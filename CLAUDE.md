@@ -26,7 +26,8 @@
 - ✅ 1-2b 後端 JWT 驗證 middleware（解析 NextAuth token）
 - ✅ 1-2c 使用者首次登入自動建立 DB 記錄
 - ✅ 1-2d 前端登入/登出頁面 + 未登入重導
-- 下一步：1-2e Role-based 權限 middleware
+- ✅ 1-2e Role-based 權限 middleware（student/teacher/admin）
+- 下一步：1-3a CodeMirror 6 整合
 
 ## 文件索引
 > 本文件目標 ≤ 60 行。新增內容先判斷歸屬，禁止回填 roadmap/日誌/UI 參數/Schema。

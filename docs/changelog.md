@@ -1,5 +1,15 @@
 # 變更日誌
 
+## [2026-04-13] — Phase 1-2e Role-based 權限 middleware
+### Added
+- `backend/api/deps.py` — `require_roles(*roles)` 依賴工廠，檢查使用者角色，不符合回傳 403 FORBIDDEN
+- `backend/tests/test_roles.py` — 5 個 role-based 權限測試（student 可/不可存取、teacher 升級、admin 全通、多角色允許）
+- `backend/tests/helpers.py` — 共用測試工具（DB engine、session factory、token 加密），修復 conftest 雙重載入問題
+- `backend/tests/conftest.py` — 重構為純 fixtures（DB 初始化/清理、client、secret 設定）
+
+### Changed
+- 測試基礎設施全面重構：pytest-asyncio 升級至 1.3，SQLite file-based DB 取代 in-memory（解決事件迴圈綁定），27 個測試全數通過
+
 ## [2026-04-13] — Phase 1-2d 前端登入/登出頁面 + 未登入重導
 ### Added
 - 確認先前實作的登入頁面、登出按鈕、middleware 重導功能完整可用，正式標記 1-2d 完成

@@ -9,6 +9,7 @@ import {
 import { CodeEditor } from "@/components/editor/code-editor";
 import { Toolbar } from "@/components/workspace/toolbar";
 import { OutputPanel, type OutputData } from "@/components/workspace/output-panel";
+import { useWorkspace } from "@/components/workspace/workspace-context";
 import { api } from "@/lib/api";
 
 /** 後端 /code/execute 回傳格式 */
@@ -30,6 +31,7 @@ export default function WorkspacePage() {
   const [isRunning, setIsRunning] = useState(false);
   const [statusText, setStatusText] = useState<string | undefined>();
   const codeRef = useRef("");
+  const workspace = useWorkspace();
 
   const toggleOutput = useCallback(
     () => setOutputCollapsed((v) => !v),
@@ -38,7 +40,8 @@ export default function WorkspacePage() {
 
   const handleCodeChange = useCallback((value: string) => {
     codeRef.current = value;
-  }, []);
+    workspace.setCode(value);
+  }, [workspace]);
 
   const handleRun = useCallback(async () => {
     const code = codeRef.current;
@@ -59,6 +62,12 @@ export default function WorkspacePage() {
         stdout: result.stdout,
         stderr: result.stderr,
         compile: result.compile_output,
+      });
+      workspace.setExecutionResult({
+        stdout: result.stdout,
+        stderr: result.stderr,
+        compile_output: result.compile_output,
+        exit_code: result.exit_code ?? -1,
       });
 
       if (result.status_description === "Accepted") {

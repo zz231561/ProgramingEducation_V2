@@ -1,5 +1,28 @@
 # 變更日誌
 
+## [2026-04-13] — Phase 1-2b 後端 JWT 驗證 middleware
+### Added
+- `backend/core/auth.py` — NextAuth v5 JWE token 解密（HKDF-SHA256 金鑰衍生 + authlib 解密 + `TokenPayload` model）
+- `backend/api/routes/auth.py` — `GET /auth/me` 端點，回傳當前登入使用者資訊
+- `backend/tests/test_auth.py` — 6 個 auth 測試（金鑰衍生、token 解碼、401 保護、/auth/me 整合測試）
+- `backend/Dockerfile` + `web/Dockerfile` — 前後端 Docker 建構設定
+- `backend/tests/test_cors.py` / `test_errors.py` / `test_models.py` — 補齊先前功能的 unit tests
+
+### Changed
+- `backend/api/deps.py` — 匯出 `get_current_user` + `TokenPayload` 供路由依賴注入
+- `backend/main.py` — 註冊 auth router
+- `backend/pyproject.toml` — 新增 `authlib`、`cryptography`、`PyJWT` 依賴
+
+## [2026-04-13] — Phase 1-2a 前端 Auth 完善
+### Added
+- `web/app/login/page.tsx` — Google OAuth 登入頁面
+- `web/middleware.ts` — NextAuth v5 middleware，未登入重導至 /login
+- `web/app/(app)/` — 路由群組，所有需認證頁面移入此群組
+
+### Changed
+- `web/auth.ts` — 新增 `authorized` callback 控制存取 + `jwt`/`session` callbacks 傳遞 Google profile
+- `web/app/layout.tsx` — 移除 `(app)` 群組外的 SessionProvider（改由群組內 layout 處理）
+
 ## [2026-04-13] — Phase 1-2a NextAuth.js Google OAuth 設定
 ### Added
 - `web/auth.ts` — NextAuth v5 核心設定（Google OAuth provider + JWT/session callbacks）

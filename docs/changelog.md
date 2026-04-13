@@ -1,5 +1,13 @@
 # 變更日誌
 
+## [2026-04-13] — Phase 1-4c Feedback 層 prompt 組裝 + 輸出驗證
+### Added
+- `backend/services/edf/feedback.py` — Feedback 層 service：
+  - 分層 prompt 組裝（preamble 5 條不可違反規則 → persona → strategy 指令 → evidence context）
+  - LLM 呼叫（GPT-4o, temperature=0.7），支援對話歷史（最近 10 輪）
+  - 輸出驗證：不允許程式碼時移除 code block、允許時超過 8 行且無 TODO/FIXME 自動截斷
+- `backend/tests/test_feedback.py` — 11 個 Feedback 層測試（prompt 組裝 3 個、輸出驗證 5 個、LLM 呼叫 3 個）
+
 ## [2026-04-13] — Phase 1-4b Decision 層策略矩陣
 ### Added
 - `backend/services/edf/decision.py` — Decision 層：6×6 Bloom × Hint Ladder 策略矩陣（36 格教學指令），RAG 觸發條件（hint≥2 且 bloom≥ANALYZE），回傳 TeachingStrategy（instruction + allow_code_snippet + use_rag）

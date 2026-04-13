@@ -31,7 +31,7 @@
 > 參考：OATutor (BKT→hint→feedback)、Mr. Ranedeer (prompt 設計)、BloomBERT (Bloom 分類)
 - [x] 1-4a Evidence 層：LLM 結構化輸出（錯誤分類 + ConceptTag + Bloom）
 - [x] 1-4b Decision 層：Bloom × Hint Ladder 策略矩陣
-- [ ] 1-4c Feedback 層：分層 prompt 組裝 + 輸出驗證
+- [x] 1-4c Feedback 層：分層 prompt 組裝 + 輸出驗證
 - [ ] 1-4d Chat API 端點（interact + history）
 - [ ] 1-4e 安全防護：輸入三層防護 + 輸出完整程式碼阻擋
 

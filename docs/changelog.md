@@ -1,5 +1,11 @@
 # 變更日誌
 
+## [2026-04-13] — Phase 1-1d Alembic 初始化 + users 表
+### Added
+- Alembic async migration 環境（`alembic/env.py` 改寫為 asyncio + asyncpg）
+- `models/user.py` — User SQLAlchemy model（UUID PK、email、name、role enum、google_id、timestamps）
+- 第一次 migration `29ec153bbf77_create_users_table`：建立 `users` 表 + `user_role` enum + email/google_id unique index
+
 ## [2026-04-13] — Phase 1-1c PostgreSQL + Redis 連線
 ### Added
 - `core/database.py` — SQLAlchemy async engine + sessionmaker + `Base` 宣告式基底 + `get_db` 依賴注入

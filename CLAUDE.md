@@ -41,3 +41,4 @@
 - [roadmap.md](docs/roadmap.md) — Phase 1~4 任務追蹤 + 已確認決策
 - [changelog.md](docs/changelog.md) — 變更日誌
 - [tech-debt.md](docs/tech-debt.md) — 技術債追蹤
+- [references.md](docs/references.md) — 開源參考專案（實作各 Phase 時 clone 研究）

@@ -5,6 +5,11 @@ globs: backend/services/edf/**
 
 # EDF 教學管線規範
 
+## 開源參考
+- OATutor：BKT → hint selection → feedback 流程，最接近 EDF 設計（詳見 `docs/references.md`）
+- Mr. Ranedeer：Socratic prompt template 設計
+- BloomBERT：Bloom taxonomy 自動分類驗證
+
 ## Evidence → Decision → Feedback 三層管線
 
 ### Evidence（程式碼分析）

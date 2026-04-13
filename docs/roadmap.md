@@ -28,6 +28,7 @@
 - [ ] 1-3f react-resizable-panels 拖曳調整
 
 ### 1-4 EDF 教學管線
+> 參考：OATutor (BKT→hint→feedback)、Mr. Ranedeer (prompt 設計)、BloomBERT (Bloom 分類)
 - [ ] 1-4a Evidence 層：LLM 結構化輸出（錯誤分類 + ConceptTag + Bloom）
 - [ ] 1-4b Decision 層：Bloom × Hint Ladder 策略矩陣
 - [ ] 1-4c Feedback 層：分層 prompt 組裝 + 輸出驗證
@@ -50,6 +51,7 @@
 > 對應頁面：Knowledge (Page 4)、Quiz 基礎版
 
 ### 2-1 RAG 知識檢索
+> 參考：DeepTutor (hybrid retrieval + citation tracking)、Open TutorAI CE (教材 RAG)
 - [ ] 2-1a pgvector 擴充啟用 + documents/chunks 表 migration
 - [ ] 2-1b LlamaIndex 索引管線（文件上傳 → chunking → embedding → 存入 DB）
 - [ ] 2-1c 檢索 service（query → 向量搜尋 → top-k chunks）
@@ -62,11 +64,13 @@
 - [ ] 2-2d Concept Detail Panel（點擊節點顯示詳情）
 
 ### 2-3 精熟度追蹤
+> 參考：OATutor BKT 演算法（`BKT-brain.js`、`bktParams.js`）→ 移植為 Python 版
 - [ ] 2-3a student_mastery 表 migration
 - [ ] 2-3b 精熟度更新邏輯（EDF Evidence 結果 → confidence 調整）
 - [ ] 2-3c 圖譜節點顏色依精熟度著色（綠/黃/紅/灰）
 
 ### 2-4 智慧出題
+> 參考：OATutor (adaptive selection)、DeepTutor (教材出題)、EduAdapt-AI (difficulty scaling)
 - [ ] 2-4a questions + student_answers 表 migration
 - [ ] 2-4b Select 階段：弱項概念選取 + 知識圖譜關聯
 - [ ] 2-4c Generate 階段：LLM 出題 + RAG 教材注入
@@ -78,6 +82,7 @@
 > 對應頁面：Learn (Page 2)、Quiz (Page 3)、Dashboard (Page 5)
 
 ### 3-1 結構化學習路徑
+> 參考：EduAdapt-AI (RL-based learning path optimization + content graph)
 - [ ] 3-1a learning_paths + learning_units 表 migration
 - [ ] 3-1b 路徑生成 service（拓撲排序 + 弱項補強）
 - [ ] 3-1c Learn 頁面：路徑視覺化 + 進度條

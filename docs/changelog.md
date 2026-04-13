@@ -1,5 +1,17 @@
 # 變更日誌
 
+## [2026-04-13] — 新增開源參考專案文檔
+### Added
+- `docs/references.md` — 8 個開源參考專案對照表（DeepTutor、OATutor、Mr. Ranedeer、EduAdapt-AI 等）
+- 各功能最佳參考來源對照（EDF、RAG、Knowledge Tracing、智慧出題、學習路徑）
+- 學術資源連結（論文、awesome list）
+
+### Changed
+- `docs/modules.md` — Module 3/4/6/7 加入對應開源參考來源
+- `docs/roadmap.md` — Phase 1-4、2-1、2-3、2-4、3-1 加入參考專案指引
+- `.claude/rules/edf-pipeline.md` — 加入開源參考區塊
+- `CLAUDE.md` — 文件索引新增 references.md
+
 ## [2026-04-13] — 文檔一致性修正
 ### Fixed
 - 將 `CHANGELOG.md` 搬移至 `docs/changelog.md`，與 CLAUDE.md 文件索引一致

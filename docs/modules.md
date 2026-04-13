@@ -1,0 +1,34 @@
+# 模組規劃
+
+> DB Schema 詳見 `db-schema.md`，EDF 管線詳見 `.claude/rules/edf-pipeline.md`
+
+## Module 1：Auth 與使用者管理
+Google OAuth (NextAuth.js) + JWT + 角色 (student/teacher/admin) + Rate limiting (per-user)
+
+## Module 2：程式碼編輯與執行
+CodeMirror 6 (C++ 語法高亮) + Judge0 API 編譯執行 + stdin 支援 + Batch 模式
+- 開發期用 Judge0 RapidAPI (免費 50 次/天)，上線後自架
+- 執行 timeout 統一 10 秒，language_id 抽象化供未來擴充
+
+## Module 3：EDF 教學管線
+Evidence → Decision → Feedback 三層管線，保留 V1 核心設計。詳見 `.claude/rules/edf-pipeline.md`
+
+## Module 4：RAG 知識檢索
+pgvector + LlamaIndex 索引 C++ 教材/cppreference/講義，檢索結果注入 EDF Feedback 層 prompt
+- Embedding: OpenAI text-embedding-3-small
+
+## Module 5：知識圖譜
+PostgreSQL 鄰接表（非 Neo4j，100 人規模 + 20 ConceptTag + <200 邊，不需圖資料庫）
+- 先修/包含/特化/相關 4 種邊類型
+- Cytoscape.js 或 D3.js 視覺化，節點顏色依精熟度：綠 >0.7 / 黃 0.4-0.7 / 紅 <0.4
+
+## Module 6：智慧出題
+4 階段管線 (Select → Generate → Validate → Present)，支援選擇題/填空題/程式撰寫題
+- 難度自適應：Bloom 等級 + concept confidence
+
+## Module 7：結構化學習路徑
+知識圖譜拓撲排序生成路徑，每節點 = 學習單元 (說明 + 範例 + 練習 + 摘要)
+- 弱項自動補強：confidence 下降時插入複習單元
+
+## Module 8：教師 Dashboard（Phase 4）
+班級管理、精熟度熱力圖、常見錯誤統計、作業指派。Schema 先設計，後續實作。

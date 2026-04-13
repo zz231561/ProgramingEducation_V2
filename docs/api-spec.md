@@ -8,8 +8,6 @@ GET    /api/auth/me               -- 取得當前使用者資訊
 POST   /api/auth/logout           -- 登出
 ```
 
----
-
 ## Code Execution
 
 ```
@@ -20,8 +18,6 @@ POST   /api/code/execute          -- 提交程式碼至 Judge0 執行
 GET    /api/code/languages        -- 取得支援的語言列表
   resp: [{ id, name }]
 ```
-
----
 
 ## Chat (EDF Pipeline)
 
@@ -35,8 +31,6 @@ GET    /api/chat/history/{sid}    -- 取得對話歷史
 
 DELETE /api/chat/history/{sid}    -- 清除對話歷史
 ```
-
----
 
 ## Quiz
 
@@ -54,46 +48,28 @@ GET    /api/quiz/history          -- 作答歷史
   resp: { answers: [StudentAnswer], total }
 ```
 
----
-
 ## Learning Path
 
 ```
 GET    /api/learn/paths           -- 取得使用者的學習路徑
-  resp: { paths: [LearningPath] }
-
 POST   /api/learn/paths           -- 建立新學習路徑
   body: { title?, goal_concepts? }
-  resp: { path: LearningPath }
 
 GET    /api/learn/paths/{id}      -- 取得特定路徑的所有單元
-  resp: { path: LearningPath, units: [LearningUnit] }
-
-PATCH  /api/learn/units/{id}      -- 更新單元狀態（完成/進行中）
+PATCH  /api/learn/units/{id}      -- 更新單元狀態
   body: { status }
-  resp: { unit: LearningUnit }
 ```
-
----
 
 ## Knowledge Graph
 
 ```
-GET    /api/knowledge/graph       -- 取得完整概念圖（nodes + edges）
-  resp: { nodes: [Concept], edges: [ConceptEdge] }
-
-GET    /api/knowledge/mastery     -- 取得學生精熟度
-  resp: { mastery: [{ concept_tag, confidence, bloom_level, ... }] }
-
-GET    /api/knowledge/concepts/{tag}  -- 取得特定概念詳情
-  resp: { concept, mastery, prerequisites, dependents }
+GET    /api/knowledge/graph       -- 完整概念圖 (nodes + edges)
+GET    /api/knowledge/mastery     -- 學生精熟度
+GET    /api/knowledge/concepts/{tag}  -- 特定概念詳情 + mastery + prerequisites
 ```
-
----
 
 ## Health
 
 ```
-GET    /api/health                -- 健康檢查
-  resp: { status, db, redis, judge0 }
+GET    /api/health                -- { status, db, redis, judge0 }
 ```

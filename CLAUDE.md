@@ -15,31 +15,29 @@
 ## 技術棧（已鎖定）
 - **前端**：Next.js 15 + TypeScript + Tailwind CSS（`web/`）
 - **後端**：FastAPI + Python 3.12 + SQLAlchemy 2.0 async（`backend/`）
-- **資料庫**：PostgreSQL + pgvector（RAG 向量搜尋）
-- **快取**：Redis（session cache、rate limiting）
-- **程式碼執行**：Judge0（開發期 RapidAPI hosted → 上線後自架）
-- **LLM**：OpenAI GPT-4o（Socratic 教學 + 智慧出題）
-- **RAG**：LlamaIndex + pgvector
-- **Auth**：NextAuth.js（Google OAuth）+ JWT
-- **編輯器**：CodeMirror 6
-- **部署**：Zeabur（Tencent Tokyo VPS 節點）
+- **資料庫**：PostgreSQL + pgvector | **快取**：Redis
+- **程式碼執行**：Judge0 | **LLM**：OpenAI GPT-4o | **RAG**：LlamaIndex + pgvector
+- **Auth**：NextAuth.js (Google OAuth) + JWT | **編輯器**：CodeMirror 6
+- **部署**：Zeabur（Tencent Tokyo VPS）
 
 ## 當前狀態
 **Phase 0：規劃完成 ✅** — 尚未開始實作
-- 完整規劃文件已就緒（技術棧、模組設計、UI 設計、API 規格、工程規範、開發階段）
 - 下一步：Phase 1-1 專案初始化（Next.js + FastAPI + PostgreSQL + Redis）
-→ 詳見 `docs/06-phases.md`
 
 ## 文件索引
-> **維護規範**：本文件目標 ≤ 60 行。新增內容先判斷歸屬哪個文件，
-> 禁止將 roadmap、測試流程、日誌、UI 參數、Schema 等回填至此。
+> 本文件目標 ≤ 60 行。新增內容先判斷歸屬，禁止回填 roadmap/日誌/UI 參數/Schema。
+
+**`.claude/rules/`**（編輯對應檔案時自動注入，無需手動查閱）
+- `frontend.md` — Design Tokens、元件規格、響應式斷點（glob: `web/**`）
+- `backend.md` — 錯誤處理、安全規範、環境變數（glob: `backend/**`）
+- `edf-pipeline.md` — EDF 三層管線、ConceptTag、出題流程（glob: `backend/services/edf/**`）
 
 **`docs/`**（按需查閱）
-- [00-overview.md](docs/00-overview.md) — 專案總覽 + 已確認決策摘要
-- [01-tech-stack.md](docs/01-tech-stack.md) — 技術棧、系統架構圖、目錄結構
-- [02-modules.md](docs/02-modules.md) — 8 個模組規劃 + DB Schema
-- [03-ui-design.md](docs/03-ui-design.md) — UI/UX 設計、Design Tokens、Wireframe、元件規格
-- [04-api-spec.md](docs/04-api-spec.md) — 完整 API 端點規格
-- [05-engineering.md](docs/05-engineering.md) — 環境變數、錯誤處理、安全規範、測試策略
-- [06-phases.md](docs/06-phases.md) — 4 個實作階段 + 已確認決策
+- [architecture.md](docs/architecture.md) — 系統架構圖 + 目錄結構
+- [modules.md](docs/modules.md) — 8 模組功能摘要 + 設計決策
+- [db-schema.md](docs/db-schema.md) — 全部 DB Schema（按模組分區）
+- [ui-wireframes.md](docs/ui-wireframes.md) — 5 頁 ASCII wireframe（實作該頁時才讀）
+- [api-spec.md](docs/api-spec.md) — API 端點規格
+- [roadmap.md](docs/roadmap.md) — Phase 1~4 任務追蹤 + 已確認決策
 - [changelog.md](docs/changelog.md) — 變更日誌
+- [tech-debt.md](docs/tech-debt.md) — 技術債追蹤

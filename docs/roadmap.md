@@ -11,7 +11,7 @@
 - [x] 1-1c PostgreSQL + Redis 連線（SQLAlchemy async + redis-py）
 - [x] 1-1d Alembic 初始化 + 第一次 migration（users 表）
 - [x] 1-1e 前後端通訊串接（Next.js API proxy → FastAPI）
-- [ ] 1-1f Health check 端點 + 前端連線狀態顯示
+- [x] 1-1f Health check 端點 + 前端連線狀態顯示
 
 ### 1-2 Auth 模組
 - [ ] 1-2a NextAuth.js 設定（Google OAuth provider）

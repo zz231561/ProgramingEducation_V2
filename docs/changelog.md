@@ -1,5 +1,13 @@
 # 變更日誌
 
+## [2026-04-13] — Phase 1-1f Health check + 前端連線狀態顯示
+### Added
+- `hooks/use-health-check.ts` — 定期 poll `/api/health`（30 秒），回傳 DB/Redis 連線狀態
+- StatusBar 即時顯示：連線成功綠點 `Connected` / 斷線紅點 `Disconnected`
+
+### Changed
+- Phase 1-1 專案骨架全部完成（1-1a ~ 1-1g 共 7 個子任務）
+
 ## [2026-04-13] — Phase 1-1e 前後端通訊串接
 ### Added
 - `web/app/api/[...path]/route.ts` — catch-all API proxy，將 `/api/*` 轉發至 FastAPI backend

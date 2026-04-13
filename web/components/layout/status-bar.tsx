@@ -1,14 +1,24 @@
 "use client";
 
 import { Circle } from "lucide-react";
+import { useHealthCheck } from "@/hooks/use-health-check";
 
 export function StatusBar() {
+  const health = useHealthCheck();
+  const isConnected = health.status !== "disconnected";
+
   return (
     <footer className="flex h-6 shrink-0 items-center border-t border-border-muted bg-bg-default px-3 text-xs text-text-muted">
       {/* 左側：連線狀態 */}
       <div className="flex items-center gap-1.5">
-        <Circle className="size-2 fill-accent-green text-accent-green" />
-        <span>Connected</span>
+        <Circle
+          className={`size-2 ${
+            isConnected
+              ? "fill-accent-green text-accent-green"
+              : "fill-accent-red text-accent-red"
+          }`}
+        />
+        <span>{isConnected ? "Connected" : "Disconnected"}</span>
       </div>
 
       <span className="mx-2 text-border-default">│</span>

@@ -1,7 +1,7 @@
 /**
  * NextAuth.js v5 設定 — Google OAuth provider。
  *
- * 環境變數：
+ * 環境變數（.env.local）：
  *   AUTH_SECRET          — NextAuth session 簽名密鑰
  *   AUTH_GOOGLE_ID       — Google OAuth Client ID
  *   AUTH_GOOGLE_SECRET   — Google OAuth Client Secret
@@ -18,6 +18,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   },
 
   callbacks: {
+    /** middleware 用 — 未登入重導至 /login */
+    authorized({ auth: session, request }) {
+      const isLoggedIn = !!session?.user;
+      const isOnLogin = request.nextUrl.pathname.startsWith("/login");
+
+      if (isOnLogin) {
+        if (isLoggedIn) return Response.redirect(new URL("/workspace", request.nextUrl));
+        return true;
+      }
+
+      return isLoggedIn;
+    },
+
     /** 將 Google profile 資訊寫入 JWT token */
     jwt({ token, account, profile }) {
       if (account && profile) {

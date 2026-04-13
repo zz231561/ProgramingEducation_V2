@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import Link from "next/link";
+import { useSession, signOut } from "next-auth/react";
 import {
   Code,
   BookOpen,
@@ -11,6 +12,7 @@ import {
   Bell,
   LayoutDashboard,
   Settings,
+  LogOut,
 } from "lucide-react";
 
 interface NavItem {
@@ -60,6 +62,7 @@ function NavButton({ item, isActive }: { item: NavItem; isActive: boolean }) {
 
 export function ActivityBar() {
   const pathname = usePathname();
+  const { data: session } = useSession();
 
   return (
     <nav className="flex h-full w-[180px] shrink-0 flex-col border-r border-border-default bg-bg-default">
@@ -101,14 +104,32 @@ export function ActivityBar() {
           />
         ))}
 
-        {/* Avatar */}
+        {/* 使用者資訊 + 登出 */}
         <div className="mx-2 mt-1 border-t border-border-muted" />
-        <button className="flex items-center gap-3 px-3 py-2 text-sm text-text-secondary hover:bg-bg-subtle/50 transition-colors">
-          <div className="size-6 shrink-0 rounded-full bg-bg-subtle border border-border-default flex items-center justify-center text-[10px]">
-            U
-          </div>
-          <span className="truncate">使用者</span>
-        </button>
+        <div className="flex items-center gap-2 px-3 py-2">
+          {session?.user?.image ? (
+            <img
+              src={session.user.image}
+              alt=""
+              className="size-6 shrink-0 rounded-full"
+              referrerPolicy="no-referrer"
+            />
+          ) : (
+            <div className="size-6 shrink-0 rounded-full bg-bg-subtle border border-border-default flex items-center justify-center text-[10px]">
+              {session?.user?.name?.[0] ?? "U"}
+            </div>
+          )}
+          <span className="min-w-0 flex-1 truncate text-sm text-text-secondary">
+            {session?.user?.name ?? "使用者"}
+          </span>
+          <button
+            onClick={() => signOut({ callbackUrl: "/login" })}
+            className="shrink-0 rounded p-1 text-text-muted hover:text-text-secondary hover:bg-bg-subtle transition-colors"
+            title="登出"
+          >
+            <LogOut className="size-3.5" />
+          </button>
+        </div>
       </div>
     </nav>
   );

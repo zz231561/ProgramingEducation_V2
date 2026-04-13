@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, Noto_Sans_TC, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
-import { AppShell } from "@/components/layout/app-shell";
 import { SessionProvider } from "@/components/providers/session-provider";
 
 const inter = Inter({
@@ -40,7 +39,7 @@ export default function RootLayout({
     >
       <body className="h-full overflow-hidden font-sans">
         <SessionProvider>
-          <AppShell>{children}</AppShell>
+          {children}
         </SessionProvider>
       </body>
     </html>

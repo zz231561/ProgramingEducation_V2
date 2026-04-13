@@ -19,8 +19,11 @@ export function useHealthCheck(): HealthStatus {
   });
 
   const check = useCallback(async () => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5_000);
+
     try {
-      const res = await fetch("/api/health");
+      const res = await fetch("/api/health", { signal: controller.signal });
       if (!res.ok) throw new Error("not ok");
       const body = await res.json();
       setHealth({
@@ -34,6 +37,8 @@ export function useHealthCheck(): HealthStatus {
         database: "disconnected",
         redis: "disconnected",
       });
+    } finally {
+      clearTimeout(timeoutId);
     }
   }, []);
 

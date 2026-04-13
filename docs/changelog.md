@@ -1,5 +1,13 @@
 # 變更日誌
 
+## [2026-04-13] — Phase 1-1a Next.js 專案初始化
+### Added
+- `web/` 目錄：Next.js 16 + App Router + TypeScript + Tailwind CSS v4
+- Design Tokens（GitHub Dark）套用為 CSS 變數，Tailwind `@theme` 映射為 utility class
+- 字型載入：Inter（UI）+ Noto Sans TC（中文）+ JetBrains Mono（程式碼）
+- Dark mode 預設啟用（`<html class="dark">`）
+- `lang="zh-TW"` 設定
+
 ## [2026-04-13] — Roadmap 新增前端 UI 基礎建設任務
 ### Changed
 - `roadmap.md` Phase 1-1 新增 1-1g：shadcn/ui 安裝 + 全域 Layout + Header Navigation + 響應式骨架，確保後續功能開發時已有成熟 UI 框架

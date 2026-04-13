@@ -1,0 +1,92 @@
+@import "tailwindcss";
+
+/* ===== Design Tokens（GitHub Dark） ===== */
+:root {
+  /* 背景 */
+  --bg-canvas: #0D1117;
+  --bg-default: #161B22;
+  --bg-subtle: #1C2128;
+  --bg-inset: #010409;
+
+  /* 邊框 */
+  --border-default: #30363D;
+  --border-muted: #21262D;
+  --border-emphasis: #6E7681;
+
+  /* 文字 */
+  --text-primary: #E6EDF3;
+  --text-secondary: #8B949E;
+  --text-muted: #6E7681;
+  --text-link: #58A6FF;
+
+  /* 強調色 */
+  --accent-blue: #58A6FF;
+  --accent-green: #3FB950;
+  --accent-red: #F85149;
+  --accent-orange: #D29922;
+  --accent-purple: #BC8CFF;
+
+  /* 按鈕 */
+  --btn-primary-bg: #238636;
+  --btn-primary-hover: #2EA043;
+  --btn-default-bg: #21262D;
+  --btn-default-border: #363B42;
+
+  /* 圓角 */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+
+  /* 間距基礎單位 */
+  --spacing-unit: 4px;
+}
+
+/* ===== Tailwind v4 theme mapping ===== */
+@theme inline {
+  /* 背景 */
+  --color-bg-canvas: var(--bg-canvas);
+  --color-bg-default: var(--bg-default);
+  --color-bg-subtle: var(--bg-subtle);
+  --color-bg-inset: var(--bg-inset);
+
+  /* 邊框 */
+  --color-border-default: var(--border-default);
+  --color-border-muted: var(--border-muted);
+  --color-border-emphasis: var(--border-emphasis);
+
+  /* 文字 */
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  --color-text-link: var(--text-link);
+
+  /* 強調色 */
+  --color-accent-blue: var(--accent-blue);
+  --color-accent-green: var(--accent-green);
+  --color-accent-red: var(--accent-red);
+  --color-accent-orange: var(--accent-orange);
+  --color-accent-purple: var(--accent-purple);
+
+  /* 按鈕 */
+  --color-btn-primary-bg: var(--btn-primary-bg);
+  --color-btn-primary-hover: var(--btn-primary-hover);
+  --color-btn-default-bg: var(--btn-default-bg);
+  --color-btn-default-border: var(--btn-default-border);
+
+  /* 圓角 */
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+
+  /* 字型 */
+  --font-sans: var(--font-inter), var(--font-noto-sans-tc), system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
+}
+
+/* ===== 全域樣式 ===== */
+body {
+  background: var(--bg-canvas);
+  color: var(--text-primary);
+}

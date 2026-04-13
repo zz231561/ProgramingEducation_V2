@@ -21,8 +21,9 @@
 - **部署**：Zeabur（Tencent Tokyo VPS）
 
 ## 當前狀態
-**Phase 0：規劃完成 ✅** — 尚未開始實作
-- 下一步：Phase 1-1 專案初始化（Next.js + FastAPI + PostgreSQL + Redis）
+**Phase 1-1：專案骨架 🔧**
+- ✅ 1-1a Next.js 16 + TypeScript + Tailwind CSS v4 + Design Tokens
+- 下一步：1-1g 前端 UI 基礎建設（shadcn/ui + Layout + Header Nav）
 
 ## 文件索引
 > 本文件目標 ≤ 60 行。新增內容先判斷歸屬，禁止回填 roadmap/日誌/UI 參數/Schema。

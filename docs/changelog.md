@@ -1,5 +1,15 @@
 # 變更日誌
 
+## [2026-04-13] — Phase 1-2c 使用者首次登入自動建立 DB 記錄
+### Added
+- `backend/services/user.py` — `get_or_create_user()` 依 google_id 查找/建立使用者，每次登入更新 name、avatar、last_login_at
+- `backend/tests/test_user_service.py` — 5 個使用者 service 測試（首次建立、重複登入、profile 更新、fallback google_id）
+
+### Changed
+- `backend/api/deps.py` — 新增 `get_current_db_user` 依賴注入（token 解析 + DB upsert）
+- `backend/api/routes/auth.py` — `/auth/me` 改用 `get_current_db_user`，回傳完整 DB 使用者資訊（含 UUID、role）
+- `backend/tests/test_auth.py` — 整合測試改用 SQLite in-memory 覆蓋 DB 依賴，新增重複呼叫測試
+
 ## [2026-04-13] — Phase 1-2b 後端 JWT 驗證 middleware
 ### Added
 - `backend/core/auth.py` — NextAuth v5 JWE token 解密（HKDF-SHA256 金鑰衍生 + authlib 解密 + `TokenPayload` model）

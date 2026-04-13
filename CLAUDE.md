@@ -24,7 +24,8 @@
 **Phase 1-2：Auth 模組 🔧**
 - ✅ 1-2a NextAuth.js 設定（Google OAuth provider）
 - ✅ 1-2b 後端 JWT 驗證 middleware（解析 NextAuth token）
-- 下一步：1-2c 使用者首次登入自動建立 DB 記錄
+- ✅ 1-2c 使用者首次登入自動建立 DB 記錄
+- 下一步：1-2d 前端登入/登出頁面 + 未登入重導
 
 ## 文件索引
 > 本文件目標 ≤ 60 行。新增內容先判斷歸屬，禁止回填 roadmap/日誌/UI 參數/Schema。

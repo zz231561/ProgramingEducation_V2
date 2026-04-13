@@ -37,7 +37,8 @@
 
 **Phase 1-5：AI 對話介面 🔧**
 - ✅ 1-5a Chat Panel 元件（訊息氣泡 + 輸入框 + Context 共享）
-- 下一步：1-5b 對話歷史持久化
+- ✅ 1-5b 對話歷史持久化（session 管理 + 歷史載入）
+- 下一步：1-5c Run 結果自動注入 Chat context
 
 ## 文件索引
 > 本文件目標 ≤ 60 行。新增內容先判斷歸屬，禁止回填 roadmap/日誌/UI 參數/Schema。

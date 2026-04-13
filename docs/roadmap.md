@@ -37,7 +37,7 @@
 
 ### 1-5 AI 對話介面
 - [x] 1-5a Chat Panel 元件（訊息氣泡 + 輸入框 + 串流顯示）
-- [ ] 1-5b 對話歷史持久化（DB 存取 + session 管理）
+- [x] 1-5b 對話歷史持久化（DB 存取 + session 管理）
 - [ ] 1-5c Run 結果自動注入 Chat context
 - [ ] 1-5d Chat Panel 收合/展開 toggle
 

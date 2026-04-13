@@ -1,5 +1,14 @@
 # 變更日誌
 
+## [2026-04-13] — Phase 1-5b 對話歷史持久化（session 管理 + 歷史載入）
+### Added
+- `web/hooks/use-sessions.ts` — session 列表管理 hook：串接 GET/DELETE /chat/sessions API，自動載入歷史 session
+- `web/components/chat/session-list.tsx` — session 歷史下拉選單：新對話、切換 session、刪除 session
+
+### Changed
+- `web/hooks/use-chat.ts` — 新增 `loadSession(id)` 載入既有對話、`startNewSession()` 開始新對話、`onSessionCreated` 回呼
+- `web/components/layout/chat-panel.tsx` — 整合 useSessions + SessionList，header 加入對話歷史按鈕
+
 ## [2026-04-13] — Phase 1-5a Chat Panel 元件（訊息氣泡 + 輸入框 + Context 共享）
 ### Added
 - `web/hooks/use-chat.ts` — 聊天狀態管理 hook：訊息列表、session 追蹤、發送訊息（串接 `/chat/interact` REST API）

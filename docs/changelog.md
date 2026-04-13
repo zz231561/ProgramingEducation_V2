@@ -1,5 +1,9 @@
 # 變更日誌
 
+## [2026-04-13] — Phase 1-2d 前端登入/登出頁面 + 未登入重導
+### Added
+- 確認先前實作的登入頁面、登出按鈕、middleware 重導功能完整可用，正式標記 1-2d 完成
+
 ## [2026-04-13] — Phase 1-2c 使用者首次登入自動建立 DB 記錄
 ### Added
 - `backend/services/user.py` — `get_or_create_user()` 依 google_id 查找/建立使用者，每次登入更新 name、avatar、last_login_at

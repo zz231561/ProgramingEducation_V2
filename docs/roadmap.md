@@ -17,7 +17,7 @@
 - [x] 1-2a NextAuth.js 設定（Google OAuth provider）
 - [x] 1-2b 後端 JWT 驗證 middleware（解析 NextAuth token）
 - [x] 1-2c 使用者首次登入自動建立 DB 記錄
-- [ ] 1-2d 前端登入/登出頁面 + 未登入重導
+- [x] 1-2d 前端登入/登出頁面 + 未登入重導
 - [ ] 1-2e Role-based 權限 middleware（student/teacher/admin）
 
 ### 1-3 程式碼編輯與執行

@@ -1,5 +1,13 @@
 # 變更日誌
 
+## [2026-04-13] — Phase 1-3e stdin 輸入支援
+### Added
+- `web/components/workspace/stdin-panel.tsx` — stdin 輸入面板（多行 textarea、80px 高、placeholder 提示、關閉按鈕）
+
+### Changed
+- `web/components/workspace/toolbar.tsx` — stdin 按鈕新增開啟狀態視覺提示（藍色邊框 + 淺底色）
+- `web/app/(app)/workspace/page.tsx` — 串接 stdin toggle + 內容 state，Run 時帶入 stdin 至 Judge0
+
 ## [2026-04-13] — Phase 1-3d 前端 Run 按鈕串接 + Output Panel
 ### Changed
 - `web/app/(app)/workspace/page.tsx` — 串接 Run 按鈕：點擊呼叫 `POST /api/code/execute`，管理 isRunning/output state，自動展開 Output Panel，顯示執行狀態（Running → Passed/Error）

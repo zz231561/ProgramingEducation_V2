@@ -1,5 +1,10 @@
 # 變更日誌
 
+## [2026-04-13] — Phase 1-3f resize handle UX 改善
+### Changed
+- `web/app/(app)/workspace/page.tsx` — 垂直 resize handle 從 1px 改為 4px hit area + 1px 視覺線條（before pseudo-element）
+- `web/components/layout/app-shell.tsx` — 水平 resize handle 同樣改善，更容易拖曳
+
 ## [2026-04-13] — 移除 stdin 前端 UI
 ### Removed
 - `web/components/workspace/stdin-panel.tsx` — Phase 1 不需要前端 stdin 面板，後端 API 仍保留 stdin 參數供未來 test case 機制使用

@@ -95,7 +95,7 @@ export default function WorkspacePage() {
           <Panel defaultSize={70} minSize={30}>
             <CodeEditor onChange={handleCodeChange} />
           </Panel>
-          <PanelResizeHandle className="h-px bg-border-default hover:bg-accent-blue transition-colors data-[resize-handle-active]:bg-accent-blue" />
+          <PanelResizeHandle className="relative flex h-1 items-center justify-center transition-colors before:absolute before:inset-x-0 before:h-px before:bg-border-default hover:before:bg-accent-blue data-[resize-handle-active]:before:bg-accent-blue" />
           <Panel defaultSize={30} minSize={15}>
             <OutputPanel
               output={output}

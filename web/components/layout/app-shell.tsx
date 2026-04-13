@@ -91,7 +91,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </Panel>
             {chatOpen && (
               <>
-                <PanelResizeHandle className="w-px bg-border-default hover:bg-accent-blue transition-colors data-[resize-handle-active]:bg-accent-blue" />
+                <PanelResizeHandle className="relative flex w-1 items-center justify-center transition-colors before:absolute before:inset-y-0 before:w-px before:bg-border-default hover:before:bg-accent-blue data-[resize-handle-active]:before:bg-accent-blue" />
                 <Panel
                   defaultSize="350px"
                   minSize="300px"

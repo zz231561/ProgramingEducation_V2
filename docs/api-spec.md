@@ -22,14 +22,19 @@ GET    /api/code/languages        -- 取得支援的語言列表
 ## Chat (EDF Pipeline)
 
 ```
-POST   /api/chat/interact         -- 主要教學互動（程式碼 + 問題 → AI 回饋）
-  body: { code, question, session_id, stdin_data?, is_review? }
-  resp: { llm_response, execution_output, error_output, session_id }
+POST   /api/chat/interact         -- 主要教學互動（SSE streaming response）
+  body: { code, question, session_id?, stdin_data?, is_review? }
+  resp: text/event-stream → { type: "token"|"done", data: string }
+        done event 包含: { session_id, evidence_summary }
 
-GET    /api/chat/history/{sid}    -- 取得對話歷史
-  resp: { messages: [{ role, content, timestamp }] }
+GET    /api/chat/sessions         -- 取得使用者所有對話 session
+  query: { page?, limit? }
+  resp: { sessions: [{ id, title, updated_at }], total }
 
-DELETE /api/chat/history/{sid}    -- 清除對話歷史
+GET    /api/chat/sessions/{sid}   -- 取得特定 session 的訊息歷史
+  resp: { session, messages: [{ role, content, code_snapshot?, created_at }] }
+
+DELETE /api/chat/sessions/{sid}   -- 刪除對話 session（cascade 刪除訊息）
 ```
 
 ## Quiz

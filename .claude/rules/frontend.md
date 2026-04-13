@@ -46,3 +46,14 @@ globs: web/**
 Top Navigation Bar（GitHub 風格頂部 tab），非 Sidebar。
 Tab: Workspace(預設) | Learn | Quiz | Knowledge | Dashboard
 Active tab: `border-bottom: 2px solid #F78166`
+
+## 測試策略
+
+- **Component**: Vitest + React Testing Library → 各 UI 元件
+- **E2E**: Playwright → 登入 → 寫程式 → 執行 → AI 對話（golden path）
+- Phase 1 優先：Workspace 頁面 E2E test
+
+## API 呼叫
+
+前端統一用 `fetch('/api/...')` 打 Next.js API Routes（proxy 至 FastAPI），不直接打後端。
+統一錯誤攔截：401 → 重導登入、429 → 冷卻倒數 toast、5xx → 錯誤 toast

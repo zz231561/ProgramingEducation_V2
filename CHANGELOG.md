@@ -1,5 +1,17 @@
 ## [2026-04-13]
 ### Changed
+- Roadmap 拆分為原子級子任務（每個 checkbox = 一次對話可完成）
+- DB Schema 補齊 index/constraint 標記（unique、GIN、HNSW、複合索引）
+- EDF pipeline 補完 Bloom 6 級定義 + Hint Ladder 6 級策略表
+- architecture.md 新增前後端通訊模式（Next.js API proxy）+ 標準錯誤 JSON 格式
+- API spec 更新 Chat 端點（SSE streaming + session CRUD）
+- rules/frontend.md 補入測試策略 + API 呼叫規範
+
+### Added
+- `.env.example` — 環境變數範本
+- `db-schema.md` Module 3 Chat Session 表（chat_sessions + chat_messages）
+
+### Previous Changed
 - 重構全部文檔架構，最佳化 Claude Code 上下文效率
 - 新增 `.claude/rules/` 自動注入規則（frontend、backend、edf-pipeline）
 - 拆分大檔案：modules + db-schema、ui-wireframes + rules/frontend

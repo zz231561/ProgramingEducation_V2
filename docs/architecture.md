@@ -25,6 +25,40 @@
 └─────────────────────────────────────────────────────────┘
 ```
 
+## 前後端通訊模式
+
+```
+Browser → Next.js API Routes (/app/api/**) → FastAPI (backend)
+                  ↑ proxy 層                      ↑ 業務邏輯
+```
+
+**流程：**
+1. Browser 發 request 到 Next.js API Routes（同源，無 CORS 問題）
+2. Next.js API Route 從 NextAuth session 取出 user info
+3. 簽發/附加 JWT token，proxy 轉發至 FastAPI
+4. FastAPI middleware 驗證 JWT，執行業務邏輯
+
+**為何不讓 Browser 直打 FastAPI：**
+- NextAuth session 是 HttpOnly cookie，只有 Next.js server 能讀取
+- 統一進出口，前端只需 `fetch('/api/...')`，不需管後端 URL
+- 部署時前端 + API Routes 同一 service，後端可設為 internal 不暴露
+
+**Chat streaming：** Next.js API Route 用 SSE 轉發 FastAPI 的 streaming response
+
+**標準錯誤回應格式（前後端共用）：**
+```json
+{
+  "error": "RATE_LIMIT_EXCEEDED",
+  "message": "已超過每分鐘請求上限，請稍後再試",
+  "detail": { "retry_after_seconds": 42 }
+}
+```
+- `error`: 機器可讀的錯誤碼（UPPER_SNAKE_CASE）
+- `message`: 使用者可見的繁中訊息
+- `detail`: 可選，額外資訊（各 error 自定義）
+
+常用 error codes: `UNAUTHORIZED`, `FORBIDDEN`, `VALIDATION_ERROR`, `RATE_LIMIT_EXCEEDED`, `JUDGE0_TIMEOUT`, `JUDGE0_UNAVAILABLE`, `LLM_UNAVAILABLE`, `INTERNAL_ERROR`
+
 ## 目錄結構
 
 ```

@@ -1,5 +1,21 @@
 # 變更日誌
 
+## [2026-04-13] — Phase 1-3b Workspace 頁面基礎佈局
+### Added
+- `web/components/workspace/toolbar.tsx` — Toolbar 元件（檔名顯示、C++ 語言標籤、stdin 按鈕、▶ Run 按鈕）
+- `web/components/workspace/output-panel.tsx` — Output Panel 元件（stdout/stderr/compile tabs、stderr 紅點指示、可收合為單行 status bar）
+
+### Changed
+- `web/app/(app)/workspace/page.tsx` — 重構為三區佈局：Toolbar (40px) + Editor (70%) + Output Panel (30%)，使用 react-resizable-panels 垂直拖曳調整
+
+## [2026-04-13] — Phase 1-3a CodeMirror 6 整合
+### Added
+- `web/components/editor/code-editor.tsx` — CodeMirror 6 編輯器元件（C++ 語法高亮、One Dark 主題、行號、括號配對、fold gutter、歷史紀錄）
+- CodeMirror 6 相關套件：codemirror、@codemirror/lang-cpp、@codemirror/theme-one-dark、@codemirror/state、@codemirror/view
+
+### Changed
+- `web/app/(app)/workspace/page.tsx` — 替換 placeholder 為 CodeEditor 元件，佔滿可用空間
+
 ## [2026-04-13] — Phase 1-2e Role-based 權限 middleware
 ### Added
 - `backend/api/deps.py` — `require_roles(*roles)` 依賴工廠，檢查使用者角色，不符合回傳 403 FORBIDDEN

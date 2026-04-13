@@ -21,13 +21,10 @@
 - **部署**：Zeabur（Tencent Tokyo VPS）
 
 ## 當前狀態
-**Phase 1-2：Auth 模組 🔧**
-- ✅ 1-2a NextAuth.js 設定（Google OAuth provider）
-- ✅ 1-2b 後端 JWT 驗證 middleware（解析 NextAuth token）
-- ✅ 1-2c 使用者首次登入自動建立 DB 記錄
-- ✅ 1-2d 前端登入/登出頁面 + 未登入重導
-- ✅ 1-2e Role-based 權限 middleware（student/teacher/admin）
-- 下一步：1-3a CodeMirror 6 整合
+**Phase 1-3：程式碼編輯與執行 🔧**
+- ✅ 1-3a CodeMirror 6 整合（C++ 語法高亮 + One Dark 主題）
+- ✅ 1-3b Workspace 頁面基礎佈局（Toolbar + Editor + Output Panel）
+- 下一步：1-3c Judge0 API client（submit + polling 取結果）
 
 ## 文件索引
 > 本文件目標 ≤ 60 行。新增內容先判斷歸屬，禁止回填 roadmap/日誌/UI 參數/Schema。

@@ -1,5 +1,16 @@
 # 變更日誌
 
+## [2026-04-13] — Phase 1-5c Run 結果自動注入 Chat context
+### Added
+- `web/components/chat/run-result-card.tsx` — 執行結果摘要卡片：通過/編譯失敗/執行錯誤狀態 badge + stdout/stderr 預覽
+- `web/lib/chat-types.ts` — Chat 型別定義：`MessageItem | ExecutionItem` union type
+
+### Changed
+- `web/components/workspace/workspace-context.tsx` — 新增 `onExecutionComplete` 事件訂閱機制（subscribe/notify pattern）
+- `web/hooks/use-chat.ts` — 新增 `injectExecutionResult()` 注入執行結果卡片至訊息列表
+- `web/components/layout/chat-panel.tsx` — 訂閱執行事件，Run 完成後自動在 Chat 中顯示結果卡片
+- `web/components/chat/message-list.tsx` — 支援 `ChatItem` union type 渲染（message / execution）
+
 ## [2026-04-13] — Phase 1-5b 對話歷史持久化（session 管理 + 歷史載入）
 ### Added
 - `web/hooks/use-sessions.ts` — session 列表管理 hook：串接 GET/DELETE /chat/sessions API，自動載入歷史 session

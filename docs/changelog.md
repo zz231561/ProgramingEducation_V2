@@ -1,5 +1,10 @@
 # 變更日誌
 
+## [2026-04-13] — Phase 1-4b Decision 層策略矩陣
+### Added
+- `backend/services/edf/decision.py` — Decision 層：6×6 Bloom × Hint Ladder 策略矩陣（36 格教學指令），RAG 觸發條件（hint≥2 且 bloom≥ANALYZE），回傳 TeachingStrategy（instruction + allow_code_snippet + use_rag）
+- `backend/tests/test_decision.py` — 10 個 Decision 層測試（低/高 Bloom×Hint 組合、RAG 觸發/不觸發、邊界值 clamp、36 格完整性驗證）
+
 ## [2026-04-13] — Phase 1-4a Evidence 層 LLM 結構化分析
 ### Added
 - `backend/services/edf/models.py` — EDF 共用模型（BloomLevel 6 級 enum、ErrorType 6 類 enum、20 個 ConceptTag 常數、EvidenceResult schema）

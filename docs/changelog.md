@@ -1,5 +1,14 @@
 # 變更日誌
 
+## [2026-04-13] — 新增 UI/UX 介面規格書
+### Added
+- `docs/ui-ux-spec.md` — 完整 UI/UX 介面規格書（13 章節）
+- VSCode 風格 IDE 佈局：Activity Bar + Content Area + AI Chat Panel
+- 7 個頁面規格：Workspace、Learn、Quiz、Knowledge、Overview、Dashboard、Settings
+- Workspace 檔案樹（多檔案管理）、學生 Overview 獨立頁面、通知系統鈴鐺
+- 響應式設計（Desktop / Laptop / Tablet / Mobile 四斷點）
+- 動效、快捷鍵、狀態列、Pre-Coding Reflection / Post-Solution 互動流程
+
 ## [2026-04-13] — Phase 1-1a Next.js 專案初始化
 ### Added
 - `web/` 目錄：Next.js 16 + App Router + TypeScript + Tailwind CSS v4

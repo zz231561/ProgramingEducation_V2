@@ -48,7 +48,7 @@
 
 ## Phase 2：智慧功能
 > 完成標準：RAG 檢索可用、知識圖譜可視覺化、弱項可自動出題
-> 對應頁面：Knowledge (Page 4)、Quiz 基礎版
+> 對應頁面：Knowledge (Page 4)、Quiz 基礎版、Workspace 擴充（Pre-Coding Reflection 側邊欄）
 
 ### 2-1 RAG 知識檢索
 > 參考：DeepTutor (hybrid retrieval + citation tracking)、Open TutorAI CE (教材 RAG)
@@ -129,7 +129,7 @@
 > 參考：ProgSnap2 + KOALA (事件 schema)、StudyChat (dialogue act 分類)
 - [ ] 4-2a coding_events 表 migration（記錄 submit/error/fix 事件）
 - [ ] 4-2b 後端 event logging service（從 Judge0 + EDF 現有流程擷取資料）
-- [ ] 4-2c chat_messages 擴充 dialogue_act 欄位（asking_hint/clarification/debugging/off_topic）
+- [ ] 4-2c chat_messages 擴充 dialogue_act 欄位（asking_hint/clarification/debugging/off_topic/acknowledgment）
 - [ ] 4-2d 行為指標聚合 service（編譯頻率/成功率/修復時間/hint 分布等）
 
 ### 4-3 行為分析演算法（Module 9）

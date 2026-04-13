@@ -1,5 +1,13 @@
 # 變更日誌
 
+## [2026-04-13] — 文檔交叉引用修正
+### Fixed
+- `architecture.md` routes 註解補齊 `dashboard, analytics, reflection` 端點
+- `changelog.md` Module 9 參考專案計數修正（7→6）
+- `db-schema.md` Module 6 `student_answers` 加入 comprehension 擴充欄位交叉引用
+- `roadmap.md` Phase 2 header 補齊影響頁面（Workspace Pre-Coding Reflection 側邊欄）
+- `roadmap.md` Phase 4-2c `dialogue_act` enum 補漏 `acknowledgment`
+
 ## [2026-04-13] — 新增 Pre-Coding Reflection 反認知外包機制
 ### Added
 - 跨模組機制：Pre-Coding Reflection（解題前反思閘門，方案 B 一次追問機會）
@@ -21,7 +29,7 @@
 - `chat_messages` 擴充 `dialogue_act` 欄位（Phase 4-2c）
 - API：Behavior Analytics 端點（班級總覽/散佈圖/熱力圖/個人時序/摘要）
 - Roadmap Phase 4 拆分為 5 子階段（4-1 班級管理 → 4-2 資料收集 → 4-3 分析演算法 → 4-4 視覺化 → 4-5 作業指派）
-- 參考專案：ProgSnap2、KOALA、StudyChat、pyBKT、PM4Py、OpenLAP 等 7 個新增至 references.md
+- 參考專案：ProgSnap2、KOALA、StudyChat、pyBKT、PM4Py、OpenLAP 等 6 個新增至 references.md
 - 目錄結構新增 `backend/services/analytics/`
 
 ### Changed

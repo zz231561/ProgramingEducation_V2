@@ -87,7 +87,7 @@ ProgramingEducation_V2/
 ├── backend/                      # FastAPI 後端
 │   ├── main.py                   # 進入點
 │   ├── api/
-│   │   ├── routes/               # auth, code, chat, quiz, learn, knowledge, health
+│   │   ├── routes/               # auth, code, chat, quiz, learn, knowledge, dashboard, analytics, reflection, health
 │   │   ├── middleware/           # auth (JWT), rate_limit
 │   │   └── deps.py              # 依賴注入
 │   ├── models/                   # SQLAlchemy Models

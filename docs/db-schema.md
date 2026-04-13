@@ -117,6 +117,7 @@ student_answers
 ├── feedback (text)
 ├── answered_at (timestamp)
 └── ★ index (user_id, answered_at) 供歷史查詢
+-- ⚠ 擴充欄位（comprehension_type 等）見下方「跨模組：Pre-Coding Reflection」
 ```
 
 ## 跨模組：Pre-Coding Reflection

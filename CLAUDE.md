@@ -27,7 +27,8 @@
 - ✅ 1-1b 建立 FastAPI 專案（Pydantic Settings + CORS + 標準錯誤處理）
 - ✅ 1-1c PostgreSQL + Redis 連線（SQLAlchemy async + redis-py + lifespan）
 - ✅ 1-1d Alembic 初始化 + 第一次 migration（users 表）
-- 下一步：1-1e 前後端通訊串接（Next.js API proxy → FastAPI）
+- ✅ 1-1e 前後端通訊串接（Next.js API proxy → FastAPI）
+- 下一步：1-1f Health check 端點 + 前端連線狀態顯示
 
 ## 文件索引
 > 本文件目標 ≤ 60 行。新增內容先判斷歸屬，禁止回填 roadmap/日誌/UI 參數/Schema。

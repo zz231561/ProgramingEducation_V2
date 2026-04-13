@@ -1,5 +1,12 @@
 # 變更日誌
 
+## [2026-04-13] — Phase 1-1e 前後端通訊串接
+### Added
+- `web/app/api/[...path]/route.ts` — catch-all API proxy，將 `/api/*` 轉發至 FastAPI backend
+- `web/lib/api.ts` — 前端統一 API client（`api<T>(path)` 函式 + 錯誤攔截 + `ApiRequestError` 類別）
+- 支援所有 HTTP method（GET/POST/PUT/PATCH/DELETE）、query string 保留、body 轉發
+- 後端不可用時回傳 502 + 標準錯誤格式
+
 ## [2026-04-13] — Phase 1-1d Alembic 初始化 + users 表
 ### Added
 - Alembic async migration 環境（`alembic/env.py` 改寫為 asyncio + asyncpg）

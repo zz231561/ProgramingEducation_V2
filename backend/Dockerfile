@@ -9,6 +9,10 @@ RUN pip install --no-cache-dir -r requirements.lock
 # 複製原始碼
 COPY . .
 
+# 啟動腳本需要執行權限
+RUN chmod +x start.sh
+
 EXPOSE 8000
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+# 啟動時先跑 Alembic migration 再啟動 uvicorn
+CMD ["./start.sh"]

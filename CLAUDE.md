@@ -40,7 +40,11 @@
 - ✅ 1-5b 對話歷史持久化（session 管理 + 歷史載入）
 - ✅ 1-5c Run 結果自動注入 Chat context
 - ✅ 1-5d Chat Panel 收合/展開 toggle
-- 下一步：Phase 1-6 部署
+
+**Phase 1-6：部署 🔧**
+- ✅ 1-6a Dockerfile（前端 + 後端）
+- ✅ 1-6b Zeabur 部署配置（環境變數 + service 串接）
+- ⬜ 1-6c 首次上線驗證（登入 → 寫碼 → 執行 → 對話 golden path）
 
 ## 文件索引
 > 本文件目標 ≤ 60 行。新增內容先判斷歸屬，禁止回填 roadmap/日誌/UI 參數/Schema。
@@ -57,6 +61,7 @@
 - [ui-ux-spec.md](docs/ui-ux-spec.md) — 完整 UI/UX 介面規格書（VSCode 風格 IDE 佈局）
 - [ui-wireframes.md](docs/ui-wireframes.md) — 5 頁 ASCII wireframe（實作該頁時才讀）
 - [api-spec.md](docs/api-spec.md) — API 端點規格
+- [deployment.md](docs/deployment.md) — Zeabur 部署指南
 - [roadmap.md](docs/roadmap.md) — Phase 1~4 任務追蹤 + 已確認決策
 - [changelog.md](docs/changelog.md) — 變更日誌
 - [tech-debt.md](docs/tech-debt.md) — 技術債追蹤

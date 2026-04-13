@@ -1,5 +1,14 @@
 # 變更日誌
 
+## [2026-04-13] — Phase 1-6a/b 部署配置（Dockerfile + Zeabur）
+### Added
+- `zeabur.json` — Zeabur Template 定義（web + backend + PostgreSQL + Redis 四服務）
+- `backend/start.sh` — 容器啟動腳本：先跑 Alembic migration 再啟動 uvicorn
+- `docs/deployment.md` — Zeabur 部署指南（環境變數、service 串接、驗證步驟）
+
+### Changed
+- `backend/Dockerfile` — CMD 改為 `start.sh`，啟動時自動執行 DB migration
+
 ## [2026-04-13] — Phase 1-5d Chat Panel 收合/展開 toggle
 ### Added
 - `web/components/workspace/toolbar.tsx` — Toolbar 新增 [AI] 按鈕，顯示 Chat Panel 展開/收合狀態（藍色 active / 灰色 inactive）

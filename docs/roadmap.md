@@ -42,8 +42,8 @@
 - [x] 1-5d Chat Panel 收合/展開 toggle
 
 ### 1-6 部署
-- [ ] 1-6a Dockerfile（前端 + 後端）
-- [ ] 1-6b Zeabur 部署配置（環境變數 + service 串接）
+- [x] 1-6a Dockerfile（前端 + 後端）
+- [x] 1-6b Zeabur 部署配置（環境變數 + service 串接）
 - [ ] 1-6c 首次上線驗證（登入 → 寫碼 → 執行 → 對話 golden path）
 
 ## Phase 2：智慧功能

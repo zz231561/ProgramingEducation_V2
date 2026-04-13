@@ -1,12 +1,12 @@
 # 變更日誌
 
-## [2026-04-13] — Phase 1-3e stdin 輸入支援
-### Added
-- `web/components/workspace/stdin-panel.tsx` — stdin 輸入面板（多行 textarea、80px 高、placeholder 提示、關閉按鈕）
+## [2026-04-13] — 移除 stdin 前端 UI
+### Removed
+- `web/components/workspace/stdin-panel.tsx` — Phase 1 不需要前端 stdin 面板，後端 API 仍保留 stdin 參數供未來 test case 機制使用
 
 ### Changed
-- `web/components/workspace/toolbar.tsx` — stdin 按鈕新增開啟狀態視覺提示（藍色邊框 + 淺底色）
-- `web/app/(app)/workspace/page.tsx` — 串接 stdin toggle + 內容 state，Run 時帶入 stdin 至 Judge0
+- `web/components/workspace/toolbar.tsx` — 移除 stdin 按鈕及相關 props
+- `web/app/(app)/workspace/page.tsx` — 移除 stdin state 和 StdinPanel 引用
 
 ## [2026-04-13] — Phase 1-3d 前端 Run 按鈕串接 + Output Panel
 ### Changed

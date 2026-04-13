@@ -9,7 +9,6 @@ import {
 import { CodeEditor } from "@/components/editor/code-editor";
 import { Toolbar } from "@/components/workspace/toolbar";
 import { OutputPanel, type OutputData } from "@/components/workspace/output-panel";
-import { StdinPanel } from "@/components/workspace/stdin-panel";
 import { api } from "@/lib/api";
 
 /** 後端 /code/execute 回傳格式 */
@@ -30,17 +29,10 @@ export default function WorkspacePage() {
   const [output, setOutput] = useState<OutputData>(EMPTY_OUTPUT);
   const [isRunning, setIsRunning] = useState(false);
   const [statusText, setStatusText] = useState<string | undefined>();
-  const [stdinOpen, setStdinOpen] = useState(false);
-  const [stdin, setStdin] = useState("");
   const codeRef = useRef("");
 
   const toggleOutput = useCallback(
     () => setOutputCollapsed((v) => !v),
-    [],
-  );
-
-  const toggleStdin = useCallback(
-    () => setStdinOpen((v) => !v),
     [],
   );
 
@@ -60,7 +52,7 @@ export default function WorkspacePage() {
     try {
       const result = await api<ExecuteResponse>("/code/execute", {
         method: "POST",
-        body: JSON.stringify({ code, stdin }),
+        body: JSON.stringify({ code }),
       });
 
       setOutput({
@@ -81,36 +73,17 @@ export default function WorkspacePage() {
     } finally {
       setIsRunning(false);
     }
-  }, [stdin]);
-
-  /** Editor 區塊（含 stdin panel） */
-  const editorBlock = (
-    <div className="flex h-full flex-col">
-      {stdinOpen && (
-        <StdinPanel
-          value={stdin}
-          onChange={setStdin}
-          onClose={() => setStdinOpen(false)}
-        />
-      )}
-      <div className="min-h-0 flex-1">
-        <CodeEditor onChange={handleCodeChange} />
-      </div>
-    </div>
-  );
+  }, []);
 
   return (
     <div className="flex h-full flex-col">
-      <Toolbar
-        onRun={handleRun}
-        isRunning={isRunning}
-        onToggleStdin={toggleStdin}
-        stdinOpen={stdinOpen}
-      />
+      <Toolbar onRun={handleRun} isRunning={isRunning} />
 
       {outputCollapsed ? (
         <>
-          {editorBlock}
+          <div className="min-h-0 flex-1">
+            <CodeEditor onChange={handleCodeChange} />
+          </div>
           <OutputPanel
             collapsed
             onToggleCollapse={toggleOutput}
@@ -120,7 +93,7 @@ export default function WorkspacePage() {
       ) : (
         <PanelGroup orientation="vertical" className="min-h-0 flex-1">
           <Panel defaultSize={70} minSize={30}>
-            {editorBlock}
+            <CodeEditor onChange={handleCodeChange} />
           </Panel>
           <PanelResizeHandle className="h-px bg-border-default hover:bg-accent-blue transition-colors data-[resize-handle-active]:bg-accent-blue" />
           <Panel defaultSize={30} minSize={15}>

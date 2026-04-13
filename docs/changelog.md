@@ -1,5 +1,9 @@
 # 變更日誌
 
+## [2026-04-13] — Roadmap 新增前端 UI 基礎建設任務
+### Changed
+- `roadmap.md` Phase 1-1 新增 1-1g：shadcn/ui 安裝 + 全域 Layout + Header Navigation + 響應式骨架，確保後續功能開發時已有成熟 UI 框架
+
 ## [2026-04-13] — 文檔交叉引用修正
 ### Fixed
 - `architecture.md` routes 註解補齊 `dashboard, analytics, reflection` 端點

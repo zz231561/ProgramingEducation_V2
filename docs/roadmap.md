@@ -6,6 +6,7 @@
 
 ### 1-1 專案骨架
 - [ ] 1-1a 建立 Next.js 15 專案（App Router + TypeScript + Tailwind）
+- [ ] 1-1g 前端 UI 基礎建設（shadcn/ui + 全域 Layout + Header Nav + 響應式骨架）
 - [ ] 1-1b 建立 FastAPI 專案（專案結構 + Pydantic Settings + CORS）
 - [ ] 1-1c PostgreSQL + Redis 連線（SQLAlchemy async + redis-py）
 - [ ] 1-1d Alembic 初始化 + 第一次 migration（users 表）

@@ -12,55 +12,49 @@ import {
   LayoutDashboard,
   Settings,
 } from "lucide-react";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 
-/** 導覽項目定義 */
 interface NavItem {
   icon: React.ComponentType<{ className?: string }>;
   label: string;
+  description: string;
   href: string;
 }
 
 const topNavItems: NavItem[] = [
-  { icon: Code, label: "Workspace", href: "/workspace" },
-  { icon: BookOpen, label: "Learn", href: "/learn" },
-  { icon: FileQuestion, label: "Quiz", href: "/quiz" },
-  { icon: Network, label: "Knowledge", href: "/knowledge" },
-  { icon: Home, label: "Overview", href: "/overview" },
+  { icon: Code, label: "Workspace", description: "程式碼編輯", href: "/workspace" },
+  { icon: BookOpen, label: "Learn", description: "學習路徑", href: "/learn" },
+  { icon: FileQuestion, label: "Quiz", description: "智慧測驗", href: "/quiz" },
+  { icon: Network, label: "Knowledge", description: "知識圖譜", href: "/knowledge" },
+  { icon: Home, label: "Overview", description: "學習總覽", href: "/overview" },
 ];
 
 const bottomNavItems: NavItem[] = [
-  { icon: Bell, label: "通知", href: "/notifications" },
-  { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
-  { icon: Settings, label: "設定", href: "/settings" },
+  { icon: Bell, label: "通知", description: "通知中心", href: "/notifications" },
+  { icon: LayoutDashboard, label: "Dashboard", description: "教師儀表板", href: "/dashboard" },
+  { icon: Settings, label: "設定", description: "個人設定", href: "/settings" },
 ];
 
 function NavButton({ item, isActive }: { item: NavItem; isActive: boolean }) {
   return (
-    <Tooltip>
-      <TooltipTrigger
-        render={<Link href={item.href} />}
-        className="relative flex h-12 w-12 items-center justify-center transition-colors"
-      >
-        {isActive && (
-          <span className="absolute left-0 top-1/2 h-6 w-0.5 -translate-y-1/2 bg-accent-blue rounded-r" />
-        )}
-        <item.icon
-          className={`size-6 ${
-            isActive
-              ? "text-text-primary"
-              : "text-text-muted hover:text-text-secondary"
-          } transition-colors`}
-        />
-      </TooltipTrigger>
-      <TooltipContent side="right" sideOffset={8}>
-        {item.label}
-      </TooltipContent>
-    </Tooltip>
+    <Link
+      href={item.href}
+      className={`relative flex items-center gap-3 px-3 py-2.5 text-sm transition-colors ${
+        isActive
+          ? "bg-bg-subtle text-text-primary"
+          : "text-text-muted hover:bg-bg-subtle/50 hover:text-text-secondary"
+      }`}
+    >
+      {isActive && (
+        <span className="absolute left-0 top-1/2 h-6 w-0.5 -translate-y-1/2 rounded-r bg-accent-blue" />
+      )}
+      <item.icon className="size-5 shrink-0" />
+      <div className="min-w-0">
+        <div className="truncate font-medium leading-tight">{item.label}</div>
+        <div className="truncate text-xs text-text-muted leading-tight">
+          {item.description}
+        </div>
+      </div>
+    </Link>
   );
 }
 
@@ -68,22 +62,23 @@ export function ActivityBar() {
   const pathname = usePathname();
 
   return (
-    <nav className="flex h-full w-12 shrink-0 flex-col border-r border-border-default bg-bg-default">
+    <nav className="flex h-full w-[180px] shrink-0 flex-col border-r border-border-default bg-bg-default">
       {/* Logo */}
-      <Tooltip>
-        <TooltipTrigger
-          render={<Link href="/workspace" />}
-          className="flex h-12 w-12 items-center justify-center text-accent-blue hover:text-accent-blue/80 transition-colors"
-        >
-          <span className="text-lg font-bold">◇</span>
-        </TooltipTrigger>
-        <TooltipContent side="right" sideOffset={8}>
-          ProgramingEducation
-        </TooltipContent>
-      </Tooltip>
+      <Link
+        href="/workspace"
+        className="flex h-12 items-center gap-2 px-3 text-accent-blue hover:text-accent-blue/80 transition-colors"
+      >
+        <span className="text-lg font-bold">◇</span>
+        <span className="text-sm font-semibold text-text-primary">
+          C++ Tutor
+        </span>
+      </Link>
+
+      {/* 分隔線 */}
+      <div className="mx-3 border-t border-border-muted" />
 
       {/* 上方導覽 */}
-      <div className="flex flex-col">
+      <div className="mt-1 flex flex-col gap-0.5 px-1">
         {topNavItems.map((item) => (
           <NavButton
             key={item.href}
@@ -93,11 +88,11 @@ export function ActivityBar() {
         ))}
       </div>
 
-      {/* 彈性空間 */}
       <div className="flex-1" />
 
       {/* 下方導覽 */}
-      <div className="flex flex-col">
+      <div className="flex flex-col gap-0.5 px-1 pb-1">
+        <div className="mx-2 mb-1 border-t border-border-muted" />
         {bottomNavItems.map((item) => (
           <NavButton
             key={item.href}
@@ -107,16 +102,13 @@ export function ActivityBar() {
         ))}
 
         {/* Avatar */}
-        <Tooltip>
-          <TooltipTrigger className="flex h-12 w-12 items-center justify-center">
-            <div className="size-7 rounded-full bg-bg-subtle border border-border-default flex items-center justify-center text-xs text-text-secondary">
-              U
-            </div>
-          </TooltipTrigger>
-          <TooltipContent side="right" sideOffset={8}>
-            使用者
-          </TooltipContent>
-        </Tooltip>
+        <div className="mx-2 mt-1 border-t border-border-muted" />
+        <button className="flex items-center gap-3 px-3 py-2 text-sm text-text-secondary hover:bg-bg-subtle/50 transition-colors">
+          <div className="size-6 shrink-0 rounded-full bg-bg-subtle border border-border-default flex items-center justify-center text-[10px]">
+            U
+          </div>
+          <span className="truncate">使用者</span>
+        </button>
       </div>
     </nav>
   );

@@ -34,7 +34,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }, [toggleChat]);
 
   return (
-    <WorkspaceProvider>
+    <WorkspaceProvider chatOpen={chatOpen} toggleChat={toggleChat}>
       <TooltipProvider delay={400}>
         <ShellLayout
           breakpoint={breakpoint}

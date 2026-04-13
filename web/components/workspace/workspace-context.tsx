@@ -17,34 +17,39 @@ interface WorkspaceContextValue {
   getCode: () => string;
   setCode: (code: string) => void;
   getExecutionResult: () => ExecutionResult | null;
-  /** 更新執行結果，同時通知所有訂閱者 */
   setExecutionResult: (result: ExecutionResult | null) => void;
-  /** 訂閱執行完成事件，回傳 unsubscribe 函式 */
   onExecutionComplete: (listener: ExecutionListener) => () => void;
+  /** Chat Panel 是否展開 */
+  chatOpen: boolean;
+  /** 切換 Chat Panel 收合/展開 */
+  toggleChat: () => void;
 }
 
 const Ctx = createContext<WorkspaceContextValue | null>(null);
 
+interface WorkspaceProviderProps {
+  chatOpen: boolean;
+  toggleChat: () => void;
+  children: React.ReactNode;
+}
+
 /**
- * Workspace 狀態 Provider — 用 ref 儲存避免不必要的 re-render。
- * 提供執行事件訂閱機制供 Chat Panel 監聽。
+ * Workspace 狀態 Provider。
+ * 程式碼/執行結果用 ref（不觸發 re-render）；
+ * chat toggle 用 props 從 AppShell 傳入（需觸發 re-render）。
  */
-export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
+export function WorkspaceProvider({ chatOpen, toggleChat, children }: WorkspaceProviderProps) {
   const codeRef = useRef("");
   const execRef = useRef<ExecutionResult | null>(null);
   const listenersRef = useRef<Set<ExecutionListener>>(new Set());
 
   const getCode = useCallback(() => codeRef.current, []);
-  const setCode = useCallback((code: string) => {
-    codeRef.current = code;
-  }, []);
+  const setCode = useCallback((code: string) => { codeRef.current = code; }, []);
   const getExecutionResult = useCallback(() => execRef.current, []);
 
   const setExecutionResult = useCallback((r: ExecutionResult | null) => {
     execRef.current = r;
-    if (r) {
-      listenersRef.current.forEach((fn) => fn(r));
-    }
+    if (r) listenersRef.current.forEach((fn) => fn(r));
   }, []);
 
   const onExecutionComplete = useCallback((listener: ExecutionListener) => {
@@ -53,13 +58,15 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <Ctx value={{ getCode, setCode, getExecutionResult, setExecutionResult, onExecutionComplete }}>
+    <Ctx value={{
+      getCode, setCode, getExecutionResult, setExecutionResult,
+      onExecutionComplete, chatOpen, toggleChat,
+    }}>
       {children}
     </Ctx>
   );
 }
 
-/** 取得 WorkspaceContext — 必須在 WorkspaceProvider 內使用 */
 export function useWorkspace() {
   const ctx = useContext(Ctx);
   if (!ctx) throw new Error("useWorkspace must be inside WorkspaceProvider");

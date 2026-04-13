@@ -1,5 +1,21 @@
 # 變更日誌
 
+## [2026-04-13] — Phase 1-5d Chat Panel 收合/展開 toggle
+### Added
+- `web/components/workspace/toolbar.tsx` — Toolbar 新增 [AI] 按鈕，顯示 Chat Panel 展開/收合狀態（藍色 active / 灰色 inactive）
+
+### Changed
+- `web/components/workspace/workspace-context.tsx` — 新增 `chatOpen` / `toggleChat` props，從 AppShell 傳入
+- `web/components/layout/app-shell.tsx` — 將 chatOpen/toggleChat 傳入 WorkspaceProvider
+
+### 4 種 toggle 方式
+| 方式 | 位置 |
+|------|------|
+| Toolbar [AI] 按鈕 | Workspace 頂部工具列 |
+| ChatPanel 收合按鈕 | Chat 面板 header |
+| Ctrl+B 快捷鍵 | 全域 |
+| 浮動 ChatToggle | Chat 收合時右上角 |
+
 ## [2026-04-13] — Phase 1-5c Run 結果自動注入 Chat context
 ### Added
 - `web/components/chat/run-result-card.tsx` — 執行結果摘要卡片：通過/編譯失敗/執行錯誤狀態 badge + stdout/stderr 預覽

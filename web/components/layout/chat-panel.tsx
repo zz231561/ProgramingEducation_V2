@@ -1,9 +1,12 @@
 "use client";
 
-import { MessageSquare, PanelRightClose, Trash2 } from "lucide-react";
+import { useCallback } from "react";
+import { MessageSquare, PanelRightClose } from "lucide-react";
 import { MessageList } from "@/components/chat/message-list";
 import { ChatInput } from "@/components/chat/chat-input";
+import { SessionList } from "@/components/chat/session-list";
 import { useChat } from "@/hooks/use-chat";
+import { useSessions } from "@/hooks/use-sessions";
 import { useWorkspace } from "@/components/workspace/workspace-context";
 
 interface ChatPanelProps {
@@ -11,22 +14,48 @@ interface ChatPanelProps {
 }
 
 /**
- * AI 導師 Chat Panel — 整合訊息列表 + 輸入框。
- * 從 WorkspaceContext 取得程式碼，傳給 /chat/interact API。
+ * AI 導師 Chat Panel — 整合訊息列表 + 輸入框 + session 管理。
  */
 export function ChatPanel({ onCollapse }: ChatPanelProps) {
   const { getCode, getExecutionResult } = useWorkspace();
-  const { messages, isLoading, sendMessage, clearMessages } = useChat({
+  const { sessions, activeId, setActiveId, deleteSession, addSession } = useSessions();
+
+  const { messages, isLoading, sendMessage, loadSession, startNewSession } = useChat({
     getCode,
     getExecutionResult,
+    onSessionCreated: addSession,
   });
+
+  const handleSelectSession = useCallback(
+    async (id: string) => {
+      setActiveId(id);
+      await loadSession(id);
+    },
+    [setActiveId, loadSession],
+  );
+
+  const handleNewChat = useCallback(() => {
+    setActiveId(null);
+    startNewSession();
+  }, [setActiveId, startNewSession]);
+
+  const handleDeleteSession = useCallback(
+    async (id: string) => {
+      await deleteSession(id);
+      if (activeId === id) startNewSession();
+    },
+    [deleteSession, activeId, startNewSession],
+  );
 
   return (
     <div className="flex h-full flex-col bg-bg-default">
       <Header
-        onClear={clearMessages}
+        sessions={sessions}
+        activeId={activeId}
+        onSelectSession={handleSelectSession}
+        onDeleteSession={handleDeleteSession}
+        onNewChat={handleNewChat}
         onCollapse={onCollapse}
-        hasMessages={messages.length > 0}
       />
       <MessageList messages={messages} isLoading={isLoading} />
       <ChatInput onSend={sendMessage} disabled={isLoading} />
@@ -35,13 +64,19 @@ export function ChatPanel({ onCollapse }: ChatPanelProps) {
 }
 
 function Header({
-  onClear,
+  sessions,
+  activeId,
+  onSelectSession,
+  onDeleteSession,
+  onNewChat,
   onCollapse,
-  hasMessages,
 }: {
-  onClear: () => void;
+  sessions: ReturnType<typeof useSessions>["sessions"];
+  activeId: string | null;
+  onSelectSession: (id: string) => void;
+  onDeleteSession: (id: string) => void;
+  onNewChat: () => void;
   onCollapse: () => void;
-  hasMessages: boolean;
 }) {
   return (
     <div className="flex h-10 shrink-0 items-center justify-between border-b border-border-default px-3">
@@ -50,15 +85,13 @@ function Header({
         <span className="text-sm font-medium text-text-primary">AI 導師</span>
       </div>
       <div className="flex items-center gap-1">
-        {hasMessages && (
-          <button
-            onClick={onClear}
-            className="flex size-7 items-center justify-center rounded-md text-text-muted hover:text-text-secondary hover:bg-bg-subtle transition-colors"
-            title="清除對話"
-          >
-            <Trash2 className="size-3.5" />
-          </button>
-        )}
+        <SessionList
+          sessions={sessions}
+          activeId={activeId}
+          onSelect={onSelectSession}
+          onDelete={onDeleteSession}
+          onNewChat={onNewChat}
+        />
         <button
           onClick={onCollapse}
           className="flex size-7 items-center justify-center rounded-md text-text-muted hover:text-text-secondary hover:bg-bg-subtle transition-colors"

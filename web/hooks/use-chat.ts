@@ -19,6 +19,12 @@ interface InteractResponse {
   assistant_message: ApiMessage;
 }
 
+/** /chat/sessions/{id} 回應格式 */
+interface SessionDetailResponse {
+  session: { id: string; title: string; updated_at: string };
+  messages: ApiMessage[];
+}
+
 interface ApiMessage {
   id: string;
   role: string;
@@ -29,10 +35,10 @@ interface ApiMessage {
 }
 
 interface UseChatOptions {
-  /** 取得當前編輯器程式碼 */
   getCode?: () => string;
-  /** 取得最近一次執行結果 */
   getExecutionResult?: () => object | null;
+  /** 新 session 建立後的回呼（供 useSessions 同步列表） */
+  onSessionCreated?: (id: string, title: string) => void;
 }
 
 function toMessage(msg: ApiMessage): ChatMessage {
@@ -47,20 +53,20 @@ function toMessage(msg: ApiMessage): ChatMessage {
 
 /**
  * 聊天狀態管理 hook。
- * 管理訊息列表、session、發送、loading 狀態。
+ * 管理訊息列表、session、發送、載入歷史。
  */
 export function useChat(options: UseChatOptions = {}) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const sessionIdRef = useRef<string | null>(null);
 
+  /** 發送訊息至 EDF pipeline */
   const sendMessage = useCallback(
     async (question: string) => {
       const code = options.getCode?.() ?? "";
       if (!question.trim()) return;
 
       setIsLoading(true);
-
       try {
         const res = await api<InteractResponse>("/chat/interact", {
           method: "POST",
@@ -73,30 +79,25 @@ export function useChat(options: UseChatOptions = {}) {
           }),
         });
 
+        const isNew = sessionIdRef.current !== res.session_id;
         sessionIdRef.current = res.session_id;
+
         setMessages((prev) => [
           ...prev,
           toMessage(res.user_message),
           toMessage(res.assistant_message),
         ]);
-      } catch (err) {
-        const fallback: ChatMessage = {
-          id: crypto.randomUUID(),
-          role: "assistant",
-          content: "⚠ 無法取得 AI 回應，請稍後再試。",
-          createdAt: new Date().toISOString(),
-        };
+
+        if (isNew) {
+          const title = question.length > 50 ? question.slice(0, 50) : question;
+          options.onSessionCreated?.(res.session_id, title);
+        }
+      } catch {
         setMessages((prev) => [
           ...prev,
-          {
-            id: crypto.randomUUID(),
-            role: "user",
-            content: question,
-            createdAt: new Date().toISOString(),
-          },
-          fallback,
+          { id: crypto.randomUUID(), role: "user", content: question, createdAt: new Date().toISOString() },
+          { id: crypto.randomUUID(), role: "assistant", content: "⚠ 無法取得 AI 回應，請稍後再試。", createdAt: new Date().toISOString() },
         ]);
-        throw err;
       } finally {
         setIsLoading(false);
       }
@@ -104,10 +105,32 @@ export function useChat(options: UseChatOptions = {}) {
     [options],
   );
 
-  const clearMessages = useCallback(() => {
+  /** 載入既有 session 的歷史訊息 */
+  const loadSession = useCallback(async (sessionId: string) => {
+    setIsLoading(true);
+    try {
+      const res = await api<SessionDetailResponse>(`/chat/sessions/${sessionId}`);
+      sessionIdRef.current = sessionId;
+      setMessages(res.messages.map(toMessage));
+    } catch {
+      setMessages([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  /** 開始新對話（清空目前訊息，不建立 DB record） */
+  const startNewSession = useCallback(() => {
     setMessages([]);
     sessionIdRef.current = null;
   }, []);
 
-  return { messages, isLoading, sendMessage, clearMessages };
+  return {
+    messages,
+    isLoading,
+    sessionId: sessionIdRef.current,
+    sendMessage,
+    loadSession,
+    startNewSession,
+  };
 }

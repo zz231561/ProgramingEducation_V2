@@ -1,5 +1,18 @@
 # 變更日誌
 
+## [2026-04-13] — Phase 1-4d Chat API 端點
+### Added
+- `backend/models/chat.py` — ChatSession + ChatMessage SQLAlchemy models（JSON 欄位存 execution_result/evidence）
+- `backend/alembic/versions/a1b2c3d4e5f6_create_chat_tables.py` — migration：chat_sessions + chat_messages 表
+- `backend/services/chat.py` — Chat service（interact 串接 EDF 三層管線、session CRUD、對話歷史管理）
+- `backend/api/routes/chat.py` — 4 個 API 端點：POST /chat/interact、GET /chat/sessions、GET /chat/sessions/{sid}、DELETE /chat/sessions/{sid}
+- `backend/tests/test_chat.py` — 4 個 Chat service 測試（建立 session、復用 session、列表、刪除）
+
+### Changed
+- `backend/models/__init__.py` — 匯入 ChatSession、ChatMessage
+- `backend/main.py` — 註冊 chat router
+- `backend/tests/conftest.py` — pytest_configure 改為 drop+create 確保 schema 最新
+
 ## [2026-04-13] — Phase 1-4c Feedback 層 prompt 組裝 + 輸出驗證
 ### Added
 - `backend/services/edf/feedback.py` — Feedback 層 service：

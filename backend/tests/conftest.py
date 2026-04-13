@@ -29,9 +29,10 @@ app.dependency_overrides[get_db] = _override_get_db
 # === DB 生命週期 ===
 
 def pytest_configure(config):
-    """pytest 啟動時建表。"""
+    """pytest 啟動時重建全部表（確保 schema 最新）。"""
     async def _create():
         async with test_engine.begin() as conn:
+            await conn.run_sync(Base.metadata.drop_all)
             await conn.run_sync(Base.metadata.create_all)
 
     asyncio.run(_create())

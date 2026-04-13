@@ -1,5 +1,16 @@
 # 變更日誌
 
+## [2026-04-13] — Phase 1-2a NextAuth.js Google OAuth 設定
+### Added
+- `web/auth.ts` — NextAuth v5 核心設定（Google OAuth provider + JWT/session callbacks）
+- `web/app/api/auth/[...nextauth]/route.ts` — Auth API route handler（`/api/auth/*`）
+- `web/components/providers/session-provider.tsx` — Client-side SessionProvider wrapper
+- `web/.env.example` — 前端環境變數範本（AUTH_SECRET、AUTH_GOOGLE_ID、AUTH_GOOGLE_SECRET）
+
+### Changed
+- `web/app/layout.tsx` — 加入 SessionProvider 包裹全域
+- `web/.gitignore` — 排除 `.env.example` 使其可被追蹤
+
 ## [2026-04-13] — Phase 1-1f Health check + 前端連線狀態顯示
 ### Added
 - `hooks/use-health-check.ts` — 定期 poll `/api/health`（30 秒），回傳 DB/Redis 連線狀態

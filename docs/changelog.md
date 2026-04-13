@@ -1,4 +1,13 @@
-## [2026-04-13]
+# 變更日誌
+
+## [2026-04-13] — 文檔一致性修正
+### Fixed
+- 將 `CHANGELOG.md` 搬移至 `docs/changelog.md`，與 CLAUDE.md 文件索引一致
+- 修正 changelog 格式：每次變更使用獨立日期標頭，移除非標準的 `Previous` 區塊
+- 統一導覽 Tab 命名：wireframe Header 的 `Graph` → `Knowledge`，並補上 `Dashboard` tab
+- api-spec.md 新增 Dashboard API 端點（`/api/dashboard/summary` + `/api/dashboard/activity`）
+
+## [2026-04-13] — Phase 0 規劃文檔完善
 ### Changed
 - Roadmap 拆分為原子級子任務（每個 checkbox = 一次對話可完成）
 - DB Schema 補齊 index/constraint 標記（unique、GIN、HNSW、複合索引）
@@ -11,7 +20,8 @@
 - `.env.example` — 環境變數範本
 - `db-schema.md` Module 3 Chat Session 表（chat_sessions + chat_messages）
 
-### Previous Changed
+## [2026-04-12] — 文檔架構重構
+### Changed
 - 重構全部文檔架構，最佳化 Claude Code 上下文效率
 - 新增 `.claude/rules/` 自動注入規則（frontend、backend、edf-pipeline）
 - 拆分大檔案：modules + db-schema、ui-wireframes + rules/frontend
@@ -36,7 +46,8 @@
 - `docs/05-engineering.md` — 拆分至 rules/backend.md
 - `docs/06-phases.md` — 合併至 roadmap.md
 
-### Previous
+## [2026-04-11] — 專案初始化
+### Added
 - 新增 `CLAUDE.md` 專案級開發指揮中心
 - 專案初始化，建立 Git repository
 - 新增 .gitignore

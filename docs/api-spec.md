@@ -73,6 +73,23 @@ GET    /api/knowledge/mastery     -- 學生精熟度
 GET    /api/knowledge/concepts/{tag}  -- 特定概念詳情 + mastery + prerequisites
 ```
 
+## Dashboard
+
+```
+GET    /api/dashboard/summary     -- 學生學習總覽（聚合資料）
+  resp: {
+    concepts_learned, concepts_total,
+    total_practices, avg_confidence,
+    streak_days,
+    weak_concepts: [{ tag, confidence }],
+    next_learning_unit: { path_id, unit_id, concept_tag }
+  }
+
+GET    /api/dashboard/activity    -- 最近活動時間線
+  query: { page?, limit? }
+  resp: { activities: [{ type, description, date }], total }
+```
+
 ## Health
 
 ```

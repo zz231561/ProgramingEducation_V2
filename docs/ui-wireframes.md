@@ -8,8 +8,8 @@
 ```
 ┌──────────────────────────────────────────────────────┐
 │  Header (48px, bg: #161B22, border-bottom: #30363D)   │
-│  [◆ Logo] C++ Tutor  [Workspace|Learn|Quiz|Graph]     │
-│                                    [? Help] [Avatar]  │
+│  [◆ Logo] C++ Tutor  [Workspace|Learn|Quiz|Knowledge]  │
+│                              [Dashboard] [?] [Avatar] │
 ├──────────────────────────────────────────────────────┤
 │                 Main Content (bg: #0D1117)             │
 └──────────────────────────────────────────────────────┘

@@ -1,5 +1,14 @@
 # 變更日誌
 
+## [2026-04-13] — Phase 1-3c Judge0 API client
+### Added
+- `backend/services/judge0.py` — Judge0 async client（submit + polling），支援 RapidAPI 和自架模式，base64 編碼，逾時/限流/不可用錯誤處理
+- `backend/api/routes/code.py` — `POST /code/execute` 端點（需登入），接收 code/language_id/stdin，回傳 stdout/stderr/compile_output
+- `backend/tests/test_judge0.py` — 7 個 Judge0 service 測試（b64 解碼、submit+poll 成功、編譯錯誤、429 限流、503 不可用）
+
+### Changed
+- `backend/main.py` — 註冊 code router
+
 ## [2026-04-13] — Phase 1-3b Workspace 頁面基礎佈局
 ### Added
 - `web/components/workspace/toolbar.tsx` — Toolbar 元件（檔名顯示、C++ 語言標籤、stdin 按鈕、▶ Run 按鈕）

@@ -12,6 +12,7 @@ from core.redis import init_redis, close_redis
 from core.errors import AppError, app_error_handler, unhandled_error_handler
 from api.routes.health import router as health_router
 from api.routes.auth import router as auth_router
+from api.routes.code import router as code_router
 
 
 @asynccontextmanager
@@ -49,3 +50,4 @@ app.add_exception_handler(Exception, unhandled_error_handler)  # type: ignore[ar
 # === 路由註冊 ===
 app.include_router(health_router)
 app.include_router(auth_router)
+app.include_router(code_router)

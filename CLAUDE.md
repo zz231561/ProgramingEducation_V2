@@ -28,13 +28,16 @@
 - ✅ 1-3d 前端 Run 按鈕串接 + Output Panel 顯示結果
 - ✅ 1-3f react-resizable-panels 拖曳調整
 
-**Phase 1-4：EDF 教學管線 🔧**
+**Phase 1-4：EDF 教學管線 ✅**
 - ✅ 1-4a Evidence 層：LLM 結構化輸出（錯誤分類 + ConceptTag + Bloom）
 - ✅ 1-4b Decision 層：Bloom × Hint Ladder 策略矩陣
 - ✅ 1-4c Feedback 層：分層 prompt 組裝 + 輸出驗證
 - ✅ 1-4d Chat API 端點（interact + history）
 - ✅ 1-4e 安全防護：輸入三層防護 + 輸出完整程式碼阻擋
-- 下一步：Phase 1-5 AI 對話介面
+
+**Phase 1-5：AI 對話介面 🔧**
+- ✅ 1-5a Chat Panel 元件（訊息氣泡 + 輸入框 + Context 共享）
+- 下一步：1-5b 對話歷史持久化
 
 ## 文件索引
 > 本文件目標 ≤ 60 行。新增內容先判斷歸屬，禁止回填 roadmap/日誌/UI 參數/Schema。

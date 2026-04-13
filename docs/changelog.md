@@ -1,5 +1,18 @@
 # 變更日誌
 
+## [2026-04-13] — Phase 1-5a Chat Panel 元件（訊息氣泡 + 輸入框 + Context 共享）
+### Added
+- `web/hooks/use-chat.ts` — 聊天狀態管理 hook：訊息列表、session 追蹤、發送訊息（串接 `/chat/interact` REST API）
+- `web/components/chat/message-bubble.tsx` — 訊息氣泡元件：user 靠右藍底、assistant 靠左灰底，含頭像
+- `web/components/chat/message-list.tsx` — 可捲動訊息列表：自動捲到底部、空狀態提示、loading 動畫
+- `web/components/chat/chat-input.tsx` — 聊天輸入框：textarea + Enter 發送、Shift+Enter 換行
+- `web/components/workspace/workspace-context.tsx` — WorkspaceContext：用 ref 共享編輯器程式碼與執行結果，不觸發額外 re-render
+
+### Changed
+- `web/components/layout/chat-panel.tsx` — 從 placeholder 重構為功能完整的 Chat Panel，整合 MessageList + ChatInput + useChat
+- `web/components/layout/app-shell.tsx` — 包裹 WorkspaceProvider、提取 ShellLayout 子元件
+- `web/app/(app)/workspace/page.tsx` — 同步程式碼變更與執行結果至 WorkspaceContext
+
 ## [2026-04-13] — Phase 1-4e 安全防護：輸入三層防護 + 輸出驗證
 ### Added
 - `backend/services/security/sanitizer.py` — 輸入安全防護 service：

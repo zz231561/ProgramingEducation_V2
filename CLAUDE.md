@@ -33,7 +33,8 @@
 - ✅ 1-4b Decision 層：Bloom × Hint Ladder 策略矩陣
 - ✅ 1-4c Feedback 層：分層 prompt 組裝 + 輸出驗證
 - ✅ 1-4d Chat API 端點（interact + history）
-- 下一步：1-4e 安全防護：輸入三層防護 + 輸出完整程式碼阻擋
+- ✅ 1-4e 安全防護：輸入三層防護 + 輸出完整程式碼阻擋
+- 下一步：Phase 1-5 AI 對話介面
 
 ## 文件索引
 > 本文件目標 ≤ 60 行。新增內容先判斷歸屬，禁止回填 roadmap/日誌/UI 參數/Schema。

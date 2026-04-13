@@ -13,7 +13,7 @@ from core.errors import AppError
 
 def test_user_prompt_with_error():
     prompt = _build_user_prompt("int main(){}", "", "segfault", "")
-    assert "```cpp" in prompt
+    assert "<student_code>" in prompt
     assert "segfault" in prompt
 
 

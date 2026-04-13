@@ -10,6 +10,7 @@ from openai import AsyncOpenAI
 from core.config import settings
 from core.errors import AppError
 from .models import EvidenceResult, CONCEPT_TAGS
+from services.security.sanitizer import wrap_student_code
 
 _client: AsyncOpenAI | None = None
 
@@ -49,8 +50,8 @@ def _build_user_prompt(
     stderr: str,
     compile_output: str,
 ) -> str:
-    """組裝送給 LLM 的使用者 prompt。"""
-    parts = [f"```cpp\n{source_code}\n```"]
+    """組裝送給 LLM 的使用者 prompt（XML 標籤隔離學生程式碼）。"""
+    parts = [wrap_student_code(source_code)]
 
     if compile_output:
         parts.append(f"編譯器輸出:\n```\n{compile_output}\n```")

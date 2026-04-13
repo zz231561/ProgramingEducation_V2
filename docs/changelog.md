@@ -1,5 +1,26 @@
 # 變更日誌
 
+## [2026-04-13] — Phase 1-4e 安全防護：輸入三層防護 + 輸出驗證
+### Added
+- `backend/services/security/sanitizer.py` — 輸入安全防護 service：
+  - Regex 層：12 個 prompt injection 偵測模式（中英文，含角色覆寫、資訊洩漏、直接要求答案）
+  - XML 標籤隔離：`<student_input>` / `<student_code>` 包裝使用者輸入
+  - `sanitize_input()` — 偵測到 injection 時拋出 422
+- `backend/tests/test_sanitizer.py` — 18 個安全防護測試
+
+### Changed
+- `backend/services/chat.py` — interact 前先 `sanitize_input()` 過濾使用者提問
+- `backend/services/edf/evidence.py` — user prompt 用 `<student_code>` XML 標籤包裝程式碼
+- `backend/services/edf/feedback.py` — user message 用 `<student_input>` XML 標籤包裝
+
+### 三層防護完整對照
+| 層 | 位置 | 功能 |
+|---|---|---|
+| 1. Regex | sanitizer.py | 偵測已知 prompt injection 模式 |
+| 2. XML 隔離 | evidence.py + feedback.py | 防止 LLM 混淆使用者輸入與系統指令 |
+| 3. System Preamble | feedback.py PREAMBLE | 5 條不可覆寫規則 |
+| 輸出驗證 | feedback.py validate_output() | 阻擋 >8 行無 TODO 的完整程式碼 |
+
 ## [2026-04-13] — Phase 1-4d Chat API 端點
 ### Added
 - `backend/models/chat.py` — ChatSession + ChatMessage SQLAlchemy models（JSON 欄位存 execution_result/evidence）

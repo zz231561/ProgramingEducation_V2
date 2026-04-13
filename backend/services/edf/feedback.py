@@ -12,6 +12,7 @@ from core.config import settings
 from core.errors import AppError
 from .models import EvidenceResult
 from .decision import TeachingStrategy
+from services.security.sanitizer import wrap_student_input
 
 _client: AsyncOpenAI | None = None
 
@@ -121,7 +122,7 @@ async def generate_feedback(
     if chat_history:
         messages.extend(chat_history[-10:])  # 最多保留最近 10 輪
 
-    messages.append({"role": "user", "content": student_message})
+    messages.append({"role": "user", "content": wrap_student_input(student_message)})
 
     try:
         response = await client.chat.completions.create(

@@ -10,6 +10,7 @@ from models.chat import ChatSession, ChatMessage, MessageRole
 from services.edf.evidence import analyze_evidence
 from services.edf.decision import decide_strategy
 from services.edf.feedback import generate_feedback
+from services.security.sanitizer import sanitize_input, wrap_student_input, wrap_student_code
 
 
 async def get_or_create_session(
@@ -46,6 +47,9 @@ async def interact(
 
     回傳 (session, user_message, assistant_message)。
     """
+    # 安全防護：Regex 偵測 + 清理
+    question = sanitize_input(question)
+
     session = await get_or_create_session(db, user_id, session_id)
 
     # 取得對話歷史（供 Feedback 層使用）

@@ -33,7 +33,7 @@
 - [x] 1-4b Decision 層：Bloom × Hint Ladder 策略矩陣
 - [x] 1-4c Feedback 層：分層 prompt 組裝 + 輸出驗證
 - [x] 1-4d Chat API 端點（interact + history）
-- [ ] 1-4e 安全防護：輸入三層防護 + 輸出完整程式碼阻擋
+- [x] 1-4e 安全防護：輸入三層防護 + 輸出完整程式碼阻擋
 
 ### 1-5 AI 對話介面
 - [ ] 1-5a Chat Panel 元件（訊息氣泡 + 輸入框 + 串流顯示）

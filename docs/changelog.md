@@ -1,5 +1,15 @@
 # 變更日誌
 
+## [2026-04-13] — Phase 1-1b FastAPI 專案建立
+### Added
+- `backend/` 目錄結構：`api/routes/`、`api/middleware/`、`models/`、`services/`、`core/`
+- `pyproject.toml` + `requirements.lock` 依賴管理（FastAPI 0.135 + Pydantic 2.13 + SQLAlchemy 2.0 + asyncpg）
+- `core/config.py` — Pydantic Settings 管理環境變數（DB、Redis、Auth、OpenAI、Judge0）
+- `core/errors.py` — 標準錯誤回應模型 `ErrorResponse` + 全域例外處理（`AppError` → JSON）
+- `main.py` — FastAPI 進入點 + CORS middleware（僅允許 NEXTAUTH_URL）+ health route
+- `api/routes/health.py` — `GET /health` 端點
+- `.env.example` — 環境變數範本
+
 ## [2026-04-13] — Activity Bar 放大並加入文字標籤
 ### Changed
 - Activity Bar 從 48px icon-only 改為 180px icon + 文字標籤（英文名稱 + 中文說明）

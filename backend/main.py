@@ -1,15 +1,33 @@
 """FastAPI 應用程式進入點。"""
 
+from contextlib import asynccontextmanager
+from collections.abc import AsyncIterator
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from core.config import settings
+from core.database import engine
+from core.redis import init_redis, close_redis
 from core.errors import AppError, app_error_handler, unhandled_error_handler
 from api.routes.health import router as health_router
+
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
+    """管理應用程式啟動/關閉時的資源。"""
+    # 啟動：初始化 Redis
+    await init_redis()
+    yield
+    # 關閉：釋放連線
+    await close_redis()
+    await engine.dispose()
+
 
 app = FastAPI(
     title=settings.APP_NAME,
     version="0.1.0",
+    lifespan=lifespan,
     docs_url="/docs" if settings.DEBUG else None,
     redoc_url="/redoc" if settings.DEBUG else None,
 )

@@ -1,5 +1,13 @@
 # 變更日誌
 
+## [2026-04-13] — Phase 1-1c PostgreSQL + Redis 連線
+### Added
+- `core/database.py` — SQLAlchemy async engine + sessionmaker + `Base` 宣告式基底 + `get_db` 依賴注入
+- `core/redis.py` — Redis async client 初始化/關閉 + `get_redis` 依賴注入
+- `main.py` 新增 `lifespan` context manager 管理 DB engine dispose + Redis 連線生命週期
+- `api/routes/health.py` 升級為完整健康檢查：回傳 DB + Redis 連線狀態（`connected` / `disconnected`）
+- `api/deps.py` 匯出 `get_db`、`get_redis` 供路由依賴注入使用
+
 ## [2026-04-13] — Phase 1-1b FastAPI 專案建立
 ### Added
 - `backend/` 目錄結構：`api/routes/`、`api/middleware/`、`models/`、`services/`、`core/`

@@ -13,11 +13,25 @@ def client():
     return AsyncClient(transport=transport, base_url="http://test")
 
 
-async def test_health_returns_ok(client: AsyncClient):
-    """GET /health 應回傳 200 + {"status": "ok"}。"""
+async def test_health_returns_200(client: AsyncClient):
+    """GET /health 應回傳 200 並包含 status 與 services。"""
     resp = await client.get("/health")
     assert resp.status_code == 200
-    assert resp.json() == {"status": "ok"}
+    body = resp.json()
+    assert "status" in body
+    assert "services" in body
+    assert "database" in body["services"]
+    assert "redis" in body["services"]
+
+
+async def test_health_degraded_without_services(client: AsyncClient):
+    """無 DB/Redis 連線時，status 應為 degraded。"""
+    resp = await client.get("/health")
+    body = resp.json()
+    # 測試環境無真實 DB/Redis，預期 degraded
+    assert body["status"] == "degraded"
+    assert body["services"]["database"] == "disconnected"
+    assert body["services"]["redis"] == "disconnected"
 
 
 async def test_not_found_returns_404(client: AsyncClient):

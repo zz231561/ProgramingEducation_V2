@@ -158,3 +158,39 @@ class_members
 ├── joined_at
 └── PRIMARY KEY (class_id, user_id)
 ```
+
+## Module 9: 學習行為分析
+
+```
+coding_events
+├── id (UUID, PK)
+├── user_id (FK → users, ON DELETE CASCADE) ★ index
+├── session_id (FK → chat_sessions, nullable)
+├── event_type (enum: submit/compile_error/runtime_error/success/hint_request/fix)
+├── concept_tags (text[], nullable) ★ GIN index
+├── code_snapshot (text, nullable)
+├── execution_result (jsonb, nullable)     -- Judge0 結果摘要
+├── hint_level (int 0-5, nullable)         -- 觸發的 hint 等級
+├── metadata (jsonb, nullable)             -- 額外資訊（error_type, fix_duration_ms 等）
+├── created_at ★ index (user_id, created_at) 複合索引供時序查詢
+```
+
+> `chat_messages` 表擴充欄位（Phase 4-2c）：
+> - `dialogue_act (enum: asking_hint/clarification/debugging/off_topic/acknowledgment, nullable)`
+> - 用於分類學生與 AI Tutor 的互動類型
+
+```
+behavior_aggregates                         -- 預聚合表，定期計算避免即時查詢壓力
+├── id (UUID, PK)
+├── user_id (FK → users, ON DELETE CASCADE)
+├── period_start (date) ★ index
+├── period_end (date)
+├── submit_count (int)
+├── success_rate (float)
+├── avg_fix_duration_seconds (float)        -- 平均修復時間
+├── hint_distribution (jsonb)               -- { "0": 3, "1": 5, "2": 2, ... }
+├── dialogue_act_distribution (jsonb)       -- { "asking_hint": 4, "debugging": 7, ... }
+├── active_seconds (int)                    -- session 總活躍時間
+├── concept_error_counts (jsonb)            -- { "pointer-arithmetic": 5, "memory-management": 3 }
+├── UNIQUE (user_id, period_start) ★
+```

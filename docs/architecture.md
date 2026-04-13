@@ -93,6 +93,7 @@ ProgramingEducation_V2/
 │   ├── models/                   # SQLAlchemy Models
 │   ├── services/
 │   │   ├── edf/                  # EDF 教學管線 (evidence, decision, feedback, prompt)
+│   │   ├── analytics/            # 學習行為分析 (event logging, aggregation, clustering)
 │   │   ├── code_executor.py      # Judge0 API client
 │   │   ├── rag.py                # RAG 檢索
 │   │   ├── quiz_generator.py     # 智慧出題

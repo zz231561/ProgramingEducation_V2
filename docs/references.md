@@ -14,6 +14,12 @@
 | [Socratic-LLM](https://github.com/GiovanniGatti/socratic-llm) | 31 | MIT | Socratic dialogue fine-tuning | Phase 1-4 |
 | [Open TutorAI CE](https://github.com/Open-TutorAi/open-tutor-ai-CE) | 48 | BSD-3 | 教材 RAG + 多角色 dashboard | Phase 2-1, 4 |
 | [JetBrains Edu Plugin](https://github.com/JetBrains/educational-plugin) | 174 | Apache-2.0 | 漸進式 hint generation | Phase 1-4 |
+| [ProgSnap2](https://github.com/CSSPLICE/progsnap2) | 5 | — | 程式教育標準化 process data 格式 | Phase 4-2 |
+| [KOALA](https://github.com/JetBrains-Research/KOALA) | 10 | MIT | IDE 事件追蹤 + ProgSnap2 輸出 | Phase 4-2 |
+| [StudyChat](https://huggingface.co/datasets/wmcnicho/StudyChat) | — | — | 學生-LLM 互動 dialogue act 分類 schema | Phase 4-2 |
+| [pyBKT](https://github.com/CAHLR/pyBKT) | 250 | — | Bayesian Knowledge Tracing（Python） | Phase 2-3, 4-3 |
+| [PM4Py](https://github.com/process-intelligence-solutions/pm4py) | 941 | AGPL-3.0 | Process Mining 行為流程分析 | Phase 4-3 |
+| [OpenLAP](https://github.com/OpenLearningAnalyticsPlatform) | ~15 | — | Learning Analytics 三層架構 | Phase 4-4 |
 
 ## 功能對照：各功能最佳參考來源
 
@@ -51,8 +57,23 @@
   - Content graph（概念關係圖）資料結構
   - 可參考其 RL policy 設計，對照我們的拓撲排序 + 弱項補強方案
 
-### 教師 Dashboard（Phase 4）
+### 教師 Dashboard（Phase 4-1, 4-5）
 - **Open TutorAI CE** — 多角色 dashboard UI（學生 / 教師 / 家長）
+
+### 學習行為分析（Phase 4-2, 4-3, 4-4）
+- **事件 Schema 設計**:
+  - [ProgSnap2](https://github.com/CSSPLICE/progsnap2) — 程式教育標準化 process data 格式（EventType/SubjectID/CodeStates）
+  - [KOALA](https://github.com/JetBrains-Research/KOALA) (JetBrains Research, MIT) — IDE plugin 追蹤 code snapshots、run/debug 操作，輸出 ProgSnap2 格式
+  - [CodeWatcher](https://arxiv.org/abs/2510.11536) — VS Code plugin + Python API，追蹤 insertions（含 AI-generated）、deletions、copy-paste
+- **AI 互動分類**:
+  - [StudyChat](https://huggingface.co/datasets/wmcnicho/StudyChat) ([論文](https://arxiv.org/abs/2503.07928)) — 16,851 筆標註學生-LLM 互動，階層式 dialogue act 分類 schema
+  - [DeepPavlov](https://github.com/deeppavlov/DeepPavlov) (7k stars, Apache-2.0) — Dialogue act classification 模組
+- **分析演算法**:
+  - [pyBKT](https://github.com/CAHLR/pyBKT) (250 stars) — Bayesian Knowledge Tracing Python 實作，scikit-learn 風格 API
+  - [PM4Py](https://github.com/process-intelligence-solutions/pm4py) (941 stars, AGPL-3.0) — Process Mining，分析 write→compile→error→debug→fix 行為流程
+- **Dashboard 架構**:
+  - [OpenLAP](https://github.com/OpenLearningAnalyticsPlatform) — 三層架構：Data Collection → Indicator Engine → Analytics Framework
+  - [Wakapi](https://github.com/muety/wakapi) (4.3k stars) — coding statistics dashboard 設計參考
 
 ## 學術資源
 
@@ -63,3 +84,8 @@
 | [OATutor LLM hint 論文](https://doi.org/10.1371/journal.pone.0304013) | ChatGPT hints 與人工 hints 效果相當的實證研究 |
 | [JetBrains AI Hints 研究](https://blog.jetbrains.com/research/2025/07/ai-hints-for-online-learning/) | 學生使用 AI hints 的行為分析數據 |
 | [Autograder+ (arXiv:2510.26402)](https://arxiv.org/abs/2510.26402) | LLM 生成教學性 feedback 的 fine-tuning 方法 |
+| [StudyChat (arXiv:2503.07928)](https://arxiv.org/abs/2503.07928) | 16,851 筆學生-LLM 互動標註，dialogue act 分類 schema |
+| [ProgSnap2 (ITiCSE 2020)](https://dl.acm.org/doi/10.1145/3341525.3387373) | 程式教育 process data 標準格式 |
+| [KOALA (CompEd 2025)](https://arxiv.org/abs/2506.21266) | IDE 行為資料收集工具設計 |
+| [pyBKT (EDM 2021)](https://arxiv.org/abs/2105.00385) | Bayesian Knowledge Tracing Python 函式庫 |
+| [CodeWatcher (ICSME 2025)](https://arxiv.org/abs/2510.11536) | IDE telemetry 追蹤開發者與 LLM 互動 |

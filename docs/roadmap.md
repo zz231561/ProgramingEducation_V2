@@ -98,11 +98,38 @@
 - [ ] 3-3b 最近活動時間線
 - [ ] 3-3c 精熟度總覽圖表
 
-## Phase 4：教師端（未來）
+## Phase 4：教師端（全部學生端功能完成後）
+> 完成標準：教師可管理班級、查看學生行為分析圖表、指派作業
+> 對應頁面：Teacher Dashboard（教師專屬，學生不可見）
+> 前置條件：Phase 1-3 全部完成
 
-- [ ] 4-1 教師 Dashboard（classes 表 migration + 班級管理 UI）
-- [ ] 4-2 作業指派 + 學生進度查看
-- [ ] 4-3 班級學習數據分析
+### 4-1 班級管理
+- [ ] 4-1a classes + class_members 表 migration
+- [ ] 4-1b 班級 CRUD API（建立/邀請碼/加入/移除）
+- [ ] 4-1c 教師 Dashboard 頁面骨架 + 班級管理 UI
+
+### 4-2 行為資料收集（Module 9）
+> 參考：ProgSnap2 + KOALA (事件 schema)、StudyChat (dialogue act 分類)
+- [ ] 4-2a coding_events 表 migration（記錄 submit/error/fix 事件）
+- [ ] 4-2b 後端 event logging service（從 Judge0 + EDF 現有流程擷取資料）
+- [ ] 4-2c chat_messages 擴充 dialogue_act 欄位（asking_hint/clarification/debugging/off_topic）
+- [ ] 4-2d 行為指標聚合 service（編譯頻率/成功率/修復時間/hint 分布等）
+
+### 4-3 行為分析演算法（Module 9）
+> 參考：pyBKT (精熟度追蹤)、PM4Py (行為流程分析)
+- [ ] 4-3a 行為-成效相關性分析（行為指標 vs 精熟度提升）
+- [ ] 4-3b 學生行為模式群聚（主動型/被動型/掙扎型分群）
+- [ ] 4-3c 行為分析 API 端點（班級/個人行為統計 + 圖表資料）
+
+### 4-4 行為分析視覺化（Module 9）
+> 參考：OpenLAP (三層架構)
+- [ ] 4-4a 行為-成效散佈圖 + 錯誤類型熱力圖
+- [ ] 4-4b 學習行為時序圖 + Hint 階梯使用分布
+- [ ] 4-4c 班級行為群聚分析圖 + 精熟度趨勢線
+
+### 4-5 作業指派
+- [ ] 4-5a 作業指派功能（選題 + 指定學生/班級）
+- [ ] 4-5b 學生進度查看（精熟度熱力圖 + 常見錯誤統計）
 
 ## 已確認決策
 

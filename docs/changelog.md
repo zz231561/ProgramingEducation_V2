@@ -1,5 +1,19 @@
 # 變更日誌
 
+## [2026-04-13] — 新增 Module 9 學習行為分析模組
+### Added
+- Module 9：學習行為分析（教師專屬，Phase 4）— 中粒度追蹤 coding 行為與 AI 互動
+- DB Schema：`coding_events` 事件紀錄表 + `behavior_aggregates` 預聚合表
+- `chat_messages` 擴充 `dialogue_act` 欄位（Phase 4-2c）
+- API：Behavior Analytics 端點（班級總覽/散佈圖/熱力圖/個人時序/摘要）
+- Roadmap Phase 4 拆分為 5 子階段（4-1 班級管理 → 4-2 資料收集 → 4-3 分析演算法 → 4-4 視覺化 → 4-5 作業指派）
+- 參考專案：ProgSnap2、KOALA、StudyChat、pyBKT、PM4Py、OpenLAP 等 7 個新增至 references.md
+- 目錄結構新增 `backend/services/analytics/`
+
+### Changed
+- modules.md 擴充為 9 模組
+- CLAUDE.md 更新模組數量
+
 ## [2026-04-13] — 新增開源參考專案文檔
 ### Added
 - `docs/references.md` — 8 個開源參考專案對照表（DeepTutor、OATutor、Mr. Ranedeer、EduAdapt-AI 等）

@@ -34,7 +34,7 @@
 
 **`docs/`**（按需查閱）
 - [architecture.md](docs/architecture.md) — 系統架構圖 + 目錄結構
-- [modules.md](docs/modules.md) — 8 模組功能摘要 + 設計決策
+- [modules.md](docs/modules.md) — 9 模組功能摘要 + 設計決策
 - [db-schema.md](docs/db-schema.md) — 全部 DB Schema（按模組分區）
 - [ui-wireframes.md](docs/ui-wireframes.md) — 5 頁 ASCII wireframe（實作該頁時才讀）
 - [api-spec.md](docs/api-spec.md) — API 端點規格

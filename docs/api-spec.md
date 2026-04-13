@@ -90,6 +90,35 @@ GET    /api/dashboard/activity    -- 最近活動時間線
   resp: { activities: [{ type, description, date }], total }
 ```
 
+## Behavior Analytics（教師專屬，需 role=teacher）
+
+```
+GET    /api/analytics/class/{class_id}/overview  -- 班級行為總覽
+  resp: {
+    student_count, avg_submit_count, avg_success_rate,
+    avg_hint_level, avg_fix_duration_seconds,
+    cluster_distribution: { active: N, passive: N, struggling: N }
+  }
+
+GET    /api/analytics/class/{class_id}/scatter   -- 行為-成效散佈圖資料
+  query: { metric: "submit_count"|"hint_avg"|"fix_duration"|"chat_count" }
+  resp: { points: [{ user_id, name, x: metric_value, y: confidence_delta }] }
+
+GET    /api/analytics/class/{class_id}/heatmap   -- 錯誤類型熱力圖
+  resp: { students: [name], concepts: [tag], matrix: [[int]] }
+
+GET    /api/analytics/student/{user_id}/timeline -- 個人學習行為時序
+  query: { from?, to? }
+  resp: { events: [{ type, concept_tags, hint_level, created_at }] }
+
+GET    /api/analytics/student/{user_id}/summary  -- 個人行為摘要
+  resp: {
+    submit_count, success_rate, avg_fix_duration,
+    hint_distribution, dialogue_act_distribution,
+    confidence_trend: [{ date, avg_confidence }]
+  }
+```
+
 ## Health
 
 ```

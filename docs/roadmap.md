@@ -24,7 +24,7 @@
 - [x] 1-3a CodeMirror 6 整合（C++ 語法高亮 + One Dark 主題）
 - [x] 1-3b Workspace 頁面基礎佈局（Editor + Output + Toolbar）
 - [x] 1-3c Judge0 API client（submit + polling 取結果）
-- [ ] 1-3d 前端 Run 按鈕串接 + Output Panel 顯示結果
+- [x] 1-3d 前端 Run 按鈕串接 + Output Panel 顯示結果
 - [ ] 1-3e stdin 輸入支援
 - [ ] 1-3f react-resizable-panels 拖曳調整
 

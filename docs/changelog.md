@@ -1,5 +1,10 @@
 # 變更日誌
 
+## [2026-04-13] — Phase 1-3d 前端 Run 按鈕串接 + Output Panel
+### Changed
+- `web/app/(app)/workspace/page.tsx` — 串接 Run 按鈕：點擊呼叫 `POST /api/code/execute`，管理 isRunning/output state，自動展開 Output Panel，顯示執行狀態（Running → Passed/Error）
+- `web/components/editor/code-editor.tsx` — mount 時通知父層初始程式碼內容，確保 Run 可取得程式碼
+
 ## [2026-04-13] — Phase 1-3c Judge0 API client
 ### Added
 - `backend/services/judge0.py` — Judge0 async client（submit + polling），支援 RapidAPI 和自架模式，base64 編碼，逾時/限流/不可用錯誤處理

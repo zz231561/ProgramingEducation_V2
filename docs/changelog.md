@@ -1,5 +1,17 @@
 # 變更日誌
 
+## [2026-04-13] — Phase 1-1g 前端 UI 基礎建設
+### Added
+- 安裝 shadcn/ui（base-nova style, dark preset）+ lucide-react + react-resizable-panels v4
+- Activity Bar 元件（48px 左側導覽，9 項 icon 導覽 + Avatar + Tooltip）
+- AI Chat Panel 空殼（Header + 訊息佔位 + 輸入區，支援收合/展開）
+- Status Bar 元件（24px 底部，連線狀態 + 語言 + 編碼 + 游標位置 + 精熟度）
+- AppShell 全域骨架整合 react-resizable-panels 拖曳調整 Content / Chat 寬度
+- 響應式佈局：Desktop 三欄 / Laptop Chat overlay / Tablet 漢堡選單頂部 bar / Mobile 底部 tab bar
+- 8 個路由佔位頁面（workspace / learn / quiz / knowledge / overview / notifications / dashboard / settings）
+- `useBreakpoint` hook（4 斷點偵測）
+- Ctrl+B 快捷鍵收合/展開 Chat Panel
+
 ## [2026-04-13] — 新增 UI/UX 介面規格書
 ### Added
 - `docs/ui-ux-spec.md` — 完整 UI/UX 介面規格書（13 章節）

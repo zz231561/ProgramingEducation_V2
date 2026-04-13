@@ -1,6 +1,6 @@
 import { Code } from "lucide-react";
 
-export default function Home() {
+export default function WorkspacePage() {
   return (
     <div className="flex h-full items-center justify-center">
       <div className="text-center">

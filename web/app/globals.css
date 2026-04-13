@@ -1,4 +1,8 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
 
 /* ===== Design Tokens（GitHub Dark） ===== */
 :root {
@@ -40,41 +44,57 @@
 
   /* 間距基礎單位 */
   --spacing-unit: 4px;
+
+  /* shadcn 語義變數 → GitHub Dark */
+  --background: var(--bg-canvas);
+  --foreground: var(--text-primary);
+  --card: var(--bg-default);
+  --card-foreground: var(--text-primary);
+  --popover: var(--bg-default);
+  --popover-foreground: var(--text-primary);
+  --primary: var(--accent-blue);
+  --primary-foreground: #FFFFFF;
+  --secondary: var(--bg-subtle);
+  --secondary-foreground: var(--text-primary);
+  --muted: var(--bg-subtle);
+  --muted-foreground: var(--text-secondary);
+  --accent: var(--bg-subtle);
+  --accent-foreground: var(--text-primary);
+  --destructive: var(--accent-red);
+  --border: var(--border-default);
+  --input: var(--border-default);
+  --ring: var(--accent-blue);
+  --radius: 0.375rem;
 }
 
 /* ===== Tailwind v4 theme mapping ===== */
 @theme inline {
-  /* 背景 */
+  /* 專案自訂色彩 */
   --color-bg-canvas: var(--bg-canvas);
   --color-bg-default: var(--bg-default);
   --color-bg-subtle: var(--bg-subtle);
   --color-bg-inset: var(--bg-inset);
 
-  /* 邊框 */
   --color-border-default: var(--border-default);
   --color-border-muted: var(--border-muted);
   --color-border-emphasis: var(--border-emphasis);
 
-  /* 文字 */
   --color-text-primary: var(--text-primary);
   --color-text-secondary: var(--text-secondary);
   --color-text-muted: var(--text-muted);
   --color-text-link: var(--text-link);
 
-  /* 強調色 */
   --color-accent-blue: var(--accent-blue);
   --color-accent-green: var(--accent-green);
   --color-accent-red: var(--accent-red);
   --color-accent-orange: var(--accent-orange);
   --color-accent-purple: var(--accent-purple);
 
-  /* 按鈕 */
   --color-btn-primary-bg: var(--btn-primary-bg);
   --color-btn-primary-hover: var(--btn-primary-hover);
   --color-btn-default-bg: var(--btn-default-bg);
   --color-btn-default-border: var(--btn-default-border);
 
-  /* 圓角 */
   --radius-sm: var(--radius-sm);
   --radius-md: var(--radius-md);
   --radius-lg: var(--radius-lg);
@@ -83,10 +103,36 @@
   /* 字型 */
   --font-sans: var(--font-inter), var(--font-noto-sans-tc), system-ui, sans-serif;
   --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
+
+  /* shadcn 語義色彩映射 */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
 }
 
 /* ===== 全域樣式 ===== */
 body {
   background: var(--bg-canvas);
   color: var(--text-primary);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
 }

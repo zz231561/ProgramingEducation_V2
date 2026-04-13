@@ -84,7 +84,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <div className="flex flex-1 overflow-hidden">
           <ActivityBar />
           <PanelGroup orientation="horizontal" className="flex-1">
-            <Panel minSize={30}>
+            <Panel minSize="200px">
               <main className="h-full overflow-auto bg-bg-canvas">
                 {children}
               </main>
@@ -92,7 +92,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             {chatOpen && (
               <>
                 <PanelResizeHandle className="w-px bg-border-default hover:bg-accent-blue transition-colors data-[resize-handle-active]:bg-accent-blue" />
-                <Panel defaultSize={30} minSize={20} maxSize={45}>
+                <Panel
+                  defaultSize="350px"
+                  minSize="300px"
+                  maxSize="600px"
+                >
                   <ChatPanel onCollapse={toggleChat} />
                 </Panel>
               </>

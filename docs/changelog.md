@@ -1,5 +1,12 @@
 # 變更日誌
 
+## [2026-04-13] — Phase 1-4a Evidence 層 LLM 結構化分析
+### Added
+- `backend/services/edf/models.py` — EDF 共用模型（BloomLevel 6 級 enum、ErrorType 6 類 enum、20 個 ConceptTag 常數、EvidenceResult schema）
+- `backend/services/edf/evidence.py` — Evidence 層 service：呼叫 OpenAI GPT-4o（JSON mode），分析學生程式碼回傳錯誤分類、ConceptTag、Bloom 認知等級
+- `backend/tests/test_evidence.py` — 8 個 Evidence 層測試（prompt 組裝、model 解析、LLM 成功/失敗/JSON 異常）
+- `backend/pyproject.toml` — 新增 openai、httpx 依賴
+
 ## [2026-04-13] — Phase 1-3f resize handle UX 改善
 ### Changed
 - `web/app/(app)/workspace/page.tsx` — 垂直 resize handle 從 1px 改為 4px hit area + 1px 視覺線條（before pseudo-element）

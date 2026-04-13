@@ -27,7 +27,10 @@
 - ✅ 1-3c Judge0 API client（submit + polling 取結果）
 - ✅ 1-3d 前端 Run 按鈕串接 + Output Panel 顯示結果
 - ✅ 1-3f react-resizable-panels 拖曳調整
-- 下一步：Phase 1-4 EDF 教學管線
+
+**Phase 1-4：EDF 教學管線 🔧**
+- ✅ 1-4a Evidence 層：LLM 結構化輸出（錯誤分類 + ConceptTag + Bloom）
+- 下一步：1-4b Decision 層：Bloom × Hint Ladder 策略矩陣
 
 ## 文件索引
 > 本文件目標 ≤ 60 行。新增內容先判斷歸屬，禁止回填 roadmap/日誌/UI 參數/Schema。

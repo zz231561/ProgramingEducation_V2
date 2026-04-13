@@ -46,11 +46,33 @@ POST   /api/quiz/generate         -- 根據弱項生成題目
 
 POST   /api/quiz/submit           -- 提交作答
   body: { question_id, answer, time_spent_seconds }
-  resp: { is_correct, explanation, feedback, mastery_update }
+  resp: { is_correct, explanation, feedback, mastery_update,
+          comprehension_check?: { type, prompt } }
 
 GET    /api/quiz/history          -- 作答歷史
   query: { page?, limit?, concept_tag? }
   resp: { answers: [StudentAnswer], total }
+
+POST   /api/quiz/comprehension    -- 提交理解驗證回答
+  body: { answer_id, comprehension_answer }
+  resp: { passed, feedback, mastery_update }
+```
+
+## Pre-Coding Reflection
+
+```
+POST   /api/reflection            -- 提交解題前反思
+  body: { source_type: "quiz"|"learning_unit", source_id,
+          problem_understanding, planned_steps, expected_concepts }
+  resp: { reflection_id, quality_score,
+          followup_question?: string }   -- 品質不足時回傳追問
+
+PATCH  /api/reflection/{id}       -- 更新反思（補充回答或 coding 中修改計畫）
+  body: { followup_answer?, planned_steps?, expected_concepts? }
+  resp: { updated: true }
+
+GET    /api/reflection/{id}       -- 取得反思內容（供 UI 側邊欄顯示）
+  resp: { Reflection }
 ```
 
 ## Learning Path

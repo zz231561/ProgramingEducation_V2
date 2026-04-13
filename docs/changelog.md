@@ -1,5 +1,19 @@
 # 變更日誌
 
+## [2026-04-13] — 新增 Pre-Coding Reflection 反認知外包機制
+### Added
+- 跨模組機制：Pre-Coding Reflection（解題前反思閘門，方案 B 一次追問機會）
+- 跨模組機制：Post-Solution Comprehension Check（EPL / 預測輸出 / 變體挑戰）
+- DB Schema：`reflections` 表 + `student_answers` 擴充 comprehension 欄位
+- API：Reflection 端點（create + update + get）+ Quiz comprehension 端點
+- Roadmap：Phase 2 新增 2-5（反思閘門）+ 2-6（理解驗證）、Phase 3-1 新增 3-1e
+- 學術參考：7 篇新增至 references.md（CodeAid、PRIMM、EPL、Self-explanation 等）
+
+### Changed
+- modules.md Module 6/7 加入反思觸發點、Module 9 加入反認知外包指標
+- edf-pipeline.md Evidence 層加入反思內容注入、Feedback 層加入反思引用
+- references.md 新增 Pre-Coding Reflection 參考區塊
+
 ## [2026-04-13] — 新增 Module 9 學習行為分析模組
 ### Added
 - Module 9：學習行為分析（教師專屬，Phase 4）— 中粒度追蹤 coding 行為與 AI 互動

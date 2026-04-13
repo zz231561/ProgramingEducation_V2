@@ -60,6 +60,20 @@
 ### 教師 Dashboard（Phase 4-1, 4-5）
 - **Open TutorAI CE** — 多角色 dashboard UI（學生 / 教師 / 家長）
 
+### Pre-Coding Reflection / 反認知外包（Phase 2-5, 2-6, 3-1）
+- **反思閘門設計**:
+  - CodeAid (Microsoft Research / U of Toronto) — AI tutor 不給直接程式碼，只給 NL 解釋 + pseudocode，學習效果更好（Kazemitabaar et al., 2023-24）
+  - PRIMM (Predict-Run-Investigate-Modify-Make, Sentance & Waite 2017) — 強制理解先於撰寫的五階段框架
+  - Polya 解題四步驟 — 理解問題 → 擬定計畫 → 執行 → 回顧
+- **理解驗證**:
+  - EPL (Explain in Plain Language, Fowler et al. 2021-24) — 用自然語言解釋程式碼，與考試成績高度相關
+  - Variation Theory (Marton 2015) — 變體測試驗證真正理解
+  - Parsons Problems (Parsons & Haden 2006) — 排列程式碼區塊，抗 AI 外包
+- **學術基礎**:
+  - Self-explanation effect (Chi et al., meta-analysis d=0.55) — 生成解釋本身促進學習
+  - Desirable difficulties (Bjork & Bjork) — 策略性摩擦提升長期記憶
+  - Automation complacency (Prather et al. 2023, ICER) — Copilot 造成「能力幻覺」
+
 ### 學習行為分析（Phase 4-2, 4-3, 4-4）
 - **事件 Schema 設計**:
   - [ProgSnap2](https://github.com/CSSPLICE/progsnap2) — 程式教育標準化 process data 格式（EventType/SubjectID/CodeStates）
@@ -89,3 +103,9 @@
 | [KOALA (CompEd 2025)](https://arxiv.org/abs/2506.21266) | IDE 行為資料收集工具設計 |
 | [pyBKT (EDM 2021)](https://arxiv.org/abs/2105.00385) | Bayesian Knowledge Tracing Python 函式庫 |
 | [CodeWatcher (ICSME 2025)](https://arxiv.org/abs/2510.11536) | IDE telemetry 追蹤開發者與 LLM 互動 |
+| Self-explanation effect (Chi et al., 1989; Bisra et al. 2018 meta-analysis) | 自我解釋效果量 d=0.55，生成解釋本身促進學習 |
+| CodeAid (Kazemitabaar et al., 2023-24, U of Toronto / MSR) | 不給直接程式碼的 AI tutor，學生學習效果顯著更好 |
+| Automation complacency (Prather et al., ICER 2023) | Copilot 造成「能力幻覺」，需 friction interventions |
+| EPL questions (Fowler et al., 2021-24) | 自然語言解釋程式碼，與考試成績相關性高於程式碼正確率 |
+| PRIMM (Sentance & Waite, 2017) | Predict-Run-Investigate-Modify-Make 五階段教學框架 |
+| Desirable difficulties (Bjork & Bjork, 1994-2020) | 策略性摩擦（spacing, interleaving, retrieval）提升長期記憶 |

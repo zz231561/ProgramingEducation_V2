@@ -77,6 +77,22 @@
 - [ ] 2-4d Validate 階段：LLM 自我檢查答案
 - [ ] 2-4e Quiz API 端點（generate + submit + history）
 
+### 2-5 Pre-Coding Reflection（解題前反思）
+> 參考：CodeAid (不給直接答案)、PRIMM、Polya 解題四步驟、Self-explanation effect (Chi et al.)
+- [ ] 2-5a reflections 表 migration + Reflection API 端點（create + update + get）
+- [ ] 2-5b 反思品質評估 service（LLM 快速評分 + 追問生成）
+- [ ] 2-5c 程式撰寫題開題時觸發反思表單 UI（必填 → 品質評估 → 追問或放行）
+- [ ] 2-5d 反思計畫側邊欄（Workspace 內持續顯示 + 可編輯）
+- [ ] 2-5e 反思內容注入 EDF Evidence 層（AI Tutor 可引用學生計畫）
+
+### 2-6 Post-Solution Comprehension Check（解題後理解驗證）
+> 參考：EPL (Fowler et al.)、Variation Theory (Marton)
+- [ ] 2-6a student_answers 表擴充 comprehension 欄位 + Comprehension API
+- [ ] 2-6b EPL 驗證：LLM 生成「用自己的話解釋」題 + 評估學生回答
+- [ ] 2-6c 預測輸出驗證：自動生成新測資 + 比對學生預測
+- [ ] 2-6d 變體挑戰：LLM 生成變體題 + 禁用 AI 的作答環境
+- [ ] 2-6e 動態觸發頻率（依學生 EPL 通過率調整）+ 驗證結果影響精熟度
+
 ## Phase 3：學習體驗
 > 完成標準：學生可從頭到尾跟隨學習路徑，完成測驗，查看進度
 > 對應頁面：Learn (Page 2)、Quiz (Page 3)、Dashboard (Page 5)
@@ -87,6 +103,7 @@
 - [ ] 3-1b 路徑生成 service（拓撲排序 + 弱項補強）
 - [ ] 3-1c Learn 頁面：路徑視覺化 + 進度條
 - [ ] 3-1d 學習單元內容頁（概念說明 / 範例 / 練習 / 摘要 tab）
+- [ ] 3-1e 練習 tab 嵌入 Pre-Coding Reflection 觸發點（復用 Phase 2-5 元件）
 
 ### 3-2 Quiz 完整版
 - [ ] 3-2a Quiz 頁面：選擇題 + 程式撰寫題 UI

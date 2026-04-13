@@ -15,13 +15,15 @@ globs: backend/services/edf/**
 ### Evidence（程式碼分析）
 - LLM 結構化輸出：錯誤分類、ConceptTag、Bloom 認知等級
 - 注入 Judge0 執行結果（stdout/stderr）作為分析脈絡
+- 注入 Pre-Coding Reflection 內容（若有）：學生的解題計畫 + 反思品質分數
 
 ### Decision（教學策略）
 - Bloom × Hint Ladder 6×6 策略矩陣（保留 V1 設計）
 - RAG 觸發條件：hint_level >= 2 且 bloom_level 屬於 {ANALYZE, EVALUATE, CREATE}
 
 ### Feedback（回應生成）
-- 分層 prompt 組裝：preamble → persona → strategy → context → RAG
+- 分層 prompt 組裝：preamble → persona → strategy → context → reflection → RAG
+- AI 可引用學生的反思計畫（如「你前面說要用迴圈處理，可以更具體嗎？」）
 - 輸出驗證：阻擋完整程式碼洩漏，保持教學引導
 
 ## Bloom 認知等級（6 級）

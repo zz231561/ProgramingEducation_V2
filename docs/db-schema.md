@@ -119,6 +119,32 @@ student_answers
 └── ★ index (user_id, answered_at) 供歷史查詢
 ```
 
+## 跨模組：Pre-Coding Reflection
+
+```
+reflections
+├── id (UUID, PK)
+├── user_id (FK → users, ON DELETE CASCADE) ★ index
+├── source_type (enum: quiz/learning_unit)   -- 觸發來源
+├── source_id (UUID)                         -- question_id 或 learning_unit_id
+├── problem_understanding (text)             -- 「這個問題要你做什麼？」
+├── planned_steps (jsonb)                    -- ["步驟1", "步驟2", ...]
+├── expected_concepts (text)                 -- 「你覺得會用到哪些概念？」
+├── quality_score (float 0.0-1.0, nullable)  -- LLM 評估的反思品質
+├── followup_question (text, nullable)       -- 系統追問的引導問題
+├── followup_answer (text, nullable)         -- 學生的補充回答
+├── is_modified (boolean, default false)     -- coding 過程中是否修改過計畫
+├── created_at
+├── updated_at
+└── UNIQUE (user_id, source_type, source_id) ★
+```
+
+> `student_answers` 表擴充欄位（Post-Solution Comprehension Check）：
+> - `comprehension_type (enum: epl/predict_output/variation, nullable)` — 驗證類型
+> - `comprehension_prompt (text, nullable)` — 系統出的驗證題目
+> - `comprehension_answer (text, nullable)` — 學生回答
+> - `comprehension_passed (boolean, nullable)` — 是否通過驗證
+
 ## Module 7: 學習路徑
 
 ```

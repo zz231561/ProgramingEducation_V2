@@ -1,5 +1,10 @@
 # 變更日誌
 
+## [2026-04-13] — Activity Bar 放大並加入文字標籤
+### Changed
+- Activity Bar 從 48px icon-only 改為 180px icon + 文字標籤（英文名稱 + 中文說明）
+- Chat Panel 預設寬度改為 350px（pixel-based），修正原本過窄的問題
+
 ## [2026-04-13] — Phase 1-1g 前端 UI 基礎建設
 ### Added
 - 安裝 shadcn/ui（base-nova style, dark preset）+ lucide-react + react-resizable-panels v4

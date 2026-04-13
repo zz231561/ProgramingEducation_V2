@@ -1,13 +1,16 @@
 """Auth middleware 測試 — JWT 解碼、依賴注入、未登入保護。"""
 
 import json
+from collections.abc import AsyncGenerator
 
 import pytest
 from authlib.jose import JsonWebEncryption
 from httpx import ASGITransport, AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from core.auth import _derive_encryption_key, decode_nextauth_token, TokenPayload
 from core.config import settings
+from core.database import Base, get_db
 from main import app
 
 
@@ -29,6 +32,31 @@ SAMPLE_PAYLOAD = {
     "picture": "https://example.com/avatar.jpg",
     "googleId": "google-456",
 }
+
+
+# === 測試用 DB（SQLite in-memory） ===
+
+_test_engine = create_async_engine("sqlite+aiosqlite://", echo=False)
+_test_session_factory = async_sessionmaker(_test_engine, class_=AsyncSession, expire_on_commit=False)
+
+
+@pytest.fixture(autouse=True)
+async def _setup_test_db():
+    """每個測試前建立 / 測試後清除 DB schema。"""
+    async with _test_engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    yield
+    async with _test_engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
+
+
+async def _override_get_db() -> AsyncGenerator[AsyncSession, None]:
+    async with _test_session_factory() as session:
+        yield session
+
+
+# 覆蓋 app 的 DB 依賴
+app.dependency_overrides[get_db] = _override_get_db
 
 
 # === 單元測試：金鑰衍生 ===
@@ -55,11 +83,9 @@ def test_decode_valid_token():
     secret = settings.NEXTAUTH_SECRET or "test-secret-for-ci"
     token = _encrypt_token(SAMPLE_PAYLOAD, secret)
 
-    # 暫時設定 secret 以便解碼
     original = settings.NEXTAUTH_SECRET
     settings.NEXTAUTH_SECRET = secret
 
-    # 清除快取的金鑰
     import core.auth
     core.auth._encryption_key = None
 
@@ -102,7 +128,7 @@ async def test_auth_me_without_token(client: AsyncClient):
 
 
 async def test_auth_me_with_valid_token(client: AsyncClient):
-    """帶合法 cookie 應回傳使用者資訊。"""
+    """帶合法 cookie 應回傳使用者資訊 + 自動建立 DB 記錄。"""
     secret = "test-secret-for-auth-me"
     token = _encrypt_token(SAMPLE_PAYLOAD, secret)
 
@@ -120,6 +146,27 @@ async def test_auth_me_with_valid_token(client: AsyncClient):
         body = resp.json()
         assert body["email"] == "test@example.com"
         assert body["name"] == "Test User"
+        assert body["role"] == "student"
+        assert "id" in body
+    finally:
+        settings.NEXTAUTH_SECRET = original
+        core.auth._encryption_key = None
+
+
+async def test_auth_me_repeat_returns_same_user(client: AsyncClient):
+    """重複呼叫 /auth/me 應回傳同一使用者（不重複建立）。"""
+    secret = "test-secret-for-repeat"
+    token = _encrypt_token(SAMPLE_PAYLOAD, secret)
+
+    import core.auth
+    original = settings.NEXTAUTH_SECRET
+    settings.NEXTAUTH_SECRET = secret
+    core.auth._encryption_key = None
+
+    try:
+        resp1 = await client.get("/auth/me", cookies={"authjs.session-token": token})
+        resp2 = await client.get("/auth/me", cookies={"authjs.session-token": token})
+        assert resp1.json()["id"] == resp2.json()["id"]
     finally:
         settings.NEXTAUTH_SECRET = original
         core.auth._encryption_key = None

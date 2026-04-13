@@ -2,47 +2,23 @@
 
 import { useState, useCallback, useRef } from "react";
 import { api } from "@/lib/api";
+import type { ExecutionResult } from "@/components/workspace/workspace-context";
+import type {
+  ChatItem, MessageItem, ExecutionItem,
+  InteractResponse, SessionDetailResponse, ApiMessage,
+} from "@/lib/chat-types";
 
-/** 單則訊息 */
-export interface ChatMessage {
-  id: string;
-  role: "user" | "assistant";
-  content: string;
-  codeSnapshot?: string;
-  createdAt: string;
-}
-
-/** /chat/interact 回應格式 */
-interface InteractResponse {
-  session_id: string;
-  user_message: ApiMessage;
-  assistant_message: ApiMessage;
-}
-
-/** /chat/sessions/{id} 回應格式 */
-interface SessionDetailResponse {
-  session: { id: string; title: string; updated_at: string };
-  messages: ApiMessage[];
-}
-
-interface ApiMessage {
-  id: string;
-  role: string;
-  content: string;
-  code_snapshot: string | null;
-  evidence: Record<string, unknown> | null;
-  created_at: string;
-}
+export type { ChatItem, MessageItem, ExecutionItem } from "@/lib/chat-types";
 
 interface UseChatOptions {
   getCode?: () => string;
   getExecutionResult?: () => object | null;
-  /** 新 session 建立後的回呼（供 useSessions 同步列表） */
   onSessionCreated?: (id: string, title: string) => void;
 }
 
-function toMessage(msg: ApiMessage): ChatMessage {
+function toMessageItem(msg: ApiMessage): MessageItem {
   return {
+    type: "message",
     id: msg.id,
     role: msg.role as "user" | "assistant",
     content: msg.content,
@@ -53,14 +29,13 @@ function toMessage(msg: ApiMessage): ChatMessage {
 
 /**
  * 聊天狀態管理 hook。
- * 管理訊息列表、session、發送、載入歷史。
+ * 管理訊息列表、session、發送、載入歷史、注入執行結果。
  */
 export function useChat(options: UseChatOptions = {}) {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [items, setItems] = useState<ChatItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const sessionIdRef = useRef<string | null>(null);
 
-  /** 發送訊息至 EDF pipeline */
   const sendMessage = useCallback(
     async (question: string) => {
       const code = options.getCode?.() ?? "";
@@ -82,10 +57,10 @@ export function useChat(options: UseChatOptions = {}) {
         const isNew = sessionIdRef.current !== res.session_id;
         sessionIdRef.current = res.session_id;
 
-        setMessages((prev) => [
+        setItems((prev) => [
           ...prev,
-          toMessage(res.user_message),
-          toMessage(res.assistant_message),
+          toMessageItem(res.user_message),
+          toMessageItem(res.assistant_message),
         ]);
 
         if (isNew) {
@@ -93,10 +68,11 @@ export function useChat(options: UseChatOptions = {}) {
           options.onSessionCreated?.(res.session_id, title);
         }
       } catch {
-        setMessages((prev) => [
+        const now = new Date().toISOString();
+        setItems((prev) => [
           ...prev,
-          { id: crypto.randomUUID(), role: "user", content: question, createdAt: new Date().toISOString() },
-          { id: crypto.randomUUID(), role: "assistant", content: "⚠ 無法取得 AI 回應，請稍後再試。", createdAt: new Date().toISOString() },
+          { type: "message", id: crypto.randomUUID(), role: "user", content: question, createdAt: now },
+          { type: "message", id: crypto.randomUUID(), role: "assistant", content: "⚠ 無法取得 AI 回應，請稍後再試。", createdAt: now },
         ]);
       } finally {
         setIsLoading(false);
@@ -105,32 +81,41 @@ export function useChat(options: UseChatOptions = {}) {
     [options],
   );
 
-  /** 載入既有 session 的歷史訊息 */
   const loadSession = useCallback(async (sessionId: string) => {
     setIsLoading(true);
     try {
       const res = await api<SessionDetailResponse>(`/chat/sessions/${sessionId}`);
       sessionIdRef.current = sessionId;
-      setMessages(res.messages.map(toMessage));
+      setItems(res.messages.map(toMessageItem));
     } catch {
-      setMessages([]);
+      setItems([]);
     } finally {
       setIsLoading(false);
     }
   }, []);
 
-  /** 開始新對話（清空目前訊息，不建立 DB record） */
   const startNewSession = useCallback(() => {
-    setMessages([]);
+    setItems([]);
     sessionIdRef.current = null;
   }, []);
 
+  const injectExecutionResult = useCallback((result: ExecutionResult) => {
+    const item: ExecutionItem = {
+      type: "execution",
+      id: crypto.randomUUID(),
+      result,
+      createdAt: new Date().toISOString(),
+    };
+    setItems((prev) => [...prev, item]);
+  }, []);
+
   return {
-    messages,
+    items,
     isLoading,
     sessionId: sessionIdRef.current,
     sendMessage,
     loadSession,
     startNewSession,
+    injectExecutionResult,
   };
 }

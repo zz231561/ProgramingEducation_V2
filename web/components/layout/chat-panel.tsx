@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
 import { MessageSquare, PanelRightClose } from "lucide-react";
 import { MessageList } from "@/components/chat/message-list";
 import { ChatInput } from "@/components/chat/chat-input";
@@ -14,23 +14,24 @@ interface ChatPanelProps {
 }
 
 /**
- * AI 導師 Chat Panel — 整合訊息列表 + 輸入框 + session 管理。
+ * AI 導師 Chat Panel — 整合訊息列表 + 輸入框 + session 管理 + 執行結果注入。
  */
 export function ChatPanel({ onCollapse }: ChatPanelProps) {
-  const { getCode, getExecutionResult } = useWorkspace();
+  const { getCode, getExecutionResult, onExecutionComplete } = useWorkspace();
   const { sessions, activeId, setActiveId, deleteSession, addSession } = useSessions();
 
-  const { messages, isLoading, sendMessage, loadSession, startNewSession } = useChat({
-    getCode,
-    getExecutionResult,
-    onSessionCreated: addSession,
-  });
+  const { items, isLoading, sendMessage, loadSession, startNewSession, injectExecutionResult } =
+    useChat({ getCode, getExecutionResult, onSessionCreated: addSession });
+
+  /* Run 完成時自動注入執行結果卡片 */
+  useEffect(() => {
+    return onExecutionComplete((result) => {
+      injectExecutionResult(result);
+    });
+  }, [onExecutionComplete, injectExecutionResult]);
 
   const handleSelectSession = useCallback(
-    async (id: string) => {
-      setActiveId(id);
-      await loadSession(id);
-    },
+    async (id: string) => { setActiveId(id); await loadSession(id); },
     [setActiveId, loadSession],
   );
 
@@ -57,7 +58,7 @@ export function ChatPanel({ onCollapse }: ChatPanelProps) {
         onNewChat={handleNewChat}
         onCollapse={onCollapse}
       />
-      <MessageList messages={messages} isLoading={isLoading} />
+      <MessageList items={items} isLoading={isLoading} />
       <ChatInput onSend={sendMessage} disabled={isLoading} />
     </div>
   );

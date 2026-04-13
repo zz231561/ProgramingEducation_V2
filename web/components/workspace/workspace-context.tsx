@@ -8,40 +8,52 @@ export interface ExecutionResult {
   stderr: string;
   compile_output: string;
   exit_code: number;
+  status_description?: string;
 }
 
+type ExecutionListener = (result: ExecutionResult) => void;
+
 interface WorkspaceContextValue {
-  /** 取得當前編輯器程式碼（即時讀取 ref） */
   getCode: () => string;
-  /** 更新程式碼 ref */
   setCode: (code: string) => void;
-  /** 取得最近一次執行結果 */
   getExecutionResult: () => ExecutionResult | null;
-  /** 更新執行結果 */
+  /** 更新執行結果，同時通知所有訂閱者 */
   setExecutionResult: (result: ExecutionResult | null) => void;
+  /** 訂閱執行完成事件，回傳 unsubscribe 函式 */
+  onExecutionComplete: (listener: ExecutionListener) => () => void;
 }
 
 const Ctx = createContext<WorkspaceContextValue | null>(null);
 
 /**
  * Workspace 狀態 Provider — 用 ref 儲存避免不必要的 re-render。
- * 只提供 getter/setter，不觸發 consumer re-render。
+ * 提供執行事件訂閱機制供 Chat Panel 監聽。
  */
 export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   const codeRef = useRef("");
   const execRef = useRef<ExecutionResult | null>(null);
+  const listenersRef = useRef<Set<ExecutionListener>>(new Set());
 
   const getCode = useCallback(() => codeRef.current, []);
   const setCode = useCallback((code: string) => {
     codeRef.current = code;
   }, []);
   const getExecutionResult = useCallback(() => execRef.current, []);
+
   const setExecutionResult = useCallback((r: ExecutionResult | null) => {
     execRef.current = r;
+    if (r) {
+      listenersRef.current.forEach((fn) => fn(r));
+    }
+  }, []);
+
+  const onExecutionComplete = useCallback((listener: ExecutionListener) => {
+    listenersRef.current.add(listener);
+    return () => { listenersRef.current.delete(listener); };
   }, []);
 
   return (
-    <Ctx value={{ getCode, setCode, getExecutionResult, setExecutionResult }}>
+    <Ctx value={{ getCode, setCode, getExecutionResult, setExecutionResult, onExecutionComplete }}>
       {children}
     </Ctx>
   );

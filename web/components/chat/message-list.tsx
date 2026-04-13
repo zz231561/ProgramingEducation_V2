@@ -3,32 +3,37 @@
 import { useEffect, useRef } from "react";
 import { MessageSquare, Loader2 } from "lucide-react";
 import { MessageBubble } from "./message-bubble";
-import type { ChatMessage } from "@/hooks/use-chat";
+import { RunResultCard } from "./run-result-card";
+import type { ChatItem } from "@/lib/chat-types";
 
 interface MessageListProps {
-  messages: ChatMessage[];
+  items: ChatItem[];
   isLoading: boolean;
 }
 
 /**
- * 可捲動的訊息列表 — 新訊息時自動捲到底部。
+ * 可捲動的訊息列表 — 支援一般訊息和執行結果卡片。
  */
-export function MessageList({ messages, isLoading }: MessageListProps) {
+export function MessageList({ items, isLoading }: MessageListProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages.length, isLoading]);
+  }, [items.length, isLoading]);
 
-  if (messages.length === 0 && !isLoading) {
+  if (items.length === 0 && !isLoading) {
     return <EmptyState />;
   }
 
   return (
     <div className="flex-1 overflow-y-auto p-3 space-y-4">
-      {messages.map((msg) => (
-        <MessageBubble key={msg.id} message={msg} />
-      ))}
+      {items.map((item) =>
+        item.type === "execution" ? (
+          <RunResultCard key={item.id} result={item.result} />
+        ) : (
+          <MessageBubble key={item.id} message={item} />
+        ),
+      )}
       {isLoading && <TypingIndicator />}
       <div ref={bottomRef} />
     </div>

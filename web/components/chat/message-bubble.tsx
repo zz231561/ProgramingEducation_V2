@@ -1,10 +1,10 @@
 "use client";
 
 import { Bot, User } from "lucide-react";
-import type { ChatMessage } from "@/hooks/use-chat";
+import type { MessageItem } from "@/lib/chat-types";
 
 interface MessageBubbleProps {
-  message: ChatMessage;
+  message: MessageItem;
 }
 
 /**

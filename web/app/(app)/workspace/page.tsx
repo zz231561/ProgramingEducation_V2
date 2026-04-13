@@ -68,6 +68,7 @@ export default function WorkspacePage() {
         stderr: result.stderr,
         compile_output: result.compile_output,
         exit_code: result.exit_code ?? -1,
+        status_description: result.status_description,
       });
 
       if (result.status_description === "Accepted") {

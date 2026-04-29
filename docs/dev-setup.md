@@ -7,11 +7,27 @@
 
 ## 1. 每次 session 啟動流程（已裝完工具的情況）
 
+### 🟢 最小啟動（DB + Redis，2-1b 開發只需這段）
+
+**一鍵指令（複製整段貼上）：**
+```bash
+colima start && \
+cd /Users/hao/Desktop/Project/ProgramingEducation_V2 && \
+docker-compose -f docker-compose.dev.yml up -d && \
+docker exec codedge-postgres-dev pg_isready -U postgres -d programing_education && \
+docker exec codedge-postgres-dev psql -U postgres -d programing_education -c "\dx vector" && \
+cd backend && .venv/bin/alembic current
+```
+
+**預期最後一行輸出**：`b2c3d4e5f6a7 (head)` → 環境 OK。
+
+**逐步版（出問題時方便定位失敗點）：**
 ```bash
 # 1) 啟動 Docker daemon（Colima VM）
 colima start
 
-# 2) 啟動 dev 容器（pgvector + redis）
+# 2) 切到專案根目錄並啟動 dev 容器（pgvector + redis）
+cd /Users/hao/Desktop/Project/ProgramingEducation_V2
 docker-compose -f docker-compose.dev.yml up -d
 
 # 3) 確認 Postgres healthy + pgvector 啟用
@@ -19,18 +35,42 @@ docker exec codedge-postgres-dev pg_isready -U postgres -d programing_education
 docker exec codedge-postgres-dev psql -U postgres -d programing_education -c "\dx vector"
 
 # 4) 確認 Alembic migration 在最新版
-cd backend && .venv/bin/alembic current
+cd /Users/hao/Desktop/Project/ProgramingEducation_V2/backend
+.venv/bin/alembic current
 # 預期顯示：b2c3d4e5f6a7 (head)
 ```
 
-**結束 session 收尾：**
+### 🟡 完整開發（再加後端 + 前端 server）
+
+承接上面之後，分別開兩個 terminal：
 ```bash
+# Terminal 1：後端 API server
+cd /Users/hao/Desktop/Project/ProgramingEducation_V2/backend
+.venv/bin/uvicorn main:app --reload --port 8000
+
+# Terminal 2：前端 dev server
+cd /Users/hao/Desktop/Project/ProgramingEducation_V2/web
+npm run dev
+```
+開瀏覽器：http://localhost:3000
+
+### 🔴 收工關閉
+
+```bash
+cd /Users/hao/Desktop/Project/ProgramingEducation_V2
 docker-compose -f docker-compose.dev.yml down  # 容器停（資料保留）
 colima stop                                     # 停 VM 釋放資源
 ```
 
 > **資料持久化**：Postgres 資料存於 Docker volume `programingeducation_v2_postgres_data`。
 > `down` 不會清資料；要清資料用 `docker-compose -f docker-compose.dev.yml down -v`。
+
+### 📊 狀態檢查（除錯用）
+```bash
+docker ps                  # 看容器跑得如何
+colima status              # 看 Colima VM 狀態
+docker info | head -5      # 看 docker daemon 是否 ready
+```
 
 ---
 

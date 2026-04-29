@@ -1,5 +1,11 @@
 # 變更日誌
 
+## [2026-04-29] — dev-setup.md §1 補上一鍵啟動指令
+
+### 變更
+- `docs/dev-setup.md` §1 重組為三段：🟢 最小啟動（含一鍵 chained 指令 + 逐步版）/ 🟡 完整開發（後端 + 前端）/ 🔴 收工關閉
+- 補上 📊 狀態檢查指令區塊（docker ps / colima status / docker info）
+
 ## [2026-04-29] — 文檔同步：本機 dev SOP + 下次 session 接續指引
 
 ### 新增

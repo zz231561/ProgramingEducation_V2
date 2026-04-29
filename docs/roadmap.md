@@ -66,6 +66,9 @@
 > 參考：DeepTutor hybrid retrieval 模式（Tier 3）
 - [x] 2-1a pgvector 擴充啟用 + documents 表 migration（chunks/向量表交給 LlamaIndex 2-1b 自動建立）
 - [ ] 2-1b LlamaIndex 索引管線（用 `IngestionPipeline`，不自刻）
+  - **前置**：本機 dev 環境啟動（`docs/dev-setup.md` §1）+ `backend/.env` 已填 `OPENAI_API_KEY`
+  - **動作**：`uv pip install llama-index llama-index-vector-stores-postgres`；於 `backend/services/rag/` 建立 `IngestionPipeline`（chunking + OpenAI embedding + `PGVectorStore`）；提供 `ingest_document(doc_id)` 介面寫入向量表
+  - **驗證**：用一份範例教材跑 ingest，`SELECT count(*) FROM data_<table>` > 0
 - [ ] 2-1c 檢索 service（用 LlamaIndex query engine + 可選 BM25 reranking）
 - [ ] 2-1d RAG 結果注入 EDF Feedback 層 prompt
 

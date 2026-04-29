@@ -1,5 +1,23 @@
 # 變更日誌
 
+## [2026-04-29] — 文檔同步：本機 dev SOP + 下次 session 接續指引
+
+### 新增
+- `docs/dev-setup.md` — **本機環境啟動 SOP**（每次 session 必讀）：
+  - §1 啟動流程（Colima + docker-compose + alembic 檢查）
+  - §2 已安裝工具版本
+  - §3 後端 venv 操作（uv pip）
+  - §4 服務連線資訊
+  - §5 與 Zeabur 部署對照
+  - §6 首次安裝完整指令
+  - §7 疑難排解（常見錯誤 + 解法）
+
+### 變更
+- `CLAUDE.md`「當前狀態」明確標出 **下一任務 2-1b** + 動工前置條件（測試通過 + OPENAI_API_KEY）
+- `CLAUDE.md` 文件索引補上 dev-setup.md（標 ★ 必讀）
+- `docs/roadmap.md` 2-1b 補上前置條件 / 動作 / 驗證三段提示，避免下次 session 走偏
+- `docs/tech-debt.md` 新增 4 項待辦：OPENAI_API_KEY 未填、git config 未設、requirements.lock 過時、pyproject.toml 缺 hatchling packages 設定
+
 ## [2026-04-29] — Phase 2-1a 完成：pgvector 啟用 + documents 表 + 本機 dev 環境
 
 ### 新增

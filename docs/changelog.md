@@ -1,5 +1,34 @@
 # 變更日誌
 
+## [2026-04-29] — OSS 重用策略落地 + Roadmap 重排（功能優先、部署延後）
+
+### 新增
+- `docs/references.md` §1 **OSS 重用決策矩陣**（4 Tier 分級）：
+  - **Tier 1 立即依賴**：pyBKT、LlamaIndex、Cytoscape.js、Vercel AI SDK、prefixspan
+  - **Tier 2 Schema 採用**：ProgSnap2 EventType、StudyChat dialogue act
+  - **Tier 3 Clone 研讀**：DeepTutor、Mr. Ranedeer、JetBrains Edu Plugin
+  - **Tier 4 不採用**：PM4Py（AGPL 風險）、OATutor BKT port、EduAdapt-AI RL、BloomBERT、Socratic-LLM
+- `docs/references.md` §2 **授權白名單／黑名單**：嚴禁 AGPL-3.0 / GPL-3.0；MIT / Apache-2.0 / BSD-3 / ISC 直接採用
+- `CLAUDE.md` 執行守則 #7 **避免重複造輪子（OSS 優先）**：開發前必查決策矩陣，新增 dependency 必須 PR 列出 license
+
+### 變更
+- `docs/roadmap.md` **重排執行順序**：
+  - 移除原 Phase 1-7（部署）→ 新增 **Phase 4：部署上線**（4-1 容器化 / 4-2 Zeabur / 4-3 上線驗證）
+  - 原 Phase 4 教師端 → **Phase 5**（5-1 ~ 5-5 全數重編）
+  - 執行順序：Phase 2 智慧功能 → Phase 3 學習體驗 → Phase 4 部署 → Phase 5 教師端
+  - **理由**：API 串接 + Zeabur 反覆卡關，先把學生端做完一次性處理部署
+- `docs/roadmap.md` 各 Phase 任務加註 **OSS 標記**：
+  - 2-1 RAG → LlamaIndex `PGVectorStore`
+  - 2-2 知識圖譜 → Cytoscape.js + fcose
+  - 2-3 精熟度 → **pyBKT，禁止 port OATutor**
+  - 3-1 學習路徑 → 拓撲排序，**不採用 EduAdapt-AI RL**
+  - 5-2 行為事件 → ProgSnap2 + StudyChat schema
+  - 5-3 行為分析 → pyBKT + prefixspan，**禁止用 PM4Py**
+- `CLAUDE.md` 當前狀態區塊壓縮為摘要（Phase 1 全完成 + 下一步 Phase 2 任務清單）
+
+### 已確認決策（roadmap.md）
+- 新增「OSS 重用」與「執行順序」兩條長期決策
+
 ## [2026-04-29] — Login hero 移除主標 `Code with Edge`，避免與 h1 `Codedge` 重複
 
 ### Changed

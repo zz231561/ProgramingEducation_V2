@@ -1,6 +1,10 @@
 # Roadmap
 
-## Phase 1：基礎建設（MVP）
+> **執行策略**：功能優先（Phase 2 → 3）→ 部署（Phase 4）→ 教師端（Phase 5）。
+> 因 API 串接 + Zeabur 部署反覆卡關，將部署延後至學生端功能全數完成後一次處理，避免邊開發邊維運耗能。
+> **OSS 重用**：開發前必查 `docs/references.md` §1 決策矩陣（CLAUDE.md 守則 #7）。
+
+## Phase 1：基礎建設（MVP）✅
 > 完成標準：學生可登入、寫 C++ 程式碼、執行、與 AI 對話學習
 > 對應頁面：Workspace (Page 1)
 
@@ -51,38 +55,36 @@
 - [x] 1-6e Toolbar Linear 風格化（高度 48px + 5 頁籤 + 檔名儲存狀態）（design-plan §2.5）
 - [x] 1-6f EDF Pipeline mini timeline（在每則 AI 訊息上方顯示教學決策過程）（design-plan §2.1）
 
-### 1-7 部署
-> ⚠ 上次嘗試卡關於 API 串接（前後端 proxy / NextAuth callback URL / CORS / Judge0 endpoint），1-7c 尚未完成。
-> 重啟前需先排查 `web/app/api/*` proxy 設定、`backend/app/core/config.py` 環境變數、Zeabur dashboard service 連線狀態。
-- [ ] 1-7a Dockerfile（前端 + 後端）— 配置檔已存在，需重新驗證 build
-- [ ] 1-7b Zeabur 部署配置（環境變數 + service 串接）— `zeabur.json` 已存在，需驗證 service 之間 internal DNS / 環境變數注入是否正確
-- [ ] 1-7c 首次上線驗證（登入 → 寫碼 → 執行 → 對話 golden path）— 上次卡在 API 串接，待逐項排查
+> 部署原 1-7 已移至 **Phase 4**（功能優先策略）
 
 ## Phase 2：智慧功能
 > 完成標準：RAG 檢索可用、知識圖譜可視覺化、弱項可自動出題
 > 對應頁面：Knowledge (Page 4)、Quiz 基礎版、Workspace 擴充（Pre-Coding Reflection 側邊欄）
 
 ### 2-1 RAG 知識檢索
-> 參考：DeepTutor (hybrid retrieval + citation tracking)、Open TutorAI CE (教材 RAG)
+> **OSS**：✅ Tier 1 LlamaIndex `PGVectorStore` + `IngestionPipeline`（禁止自寫 chunking/embedding）
+> 參考：DeepTutor hybrid retrieval 模式（Tier 3）
 - [ ] 2-1a pgvector 擴充啟用 + documents/chunks 表 migration
-- [ ] 2-1b LlamaIndex 索引管線（文件上傳 → chunking → embedding → 存入 DB）
-- [ ] 2-1c 檢索 service（query → 向量搜尋 → top-k chunks）
+- [ ] 2-1b LlamaIndex 索引管線（用 `IngestionPipeline`，不自刻）
+- [ ] 2-1c 檢索 service（用 LlamaIndex query engine + 可選 BM25 reranking）
 - [ ] 2-1d RAG 結果注入 EDF Feedback 層 prompt
 
 ### 2-2 知識圖譜
+> **OSS**：✅ Tier 1 Cytoscape.js + `cytoscape-fcose` layout（禁止自刻力導向圖）
 - [ ] 2-2a concepts + concept_edges 表 migration + 初始 20 ConceptTag seed
 - [ ] 2-2b 圖譜查詢 service（全圖 / 單節點 + 鄰居）
 - [ ] 2-2c Knowledge 頁面：Cytoscape.js 圖譜渲染
 - [ ] 2-2d Concept Detail Panel（點擊節點顯示詳情）
 
 ### 2-3 精熟度追蹤
-> 參考：OATutor BKT 演算法（`BKT-brain.js`、`bktParams.js`）→ 移植為 Python 版
+> **OSS**：✅ Tier 1 **`pip install pyBKT`**（scikit-learn 風格 API，**禁止 port OATutor JS 版**）
 - [ ] 2-3a student_mastery 表 migration
-- [ ] 2-3b 精熟度更新邏輯（EDF Evidence 結果 → confidence 調整）
+- [ ] 2-3b 精熟度更新邏輯（pyBKT Model + EDF Evidence 結果 → confidence 調整）
 - [ ] 2-3c 圖譜節點顏色依精熟度著色（綠/黃/紅/灰）
 
 ### 2-4 智慧出題
-> 參考：OATutor (adaptive selection)、DeepTutor (教材出題)、EduAdapt-AI (difficulty scaling)
+> **OSS**：LlamaIndex 教材檢索注入 prompt（Tier 1）
+> 參考：OATutor adaptive selection 思路（Tier 3，不引程式碼）
 - [ ] 2-4a questions + student_answers 表 migration
 - [ ] 2-4b Select 階段：弱項概念選取 + 知識圖譜關聯
 - [ ] 2-4c Generate 階段：LLM 出題 + RAG 教材注入
@@ -110,9 +112,9 @@
 > 對應頁面：Learn (Page 2)、Quiz (Page 3)、Dashboard (Page 5)
 
 ### 3-1 結構化學習路徑
-> 參考：EduAdapt-AI (RL-based learning path optimization + content graph)
+> **OSS**：拓撲排序 + 弱項補強（**不採用 EduAdapt-AI 的 RL 方案**，過度工程）
 - [ ] 3-1a learning_paths + learning_units 表 migration
-- [ ] 3-1b 路徑生成 service（拓撲排序 + 弱項補強）
+- [ ] 3-1b 路徑生成 service（拓撲排序 + 弱項補強，純 Python 實作）
 - [ ] 3-1c Learn 頁面：路徑視覺化 + 進度條
 - [ ] 3-1d 學習單元內容頁（概念說明 / 範例 / 練習 / 摘要 tab）
 - [ ] 3-1e 練習 tab 嵌入 Pre-Coding Reflection 觸發點（復用 Phase 2-5 元件）
@@ -127,38 +129,61 @@
 - [ ] 3-3b 最近活動時間線
 - [ ] 3-3c 精熟度總覽圖表
 
-## Phase 4：教師端（全部學生端功能完成後）
+## Phase 4：部署上線（學生端完成後）
+> 完成標準：學生端 Phase 1~3 全數完成後，一次性處理 Docker / Zeabur / Judge0 自架 / NextAuth callback / CORS / API proxy 串接。
+> ⚠ 上次卡關於 API 串接（前後端 proxy / NextAuth callback URL / CORS / Judge0 endpoint），重啟前需先排查 `web/app/api/*` proxy 設定、`backend/app/core/config.py` 環境變數、Zeabur dashboard service 連線狀態。
+> **前置條件**：Phase 1-3 全部完成。
+
+### 4-1 容器化
+- [ ] 4-1a Dockerfile（前端 + 後端）— 配置檔已存在，需重新驗證 build
+- [ ] 4-1b `pgvector/pgvector:pg16` 容器配置（Phase 2-1 完成後驗證）
+- [ ] 4-1c Judge0 自架 docker-compose（取代 RapidAPI 50 次/天限制）
+
+### 4-2 Zeabur 部署
+- [ ] 4-2a 環境變數分層配置（dev/prod，敏感資訊用 Zeabur Secrets）
+- [ ] 4-2b Zeabur service 串接（internal DNS / Postgres / Redis / Judge0）— `zeabur.json` 已存在，需驗證
+- [ ] 4-2c NextAuth callback URL + CORS 設定（前後端網域）
+
+### 4-3 上線驗證
+- [ ] 4-3a Golden path：登入 → 寫碼 → 執行 → AI 對話 → RAG 檢索 → 出題作答
+- [ ] 4-3b 監控：Sentry / 日誌聚合 / 健康檢查
+- [ ] 4-3c 效能 baseline（首次互動時間、LLM p95 延遲、Judge0 成功率）
+
+---
+
+## Phase 5：教師端（部署後）
 > 完成標準：教師可管理班級、查看學生行為分析圖表、指派作業
 > 對應頁面：Teacher Dashboard（教師專屬，學生不可見）
-> 前置條件：Phase 1-3 全部完成
+> **前置條件**：Phase 4 部署完成（教師分析需要實際學生資料）。
 
-### 4-1 班級管理
-- [ ] 4-1a classes + class_members 表 migration
-- [ ] 4-1b 班級 CRUD API（建立/邀請碼/加入/移除）
-- [ ] 4-1c 教師 Dashboard 頁面骨架 + 班級管理 UI
+### 5-1 班級管理
+- [ ] 5-1a classes + class_members 表 migration
+- [ ] 5-1b 班級 CRUD API（建立/邀請碼/加入/移除）
+- [ ] 5-1c 教師 Dashboard 頁面骨架 + 班級管理 UI
 
-### 4-2 行為資料收集（Module 9）
-> 參考：ProgSnap2 + KOALA (事件 schema)、StudyChat (dialogue act 分類)
-- [ ] 4-2a coding_events 表 migration（記錄 submit/error/fix 事件）
-- [ ] 4-2b 後端 event logging service（從 Judge0 + EDF 現有流程擷取資料）
-- [ ] 4-2c chat_messages 擴充 dialogue_act 欄位（asking_hint/clarification/debugging/off_topic/acknowledgment）
-- [ ] 4-2d 行為指標聚合 service（編譯頻率/成功率/修復時間/hint 分布等）
+### 5-2 行為資料收集（Module 9）
+> **OSS**：✅ Tier 2 直接採用 ProgSnap2 EventType schema + StudyChat dialogue act 分類 schema（references.md §1）
+- [ ] 5-2a coding_events 表 migration（**採用 ProgSnap2 五欄主鍵 + EventType 列舉**）
+- [ ] 5-2b 後端 event logging service（從 Judge0 + EDF 現有流程擷取資料）
+- [ ] 5-2c chat_messages 擴充 dialogue_act 欄位（**採用 StudyChat schema**：asking_hint/clarification_request/debugging/off_topic/acknowledgment/verification）
+- [ ] 5-2d 行為指標聚合 service（編譯頻率/成功率/修復時間/hint 分布等）
 
-### 4-3 行為分析演算法（Module 9）
-> 參考：pyBKT (精熟度追蹤)、PM4Py (行為流程分析)
-- [ ] 4-3a 行為-成效相關性分析（行為指標 vs 精熟度提升）
-- [ ] 4-3b 學生行為模式群聚（主動型/被動型/掙扎型分群）
-- [ ] 4-3c 行為分析 API 端點（班級/個人行為統計 + 圖表資料）
+### 5-3 行為分析演算法（Module 9）
+> **OSS**：✅ Tier 1 pyBKT（精熟度追蹤）+ `prefixspan`（sequential pattern mining，**取代 AGPL 的 PM4Py**）
+- [ ] 5-3a 行為-成效相關性分析（行為指標 vs 精熟度提升）
+- [ ] 5-3b 學生行為模式群聚（主動型/被動型/掙扎型分群，scikit-learn KMeans）
+- [ ] 5-3c 行為流程分析（**用 prefixspan**，禁止用 PM4Py）
+- [ ] 5-3d 行為分析 API 端點（班級/個人行為統計 + 圖表資料）
 
-### 4-4 行為分析視覺化（Module 9）
-> 參考：OpenLAP (三層架構)
-- [ ] 4-4a 行為-成效散佈圖 + 錯誤類型熱力圖
-- [ ] 4-4b 學習行為時序圖 + Hint 階梯使用分布
-- [ ] 4-4c 班級行為群聚分析圖 + 精熟度趨勢線
+### 5-4 行為分析視覺化（Module 9）
+> 參考：OpenLAP 三層架構（Data Collection → Indicator Engine → Analytics Framework）
+- [ ] 5-4a 行為-成效散佈圖 + 錯誤類型熱力圖
+- [ ] 5-4b 學習行為時序圖 + Hint 階梯使用分布
+- [ ] 5-4c 班級行為群聚分析圖 + 精熟度趨勢線
 
-### 4-5 作業指派
-- [ ] 4-5a 作業指派功能（選題 + 指定學生/班級）
-- [ ] 4-5b 學生進度查看（精熟度熱力圖 + 常見錯誤統計）
+### 5-5 作業指派
+- [ ] 5-5a 作業指派功能（選題 + 指定學生/班級）
+- [ ] 5-5b 學生進度查看（精熟度熱力圖 + 常見錯誤統計）
 
 ## 已確認決策
 
@@ -169,3 +194,5 @@
 - 部署：Zeabur (Tencent Tokyo VPS) | 使用者規模：初期 < 100 人
 - 即時通訊：Phase 1 用 REST + SSE (chat streaming)，未來視需求加 WebSocket
 - 介面借鑑：6 份來源僅貢獻結構模式，視覺基本元素統一為 GitHub Dark（design-plan.md §0.3 七條硬規則）
+- **OSS 重用**：開發前必查 `docs/references.md` §1 決策矩陣；禁止 AGPL/GPL 套件；禁止移植已有對應套件的演算法（如 BKT 必用 pyBKT）
+- **執行順序**：功能優先（Phase 2 → 3）→ 部署（Phase 4）→ 教師端（Phase 5）；避免邊開發邊維運耗能

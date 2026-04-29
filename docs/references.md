@@ -1,111 +1,153 @@
 # 開源參考專案
 
-> 實作各 Phase 時，clone 對應專案深入研究再制定細節計畫。
+> **強制守則**：開發新功能前**必先檢視本文件 §1 決策矩陣**，確認是否有可直接 `pip/npm install` 的成熟套件或可採用的 schema。違反「避免重複造輪子」原則的設計將被拒絕（CLAUDE.md 執行守則 #7）。
 
-## 專案總覽
+---
+
+## 1. OSS 重用決策矩陣
+
+### ✅ Tier 1：立即依賴（pip/npm install，最高 ROI）
+
+| 套件 | License | 對應 Phase | 用法 |
+|------|---------|-----------|------|
+| **pyBKT** | MIT | 2-3 精熟度追蹤、5-3 行為分析 | `pip install pyBKT`，scikit-learn 風格 API。**取代 OATutor BKT-brain.js 移植**，省 1-2 天 |
+| **LlamaIndex** | MIT | 2-1 RAG 索引管線 | 已鎖定技術棧。直接用 `PGVectorStore` + `IngestionPipeline`，**禁止自寫 chunking/embedding 流程** |
+| **Cytoscape.js** + `cytoscape-fcose` | MIT | 2-2 知識圖譜渲染 | force-directed layout 一行設定，**禁止用 D3 從頭刻** |
+| **Vercel AI SDK (`ai`)** | Apache-2.0 | 1-5 Chat 串流（如需重構）| `useChat` hook + SSE backend helper，省手刻 streaming parsing |
+| **`prefixspan`** | MIT | 5-3 行為流程分析 | Sequential pattern mining。**取代 AGPL 的 PM4Py**（見 Tier 4） |
+| **shadcn/ui + Radix UI** | MIT | 全站元件 | 已採用 |
+| **CodeMirror 6** | MIT | 編輯器 | 已採用 |
+| **react-resizable-panels** | MIT | Workspace 拖曳 | 已採用 |
+| **NextAuth.js (Auth.js)** | ISC | Auth | 已採用 |
+
+### ✅ Tier 2：Schema 直接採用（抄欄位定義，零依賴）
+
+| Schema 來源 | License | 用法 |
+|------------|---------|------|
+| **ProgSnap2** EventType / SubjectID 五欄主鍵 | CC-BY-4.0 | 直接套用至 `coding_events` 表（5-2a）。未來可與學界資料集互通 |
+| **StudyChat** dialogue act 階層分類（asking_hint / clarification_request / debugging / off_topic / acknowledgment / verification 等）| CC-BY-4.0 | 直接套用至 `chat_messages.dialogue_act` 欄位（5-2c），16,851 筆標註可作未來分類器訓練語料 |
+| **OATutor** Hint Ladder 6 階（0-5） | MIT | 已採用於 EDF Decision 層 |
+
+### ⚠ Tier 3：Clone 研讀後移植（無對應套件，需手寫實作）
+
+| 來源 | License | 對應 | 借鑑深度 |
+|------|---------|------|---------|
+| **DeepTutor** | Apache-2.0 | 2-1c 檢索 service | 讀 `agents/` 與 `tools/` 的 hybrid retrieval（dense + BM25 reranking）+ citation tracking 模式。**本身是完整 app 不是 lib** |
+| **Mr. Ranedeer** | License 未明示 | 1-4c Feedback prompt | 已用於 1-4c。僅汲取 prompt 設計思路，**不複製文字內容**（避免授權糾紛） |
+| **JetBrains Edu Plugin** | Apache-2.0 | 2-4 出題流程 | 讀 `taskDescription` 模板設計 |
+
+### ❌ Tier 4：不採用（授權風險或過度工程）
+
+| 來源 | 不採用原因 | 替代方案 |
+|------|-----------|---------|
+| **PM4Py** | ❌ AGPL-3.0：網路服務觸發第 13 條，要求公開後端整體源碼，**與閉源商業化衝突** | Tier 1 的 `prefixspan`（MIT）+ 自刻簡化版 process flow 統計 |
+| **OATutor `BKT-brain.js`** port | 已有 pyBKT 套件且更穩定 | Tier 1 直接用 pyBKT |
+| **EduAdapt-AI RL learning path** | RL 對 MVP 過度工程 | Phase 3-1 先用拓撲排序 + 弱項補強，後期再評估 |
+| **BloomBERT** | LLM 結構化輸出已足夠，引入額外模型增加維運成本 | 保留交叉驗證可能，Phase 1 不引入 |
+| **Socratic-LLM** fine-tune | 不做 fine-tuning（用 GPT-4o + prompt engineering）| — |
+
+---
+
+## 2. 授權白名單／黑名單
+
+| License | 使用條件 | 範例 |
+|---------|---------|------|
+| **MIT / Apache-2.0 / BSD-3 / ISC** | ✅ 直接採用 | pyBKT, LlamaIndex, Cytoscape.js |
+| **CC-BY-4.0**（資料/規格）| ✅ 採用，註明出處 | ProgSnap2, StudyChat schema |
+| **LGPL** | ⚠ 動態連結可，靜態連結需評估 | 個案處理 |
+| **AGPL-3.0** | ❌ **嚴禁**：網路服務觸發第 13 條，需公開整體源碼 | PM4Py |
+| **GPL-3.0** | ❌ **嚴禁**：傳染性，會強制本專案開源 | — |
+| **未明示 license** | ⚠ 僅可汲取設計思路，**禁止複製程式碼或文案** | Mr. Ranedeer (prompt 思路 OK，文字禁複製) |
+| **Custom / 商用限制** | ❌ 禁用 | — |
+
+> **檢查清單**（每次新增 dependency 前）：
+> 1. 套件 GitHub 的 LICENSE 檔內容（不要只看 README 標示）
+> 2. `package.json` / `pyproject.toml` 的 `license` 欄位
+> 3. 若是 fork，需追溯到原始上游 license
+
+---
+
+## 3. 各 Phase 快速查表
+
+| Phase | 必用 OSS（Tier 1）| 採用 Schema（Tier 2）|
+|-------|------------------|---------------------|
+| **Phase 2-1 RAG** | LlamaIndex（PGVectorStore）| — |
+| **Phase 2-2 知識圖譜** | Cytoscape.js + fcose | — |
+| **Phase 2-3 精熟度** | **pyBKT** | — |
+| **Phase 2-4 智慧出題** | LlamaIndex（教材檢索）| — |
+| **Phase 2-5 Pre-Coding Reflection** | （無，純後端 + UI）| — |
+| **Phase 2-6 Comprehension Check** | （無，純 LLM prompt）| — |
+| **Phase 3-1 學習路徑** | （拓撲排序，不引 RL）| — |
+| **Phase 4 部署** | Zeabur 官方模板 + `pgvector/pgvector:pg16` + Judge0 docker-compose | — |
+| **Phase 5-2 行為事件** | （無）| ProgSnap2 + StudyChat |
+| **Phase 5-3 行為分析** | pyBKT + `prefixspan` | — |
+
+---
+
+## 4. 專案總覽
 
 | 專案 | Stars | License | 主要參考價值 | 對應 Phase |
 |------|-------|---------|-------------|-----------|
-| [DeepTutor](https://github.com/HKUDS/DeepTutor) | 17k+ | Apache-2.0 | RAG hybrid retrieval + Knowledge Graph | Phase 2 |
-| [OATutor](https://github.com/CAHLR/OATutor) | 190 | MIT | BKT 精熟度演算法 + Hint pathway | Phase 1-4, 2-3 |
-| [Mr. Ranedeer](https://github.com/JushBJJ/Mr.-Ranedeer-AI-Tutor) | 29k+ | — | Socratic prompt template 設計 | Phase 1-4 |
-| [EduAdapt-AI](https://github.com/mwasifanwar/eduadapt-ai) | 10 | — | RL learning path + adaptive quiz（FastAPI） | Phase 2-4, 3-1 |
-| [BloomBERT](https://github.com/RyanLauQF/BloomBERT) | 36 | MIT | Bloom taxonomy 自動分類 | Phase 1-4 |
-| [Socratic-LLM](https://github.com/GiovanniGatti/socratic-llm) | 31 | MIT | Socratic dialogue fine-tuning | Phase 1-4 |
-| [Open TutorAI CE](https://github.com/Open-TutorAi/open-tutor-ai-CE) | 48 | BSD-3 | 教材 RAG + 多角色 dashboard | Phase 2-1, 4 |
+| [DeepTutor](https://github.com/HKUDS/DeepTutor) | 17k+ | Apache-2.0 | RAG hybrid retrieval + Knowledge Graph | Phase 2-1 |
+| [OATutor](https://github.com/CAHLR/OATutor) | 190 | MIT | BKT 演算法（已被 pyBKT 取代）+ Hint pathway | Phase 2-3, 1-4 |
+| [Mr. Ranedeer](https://github.com/JushBJJ/Mr.-Ranedeer-AI-Tutor) | 29k+ | 未明示 | Socratic prompt 思路（不複製文字） | Phase 1-4 |
+| [EduAdapt-AI](https://github.com/mwasifanwar/eduadapt-ai) | 10 | 未明示 | ❌ Tier 4：RL 過重，僅讀架構 | Phase 3-1 |
+| [BloomBERT](https://github.com/RyanLauQF/BloomBERT) | 36 | MIT | ❌ Tier 4：LLM 已足夠 | — |
+| [Socratic-LLM](https://github.com/GiovanniGatti/socratic-llm) | 31 | MIT | ❌ Tier 4：不做 fine-tune | — |
+| [Open TutorAI CE](https://github.com/Open-TutorAi/open-tutor-ai-CE) | 48 | BSD-3 | 多角色 dashboard UI | Phase 5-1 |
 | [JetBrains Edu Plugin](https://github.com/JetBrains/educational-plugin) | 174 | Apache-2.0 | 漸進式 hint generation | Phase 1-4 |
-| [ProgSnap2](https://github.com/CSSPLICE/progsnap2) | 5 | — | 程式教育標準化 process data 格式 | Phase 4-2 |
-| [KOALA](https://github.com/JetBrains-Research/KOALA) | 10 | MIT | IDE 事件追蹤 + ProgSnap2 輸出 | Phase 4-2 |
-| [StudyChat](https://huggingface.co/datasets/wmcnicho/StudyChat) | — | — | 學生-LLM 互動 dialogue act 分類 schema | Phase 4-2 |
-| [pyBKT](https://github.com/CAHLR/pyBKT) | 250 | — | Bayesian Knowledge Tracing（Python） | Phase 2-3, 4-3 |
-| [PM4Py](https://github.com/process-intelligence-solutions/pm4py) | 941 | AGPL-3.0 | Process Mining 行為流程分析 | Phase 4-3 |
-| [OpenLAP](https://github.com/OpenLearningAnalyticsPlatform) | ~15 | — | Learning Analytics 三層架構 | Phase 4-4 |
+| [pyBKT](https://github.com/CAHLR/pyBKT) | 250 | MIT | ✅ Tier 1：BKT Python 套件 | Phase 2-3, 5-3 |
+| [prefixspan-py](https://github.com/chuanconggao/PrefixSpan-py) | 400+ | MIT | ✅ Tier 1：sequential pattern mining，取代 PM4Py | Phase 5-3 |
+| [ProgSnap2](https://github.com/CSSPLICE/progsnap2) | 5 | CC-BY-4.0 | ✅ Tier 2：事件 schema 規格 | Phase 5-2 |
+| [KOALA](https://github.com/JetBrains-Research/KOALA) | 10 | MIT | ProgSnap2 輸出實作參考 | Phase 5-2 |
+| [StudyChat](https://huggingface.co/datasets/wmcnicho/StudyChat) | — | CC-BY-4.0 | ✅ Tier 2：dialogue act schema | Phase 5-2 |
+| ~~[PM4Py](https://github.com/process-intelligence-solutions/pm4py)~~ | 941 | ❌ AGPL-3.0 | **不採用**，改用 prefixspan | — |
 
-## 功能對照：各功能最佳參考來源
+---
 
-### EDF 教學管線（Phase 1-4）
-- **Evidence 層 — Bloom 分類**: BloomBERT 用 BERT 自動判定認知等級，可作為 LLM 輸出的交叉驗證
-- **Decision 層 — 策略矩陣**: 無直接對應開源實作（本專案原創），最接近的是 OATutor 的 BKT → hint selection 流程
-- **Feedback 層 — Prompt 設計**: Mr. Ranedeer 的 system prompt 控制教學行為（不給答案、引導提問、風格切換）
-- **Socratic 對話**: Socratic-LLM 的 fine-tuning dataset 結構 + 評估 metrics
-
-### Knowledge Tracing / 精熟度追蹤（Phase 2-3）
-- **OATutor** — Bayesian Knowledge Tracing (BKT) 實作
-  - 核心檔案：`BKT-brain.js`（演算法）、`bktParams.js`（參數設定）
-  - 可移植為 Python 版，作為 `student_mastery.confidence` 更新公式
-  - 論文驗證：LLM-generated hints 與人工 hints 效果相當（DOI: 10.1371/journal.pone.0304013）
-- **OATutor 相關子專案**:
-  - [OATutor-GPT-Study](https://github.com/CAHLR/OATutor-GPT-Study) — ChatGPT 生成 hint 的實驗
-  - [OATutor-AI-Feedback-Experiment](https://github.com/CAHLR/OATutor-AI-Feedback-Experiment) — AI feedback 效果研究
-  - [OATutor-Question-Generation-Final](https://github.com/CAHLR/OATutor-Question-Generation-Final) — AI 出題流程
-
-### RAG 知識檢索（Phase 2-1）
-- **DeepTutor** — RAG hybrid retrieval 最成熟的開源實作
-  - 四層架構：UI → Agent Modules → Tool Integration → Knowledge Foundation
-  - 向量搜尋 + 知識庫的混合檢索策略
-  - Session memory + citation tracking
-- **Open TutorAI CE** — 教材 RAG 完整流程
-  - PDF / 講義 / 作業上傳 → 向量化 → 對話引用
-
-### 智慧出題（Phase 2-4）
-- **DeepTutor** — 從教材抽取概念再生成測驗題
-- **OATutor** — Adaptive problem selection（選 mastery probability 最低的技能出題）
-- **EduAdapt-AI** — Adaptive quiz difficulty scaling 實作
-
-### 學習路徑生成（Phase 3-1）
-- **EduAdapt-AI** — Reinforcement learning-based learning path optimization
-  - Content graph（概念關係圖）資料結構
-  - 可參考其 RL policy 設計，對照我們的拓撲排序 + 弱項補強方案
-
-### 教師 Dashboard（Phase 4-1, 4-5）
-- **Open TutorAI CE** — 多角色 dashboard UI（學生 / 教師 / 家長）
-
-### Pre-Coding Reflection / 反認知外包（Phase 2-5, 2-6, 3-1）
-- **反思閘門設計**:
-  - CodeAid (Microsoft Research / U of Toronto) — AI tutor 不給直接程式碼，只給 NL 解釋 + pseudocode，學習效果更好（Kazemitabaar et al., 2023-24）
-  - PRIMM (Predict-Run-Investigate-Modify-Make, Sentance & Waite 2017) — 強制理解先於撰寫的五階段框架
-  - Polya 解題四步驟 — 理解問題 → 擬定計畫 → 執行 → 回顧
-- **理解驗證**:
-  - EPL (Explain in Plain Language, Fowler et al. 2021-24) — 用自然語言解釋程式碼，與考試成績高度相關
-  - Variation Theory (Marton 2015) — 變體測試驗證真正理解
-  - Parsons Problems (Parsons & Haden 2006) — 排列程式碼區塊，抗 AI 外包
-- **學術基礎**:
-  - Self-explanation effect (Chi et al., meta-analysis d=0.55) — 生成解釋本身促進學習
-  - Desirable difficulties (Bjork & Bjork) — 策略性摩擦提升長期記憶
-  - Automation complacency (Prather et al. 2023, ICER) — Copilot 造成「能力幻覺」
-
-### 學習行為分析（Phase 4-2, 4-3, 4-4）
-- **事件 Schema 設計**:
-  - [ProgSnap2](https://github.com/CSSPLICE/progsnap2) — 程式教育標準化 process data 格式（EventType/SubjectID/CodeStates）
-  - [KOALA](https://github.com/JetBrains-Research/KOALA) (JetBrains Research, MIT) — IDE plugin 追蹤 code snapshots、run/debug 操作，輸出 ProgSnap2 格式
-  - [CodeWatcher](https://arxiv.org/abs/2510.11536) — VS Code plugin + Python API，追蹤 insertions（含 AI-generated）、deletions、copy-paste
-- **AI 互動分類**:
-  - [StudyChat](https://huggingface.co/datasets/wmcnicho/StudyChat) ([論文](https://arxiv.org/abs/2503.07928)) — 16,851 筆標註學生-LLM 互動，階層式 dialogue act 分類 schema
-  - [DeepPavlov](https://github.com/deeppavlov/DeepPavlov) (7k stars, Apache-2.0) — Dialogue act classification 模組
-- **分析演算法**:
-  - [pyBKT](https://github.com/CAHLR/pyBKT) (250 stars) — Bayesian Knowledge Tracing Python 實作，scikit-learn 風格 API
-  - [PM4Py](https://github.com/process-intelligence-solutions/pm4py) (941 stars, AGPL-3.0) — Process Mining，分析 write→compile→error→debug→fix 行為流程
-- **Dashboard 架構**:
-  - [OpenLAP](https://github.com/OpenLearningAnalyticsPlatform) — 三層架構：Data Collection → Indicator Engine → Analytics Framework
-  - [Wakapi](https://github.com/muety/wakapi) (4.3k stars) — coding statistics dashboard 設計參考
-
-## 學術資源
+## 5. 學術資源（讀論文，不複製程式碼）
 
 | 資源 | 說明 |
 |------|------|
-| [awesome-ai-llm4education](https://github.com/GeminiLight/awesome-ai-llm4education) | AI/LLM for education 論文清單（179 stars，持續更新） |
-| [SocraticLM (OpenReview)](https://openreview.net/forum?id=qkoZgJhxsA) | Dean-Teacher-Student 多 agent Socratic 教學，超越 GPT-4 12% |
+| [awesome-ai-llm4education](https://github.com/GeminiLight/awesome-ai-llm4education) | AI/LLM for education 論文清單（179 stars，持續更新）|
+| [SocraticLM (OpenReview)](https://openreview.net/forum?id=qkoZgJhxsA) | Dean-Teacher-Student 多 agent，超越 GPT-4 12% |
 | [OATutor LLM hint 論文](https://doi.org/10.1371/journal.pone.0304013) | ChatGPT hints 與人工 hints 效果相當的實證研究 |
 | [JetBrains AI Hints 研究](https://blog.jetbrains.com/research/2025/07/ai-hints-for-online-learning/) | 學生使用 AI hints 的行為分析數據 |
 | [Autograder+ (arXiv:2510.26402)](https://arxiv.org/abs/2510.26402) | LLM 生成教學性 feedback 的 fine-tuning 方法 |
-| [StudyChat (arXiv:2503.07928)](https://arxiv.org/abs/2503.07928) | 16,851 筆學生-LLM 互動標註，dialogue act 分類 schema |
+| [StudyChat (arXiv:2503.07928)](https://arxiv.org/abs/2503.07928) | dialogue act 分類 schema 論文 |
 | [ProgSnap2 (ITiCSE 2020)](https://dl.acm.org/doi/10.1145/3341525.3387373) | 程式教育 process data 標準格式 |
-| [KOALA (CompEd 2025)](https://arxiv.org/abs/2506.21266) | IDE 行為資料收集工具設計 |
 | [pyBKT (EDM 2021)](https://arxiv.org/abs/2105.00385) | Bayesian Knowledge Tracing Python 函式庫 |
-| [CodeWatcher (ICSME 2025)](https://arxiv.org/abs/2510.11536) | IDE telemetry 追蹤開發者與 LLM 互動 |
-| Self-explanation effect (Chi et al., 1989; Bisra et al. 2018 meta-analysis) | 自我解釋效果量 d=0.55，生成解釋本身促進學習 |
-| CodeAid (Kazemitabaar et al., 2023-24, U of Toronto / MSR) | 不給直接程式碼的 AI tutor，學生學習效果顯著更好 |
-| Automation complacency (Prather et al., ICER 2023) | Copilot 造成「能力幻覺」，需 friction interventions |
-| EPL questions (Fowler et al., 2021-24) | 自然語言解釋程式碼，與考試成績相關性高於程式碼正確率 |
-| PRIMM (Sentance & Waite, 2017) | Predict-Run-Investigate-Modify-Make 五階段教學框架 |
-| Desirable difficulties (Bjork & Bjork, 1994-2020) | 策略性摩擦（spacing, interleaving, retrieval）提升長期記憶 |
+| [CodeWatcher (ICSME 2025)](https://arxiv.org/abs/2510.11536) | IDE telemetry 追蹤 LLM 互動 |
+| Self-explanation effect (Chi et al., 1989; Bisra et al. 2018 meta-analysis) | 自我解釋效果 d=0.55 |
+| CodeAid (Kazemitabaar et al., 2023-24) | 不給直接程式碼的 AI tutor 學習效果顯著更好 |
+| Automation complacency (Prather et al., ICER 2023) | Copilot 造成「能力幻覺」 |
+| EPL questions (Fowler et al., 2021-24) | 自然語言解釋程式碼，與考試成績相關性高 |
+| PRIMM (Sentance & Waite, 2017) | Predict-Run-Investigate-Modify-Make 五階段 |
+| Desirable difficulties (Bjork & Bjork, 1994-2020) | 策略性摩擦提升長期記憶 |
+
+---
+
+## 6. 功能對照（細節參考）
+
+### EDF 教學管線（Phase 1-4 已完成）
+- **Bloom 分類**：BloomBERT 可作為 LLM 輸出交叉驗證（Tier 4 不引入）
+- **Hint Ladder**：採用 OATutor 6 階設計（Tier 2）
+- **Prompt 設計**：Mr. Ranedeer 思路（Tier 3）
+
+### 精熟度追蹤（Phase 2-3）
+- **直接 `pip install pyBKT`**，scikit-learn API
+- 整合點：EDF Evidence 結果 → BKT update → `student_mastery.confidence`
+
+### RAG 檢索（Phase 2-1）
+- LlamaIndex 內建 `PGVectorStore` + `IngestionPipeline`
+- 參考 DeepTutor hybrid retrieval（dense + BM25 reranking）模式
+
+### 學習路徑（Phase 3-1）
+- **不採用 EduAdapt-AI 的 RL 方案**
+- MVP 用拓撲排序 + 弱項補強
+
+### 行為分析（Phase 5）
+- 事件 schema：ProgSnap2（Tier 2）
+- Dialogue act：StudyChat（Tier 2）
+- Knowledge tracing：pyBKT（Tier 1）
+- Process mining：prefixspan（Tier 1，取代 PM4Py）

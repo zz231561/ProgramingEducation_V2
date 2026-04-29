@@ -11,6 +11,7 @@
    - `docs/roadmap.md` — 勾選已完成的 Checkbox / 新增任務項
    - `CLAUDE.md` 當前狀態區塊 — 反映最新進度
    - `docs/tech-debt.md` — 若產生或消除技術債
+7. **避免重複造輪子（OSS 優先）**：開發新功能前**必先查閱 `docs/references.md` §1 決策矩陣**，確認是否有 Tier 1 可直接 `pip/npm install` 的成熟套件、或 Tier 2 可採用的 schema。**禁止移植已有對應套件的演算法**（例：BKT 必用 pyBKT，禁止 port OATutor JS 版）。**禁止引入 AGPL/GPL 授權套件**（見 references.md §2 黑名單）。新增 dependency 前必須在 PR 描述列出 license 並確認屬於白名單。
 
 ## 技術棧（已鎖定）
 - **前端**：Next.js 15 + TypeScript + Tailwind CSS（`web/`）
@@ -21,38 +22,22 @@
 - **部署**：Zeabur（Tencent Tokyo VPS）
 
 ## 當前狀態
-**Phase 1-3：程式碼編輯與執行 🔧**
-- ✅ 1-3a CodeMirror 6 整合（C++ 語法高亮 + One Dark 主題）
-- ✅ 1-3b Workspace 頁面基礎佈局（Toolbar + Editor + Output Panel）
-- ✅ 1-3c Judge0 API client（submit + polling 取結果）
-- ✅ 1-3d 前端 Run 按鈕串接 + Output Panel 顯示結果
-- ✅ 1-3f react-resizable-panels 拖曳調整
 
-**Phase 1-4：EDF 教學管線 ✅**
-- ✅ 1-4a Evidence 層：LLM 結構化輸出（錯誤分類 + ConceptTag + Bloom）
-- ✅ 1-4b Decision 層：Bloom × Hint Ladder 策略矩陣
-- ✅ 1-4c Feedback 層：分層 prompt 組裝 + 輸出驗證
-- ✅ 1-4d Chat API 端點（interact + history）
-- ✅ 1-4e 安全防護：輸入三層防護 + 輸出完整程式碼阻擋
+**Phase 1：基礎建設（MVP）✅**（1-1 ~ 1-6 全數完成；明細見 `docs/roadmap.md`）
+- 骨架 / Auth / 編輯與執行 / EDF 教學管線 / AI 對話介面 / 介面精修
 
-**Phase 1-5：AI 對話介面 ✅**
-- ✅ 1-5a Chat Panel 元件（訊息氣泡 + 輸入框 + Context 共享）
-- ✅ 1-5b 對話歷史持久化（session 管理 + 歷史載入）
-- ✅ 1-5c Run 結果自動注入 Chat context
-- ✅ 1-5d Chat Panel 收合/展開 toggle
+**🎯 下一階段：Phase 2 智慧功能（功能優先策略）**
+> 部署已從 Phase 1-7 移至 **Phase 4**（見 roadmap）。先把學生端體驗做完，再一次性處理部署 + 教師端，避免反覆卡關於 API 串接。
+- ⬜ 2-1 RAG 知識檢索（**用 LlamaIndex `PGVectorStore`**）
+- ⬜ 2-2 知識圖譜（**用 Cytoscape.js + fcose**）
+- ⬜ 2-3 精熟度追蹤（**用 pyBKT，禁止 port OATutor JS 版**）
+- ⬜ 2-4 智慧出題
+- ⬜ 2-5 Pre-Coding Reflection（解題前反思）
+- ⬜ 2-6 Post-Solution Comprehension Check（解題後驗證）
 
-**Phase 1-6：介面精修 ✅**（統一視覺協議；6 份借鑑來源僅貢獻結構模式）
-- ✅ 1-6a Surface / Shadow / Border / Radius token 增補
-- ✅ 1-6b Inter OpenType `cv01, ss03` 全站套用
-- ✅ 1-6c Output Panel Run Block 化（Warp 結構）
-- ✅ 1-6d Chat 訊息氣泡 ring + Bloom badge（Claude 結構）
-- ✅ 1-6e Toolbar Linear 風格化
-- ✅ 1-6f EDF Pipeline mini timeline（Cursor 結構）
+**Phase 3 學習體驗 → Phase 4 部署 → Phase 5 教師端**（詳見 roadmap）
 
-**Phase 1-7：部署 ⏸**（上次卡關於 API 串接）
-- ⬜ 1-7a Dockerfile — 配置已存在，需重新驗證 build
-- ⬜ 1-7b Zeabur 部署配置 — `zeabur.json` 已存在，需驗證 service 串接
-- ⬜ 1-7c 首次上線驗證 — 上次卡在 API 串接，待逐項排查
+**📦 OSS 重用策略**：開發前必查 `docs/references.md` §1 決策矩陣（CLAUDE.md 守則 #7）
 
 ## 文件索引
 > 本文件目標 ≤ 60 行。新增內容先判斷歸屬，禁止回填 roadmap/日誌/UI 參數/Schema。

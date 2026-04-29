@@ -6,9 +6,8 @@ import {
   Group as PanelGroup,
   Separator as PanelResizeHandle,
 } from "react-resizable-panels";
-import { PanelRightOpen } from "lucide-react";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { ActivityBar } from "./activity-bar";
+import { GlobalNav } from "./global-nav";
 import { ChatPanel } from "./chat-panel";
 import { StatusBar } from "./status-bar";
 import { MobileNav } from "./mobile-nav";
@@ -78,14 +77,11 @@ function ShellLayout({ breakpoint, chatOpen, toggleChat, children }: ShellLayout
   if (breakpoint === "laptop") {
     return (
       <div className="flex h-full flex-col">
-        <div className="flex flex-1 overflow-hidden">
-          <ActivityBar />
-          <main className="relative flex-1 overflow-auto bg-bg-canvas">
-            {children}
-            {!chatOpen && <ChatToggle onClick={toggleChat} />}
-          </main>
+        <GlobalNav chatOpen={chatOpen} onToggleChat={toggleChat} />
+        <div className="relative flex flex-1 overflow-hidden">
+          <main className="flex-1 overflow-auto bg-bg-canvas">{children}</main>
           {chatOpen && (
-            <div className="absolute right-0 top-0 z-30 h-[calc(100%-24px)] w-[400px] border-l border-border-default shadow-xl">
+            <div className="absolute right-0 top-0 z-30 h-[calc(100%-24px)] w-[400px] border-l border-border-default shadow-modal">
               <ChatPanel onCollapse={toggleChat} />
             </div>
           )}
@@ -98,8 +94,8 @@ function ShellLayout({ breakpoint, chatOpen, toggleChat, children }: ShellLayout
   /* Desktop：完整三欄 + react-resizable-panels */
   return (
     <div className="flex h-full flex-col">
+      <GlobalNav chatOpen={chatOpen} onToggleChat={toggleChat} />
       <div className="flex flex-1 overflow-hidden">
-        <ActivityBar />
         <PanelGroup orientation="horizontal" className="flex-1">
           <Panel minSize="200px">
             <main className="h-full overflow-auto bg-bg-canvas">
@@ -119,21 +115,8 @@ function ShellLayout({ breakpoint, chatOpen, toggleChat, children }: ShellLayout
             </>
           )}
         </PanelGroup>
-        {!chatOpen && <ChatToggle onClick={toggleChat} />}
       </div>
       <StatusBar />
     </div>
-  );
-}
-
-function ChatToggle({ onClick }: { onClick: () => void }) {
-  return (
-    <button
-      onClick={onClick}
-      className="fixed right-3 top-3 z-20 flex size-8 items-center justify-center rounded-md border border-border-default bg-bg-default text-text-muted hover:text-text-secondary hover:bg-bg-subtle transition-colors"
-      title="展開 AI Chat (Ctrl+B)"
-    >
-      <PanelRightOpen className="size-4" />
-    </button>
   );
 }

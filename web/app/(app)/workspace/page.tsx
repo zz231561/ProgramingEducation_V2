@@ -26,6 +26,7 @@ interface ExecuteResponse {
 export default function WorkspacePage() {
   const [outputCollapsed, setOutputCollapsed] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
   const codeRef = useRef("");
   const workspace = useWorkspace();
 
@@ -34,6 +35,7 @@ export default function WorkspacePage() {
   const handleCodeChange = useCallback((value: string) => {
     codeRef.current = value;
     workspace.setCode(value);
+    setIsDirty(true);
   }, [workspace]);
 
   const handleRun = useCallback(async () => {
@@ -59,6 +61,7 @@ export default function WorkspacePage() {
         time: result.time ?? undefined,
         memory: result.memory ?? undefined,
       });
+      setIsDirty(false);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "未知錯誤";
       workspace.setExecutionResult({
@@ -75,7 +78,7 @@ export default function WorkspacePage() {
 
   return (
     <div className="flex h-full flex-col">
-      <Toolbar onRun={handleRun} isRunning={isRunning} />
+      <Toolbar onRun={handleRun} isRunning={isRunning} isDirty={isDirty} />
 
       {outputCollapsed ? (
         <>

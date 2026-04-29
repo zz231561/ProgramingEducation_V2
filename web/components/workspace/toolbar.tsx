@@ -1,28 +1,40 @@
 "use client";
 
-import { Play, MessageSquare } from "lucide-react";
-import { useWorkspace } from "./workspace-context";
+import { Play } from "lucide-react";
 
 interface ToolbarProps {
   fileName?: string;
+  /** 程式碼自上次成功執行後是否已修改 */
+  isDirty?: boolean;
   onRun?: () => void;
   isRunning?: boolean;
 }
 
 /**
- * Workspace Toolbar — 檔名、語言標籤、Run 按鈕、AI toggle
+ * Workspace 頁面 Toolbar — 檔名 + 修改狀態 dot + 語言 badge + Run 按鈕。
+ * Chat Toggle 移至 GlobalNav（design-plan §2.5）。
  */
 export function Toolbar({
   fileName = "main.cpp",
+  isDirty = false,
   onRun,
   isRunning = false,
 }: ToolbarProps) {
-  const { chatOpen, toggleChat } = useWorkspace();
-
   return (
-    <div className="flex h-10 items-center gap-2 border-b border-border-default bg-bg-default px-3">
-      <span className="text-sm text-text-primary">{fileName}</span>
-      <span className="rounded bg-bg-subtle px-2 py-0.5 text-xs text-text-secondary">
+    <div className="flex h-10 shrink-0 items-center gap-2 border-b border-border-muted bg-bg-canvas px-3 body-ui">
+      <div className="flex items-center gap-1.5">
+        {/* 修改狀態 dot：黃色＝有未執行的變更；隱形佔位＝乾淨 */}
+        <span
+          className={`size-1.5 rounded-pill ${
+            isDirty ? "bg-accent-orange" : "bg-transparent"
+          }`}
+          title={isDirty ? "尚未執行此版本" : "已是最新執行版本"}
+          aria-hidden
+        />
+        <span className="text-sm text-text-primary">{fileName}</span>
+      </div>
+
+      <span className="rounded-pill border border-border-default px-2 py-0.5 text-xs text-text-secondary font-medium">
         C++
       </span>
 
@@ -36,19 +48,6 @@ export function Toolbar({
       >
         <Play className="size-3.5" />
         <span>{isRunning ? "Running..." : "Run"}</span>
-      </button>
-
-      <button
-        onClick={toggleChat}
-        className={`flex h-7 items-center gap-1.5 rounded-md px-2.5 text-xs font-medium transition-colors ${
-          chatOpen
-            ? "bg-accent-blue/15 text-accent-blue"
-            : "bg-btn-default-bg text-text-secondary border border-btn-default-border hover:bg-bg-subtle"
-        }`}
-        title={`${chatOpen ? "收合" : "展開"} AI 導師 (Ctrl+B)`}
-      >
-        <MessageSquare className="size-3.5" />
-        <span>AI</span>
       </button>
     </div>
   );

@@ -1,5 +1,27 @@
 # 變更日誌
 
+## [2026-04-29] — Phase 1-6e GlobalNav 取代 ActivityBar（VSCode sidebar → GitHub top nav）
+
+### Added
+- `web/components/layout/global-nav.tsx` — 新建頂部全域導覽（48px 高 / `bg-canvas` / `border-muted` 底）：Logo + 5 頁籤（Workspace / Learn / Quiz / Knowledge / Dashboard）+ Chat Toggle + Avatar 下拉選單（學習總覽 / 通知 / 設定 / 登出）；Tab active 採 `border-bottom: 2px solid #F78166`；click-outside + Escape 關閉下拉
+
+### Changed
+- `web/components/layout/app-shell.tsx` — laptop / desktop 將 `ActivityBar` 換為 `GlobalNav` 置於頂部；移除 floating `ChatToggle`（GlobalNav 已含 toggle，避免重複）；laptop chat overlay shadow 改用 `shadow-modal` token
+- `web/components/workspace/toolbar.tsx` — 移除 AI 切換按鈕（已上移至 GlobalNav）；新增「未執行版本」橘色 dot（`isDirty` prop）；改用 `border-muted` 底線、`body-ui` 行高、`rounded-pill` 語言 badge
+- `web/app/(app)/workspace/page.tsx` — 新增 `isDirty` state：editor 變更時 true、Run 成功後 false；傳給 Toolbar
+
+### Removed
+- `web/components/layout/activity-bar.tsx` — 完全刪除（GlobalNav 取代所有功能）
+
+### Layout 哲學變更
+- 從 VSCode 風 left sidebar（180px）改為 GitHub 風 top horizontal nav（48px）
+- 釋出更多水平空間給 Editor + Chat
+- Tablet/Mobile 維持原本 TabletHeader / MobileNav，未來再統一
+
+### Notes
+- `global-nav.tsx` 203 行（介於 150 警告與 250 停止之間，可選擇性拆出 AvatarMenu 至獨立檔）
+- TypeScript `tsc --noEmit` exit 0
+
 ## [2026-04-29] — Phase 1-6d Chat 訊息氣泡 ring + Bloom badge
 
 ### Added

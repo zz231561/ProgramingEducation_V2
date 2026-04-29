@@ -48,7 +48,7 @@
 - [x] 1-6b Inter OpenType `cv01, ss03` 全站套用 + 三權重檢核（design-plan §3.4）
 - [x] 1-6c Output Panel Run Block 化（每次 Run 為獨立可摺疊 block + status badge + Run→Chat 按鈕）（design-plan §2.3）
 - [x] 1-6d Chat 訊息氣泡 ring 區分 user/AI + Bloom 等級 badge（design-plan §2.4）
-- [ ] 1-6e Toolbar Linear 風格化（高度 48px + 5 頁籤 + 檔名儲存狀態）（design-plan §2.5）
+- [x] 1-6e Toolbar Linear 風格化（高度 48px + 5 頁籤 + 檔名儲存狀態）（design-plan §2.5）
 - [ ] 1-6f EDF Pipeline mini timeline（在每則 AI 訊息上方顯示教學決策過程）（design-plan §2.1）
 
 ### 1-7 部署

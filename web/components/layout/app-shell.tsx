@@ -77,7 +77,7 @@ function ShellLayout({ breakpoint, chatOpen, toggleChat, children }: ShellLayout
   if (breakpoint === "laptop") {
     return (
       <div className="flex h-full flex-col">
-        <GlobalNav />
+        <GlobalNav chatOpen={chatOpen} onToggleChat={toggleChat} />
         <div className="relative flex flex-1 overflow-hidden">
           <main className="flex-1 overflow-auto bg-bg-canvas">{children}</main>
           {chatOpen && (
@@ -94,7 +94,7 @@ function ShellLayout({ breakpoint, chatOpen, toggleChat, children }: ShellLayout
   /* Desktop：完整三欄 + react-resizable-panels */
   return (
     <div className="flex h-full flex-col">
-      <GlobalNav />
+      <GlobalNav chatOpen={chatOpen} onToggleChat={toggleChat} />
       <div className="flex flex-1 overflow-hidden">
         <PanelGroup orientation="horizontal" className="flex-1">
           <Panel minSize="200px">

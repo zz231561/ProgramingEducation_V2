@@ -5,12 +5,18 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useSession, signOut } from "next-auth/react";
 import {
+  MessageSquare,
   ChevronDown,
   Bell,
   Settings,
   Home,
   LogOut,
 } from "lucide-react";
+
+interface GlobalNavProps {
+  chatOpen: boolean;
+  onToggleChat: () => void;
+}
 
 interface NavTab {
   label: string;
@@ -30,9 +36,10 @@ const NAV_TABS: NavTab[] = [
  * 頂部全域導覽（design-plan §2.5）：
  * 高度 48px、bg-canvas、底部 border-muted、Logo + 5 頁籤 + Avatar 下拉
  * Tab active：border-bottom: 2px solid #F78166（frontend.md 規範）
- * Chat toggle 移除（靠 Ctrl+B 切換）
+ * Chat toggle 僅在 chat 收合時顯示（提供視覺 affordance 重新開啟）；
+ * chat 開啟時靠 ChatPanel 內的收合按鈕或 Ctrl+B 關閉。
  */
-export function GlobalNav() {
+export function GlobalNav({ chatOpen, onToggleChat }: GlobalNavProps) {
   const pathname = usePathname();
 
   return (
@@ -70,7 +77,18 @@ export function GlobalNav() {
 
       <div className="flex-1" />
 
-      {/* Avatar Menu — Chat toggle 已移除，靠 Ctrl+B 開關 */}
+      {/* Chat Toggle — 僅 chat 收合時顯示，避免重複（chat 開啟時 ChatPanel 內已有收合按鈕） */}
+      {!chatOpen && (
+        <button
+          onClick={onToggleChat}
+          className="flex size-8 items-center justify-center rounded-md text-text-muted hover:text-text-primary hover:bg-surface-2 transition-colors"
+          title="展開 AI 導師 (Ctrl+B)"
+          aria-label="展開 AI 導師"
+        >
+          <MessageSquare className="size-4" />
+        </button>
+      )}
+
       <AvatarMenu />
     </nav>
   );

@@ -1,5 +1,16 @@
 # 變更日誌
 
+## [2026-04-29] — Chat toggle 改為「僅收合時顯示」
+
+### Changed
+- `web/components/layout/global-nav.tsx` — chat toggle 按鈕從「總是顯示」改為「`!chatOpen` 時才渲染」：chat 開啟時隱藏（避免與 ChatPanel 內收合按鈕重複），chat 收合時顯示 `MessageSquare` icon 提供視覺 affordance 重新開啟
+- `web/components/layout/app-shell.tsx` — 恢復傳遞 `chatOpen` / `toggleChat` props 至 `<GlobalNav />`
+
+### UX
+- Chat 開啟：右上只見 Avatar 下拉（極簡）
+- Chat 收合：右上出現訊息 icon（一鍵展開）+ Avatar 下拉
+- Ctrl+B 仍可全狀態切換
+
 ## [2026-04-29] — 移除 GlobalNav chat toggle 與 ChatPanel header 訊息 icon
 
 ### Removed

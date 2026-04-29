@@ -1,5 +1,41 @@
 # 變更日誌
 
+## [2026-04-29] — Phase 2-1a 完成：pgvector 啟用 + documents 表 + 本機 dev 環境
+
+### 新增
+- `docker-compose.dev.yml`（專案根目錄）— 本機開發環境：
+  - Postgres：`pgvector/pgvector:pg16`（與 Phase 4-1b 部署目標 image 對齊）
+  - Redis：`redis:7-alpine`
+  - 兩服務皆配 healthcheck + 持久化 volume
+  - 預設帳密 `postgres/postgres`、DB 名 `programing_education`，與 `backend/.env.example` 對齊
+- `backend/alembic/versions/b2c3d4e5f6a7_enable_pgvector_and_create_documents.py`（roadmap 2-1a-i）：
+  - `CREATE EXTENSION IF NOT EXISTS vector`（pgvector 0.8.2 由 image 自帶）
+  - `documents` 業務表：id / source / title / uri / uploader_id (FK→users) / version / doc_metadata / created_at / indexed_at
+  - chunks 與向量資料交給 LlamaIndex `IngestionPipeline` 於 2-1b 自動建表
+- `backend/.env`（不進 git）— 從 `.env.example` 複製，指向本機 Docker 服務
+
+### 變更
+- `backend/pyproject.toml`（roadmap 2-1a-ii）：
+  - 新增 `pgvector>=0.3,<1`（SQLAlchemy `Vector` 型別綁定）
+  - 補上漏掉的 `alembic>=1.13,<2`（先前僅在 `requirements.lock`）
+
+### 開發環境基礎建設（首次本機跑通）
+- 安裝 Colima 0.10.1（取代 Docker Desktop，避免 brew cask 需要 sudo TTY 的問題）
+- 安裝 docker CLI 29.4.1 + docker-compose
+- 安裝 uv 0.11.8（繞過 brew Python 3.12 在 macOS Tahoe 上的 expat 動態連結 bug）
+- 建立 `backend/.venv`（uv 自帶 portable CPython 3.12.13）
+- 安裝後端依賴：fastapi 0.136.1 / sqlalchemy 2.0.49 / alembic 1.18.4 / pgvector / openai 等
+
+### 驗證
+- `alembic upgrade head` 全 3 份 migration 成功（users → chat → documents+vector）
+- `\dx vector` 顯示 vector 0.8.2 已啟用
+- `\dt` 列出 4 張業務表 + alembic_version
+
+### 與 Zeabur 部署相容性
+- 本機 docker-compose.dev.yml **不進部署路徑**，Zeabur 走 `zeabur.json`
+- Phase 4-1b 部署前需把 `zeabur.json` 的 marketplace `postgresql` 替換為 pgvector spec（已記錄於 roadmap）
+- migration 一份共用，部署時 `alembic upgrade head` 同指令
+
 ## [2026-04-29] — OSS 重用策略落地 + Roadmap 重排（功能優先、部署延後）
 
 ### 新增

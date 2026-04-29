@@ -26,9 +26,10 @@
 **Phase 1：基礎建設（MVP）✅**（1-1 ~ 1-6 全數完成；明細見 `docs/roadmap.md`）
 - 骨架 / Auth / 編輯與執行 / EDF 教學管線 / AI 對話介面 / 介面精修
 
-**🎯 下一階段：Phase 2 智慧功能（功能優先策略）**
+**🎯 進行中：Phase 2 智慧功能（功能優先策略）**
 > 部署已從 Phase 1-7 移至 **Phase 4**（見 roadmap）。先把學生端體驗做完，再一次性處理部署 + 教師端，避免反覆卡關於 API 串接。
-- ⬜ 2-1 RAG 知識檢索（**用 LlamaIndex `PGVectorStore`**）
+> **本機 dev**：Colima + `docker compose -f docker-compose.dev.yml up -d`（啟 pgvector + redis）；後端用 `uv` + `backend/.venv`。
+- 🟡 2-1 RAG 知識檢索（**用 LlamaIndex `PGVectorStore`**）— 2-1a ✅ pgvector + documents 表
 - ⬜ 2-2 知識圖譜（**用 Cytoscape.js + fcose**）
 - ⬜ 2-3 精熟度追蹤（**用 pyBKT，禁止 port OATutor JS 版**）
 - ⬜ 2-4 智慧出題

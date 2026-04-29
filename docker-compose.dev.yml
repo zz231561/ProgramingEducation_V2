@@ -1,0 +1,45 @@
+# 本機開發環境 — Postgres (pgvector) + Redis
+# 用法：
+#   docker compose -f docker-compose.dev.yml up -d
+#   docker compose -f docker-compose.dev.yml down
+#
+# 與 Zeabur 部署的關係：本檔僅供本機 dev，不進部署路徑。
+# Zeabur 走 zeabur.json，Phase 4-1b 部署前會將 marketplace postgresql
+# 替換為相同的 pgvector spec，確保 dev/prod 環境一致。
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: codedge-postgres-dev
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: programing_education
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d programing_education"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: codedge-redis-dev
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  postgres_data:
+  redis_data:

@@ -64,7 +64,7 @@
 ### 2-1 RAG 知識檢索
 > **OSS**：✅ Tier 1 LlamaIndex `PGVectorStore` + `IngestionPipeline`（禁止自寫 chunking/embedding）
 > 參考：DeepTutor hybrid retrieval 模式（Tier 3）
-- [ ] 2-1a pgvector 擴充啟用 + documents/chunks 表 migration
+- [x] 2-1a pgvector 擴充啟用 + documents 表 migration（chunks/向量表交給 LlamaIndex 2-1b 自動建立）
 - [ ] 2-1b LlamaIndex 索引管線（用 `IngestionPipeline`，不自刻）
 - [ ] 2-1c 檢索 service（用 LlamaIndex query engine + 可選 BM25 reranking）
 - [ ] 2-1d RAG 結果注入 EDF Feedback 層 prompt

@@ -41,13 +41,13 @@
 - ✅ 1-5c Run 結果自動注入 Chat context
 - ✅ 1-5d Chat Panel 收合/展開 toggle
 
-**Phase 1-6：介面精修 🔧**（統一視覺協議；6 份借鑑來源僅貢獻結構模式）
+**Phase 1-6：介面精修 ✅**（統一視覺協議；6 份借鑑來源僅貢獻結構模式）
 - ✅ 1-6a Surface / Shadow / Border / Radius token 增補
 - ✅ 1-6b Inter OpenType `cv01, ss03` 全站套用
 - ✅ 1-6c Output Panel Run Block 化（Warp 結構）
 - ✅ 1-6d Chat 訊息氣泡 ring + Bloom badge（Claude 結構）
 - ✅ 1-6e Toolbar Linear 風格化
-- ⬜ 1-6f EDF Pipeline mini timeline（Cursor 結構）
+- ✅ 1-6f EDF Pipeline mini timeline（Cursor 結構）
 
 **Phase 1-7：部署 ⏸**（上次卡關於 API 串接）
 - ⬜ 1-7a Dockerfile — 配置已存在，需重新驗證 build

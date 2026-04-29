@@ -49,7 +49,7 @@
 - [x] 1-6c Output Panel Run Block 化（每次 Run 為獨立可摺疊 block + status badge + Run→Chat 按鈕）（design-plan §2.3）
 - [x] 1-6d Chat 訊息氣泡 ring 區分 user/AI + Bloom 等級 badge（design-plan §2.4）
 - [x] 1-6e Toolbar Linear 風格化（高度 48px + 5 頁籤 + 檔名儲存狀態）（design-plan §2.5）
-- [ ] 1-6f EDF Pipeline mini timeline（在每則 AI 訊息上方顯示教學決策過程）（design-plan §2.1）
+- [x] 1-6f EDF Pipeline mini timeline（在每則 AI 訊息上方顯示教學決策過程）（design-plan §2.1）
 
 ### 1-7 部署
 > ⚠ 上次嘗試卡關於 API 串接（前後端 proxy / NextAuth callback URL / CORS / Judge0 endpoint），1-7c 尚未完成。

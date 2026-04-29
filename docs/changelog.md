@@ -1,5 +1,26 @@
 # 變更日誌
 
+## [2026-04-29] — Phase 1-6f EDF Pipeline mini timeline + Phase 1-6 全部完成 ✅
+
+### Added
+- `web/components/chat/edf-timeline.tsx` — 新建 EDF Pipeline mini timeline：4 步（Evidence orange / Decision purple / Feedback green / RAG blue）8px 圓點 + 連接線；每步附 hint tooltip 解說；前 3 步永遠 active（Phase 1 必經）；RAG 在 Phase 2-1 啟用後才會 active
+
+### Changed
+- `web/components/chat/message-bubble.tsx` — AI 訊息有 `evidence` 時，於氣泡上方渲染 `<EdfTimeline />`；max-w-[80%] 容器內排列：timeline + bubble（Bloom badge 仍在 bubble 底部）
+
+### 🎉 Phase 1-6「介面精修」全部完成
+- 1-6a Surface / Shadow / Border / Radius token ✅
+- 1-6b Inter OpenType + 三權重檢核 ✅
+- 1-6c Output Panel Run Block 化 ✅
+- 1-6d Chat 訊息氣泡 ring + Bloom badge ✅
+- 1-6e GlobalNav 取代 ActivityBar ✅
+- 1-6f EDF Pipeline mini timeline ✅
+
+### Verified
+- TypeScript `tsc --noEmit` exit 0
+- design-plan §0.3 七條視覺統一規則皆遵守（R1 顏色 / R2 字體 / R3 邊框 / R4 陰影 / R5 Radius / R6 Hover / R7 字距）
+- 兩處唯一視覺例外：AI 訊息氣泡 ring（border-ai purple alpha）、`.kbd` 鍵帽（待 Phase 2-5 Cmd+K 實作時建立）
+
 ## [2026-04-29] — Phase 1-6e GlobalNav 取代 ActivityBar（VSCode sidebar → GitHub top nav）
 
 ### Added

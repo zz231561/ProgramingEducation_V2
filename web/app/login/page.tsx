@@ -19,8 +19,11 @@ export default function LoginPage() {
         <h1 className="mt-4 text-xl font-semibold text-text-primary">
           Codedge
         </h1>
-        <p className="mt-2 text-sm text-text-secondary">
-          Coddy 陪你寫 C++，磨穿每個 edge case
+        <p className="mt-3 text-base font-medium text-text-primary">
+          Code with Edge
+        </p>
+        <p className="mt-1.5 text-sm text-text-secondary">
+          會思考的學習，從會提問的 AI 開始
         </p>
 
         {/* Google 登入按鈕 */}

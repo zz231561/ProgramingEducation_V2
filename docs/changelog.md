@@ -1,5 +1,16 @@
 # 變更日誌
 
+## [2026-04-29] — Slogan 改版：雙標題式 hero（Code with Edge）
+
+### 命名邏輯
+- **主標 `Code with Edge`** — 直接拆解 `Codedge` 字母，三層意義同步：cutting-edge / edge case / have the edge
+- **副標「會思考的學習，從會提問的 AI 開始」** — 點出 EDF Pipeline 蘇格拉底式提問教學差異化（vs ChatGPT 直接給答案）
+- 取代原 slogan「Coddy 陪你寫 C++，磨穿每個 edge case」（受苦感、未體現品牌雙關）
+
+### Changed
+- `web/app/login/page.tsx` — login hero 由單行改為雙標題：`Code with Edge`（text-base font-medium）+「會思考的學習，從會提問的 AI 開始」（text-sm secondary）
+- `web/app/layout.tsx` — `<title>` "Codedge" → "Codedge — Code with Edge"；description 更新為中文價值主張，強調蘇格拉底式提問與不直接給答案
+
 ## [2026-04-29] — 品牌命名：**Codedge** 平台 + **Coddy** AI 助教
 
 ### 命名邏輯

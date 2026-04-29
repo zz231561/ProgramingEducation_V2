@@ -7,6 +7,8 @@ export interface MessageItem {
   role: "user" | "assistant";
   content: string;
   codeSnapshot?: string;
+  /** EDF Evidence 結果（assistant 訊息才有） — 提供 bloom_level / concept_tags 等資訊給 UI 顯示 */
+  evidence?: Record<string, unknown>;
   createdAt: string;
 }
 

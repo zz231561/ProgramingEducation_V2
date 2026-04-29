@@ -26,7 +26,7 @@ export function MessageList({ items, isLoading }: MessageListProps) {
   }
 
   return (
-    <div className="flex-1 overflow-y-auto p-3 space-y-4">
+    <div className="flex-1 overflow-y-auto p-3 space-y-3">
       {items.map((item) =>
         item.type === "execution" ? (
           <RunResultCard key={item.id} result={item.result} />

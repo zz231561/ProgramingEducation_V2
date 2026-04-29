@@ -23,6 +23,7 @@ function toMessageItem(msg: ApiMessage): MessageItem {
     role: msg.role as "user" | "assistant",
     content: msg.content,
     codeSnapshot: msg.code_snapshot ?? undefined,
+    evidence: msg.evidence ?? undefined,
     createdAt: msg.created_at,
   };
 }

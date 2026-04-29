@@ -1,5 +1,20 @@
 # 變更日誌
 
+## [2026-04-29] — Phase 1-6d Chat 訊息氣泡 ring + Bloom badge
+
+### Added
+- `web/components/chat/bloom-badge.tsx` — 新建 Bloom 6 級 pill badge：6 色取自 GitHub Dark accent token（L1 muted / L2 blue / L3 green / L4 orange / L5 purple / L6 red）+ `extractBloomLevel(evidence)` 防禦性 parse helper
+
+### Changed
+- `web/components/chat/message-bubble.tsx` — User / AI 訊息同 `bg-surface-1` 背景；以 border 顏色區分角色（User: `border-default`、AI: `border-ai` GitHub Dark purple 25% alpha ring，符合 R3 邊框唯一例外）；radius 12px (`rounded-xl`)；line-height 1.6 (`body-reading`)；AI 訊息底部顯示 BloomBadge（讀 `evidence.bloom_level`）；Avatar 從 green 改為 purple（與 ring 色呼應）
+- `web/lib/chat-types.ts` — `MessageItem` 新增 `evidence?: Record<string, unknown>` 選用欄位
+- `web/hooks/use-chat.ts` — `toMessageItem` 將 `msg.evidence` 透傳至 MessageItem，使 BloomBadge 可讀取
+- `web/components/chat/message-list.tsx` — 訊息間距從 `space-y-4` (16px) 改為 `space-y-3` (12px) 符合 design-plan §2.4
+
+### Verified
+- TypeScript `tsc --noEmit` exit 0
+- 5 個檔案皆 ≤ 150 行（bloom-badge 48 / message-bubble 59 / message-list 66 / chat-types 46 / use-chat 122）
+
 ## [2026-04-29] — Phase 1-6c Output Panel Run Block 化
 
 ### Added

@@ -2,33 +2,43 @@
 
 import { Bot, User } from "lucide-react";
 import type { MessageItem } from "@/lib/chat-types";
+import { BloomBadge, extractBloomLevel } from "./bloom-badge";
 
 interface MessageBubbleProps {
   message: MessageItem;
 }
 
 /**
- * 單則訊息氣泡 — user 靠右、assistant 靠左。
- * 內容以純文字段落渲染（未來可擴充 markdown）。
+ * 單則訊息氣泡（design-plan §2.4 統一視覺協議）：
+ * - User / AI 同 surface-1 背景；以 border 顏色區分角色
+ * - User: border-default（灰）；AI: border-ai（GitHub Dark purple 25% alpha）
+ * - radius 12px、line-height 1.6（中文可讀性）
+ * - AI 訊息底部顯示 Bloom 等級 badge（若有 evidence.bloom_level）
  */
 export function MessageBubble({ message }: MessageBubbleProps) {
   const isUser = message.role === "user";
+  const bloomLevel = isUser ? null : extractBloomLevel(message.evidence);
 
   return (
     <div className={`flex gap-2.5 ${isUser ? "flex-row-reverse" : ""}`}>
       <Avatar isUser={isUser} />
       <div
-        className={`max-w-[80%] rounded-lg px-3 py-2 text-sm leading-relaxed ${
-          isUser
-            ? "bg-accent-blue/15 text-text-primary"
-            : "bg-bg-subtle text-text-primary"
+        className={`max-w-[80%] rounded-xl border bg-surface-1 px-3 py-2 text-sm body-reading ${
+          isUser ? "border-border-default" : "border-ai"
         }`}
       >
-        {message.content.split("\n").map((line, i) => (
-          <p key={i} className={i > 0 ? "mt-1.5" : ""}>
-            {line || "\u00A0"}
-          </p>
-        ))}
+        <div className="text-text-primary">
+          {message.content.split("\n").map((line, i) => (
+            <p key={i} className={i > 0 ? "mt-1.5" : ""}>
+              {line || " "}
+            </p>
+          ))}
+        </div>
+        {bloomLevel !== null && (
+          <div className="mt-2 pt-2 border-t border-border-muted">
+            <BloomBadge level={bloomLevel} />
+          </div>
+        )}
       </div>
     </div>
   );
@@ -40,7 +50,7 @@ function Avatar({ isUser }: { isUser: boolean }) {
       className={`flex size-7 shrink-0 items-center justify-center rounded-full ${
         isUser
           ? "bg-accent-blue/20 text-accent-blue"
-          : "bg-accent-green/20 text-accent-green"
+          : "bg-accent-purple/20 text-accent-purple"
       }`}
     >
       {isUser ? <User className="size-3.5" /> : <Bot className="size-3.5" />}

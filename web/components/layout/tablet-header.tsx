@@ -17,7 +17,7 @@ export function TabletHeader({ onToggleChat }: TabletHeaderProps) {
           <Menu className="size-4" />
         </button>
         <span className="text-sm font-medium text-text-primary">
-          C++ Tutor
+          Codedge
         </span>
       </div>
       <div className="flex items-center gap-2">

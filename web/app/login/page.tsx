@@ -17,10 +17,10 @@ export default function LoginPage() {
         </div>
 
         <h1 className="mt-4 text-xl font-semibold text-text-primary">
-          C++ Tutor
+          Codedge
         </h1>
         <p className="mt-2 text-sm text-text-secondary">
-          AI 驅動的 C++ 程式教學平台
+          Coddy 陪你寫 C++，磨穿每個 edge case
         </p>
 
         {/* Google 登入按鈕 */}

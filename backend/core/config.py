@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     )
 
     # === 應用程式 ===
-    APP_NAME: str = "ProgramingEducation API"
+    APP_NAME: str = "Codedge API"
     DEBUG: bool = False
     LOG_LEVEL: str = "INFO"
 

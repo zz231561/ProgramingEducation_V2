@@ -9,7 +9,7 @@ interface RunResultCardProps {
 
 /**
  * 執行結果摘要卡片 — 顯示在 chat 訊息列中。
- * 讓使用者知道 AI 導師已取得程式執行結果。
+ * 讓使用者知道 Coddy已取得程式執行結果。
  */
 export function RunResultCard({ result }: RunResultCardProps) {
   const passed = result.status_description === "Accepted";
@@ -35,7 +35,7 @@ export function RunResultCard({ result }: RunResultCardProps) {
       )}
 
       <p className="mt-2 text-xs text-text-muted/70">
-        AI 導師已取得此執行結果，可直接提問
+        Coddy已取得此執行結果，可直接提問
       </p>
     </div>
   );

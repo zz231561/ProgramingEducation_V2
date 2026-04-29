@@ -46,7 +46,7 @@ function EmptyState() {
       <div className="text-center">
         <MessageSquare className="mx-auto size-10 text-text-muted/50" />
         <p className="mt-3 text-sm text-text-muted">
-          AI 導師隨時為你解答
+          Coddy隨時為你解答
         </p>
         <p className="mt-1 text-xs text-text-muted/70">
           寫程式遇到問題？在這裡提問吧！
@@ -60,7 +60,7 @@ function TypingIndicator() {
   return (
     <div className="flex items-center gap-2 text-text-muted">
       <Loader2 className="size-4 animate-spin" />
-      <span className="text-xs">AI 導師思考中…</span>
+      <span className="text-xs">Coddy思考中…</span>
     </div>
   );
 }

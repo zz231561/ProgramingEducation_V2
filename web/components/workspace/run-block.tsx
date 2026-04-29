@@ -95,8 +95,8 @@ export function RunBlock({ block, index, onToggle, onSendToChat }: RunBlockProps
         <button
           onClick={onSendToChat}
           className="flex h-6 w-6 items-center justify-center rounded text-text-muted hover:text-accent-blue hover:bg-surface-2 transition-colors"
-          title="詢問 AI 導師"
-          aria-label="詢問 AI 導師"
+          title="詢問 Coddy"
+          aria-label="詢問 Coddy"
         >
           <MessageSquare className="size-3.5" />
         </button>

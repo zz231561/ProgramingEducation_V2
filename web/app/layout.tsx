@@ -23,8 +23,8 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ProgramingEducation",
-  description: "AI-powered C++ programming education platform",
+  title: "Codedge",
+  description: "Codedge — AI-powered C++ programming education with Coddy",
 };
 
 export default function RootLayout({

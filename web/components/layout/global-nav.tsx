@@ -49,7 +49,7 @@ export function GlobalNav({ chatOpen, onToggleChat }: GlobalNavProps) {
         href="/workspace"
         className="flex h-full items-center pr-3 text-sm font-semibold text-text-primary hover:text-text-secondary transition-colors"
       >
-        C++ Tutor
+        Codedge
       </Link>
 
       {/* 5 個頁籤 */}
@@ -82,8 +82,8 @@ export function GlobalNav({ chatOpen, onToggleChat }: GlobalNavProps) {
         <button
           onClick={onToggleChat}
           className="flex size-8 items-center justify-center rounded-md text-text-muted hover:text-text-primary hover:bg-surface-2 transition-colors"
-          title="展開 AI 導師 (Ctrl+B)"
-          aria-label="展開 AI 導師"
+          title="展開 Coddy (Ctrl+B)"
+          aria-label="展開 Coddy"
         >
           <MessageSquare className="size-4" />
         </button>

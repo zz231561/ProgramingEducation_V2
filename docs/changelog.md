@@ -1,5 +1,28 @@
 # 變更日誌
 
+## [2026-04-29] — 品牌命名：**Codedge** 平台 + **Coddy** AI 助教
+
+### 命名邏輯
+- **Codedge** = `Code` + `Edge` 字母融合（共享 `e`）。三層意義：(1) Cutting-edge 程式前沿、(2) Edge case 邊界案例（CS 核心術語）、(3) "have the edge" 取得競爭優勢
+- **Coddy** = AI 助教名，承襲 `Cod-` 字頭與品牌 `Codedge` 兄妹呼應
+
+### Changed — 全站 rename
+- `web/components/layout/global-nav.tsx` — Logo "C++ Tutor" → **Codedge**；chat toggle title/aria "AI 導師" → "Coddy"
+- `web/components/layout/chat-panel.tsx` — header "AI 導師" → "Coddy"
+- `web/components/layout/tablet-header.tsx` — "C++ Tutor" → "Codedge"
+- `web/components/chat/message-list.tsx` — "AI 導師隨時為你解答" → "Coddy 隨時為你解答"；"AI 導師思考中…" → "Coddy 思考中…"
+- `web/components/chat/run-result-card.tsx` — "AI 導師已取得..." → "Coddy 已取得..."（含註解）
+- `web/components/workspace/run-block.tsx` — 「💬 詢問 AI 導師」按鈕 title/aria → "詢問 Coddy"
+- `web/app/login/page.tsx` — `<h1>` "C++ Tutor" → "Codedge"；副標 "AI 驅動的 C++ 程式教學平台" → "Coddy 陪你寫 C++，磨穿每個 edge case"
+- `web/app/layout.tsx` — `<title>` "ProgramingEducation" → "Codedge"；description 更新為「Codedge — AI-powered C++ programming education with Coddy」
+- `backend/core/config.py` — `APP_NAME` "ProgramingEducation API" → "Codedge API"
+- `docs/ui-ux-spec.md` + `docs/ui-wireframes.md` — wireframe ASCII / 文案同步更新
+
+### Verified
+- `grep` 全 `web/` `backend/` 殘留 "C++ Tutor" 0 處、"AI 導師" 0 處（生產代碼）
+- TypeScript `tsc --noEmit` exit 0
+- changelog 歷史紀錄保留「C++ Tutor」原貌不修改
+
 ## [2026-04-29] — Chat toggle 改為「僅收合時顯示」
 
 ### Changed

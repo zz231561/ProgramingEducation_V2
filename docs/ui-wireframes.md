@@ -8,7 +8,7 @@
 ```
 ┌──────────────────────────────────────────────────────┐
 │  Header (48px, bg: #161B22, border-bottom: #30363D)   │
-│  [◆ Logo] C++ Tutor  [Workspace|Learn|Quiz|Knowledge]  │
+│  Codedge             [Workspace|Learn|Quiz|Knowledge]  │
 │                              [Dashboard] [?] [Avatar] │
 ├──────────────────────────────────────────────────────┤
 │                 Main Content (bg: #0D1117)             │
@@ -26,7 +26,7 @@
 │  Editor (CodeMirror 6)      │  AI Chat Panel (400px)     │
 │  bg: #0D1117                │  bg: #161B22, 可收合       │
 │  VS Code Dark+ (One Dark)   │                            │
-│                              │  AI 導師 / 學生 對話氣泡  │
+│                              │  Coddy / 學生 對話氣泡  │
 │                              │                            │
 ├─────────────────────────────┤  輸入框 + Send 按鈕        │
 │  Output (bg: #010409, 可收合)│                            │

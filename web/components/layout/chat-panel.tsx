@@ -14,7 +14,7 @@ interface ChatPanelProps {
 }
 
 /**
- * AI 導師 Chat Panel — 整合訊息列表 + 輸入框 + session 管理 + 執行結果注入。
+ * Coddy Chat Panel — 整合訊息列表 + 輸入框 + session 管理 + 執行結果注入。
  */
 export function ChatPanel({ onCollapse }: ChatPanelProps) {
   const { getCode, getExecutionResult, onExecutionComplete, onChatInjectionRequest } = useWorkspace();
@@ -88,7 +88,7 @@ function Header({
 }) {
   return (
     <div className="flex h-10 shrink-0 items-center justify-between border-b border-border-default px-3">
-      <span className="text-sm font-medium text-text-primary">AI 導師</span>
+      <span className="text-sm font-medium text-text-primary">Coddy</span>
       <div className="flex items-center gap-1">
         <SessionList
           sessions={sessions}

@@ -1,5 +1,20 @@
 # 變更日誌
 
+## [2026-04-29] — Phase 1-6a Surface/Shadow/Border/Radius token 增補
+
+### Added
+- `web/app/globals.css` — `:root` 新增 8 個 token：
+  - Surface 語義別名 4 個（`--surface-0/1/2/inset`）疊加既有 `--bg-*`，不破壞 backward compatibility
+  - Shadow stack 2 個（`--shadow-card`、`--shadow-modal`）
+  - Border AI ring 例外 1 個（`--border-ai`）
+  - Pill radius 1 個（`--radius-pill: 9999px`）
+- `web/app/globals.css` — `@theme inline` 對應新增 9 條 Tailwind utility 映射，解鎖 `bg-surface-1` / `shadow-card` / `shadow-modal` / `border-ai` / `rounded-pill`
+- `.claude/rules/frontend.md` — Design Tokens 區塊新增「Phase 1-6 統一協議 token」說明列；移除底部 placeholder 註記
+
+### Notes
+- 純 additive 變更，所有既有元件與 `--bg-*` 引用 0 影響
+- 為 1-6c (Output Run Block) / 1-6d (Chat ring + Bloom badge) / 1-6e (Toolbar + .kbd) 鋪設 token 基礎
+
 ## [2026-04-29] — Phase 1-2 Google OAuth 本機端到端驗證通過
 
 ### Verified

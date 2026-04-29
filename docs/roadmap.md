@@ -44,7 +44,7 @@
 ### 1-6 介面精修（統一視覺協議）
 > 完成標準：6 份設計系統借鑑（Cursor/Warp/Linear/Claude/Vercel/Raycast）僅貢獻結構模式，所有視覺基本元素統一為 GitHub Dark；通過 §5 違和感 7 條檢核。
 > 詳細設計規格與借鑑映射：`docs/design-plan.md`、`docs/design-references/*.md`
-- [ ] 1-6a Surface / Shadow / Border / Radius token 增補（design-plan §3.1-3.5）→ 同步 `frontend.md`
+- [x] 1-6a Surface / Shadow / Border / Radius token 增補（design-plan §3.1-3.5）→ 同步 `frontend.md`
 - [ ] 1-6b Inter OpenType `cv01, ss03` 全站套用 + 三權重檢核（design-plan §3.4）
 - [ ] 1-6c Output Panel Run Block 化（每次 Run 為獨立可摺疊 block + status badge + Run→Chat 按鈕）（design-plan §2.3）
 - [ ] 1-6d Chat 訊息氣泡 ring 區分 user/AI + Bloom 等級 badge（design-plan §2.4）

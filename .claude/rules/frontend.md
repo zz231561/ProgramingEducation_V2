@@ -13,9 +13,15 @@ globs: web/**
 強調: `blue: #58A6FF` | `green: #3FB950` | `red: #F85149` | `orange: #D29922` | `purple: #BC8CFF`
 按鈕: `primary-bg: #238636` | `primary-hover: #2EA043` | `default-bg: #21262D` | `default-border: #363B42`
 
-圓角: 4/6/8/12px | 間距: 4px 基礎單位 | 陰影: 極少，以 border 分隔層級
+圓角: 4/6/8/12/9999(pill) | 間距: 4px 基礎單位
 字型: Inter (UI) + Noto Sans TC (中文) + JetBrains Mono (程式碼)
 元件庫: shadcn/ui (dark preset, 基於 Radix UI)
+
+### Phase 1-6 統一協議 token（design-plan §3）
+Surface 語義別名: `--surface-0` (=bg-canvas) | `--surface-1` (=bg-default) | `--surface-2` (=bg-subtle) | `--surface-inset` (=bg-inset)
+Shadow（僅 3 階）: flat | `--shadow-card`: `0 1px 3px rgba(0,0,0,0.3)` | `--shadow-modal`: `0 16px 48px rgba(0,0,0,0.5), 0 0 0 1px var(--border-default)`
+Border AI 例外: `--border-ai`: `rgba(188, 140, 255, 0.25)` — 僅 Chat AI 訊息氣泡可用
+Tailwind utility: `bg-surface-1`、`shadow-card`、`shadow-modal`、`border-ai`、`rounded-pill`
 
 ## 元件規格
 
@@ -74,7 +80,5 @@ Active tab: `border-bottom: 2px solid #F78166`
 | R7 字距 | Display ≥40px → -0.02em；Body 預設 0；UI 全站 `font-feature-settings: "cv01", "ss03"` |
 
 ### 兩處唯一視覺例外
-1. **AI 訊息氣泡** ring：`1px solid rgba(188,140,255,0.25)`（GitHub Dark purple）
-2. **`.kbd` 鍵帽**：多層 inset 陰影（規格見 design-plan §2.10）
-
-> 1-6a 子任務完成時，將 design-plan §3 全部 token 增補至本檔上方 Design Tokens 區塊。
+1. **AI 訊息氣泡** ring：`border: 1px solid var(--border-ai)`（已建立 token，1-6d 套用）
+2. **`.kbd` 鍵帽**：多層 inset 陰影（1-6e 實作時建立 `.kbd` class，規格見 design-plan §2.10）

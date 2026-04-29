@@ -41,9 +41,25 @@
   --radius-md: 6px;
   --radius-lg: 8px;
   --radius-xl: 12px;
+  --radius-pill: 9999px;
 
   /* 間距基礎單位 */
   --spacing-unit: 4px;
+
+  /* ===== Phase 1-6 統一視覺協議 token（design-plan §3）===== */
+
+  /* §3.1 Surface luminance 語義別名（疊加既有 --bg-*） */
+  --surface-0: var(--bg-canvas);
+  --surface-1: var(--bg-default);
+  --surface-2: var(--bg-subtle);
+  --surface-inset: var(--bg-inset);
+
+  /* §3.2 Shadow stack（僅 3 階；.kbd 多層 inset 為 1-6e 唯一例外） */
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-modal: 0 16px 48px rgba(0, 0, 0, 0.5), 0 0 0 1px var(--border-default);
+
+  /* §3.3 Border 例外：AI 訊息氣泡 ring（GitHub Dark purple 25% alpha） */
+  --border-ai: rgba(188, 140, 255, 0.25);
 
   /* shadcn 語義變數 → GitHub Dark */
   --background: var(--bg-canvas);
@@ -99,6 +115,16 @@
   --radius-md: var(--radius-md);
   --radius-lg: var(--radius-lg);
   --radius-xl: var(--radius-xl);
+  --radius-pill: var(--radius-pill);
+
+  /* Phase 1-6 統一協議 token 映射（Tailwind utility 對應） */
+  --color-surface-0: var(--surface-0);
+  --color-surface-1: var(--surface-1);
+  --color-surface-2: var(--surface-2);
+  --color-surface-inset: var(--surface-inset);
+  --color-border-ai: var(--border-ai);
+  --shadow-card: var(--shadow-card);
+  --shadow-modal: var(--shadow-modal);
 
   /* 字型 */
   --font-sans: var(--font-inter), var(--font-noto-sans-tc), system-ui, sans-serif;

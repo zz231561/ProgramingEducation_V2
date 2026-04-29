@@ -43,13 +43,12 @@ export function GlobalNav({ chatOpen, onToggleChat }: GlobalNavProps) {
 
   return (
     <nav className="flex h-12 shrink-0 items-center gap-1 border-b border-border-muted bg-bg-canvas px-3 body-ui">
-      {/* Logo */}
+      {/* Logo — 純文字（design-plan §0.3 R8.2 禁 emoji 字） */}
       <Link
         href="/workspace"
-        className="flex h-full items-center gap-2 pr-3 text-accent-blue hover:text-accent-blue/80 transition-colors"
+        className="flex h-full items-center pr-3 text-sm font-semibold text-text-primary hover:text-text-secondary transition-colors"
       >
-        <span className="text-lg font-semibold">◇</span>
-        <span className="text-sm font-semibold text-text-primary hidden sm:inline">C++ Tutor</span>
+        C++ Tutor
       </Link>
 
       {/* 5 個頁籤 */}
@@ -82,7 +81,7 @@ export function GlobalNav({ chatOpen, onToggleChat }: GlobalNavProps) {
         onClick={onToggleChat}
         className={`flex size-8 items-center justify-center rounded-md transition-colors ${
           chatOpen
-            ? "text-accent-blue bg-accent-blue/15"
+            ? "text-text-primary bg-surface-2"
             : "text-text-muted hover:text-text-primary hover:bg-surface-2"
         }`}
         title={`${chatOpen ? "收合" : "展開"} AI 導師 (Ctrl+B)`}

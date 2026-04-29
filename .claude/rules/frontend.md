@@ -82,3 +82,20 @@ Active tab: `border-bottom: 2px solid #F78166`
 ### 兩處唯一視覺例外
 1. **AI 訊息氣泡** ring：`border: 1px solid var(--border-ai)`（已建立 token，1-6d 套用）
 2. **`.kbd` 鍵帽**：多層 inset 陰影（1-6e 實作時建立 `.kbd` class，規格見 design-plan §2.10）
+
+### R8 反 AI 感規則（必須遵守）
+拒絕「現代 AI 工具網站」的廉價視覺：彩色半透明 halo / 卡通圓頭像 / emoji 圖示。專業工具（Linear / Stripe / Vercel）皆無此風格。
+
+| 規則 | 規格 | 違反信號 |
+|------|------|----------|
+| R8.1 禁半透明色背景 | 嚴禁 `bg-{accent\|primary\|destructive}/{N}` 半透明色填充作為強調 | 任何 `bg-accent-X/N`、`bg-purple/N` |
+| R8.2 禁 emoji/Unicode 符號字 | 嚴禁 `✓ ✗ ⚠ ◇ ☰ ✕ → ←` 等符號字出現於 UI 文字 | 一律改用 `lucide-react` icon |
+| R8.3 禁圓形彩色 halo 頭像 | 嚴禁 `rounded-full + bg-accent-X/N` 卡通頭像 | round + 半透明色背景 |
+| R8.4 禁裝飾性彩色 | 顏色只用於功能性語意（status / Bloom / EDF stage），禁裝飾用 | 純美觀的彩色 hover / decoration |
+| R8.5 active 狀態用 border 不用色背景 | active / selected 用 border-emphasis 或文字色加深；嚴禁半透明色 fill | active button 出現彩色背景塊 |
+
+**例外白名單**：
+- `text-text-muted/N` 等灰階淡化（純黑白透明度，無色相）
+- `shadcn/ui/button.tsx` 預設變體（基礎庫，避免動）
+- `lucide-react` icon（線條圖示，非 emoji）
+- 邊框實線色 `border-accent-X`（功能性，無填充）

@@ -31,6 +31,11 @@
 | **R5 Radius** | 僅 5 階：4 / 6 / 8 / 12 / 9999（pill） | 出現 32px、86px、22px、3px、1.5px |
 | **R6 Hover** | Surface 元件：背景升一階；Button：背景升一階；Link：文字色轉 `#58A6FF` | 出現 opacity 0.6、文字轉暖紅 `#cf2d56` |
 | **R7 字距** | Display ≥40px → -0.02em；Body 維持預設 0；UI label → `font-feature-settings: "cv01", "ss03"` | 出現 -2.4px / -2.88px 極端壓縮、+0.4px 大正字距 |
+| **R8.1 禁半透明色背景** | 嚴禁 `bg-{accent\|primary\|destructive}/{N}` 半透明色填充作為強調 | 任何 `bg-accent-X/N` 出現於 UI |
+| **R8.2 禁 emoji/Unicode 符號字** | 嚴禁 `✓ ✗ ⚠ ◇ ☰` 等符號字出現於 UI 文字 | 改用 `lucide-react` icon |
+| **R8.3 禁圓形彩色 halo 頭像** | 嚴禁 `rounded-full + bg-accent-X/N` 卡通頭像 | round + 半透明色背景 |
+| **R8.4 禁裝飾性彩色** | 顏色只用於功能性語意 | 純美觀的彩色 decoration |
+| **R8.5 active 狀態用 border 不用色背景** | active 用 border-emphasis 或文字色加深 | active button 出現彩色背景塊 |
 
 > **檢驗法**：任一新元件實作完成後，逐條對 R1-R7 自檢。若違反 → 退回，用 GitHub Dark 重新渲染。
 

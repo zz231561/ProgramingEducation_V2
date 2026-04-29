@@ -11,8 +11,8 @@ export default function LoginPage() {
   return (
     <div className="flex h-screen items-center justify-center bg-bg-canvas">
       <div className="w-full max-w-sm rounded-lg border border-border-default bg-bg-default p-8 text-center">
-        {/* Logo */}
-        <div className="mx-auto flex size-12 items-center justify-center rounded-lg bg-accent-blue/10 text-accent-blue">
+        {/* Logo — design-plan §0.3 R8.1：純背景 + border，不用半透明色 halo */}
+        <div className="mx-auto flex size-12 items-center justify-center rounded-lg border border-border-default bg-bg-canvas text-text-secondary">
           <Code className="size-6" />
         </div>
 

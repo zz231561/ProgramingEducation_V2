@@ -1,5 +1,28 @@
 # 變更日誌
 
+## [2026-04-29] — R8 反 AI 感視覺修正（Phase 1-6 follow-up）
+
+> 觸發：使用者指出截圖中右上 chat icon 半透明 halo + 紫色圓 bot 頭像 + `⚠` emoji = 廉價 AI 感。專業工具（Linear/Stripe/Vercel）皆無此風格。
+
+### Added — R8 規則
+- `.claude/rules/frontend.md` — 新增 R8 反 AI 感規則（5 條）：禁半透明色背景 / 禁 emoji 符號字 / 禁圓形彩色 halo 頭像 / 禁裝飾性彩色 / active 狀態用 border 不用色背景
+- `docs/design-plan.md` §0.3 違和感檢核表新增 R8.1-R8.5
+- 例外白名單：`text-text-muted/N` 灰階淡化、`shadcn/ui` 基礎元件、`lucide-react` 線條 icon、實線 border-accent-X
+
+### Changed — 9 處違規修正
+- `web/components/chat/message-bubble.tsx` — Avatar 從圓形彩色 halo（`rounded-full + bg-accent-X/20`）改為圓角方型 + border（`rounded-md + bg-surface-1 + border-border-default`），icon 顏色改為 `text-text-secondary` 去除彩色填充
+- `web/components/layout/global-nav.tsx` — Logo 從 `◇ C++ Tutor`（Unicode 幾何字 + 藍色 hover）改為純文字「C++ Tutor」；chat toggle active 從 `bg-accent-blue/15 text-accent-blue` 改為 `bg-surface-2 text-text-primary`
+- `web/components/workspace/run-block.tsx` — `STATUS_META` 重構：加入 `Icon: LucideIcon` 欄位（Check/AlertOctagon/X/Clock/Minus）；移除標籤中的 `✓`；badge 從半透明色填充（`bg-accent-X/10`）改為實線 border + 純文字色（`border-accent-X text-accent-X`）；export STATUS_META 供 output-panel 復用
+- `web/components/workspace/output-panel.tsx` — 將 `collapsedStatusText()` 字串函式改為 `<CollapsedStatusContent />` React 元件，用 lucide icon 取代 `✓` `✗` 符號字
+- `web/hooks/use-chat.ts` — 錯誤訊息 `⚠ 無法取得 AI 回應` → `無法取得 AI 回應`
+- `web/components/layout/tablet-header.tsx` — hamburger `☰` 字符 → lucide `<Menu />` icon；avatar 占位由 `rounded-full` 改 `rounded-md`
+- `web/app/login/page.tsx` — Logo 容器 `bg-accent-blue/10 text-accent-blue` → `bg-bg-canvas border-border-default text-text-secondary`
+
+### Verified
+- `grep -rE 'bg-(accent|btn|primary|destructive)[a-z-]*/[0-9]+'` 全程式碼 0 命中（排除 shadcn ui/button.tsx 白名單）
+- `grep -rE '✓|✗|⚠|◇|☰|✕'` 全程式碼 0 命中
+- TypeScript `tsc --noEmit` exit 0
+
 ## [2026-04-29] — Phase 1-6f EDF Pipeline mini timeline + Phase 1-6 全部完成 ✅
 
 ### Added

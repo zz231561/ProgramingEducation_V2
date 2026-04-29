@@ -1,6 +1,17 @@
 "use client";
 
-import { ChevronDown, ChevronRight, Copy, MessageSquare } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronRight,
+  Copy,
+  MessageSquare,
+  Check,
+  X,
+  AlertOctagon,
+  Clock,
+  Minus,
+  type LucideIcon,
+} from "lucide-react";
 import type { ExecutionResult } from "./workspace-context";
 
 export type RunStatus = "accepted" | "compile-error" | "runtime-error" | "limit-exceeded" | "unknown";
@@ -58,7 +69,8 @@ export function RunBlock({ block, index, onToggle, onSendToChat }: RunBlockProps
 
         <span className="text-text-muted body-ui">{formatTime(timestamp)}</span>
 
-        <span className={`flex items-center gap-1 rounded-pill px-2 py-0.5 text-xs ${meta.className}`}>
+        <span className={`flex items-center gap-1 rounded-pill border px-2 py-0.5 text-xs ${meta.borderClass} ${meta.textClass}`}>
+          <meta.Icon className="size-3" />
           {meta.label}
         </span>
 
@@ -136,26 +148,43 @@ export function classifyStatus(result: ExecutionResult): RunStatus {
   return "unknown";
 }
 
-const STATUS_META: Record<RunStatus, { label: string; className: string }> = {
+interface StatusMeta {
+  label: string;
+  Icon: LucideIcon;
+  textClass: string;
+  borderClass: string;
+}
+
+export const STATUS_META: Record<RunStatus, StatusMeta> = {
   "accepted": {
-    label: "✓ Accepted",
-    className: "text-accent-green bg-accent-green/10",
+    label: "Accepted",
+    Icon: Check,
+    textClass: "text-accent-green",
+    borderClass: "border-accent-green",
   },
   "compile-error": {
     label: "Compile Error",
-    className: "text-accent-orange bg-accent-orange/10",
+    Icon: AlertOctagon,
+    textClass: "text-accent-orange",
+    borderClass: "border-accent-orange",
   },
   "runtime-error": {
     label: "Runtime Error",
-    className: "text-accent-red bg-accent-red/10",
+    Icon: X,
+    textClass: "text-accent-red",
+    borderClass: "border-accent-red",
   },
   "limit-exceeded": {
     label: "Limit Exceeded",
-    className: "text-text-secondary bg-bg-subtle",
+    Icon: Clock,
+    textClass: "text-text-secondary",
+    borderClass: "border-border-default",
   },
   "unknown": {
-    label: "—",
-    className: "text-text-secondary bg-bg-subtle",
+    label: "Unknown",
+    Icon: Minus,
+    textClass: "text-text-secondary",
+    borderClass: "border-border-default",
   },
 };
 

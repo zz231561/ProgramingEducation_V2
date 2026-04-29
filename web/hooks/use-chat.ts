@@ -73,7 +73,7 @@ export function useChat(options: UseChatOptions = {}) {
         setItems((prev) => [
           ...prev,
           { type: "message", id: crypto.randomUUID(), role: "user", content: question, createdAt: now },
-          { type: "message", id: crypto.randomUUID(), role: "assistant", content: "⚠ 無法取得 AI 回應，請稍後再試。", createdAt: now },
+          { type: "message", id: crypto.randomUUID(), role: "assistant", content: "無法取得 AI 回應，請稍後再試。", createdAt: now },
         ]);
       } finally {
         setIsLoading(false);

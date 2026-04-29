@@ -52,13 +52,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
 
 function Avatar({ isUser }: { isUser: boolean }) {
   return (
-    <div
-      className={`flex size-7 shrink-0 items-center justify-center rounded-full ${
-        isUser
-          ? "bg-accent-blue/20 text-accent-blue"
-          : "bg-accent-purple/20 text-accent-purple"
-      }`}
-    >
+    <div className="flex size-7 shrink-0 items-center justify-center rounded-md border border-border-default bg-surface-1 text-text-secondary">
       {isUser ? <User className="size-3.5" /> : <Bot className="size-3.5" />}
     </div>
   );

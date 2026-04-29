@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { ChevronUp, ChevronDown, Trash2 } from "lucide-react";
 import { useWorkspace } from "./workspace-context";
-import { RunBlock, type RunBlockData, classifyStatus } from "./run-block";
+import { RunBlock, type RunBlockData, classifyStatus, STATUS_META } from "./run-block";
 
 interface OutputPanelProps {
   /** 是否收合為單行 status bar */
@@ -50,10 +50,10 @@ export function OutputPanel({ collapsed = false, onToggleCollapse }: OutputPanel
     return (
       <button
         onClick={onToggleCollapse}
-        className="flex h-7 w-full items-center gap-2 border-t border-border-default bg-bg-inset px-3 text-xs text-text-secondary hover:text-text-primary transition-colors"
+        className="flex h-7 w-full items-center gap-2 border-t border-border-default bg-bg-inset px-3 text-xs text-text-secondary hover:text-text-primary transition-colors body-ui"
       >
         <ChevronUp className="size-3.5" />
-        <span className="body-ui">{collapsedStatusText(latestBlock)}</span>
+        <CollapsedStatusContent latest={latestBlock} />
       </button>
     );
   }
@@ -113,16 +113,17 @@ export function OutputPanel({ collapsed = false, onToggleCollapse }: OutputPanel
   );
 }
 
-function collapsedStatusText(latest?: RunBlockData): string {
-  if (!latest) return "Output";
+/** Collapsed status bar 內容 — 用 lucide icon 取代 emoji 符號（R8.2） */
+function CollapsedStatusContent({ latest }: { latest?: RunBlockData }) {
+  if (!latest) return <span>Output</span>;
   const status = classifyStatus(latest.result);
-  const statusLabel = {
-    "accepted": "✓ Accepted",
-    "compile-error": "✗ Compile Error",
-    "runtime-error": "✗ Runtime Error",
-    "limit-exceeded": "✗ Limit Exceeded",
-    "unknown": "✗ Error",
-  }[status];
+  const meta = STATUS_META[status];
   const time = latest.result.time ? ` (${parseFloat(latest.result.time).toFixed(2)}s)` : "";
-  return `Run #${latest.id} ${statusLabel}${time}`;
+  return (
+    <span className="flex items-center gap-1.5">
+      <span>Run #{latest.id}</span>
+      <meta.Icon className={`size-3 ${meta.textClass}`} />
+      <span className={meta.textClass}>{meta.label}{time}</span>
+    </span>
+  );
 }

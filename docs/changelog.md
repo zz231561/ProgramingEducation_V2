@@ -1,5 +1,13 @@
 # 變更日誌
 
+## [2026-04-29] — Login hero 移除主標 `Code with Edge`，避免與 h1 `Codedge` 重複
+
+### Changed
+- `web/app/login/page.tsx` — 移除中間的「Code with Edge」副 slogan 行：h1 `Codedge` 已等同於拆解後的字面，再放等於重複。保留唯一副標「會思考的學習，從會提問的 AI 開始」（mt-2 text-sm secondary）
+
+### Kept
+- `web/app/layout.tsx` `<title>` 仍保留「Codedge — Code with Edge」：browser tab / SEO 場景單獨出現，「Code with Edge」首次接觸者揭示品牌雙關，無視覺重複
+
 ## [2026-04-29] — Slogan 改版：雙標題式 hero（Code with Edge）
 
 ### 命名邏輯

@@ -1,5 +1,17 @@
 # 變更日誌
 
+## [2026-04-29] — Phase 1-2 Google OAuth 本機端到端驗證通過
+
+### Verified
+- `web/.env.local` 建立完成（`AUTH_SECRET` 由 `openssl rand -base64 33` 產生；`AUTH_GOOGLE_ID` / `AUTH_GOOGLE_SECRET` 已填入 Google Cloud Console 取得的憑證）
+- Google OAuth 登入流程實測通過：`/login` → Google 同意畫面 → 重導 `/workspace`
+- NextAuth v5 `MissingSecret` 錯誤已排除，`/api/auth/session` 不再回 500
+
+### Notes
+- Google Cloud Console OAuth 用戶端設定：Authorized redirect URI = `http://localhost:3000/api/auth/callback/google`；測試使用者已加入 `abbyabby41@gmail.com`
+- `.env.local` 受 `web/.gitignore` 保護（`.env*` 規則），不會被 commit
+- Phase 1-2 Auth 模組 4 子任務（1-2a~d）roadmap 早已勾選，本次為首次完整本機 dev 環境驗證
+
 ## [2026-04-29] — Phase 1-6 介面精修計畫產出 + Roadmap 重排
 
 ### Added

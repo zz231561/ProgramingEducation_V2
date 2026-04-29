@@ -1,5 +1,18 @@
 # 變更日誌
 
+## [2026-04-29] — Phase 1-6b Inter OpenType + 三權重檢核
+
+### Added
+- `web/app/globals.css` — `body` 套用 `font-feature-settings: "cv01", "ss03"`（Inter 單層 'a' + 幾何字形，全站生效）
+- `web/app/globals.css` — Typography helper classes：`.display`（≥40px 字級用，-0.02em 字距 + 1.1 行高）、`.body-reading`（chat/段落用，1.6 行高）、`.body-ui`（按鈕/nav 用，1.4 行高）
+
+### Changed
+- `web/components/layout/activity-bar.tsx` — Logo `◇` 從 `font-bold` (700) 改為 `font-semibold` (600)，遵守 R7 三權重系統
+
+### Verified
+- `grep` 全 `web/` 確認無剩餘 `font-bold` / `font-extrabold` / `font-black` / `font-weight: 700+`
+- 既有元件已使用 `font-medium` (500) / `font-semibold` (600) / 預設 (400)，全數符合 R7
+
 ## [2026-04-29] — Phase 1-6a Surface/Shadow/Border/Radius token 增補
 
 ### Added

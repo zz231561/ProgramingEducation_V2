@@ -155,6 +155,23 @@
 body {
   background: var(--bg-canvas);
   color: var(--text-primary);
+  /* Phase 1-6b: Inter OpenType — cv01 (單層 'a')、ss03 (幾何字形) */
+  font-feature-settings: "cv01", "ss03";
+}
+
+/* Phase 1-6b: Typography helper classes（design-plan §3.4） */
+.display {
+  /* 顯示字級 ≥40px 適用：壓縮字距 + 緊湊行高 */
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+.body-reading {
+  /* Chat 訊息、editorial 段落：寬鬆行高提升中文可讀性 */
+  line-height: 1.6;
+}
+.body-ui {
+  /* 按鈕、nav link、UI label：緊湊行高 */
+  line-height: 1.4;
 }
 
 @layer base {

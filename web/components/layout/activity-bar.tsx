@@ -71,7 +71,7 @@ export function ActivityBar() {
         href="/workspace"
         className="flex h-12 items-center gap-2 px-3 text-accent-blue hover:text-accent-blue/80 transition-colors"
       >
-        <span className="text-lg font-bold">◇</span>
+        <span className="text-lg font-semibold">◇</span>
         <span className="text-sm font-semibold text-text-primary">
           C++ Tutor
         </span>

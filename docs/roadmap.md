@@ -41,10 +41,22 @@
 - [x] 1-5c Run 結果自動注入 Chat context
 - [x] 1-5d Chat Panel 收合/展開 toggle
 
-### 1-6 部署
-- [x] 1-6a Dockerfile（前端 + 後端）
-- [x] 1-6b Zeabur 部署配置（環境變數 + service 串接）
-- [ ] 1-6c 首次上線驗證（登入 → 寫碼 → 執行 → 對話 golden path）
+### 1-6 介面精修（統一視覺協議）
+> 完成標準：6 份設計系統借鑑（Cursor/Warp/Linear/Claude/Vercel/Raycast）僅貢獻結構模式，所有視覺基本元素統一為 GitHub Dark；通過 §5 違和感 7 條檢核。
+> 詳細設計規格與借鑑映射：`docs/design-plan.md`、`docs/design-references/*.md`
+- [ ] 1-6a Surface / Shadow / Border / Radius token 增補（design-plan §3.1-3.5）→ 同步 `frontend.md`
+- [ ] 1-6b Inter OpenType `cv01, ss03` 全站套用 + 三權重檢核（design-plan §3.4）
+- [ ] 1-6c Output Panel Run Block 化（每次 Run 為獨立可摺疊 block + status badge + Run→Chat 按鈕）（design-plan §2.3）
+- [ ] 1-6d Chat 訊息氣泡 ring 區分 user/AI + Bloom 等級 badge（design-plan §2.4）
+- [ ] 1-6e Toolbar Linear 風格化（高度 48px + 5 頁籤 + 檔名儲存狀態）（design-plan §2.5）
+- [ ] 1-6f EDF Pipeline mini timeline（在每則 AI 訊息上方顯示教學決策過程）（design-plan §2.1）
+
+### 1-7 部署
+> ⚠ 上次嘗試卡關於 API 串接（前後端 proxy / NextAuth callback URL / CORS / Judge0 endpoint），1-7c 尚未完成。
+> 重啟前需先排查 `web/app/api/*` proxy 設定、`backend/app/core/config.py` 環境變數、Zeabur dashboard service 連線狀態。
+- [ ] 1-7a Dockerfile（前端 + 後端）— 配置檔已存在，需重新驗證 build
+- [ ] 1-7b Zeabur 部署配置（環境變數 + service 串接）— `zeabur.json` 已存在，需驗證 service 之間 internal DNS / 環境變數注入是否正確
+- [ ] 1-7c 首次上線驗證（登入 → 寫碼 → 執行 → 對話 golden path）— 上次卡在 API 串接，待逐項排查
 
 ## Phase 2：智慧功能
 > 完成標準：RAG 檢索可用、知識圖譜可視覺化、弱項可自動出題
@@ -156,3 +168,4 @@
 - Judge0：開發期 RapidAPI (免費 50 次/天) → 上線後自架
 - 部署：Zeabur (Tencent Tokyo VPS) | 使用者規模：初期 < 100 人
 - 即時通訊：Phase 1 用 REST + SSE (chat streaming)，未來視需求加 WebSocket
+- 介面借鑑：6 份來源僅貢獻結構模式，視覺基本元素統一為 GitHub Dark（design-plan.md §0.3 七條硬規則）

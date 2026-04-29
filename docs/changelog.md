@@ -1,5 +1,21 @@
 # 變更日誌
 
+## [2026-04-29] — Phase 1-6 介面精修計畫產出 + Roadmap 重排
+
+### Added
+- `docs/design-plan.md` — 統一視覺協議與 6 份借鑑來源映射計畫；§0.3 七條違和感檢核硬規則；§2 各區塊借鑑細節（含 EDF Pipeline timeline、Output Run Block、Chat ring、Bloom badge）；§3 Token 增補規格
+- `docs/design-references/` — 6 份原版 DESIGN.md 收錄（cursor / warp / linear.app / claude / vercel / raycast，共 1819 行原文，自 voltagent/awesome-design-md repo 首次 commit 提取）
+- `.claude/rules/frontend.md` — 新增「統一視覺協議」章節，含 R1-R7 違和感檢核 7 條 + 兩處唯一視覺例外
+
+### Changed
+- `docs/roadmap.md` — **新增 Phase 1-6「介面精修」**（6 子任務 a-f），對應 design-plan §2-3；**原 Phase 1-6 部署改為 Phase 1-7**，3 子任務全部回退為未完成（上次卡關於 API 串接，1-7c golden path 未通過）
+- `CLAUDE.md` — 當前狀態同步：Phase 1-6 改為「介面精修 🔧」、Phase 1-7「部署 ⏸」；新增「介面借鑑：6 份來源僅貢獻結構模式」於已確認決策
+
+### Decision
+- **唯一視覺基本元素**：GitHub Dark token，外部 6 份來源不貢獻 color/font/shadow/border/radius/spacing
+- **兩處唯一視覺例外**：AI 訊息氣泡 ring（GitHub Dark purple alpha）、`.kbd` 鍵帽多層 inset 陰影
+- **執行順序變更**：UI 統一精修先於部署，避免上線後再大幅改 UI
+
 ## [2026-04-13] — Phase 1-6a/b 部署配置（Dockerfile + Zeabur）
 ### Added
 - `zeabur.json` — Zeabur Template 定義（web + backend + PostgreSQL + Redis 四服務）

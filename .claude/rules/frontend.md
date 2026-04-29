@@ -57,3 +57,24 @@ Active tab: `border-bottom: 2px solid #F78166`
 
 前端統一用 `fetch('/api/...')` 打 Next.js API Routes（proxy 至 FastAPI），不直接打後端。
 統一錯誤攔截：401 → 重導登入、429 → 冷卻倒數 toast、5xx → 錯誤 toast
+
+## 統一視覺協議（Phase 1-6 借鑑計畫）
+
+**詳見 [docs/design-plan.md](../../docs/design-plan.md)。** 6 份外部借鑑來源（Cursor / Warp / Linear / Claude / Vercel / Raycast）僅貢獻結構模式，**所有 color / font / shadow / border / radius / spacing 一律來自本檔上方既有 GitHub Dark token**。
+
+### 違和感檢核 7 條（每元件實作後逐條對照）
+| 規則 | 規格 |
+|------|------|
+| R1 顏色 | 僅 GitHub Dark token，禁外來 hex |
+| R2 字體 | 僅 Inter / Noto Sans TC / JetBrains Mono |
+| R3 邊框 | 一律 `1px solid` + 既有 border token，禁 shadow-as-border / 半透明邊 |
+| R4 陰影 | 僅 3 階：flat / `--shadow-card` / `--shadow-modal`；`.kbd` 鍵帽為唯一例外 |
+| R5 Radius | 僅 5 階：4 / 6 / 8 / 12 / 9999 |
+| R6 Hover | Surface 升一階 / Button bg 變化；禁 `opacity 0.6` / 暖紅文字 |
+| R7 字距 | Display ≥40px → -0.02em；Body 預設 0；UI 全站 `font-feature-settings: "cv01", "ss03"` |
+
+### 兩處唯一視覺例外
+1. **AI 訊息氣泡** ring：`1px solid rgba(188,140,255,0.25)`（GitHub Dark purple）
+2. **`.kbd` 鍵帽**：多層 inset 陰影（規格見 design-plan §2.10）
+
+> 1-6a 子任務完成時，將 design-plan §3 全部 token 增補至本檔上方 Design Tokens 區塊。

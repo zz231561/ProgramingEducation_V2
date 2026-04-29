@@ -41,10 +41,18 @@
 - ✅ 1-5c Run 結果自動注入 Chat context
 - ✅ 1-5d Chat Panel 收合/展開 toggle
 
-**Phase 1-6：部署 🔧**
-- ✅ 1-6a Dockerfile（前端 + 後端）
-- ✅ 1-6b Zeabur 部署配置（環境變數 + service 串接）
-- ⬜ 1-6c 首次上線驗證（登入 → 寫碼 → 執行 → 對話 golden path）
+**Phase 1-6：介面精修 🔧**（統一視覺協議；6 份借鑑來源僅貢獻結構模式）
+- ⬜ 1-6a Surface / Shadow / Border / Radius token 增補
+- ⬜ 1-6b Inter OpenType `cv01, ss03` 全站套用
+- ⬜ 1-6c Output Panel Run Block 化（Warp 結構）
+- ⬜ 1-6d Chat 訊息氣泡 ring + Bloom badge（Claude 結構）
+- ⬜ 1-6e Toolbar Linear 風格化
+- ⬜ 1-6f EDF Pipeline mini timeline（Cursor 結構）
+
+**Phase 1-7：部署 ⏸**（上次卡關於 API 串接）
+- ⬜ 1-7a Dockerfile — 配置已存在，需重新驗證 build
+- ⬜ 1-7b Zeabur 部署配置 — `zeabur.json` 已存在，需驗證 service 串接
+- ⬜ 1-7c 首次上線驗證 — 上次卡在 API 串接，待逐項排查
 
 ## 文件索引
 > 本文件目標 ≤ 60 行。新增內容先判斷歸屬，禁止回填 roadmap/日誌/UI 參數/Schema。

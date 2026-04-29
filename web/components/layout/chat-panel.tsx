@@ -17,7 +17,7 @@ interface ChatPanelProps {
  * AI 導師 Chat Panel — 整合訊息列表 + 輸入框 + session 管理 + 執行結果注入。
  */
 export function ChatPanel({ onCollapse }: ChatPanelProps) {
-  const { getCode, getExecutionResult, onExecutionComplete } = useWorkspace();
+  const { getCode, getExecutionResult, onExecutionComplete, onChatInjectionRequest } = useWorkspace();
   const { sessions, activeId, setActiveId, deleteSession, addSession } = useSessions();
 
   const { items, isLoading, sendMessage, loadSession, startNewSession, injectExecutionResult } =
@@ -29,6 +29,13 @@ export function ChatPanel({ onCollapse }: ChatPanelProps) {
       injectExecutionResult(result);
     });
   }, [onExecutionComplete, injectExecutionResult]);
+
+  /* 從 Output block「💬 詢問 AI」按鈕手動注入（含掛載前 queue drain） */
+  useEffect(() => {
+    return onChatInjectionRequest((result) => {
+      injectExecutionResult(result);
+    });
+  }, [onChatInjectionRequest, injectExecutionResult]);
 
   const handleSelectSession = useCallback(
     async (id: string) => { setActiveId(id); await loadSession(id); },

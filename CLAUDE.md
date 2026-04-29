@@ -44,7 +44,7 @@
 **Phase 1-6：介面精修 🔧**（統一視覺協議；6 份借鑑來源僅貢獻結構模式）
 - ✅ 1-6a Surface / Shadow / Border / Radius token 增補
 - ✅ 1-6b Inter OpenType `cv01, ss03` 全站套用
-- ⬜ 1-6c Output Panel Run Block 化（Warp 結構）
+- ✅ 1-6c Output Panel Run Block 化（Warp 結構）
 - ⬜ 1-6d Chat 訊息氣泡 ring + Bloom badge（Claude 結構）
 - ⬜ 1-6e Toolbar Linear 風格化
 - ⬜ 1-6f EDF Pipeline mini timeline（Cursor 結構）

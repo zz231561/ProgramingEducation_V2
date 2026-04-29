@@ -8,7 +8,7 @@ import {
 } from "react-resizable-panels";
 import { CodeEditor } from "@/components/editor/code-editor";
 import { Toolbar } from "@/components/workspace/toolbar";
-import { OutputPanel, type OutputData } from "@/components/workspace/output-panel";
+import { OutputPanel } from "@/components/workspace/output-panel";
 import { useWorkspace } from "@/components/workspace/workspace-context";
 import { api } from "@/lib/api";
 
@@ -23,20 +23,13 @@ interface ExecuteResponse {
   status_description: string;
 }
 
-const EMPTY_OUTPUT: OutputData = { stdout: "", stderr: "", compile: "" };
-
 export default function WorkspacePage() {
   const [outputCollapsed, setOutputCollapsed] = useState(false);
-  const [output, setOutput] = useState<OutputData>(EMPTY_OUTPUT);
   const [isRunning, setIsRunning] = useState(false);
-  const [statusText, setStatusText] = useState<string | undefined>();
   const codeRef = useRef("");
   const workspace = useWorkspace();
 
-  const toggleOutput = useCallback(
-    () => setOutputCollapsed((v) => !v),
-    [],
-  );
+  const toggleOutput = useCallback(() => setOutputCollapsed((v) => !v), []);
 
   const handleCodeChange = useCallback((value: string) => {
     codeRef.current = value;
@@ -49,8 +42,6 @@ export default function WorkspacePage() {
 
     setIsRunning(true);
     setOutputCollapsed(false);
-    setStatusText("⏳ Running...");
-    setOutput(EMPTY_OUTPUT);
 
     try {
       const result = await api<ExecuteResponse>("/code/execute", {
@@ -58,32 +49,29 @@ export default function WorkspacePage() {
         body: JSON.stringify({ code }),
       });
 
-      setOutput({
-        stdout: result.stdout,
-        stderr: result.stderr,
-        compile: result.compile_output,
-      });
+      // 推送至 context — OutputPanel 與 ChatPanel 透過 listener 各自處理
       workspace.setExecutionResult({
         stdout: result.stdout,
         stderr: result.stderr,
         compile_output: result.compile_output,
         exit_code: result.exit_code ?? -1,
         status_description: result.status_description,
+        time: result.time ?? undefined,
+        memory: result.memory ?? undefined,
       });
-
-      if (result.status_description === "Accepted") {
-        setStatusText(`✓ Passed (${result.time ?? "?"}s)`);
-      } else {
-        setStatusText(`✗ ${result.status_description}`);
-      }
     } catch (err) {
       const msg = err instanceof Error ? err.message : "未知錯誤";
-      setOutput({ stdout: "", stderr: msg, compile: "" });
-      setStatusText("✗ Error");
+      workspace.setExecutionResult({
+        stdout: "",
+        stderr: msg,
+        compile_output: "",
+        exit_code: -1,
+        status_description: "Internal Error",
+      });
     } finally {
       setIsRunning(false);
     }
-  }, []);
+  }, [workspace]);
 
   return (
     <div className="flex h-full flex-col">
@@ -94,11 +82,7 @@ export default function WorkspacePage() {
           <div className="min-h-0 flex-1">
             <CodeEditor onChange={handleCodeChange} />
           </div>
-          <OutputPanel
-            collapsed
-            onToggleCollapse={toggleOutput}
-            statusText={statusText}
-          />
+          <OutputPanel collapsed onToggleCollapse={toggleOutput} />
         </>
       ) : (
         <PanelGroup orientation="vertical" className="min-h-0 flex-1">
@@ -107,12 +91,7 @@ export default function WorkspacePage() {
           </Panel>
           <PanelResizeHandle className="relative flex h-1 items-center justify-center transition-colors before:absolute before:inset-x-0 before:h-px before:bg-border-default hover:before:bg-accent-blue data-[resize-handle-active]:before:bg-accent-blue" />
           <Panel defaultSize={30} minSize={15}>
-            <OutputPanel
-              output={output}
-              collapsed={false}
-              onToggleCollapse={toggleOutput}
-              statusText={statusText}
-            />
+            <OutputPanel collapsed={false} onToggleCollapse={toggleOutput} />
           </Panel>
         </PanelGroup>
       )}

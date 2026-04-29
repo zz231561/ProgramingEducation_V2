@@ -1,5 +1,20 @@
 # 變更日誌
 
+## [2026-04-29] — Phase 1-6c Output Panel Run Block 化
+
+### Added
+- `web/components/workspace/run-block.tsx` — 新建單一 Run Block 元件：32px header（折疊 chevron / Run #N / 時間 / status badge / runtime / 記憶體 / 📋 複製 / 💬 詢問 AI）+ 可折疊 body（compile / stdout / stderr 分區）+ 5 種狀態分類（accepted / compile-error / runtime-error / limit-exceeded / unknown）
+
+### Changed
+- `web/components/workspace/output-panel.tsx` 重寫 — 從單次輸出 tab UI 改為 block list：訂閱 `onExecutionComplete`、新 block 置頂自動收合舊 block（仿 Warp）、panel header 含「清空」按鈕與 block 計數、保留收合單行 status bar 顯示最新 block 摘要
+- `web/components/workspace/workspace-context.tsx` — `ExecutionResult` 新增 `time / memory` 選用欄位；新增 `requestChatInjection` + `onChatInjectionRequest` queued listener pattern（chat 收合時點擊 block 「💬」會 queue，等 chat 掛載時 drain）
+- `web/components/layout/chat-panel.tsx` — 新增訂閱 `onChatInjectionRequest`，與 auto-inject 共用 `injectExecutionResult`
+- `web/app/(app)/workspace/page.tsx` — 移除本地 `output` state（OutputPanel 自管理）、`setExecutionResult` 補傳 `time / memory`、移除 `statusText` 由 OutputPanel 內部生成
+
+### Verified
+- TypeScript `tsc --noEmit` exit 0，無錯誤
+- `RunResultCard`（chat 內既有執行結果卡片）保持不變，與 RunBlock 各司其職
+
 ## [2026-04-29] — Phase 1-6b Inter OpenType + 三權重檢核
 
 ### Added

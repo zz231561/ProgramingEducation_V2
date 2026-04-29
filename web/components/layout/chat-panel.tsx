@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect } from "react";
-import { MessageSquare, PanelRightClose } from "lucide-react";
+import { PanelRightClose } from "lucide-react";
 import { MessageList } from "@/components/chat/message-list";
 import { ChatInput } from "@/components/chat/chat-input";
 import { SessionList } from "@/components/chat/session-list";
@@ -88,10 +88,7 @@ function Header({
 }) {
   return (
     <div className="flex h-10 shrink-0 items-center justify-between border-b border-border-default px-3">
-      <div className="flex items-center gap-2">
-        <MessageSquare className="size-4 text-accent-blue" />
-        <span className="text-sm font-medium text-text-primary">AI 導師</span>
-      </div>
+      <span className="text-sm font-medium text-text-primary">AI 導師</span>
       <div className="flex items-center gap-1">
         <SessionList
           sessions={sessions}

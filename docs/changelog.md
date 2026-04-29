@@ -1,5 +1,19 @@
 # 變更日誌
 
+## [2026-04-29] — 移除 GlobalNav chat toggle 與 ChatPanel header 訊息 icon
+
+### Removed
+- `web/components/layout/global-nav.tsx` — 移除右上角 chat toggle 按鈕（`MessageSquare` / `PanelRightOpen` icon）；連帶移除已 orphan 的 `chatOpen` / `onToggleChat` props
+- `web/components/layout/chat-panel.tsx` — 移除 ChatPanel header「AI 導師」文字左側的 `MessageSquare` icon，header 僅保留純文字 + 右側 SessionList + 收合按鈕
+
+### Changed
+- `web/components/layout/app-shell.tsx` — `<GlobalNav />` 不再傳 props（簽名簡化）
+
+### Notes
+- Chat 開關現只能透過 **Ctrl+B 全域快捷鍵** 或 **ChatPanel 內收合按鈕** 觸發
+- Chat 關閉時無視覺按鈕重新開啟（依使用者要求保持極簡）；若日後需要視覺後備可加回浮動按鈕
+- TypeScript `tsc --noEmit` exit 0；其他用到 `MessageSquare` 的場景保留（session-list / message-list 空狀態 / run-block 詢問 AI 按鈕）
+
 ## [2026-04-29] — R8 反 AI 感視覺修正（Phase 1-6 follow-up）
 
 > 觸發：使用者指出截圖中右上 chat icon 半透明 halo + 紫色圓 bot 頭像 + `⚠` emoji = 廉價 AI 感。專業工具（Linear/Stripe/Vercel）皆無此風格。

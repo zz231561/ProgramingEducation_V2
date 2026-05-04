@@ -17,6 +17,10 @@
     ```
 
 ### 內容層（教學課綱）
+- [ ] **`concept_edges` seed 的 23 條邊為 AI 暫定值**
+  - **影響**：知識圖譜佈局聚類、Detail Panel 的「先修/進階」清單、未來路徑生成 (3-1) 都會用到
+  - **內容**：20 prerequisite + 3 related，依常見 C++ 教學順序；其中 `function-design → oop-encapsulation` 與 `oop-polymorphism → template-meta` 屬可爭議選擇
+  - **如何處理**：實際使用後依教師回饋調整；可發 patch migration 增刪邊或建管理介面
 - [ ] **`concepts` seed 的 `category` / `difficulty_level` / `name_zh` 為暫定值**
   - **影響**：知識圖譜 (2-2c) 的分類聚合、出題 (2-4) 的難度過濾、Learn 頁面 (3-1) 的學習路徑生成都會吃這些值
   - **暫定來源**：AI 在 2-2a 依 C++ 教學常見譯名 + 經驗判斷填入；20 個 ConceptTag 本身是 authoritative（來自 `.claude/rules/edf-pipeline.md`），但 enrichment 欄位非

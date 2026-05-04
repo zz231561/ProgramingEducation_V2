@@ -106,7 +106,10 @@
   - 完成：`services/mastery/{updater,__init__}.py` + `tests/test_mastery_updater.py`（10 測試）
   - 串入 `services/chat.py` interact() 流程，每次 EDF Evidence 後更新 mastery；失敗安全（同 RAG 處理）
   - **pyBKT 使用策略**：套件已裝（OSS 守則 ✅）；cold-start 階段用標準 BKT Bayes 公式線上更新；Phase 5 真實資料後跑 `pyBKT.Model.fit()` 學 per-concept 參數，餵入此 service 即可
-- [ ] 2-3c 圖譜節點顏色依精熟度著色（綠/黃/紅/灰）
+- [x] 2-3c 圖譜節點顏色依精熟度著色（綠/黃/紅/灰）
+  - 後端：`GET /concepts/mastery` + `services/mastery/queries.py` `get_user_mastery_summary`
+  - 前端：fetch 上提至 page 層，KnowledgeGraph 改 presentational；節點 underlay 圓環依 confidence 分群（≥0.8 mastered / 0.4-0.8 learning / <0.4 struggling / 無 row 不畫）；Detail Panel 加「我的精熟度」區塊
+  - 6 個新測試（3 backend + 3 frontend type/style 同步驗證 via TS）— 共 118 passed
 
 ### 2-4 智慧出題
 > **OSS**：LlamaIndex 教材檢索注入 prompt（Tier 1）

@@ -3,66 +3,51 @@
 /**
  * Knowledge Graph — Cytoscape.js + fcose layout 視覺化全部 Concept 節點與 Edge。
  *
- * 對應 roadmap 2-2c。串接後端 GET /concepts/graph，依 category 著色、
- * 依 difficulty_level 調整節點大小，邊樣式依 edge_type 區分。
- *
+ * Presentational 元件 — 由 KnowledgePage 傳入 graphData + masteryMap，
+ * 自己只負責 Cytoscape 生命週期與互動。
  * 視覺規格 / 色票 / 違和感 7 條檢核 → `knowledge-graph-style.ts`
  */
 
 import cytoscape, { type Core, type EventObject } from "cytoscape";
 import fcose from "cytoscape-fcose";
-import { useEffect, useMemo, useRef, useState } from "react";
-
-import { ApiRequestError, api } from "@/lib/api";
+import { useEffect, useMemo, useRef } from "react";
 
 import {
   STYLESHEET,
   TOKEN,
   toElements,
 } from "./knowledge-graph-style";
-import type { GraphData } from "./knowledge-graph-types";
+import type {
+  GraphData,
+  MasteryEntry,
+} from "./knowledge-graph-types";
 
 // 註冊 fcose layout（idempotent，多次呼叫無害）
 cytoscape.use(fcose);
 
 export type KnowledgeGraphProps = {
+  data: GraphData;
+  masteryMap: Map<string, MasteryEntry>;
   /** 點擊節點時觸發；接收 concept tag 供上層查詳情。*/
   onNodeClick?: (tag: string) => void;
 };
 
-export function KnowledgeGraph({ onNodeClick }: KnowledgeGraphProps) {
+export function KnowledgeGraph({
+  data,
+  masteryMap,
+  onNodeClick,
+}: KnowledgeGraphProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const cyRef = useRef<Core | null>(null);
-  const [data, setData] = useState<GraphData | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  // 初次載入：抓全圖
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const result = await api<GraphData>("/concepts/graph");
-        if (!cancelled) setData(result);
-      } catch (e) {
-        if (cancelled) return;
-        const msg =
-          e instanceof ApiRequestError ? e.body.message : "無法載入知識圖譜";
-        setError(msg);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   const elements = useMemo(
-    () => (data ? toElements(data) : []),
-    [data],
+    () => toElements(data, masteryMap),
+    [data, masteryMap],
   );
 
-  // Cytoscape lifecycle — data 可用後才初始化
+  // Cytoscape lifecycle
   useEffect(() => {
-    if (!containerRef.current || !data) return;
+    if (!containerRef.current) return;
 
     const cy = cytoscape({
       container: containerRef.current,
@@ -103,23 +88,7 @@ export function KnowledgeGraph({ onNodeClick }: KnowledgeGraphProps) {
       cy.destroy();
       cyRef.current = null;
     };
-  }, [data, elements, onNodeClick]);
-
-  if (error) {
-    return (
-      <div className="flex h-full items-center justify-center">
-        <p className="text-sm text-text-secondary">{error}</p>
-      </div>
-    );
-  }
-
-  if (!data) {
-    return (
-      <div className="flex h-full items-center justify-center">
-        <p className="text-sm text-text-secondary">載入知識圖譜中…</p>
-      </div>
-    );
-  }
+  }, [elements, onNodeClick]);
 
   return (
     <div

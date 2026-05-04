@@ -18,8 +18,17 @@ import {
 } from "./knowledge-graph-style";
 import type {
   ConceptDetailData,
+  MasteryEntry,
   NeighborRecord,
 } from "./knowledge-graph-types";
+import { getMasteryBand } from "./knowledge-graph-types";
+
+const MASTERY_BAND_LABEL: Record<string, { label: string; color: string }> = {
+  mastered: { label: "已掌握", color: "#3FB950" },
+  learning: { label: "學習中", color: "#D29922" },
+  struggling: { label: "需加強", color: "#F85149" },
+  unseen: { label: "尚未互動", color: "#6E7681" },
+};
 
 const EDGE_TYPE_LABEL: Record<string, string> = {
   prerequisite: "先修",
@@ -30,12 +39,15 @@ const EDGE_TYPE_LABEL: Record<string, string> = {
 
 export type ConceptDetailPanelProps = {
   tag: string;
+  /** 此 tag 對應的學生精熟度；undefined 表示尚未互動 */
+  mastery?: MasteryEntry;
   onClose: () => void;
   onSelectTag: (tag: string) => void;
 };
 
 export function ConceptDetailPanel({
   tag,
+  mastery,
   onClose,
   onSelectTag,
 }: ConceptDetailPanelProps) {
@@ -72,7 +84,7 @@ export function ConceptDetailPanel({
       ) : !data ? (
         <p className="px-4 py-6 text-sm text-text-secondary">載入中…</p>
       ) : (
-        <PanelBody data={data} onSelectTag={onSelectTag} />
+        <PanelBody data={data} mastery={mastery} onSelectTag={onSelectTag} />
       )}
     </aside>
   );
@@ -98,9 +110,11 @@ function PanelHeader({ onClose }: { onClose: () => void }) {
 
 function PanelBody({
   data,
+  mastery,
   onSelectTag,
 }: {
   data: ConceptDetailData;
+  mastery?: MasteryEntry;
   onSelectTag: (tag: string) => void;
 }) {
   const { concept, neighbors } = data;
@@ -124,6 +138,8 @@ function PanelBody({
       </div>
 
       <p className="mt-1 text-xs text-text-secondary">{concept.name_en}</p>
+
+      <MasterySection mastery={mastery} />
 
       <section className="mt-5">
         <h3 className="text-xs font-medium uppercase tracking-wide text-text-muted">
@@ -149,6 +165,32 @@ function PanelBody({
     </div>
   );
 }
+
+function MasterySection({ mastery }: { mastery?: MasteryEntry }) {
+  const band = getMasteryBand(mastery?.confidence);
+  const { label, color } = MASTERY_BAND_LABEL[band];
+  return (
+    <section className="mt-5">
+      <h3 className="text-xs font-medium uppercase tracking-wide text-text-muted">
+        我的精熟度
+      </h3>
+      <div className="mt-2 flex items-center gap-2">
+        <span
+          className="inline-flex size-2 rounded-full"
+          style={{ backgroundColor: color }}
+          aria-hidden
+        />
+        <span className="text-sm text-text-primary">{label}</span>
+        {mastery ? (
+          <span className="text-xs text-text-muted">
+            {Math.round(mastery.confidence * 100)}% · {mastery.exposure_count} 次互動
+          </span>
+        ) : null}
+      </div>
+    </section>
+  );
+}
+
 
 function DifficultyDots({ level }: { level: number }) {
   return (

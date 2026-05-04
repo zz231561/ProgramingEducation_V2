@@ -8,7 +8,8 @@
 
 import type { ElementDefinition, StylesheetCSS } from "cytoscape";
 
-import type { GraphData } from "./knowledge-graph-types";
+import type { GraphData, MasteryEntry } from "./knowledge-graph-types";
+import { getMasteryBand } from "./knowledge-graph-types";
 
 // === Design tokens（與 frontend.md 對齊） ===
 
@@ -81,6 +82,36 @@ export const STYLESHEET: StylesheetCSS[] = [
     css: { opacity: 0.18 },
   },
 
+  // --- Mastery 外圈（roadmap 2-3c）— 顏色用於功能性語意（學習狀態），符合 R8.4 ---
+  {
+    selector: 'node[mastery_band = "mastered"]',
+    css: {
+      "underlay-color": "#3FB950",
+      "underlay-padding": 4,
+      "underlay-opacity": 0.9,
+      "underlay-shape": "ellipse",
+    },
+  },
+  {
+    selector: 'node[mastery_band = "learning"]',
+    css: {
+      "underlay-color": "#D29922",
+      "underlay-padding": 4,
+      "underlay-opacity": 0.9,
+      "underlay-shape": "ellipse",
+    },
+  },
+  {
+    selector: 'node[mastery_band = "struggling"]',
+    css: {
+      "underlay-color": "#F85149",
+      "underlay-padding": 4,
+      "underlay-opacity": 0.9,
+      "underlay-shape": "ellipse",
+    },
+  },
+  // unseen（無 row）：不畫 underlay，保持原樣
+
   // --- Edge base ---
   {
     selector: "edge",
@@ -132,19 +163,27 @@ export const STYLESHEET: StylesheetCSS[] = [
 
 // === GraphData → Cytoscape elements ===
 
-export function toElements(data: GraphData): ElementDefinition[] {
-  const nodes: ElementDefinition[] = data.nodes.map((n) => ({
-    data: {
-      id: n.id,
-      tag: n.tag,
-      label: n.name_zh,
-      color: CATEGORY_COLOR[n.category] ?? DEFAULT_CATEGORY_COLOR,
-      // Obsidian 比例：18 base + 4 per difficulty (1-5 → 22-38 px)
-      size: 18 + n.difficulty_level * 4,
-      category: n.category,
-      difficulty_level: n.difficulty_level,
-    },
-  }));
+export function toElements(
+  data: GraphData,
+  masteryMap?: Map<string, MasteryEntry>,
+): ElementDefinition[] {
+  const nodes: ElementDefinition[] = data.nodes.map((n) => {
+    const mastery = masteryMap?.get(n.tag);
+    return {
+      data: {
+        id: n.id,
+        tag: n.tag,
+        label: n.name_zh,
+        color: CATEGORY_COLOR[n.category] ?? DEFAULT_CATEGORY_COLOR,
+        // Obsidian 比例：18 base + 4 per difficulty (1-5 → 22-38 px)
+        size: 18 + n.difficulty_level * 4,
+        category: n.category,
+        difficulty_level: n.difficulty_level,
+        mastery_band: getMasteryBand(mastery?.confidence),
+        confidence: mastery?.confidence ?? null,
+      },
+    };
+  });
   const edges: ElementDefinition[] = data.edges.map((e) => ({
     data: {
       id: e.id,

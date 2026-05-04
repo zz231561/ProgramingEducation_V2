@@ -1,5 +1,39 @@
 # 變更日誌
 
+## [2026-05-04] — Phase 2-3c：圖譜節點精熟度著色（Phase 2-3 完成）
+
+### 新增（後端）
+- `backend/services/mastery/queries.py` — `get_user_mastery_summary(db, user_id)` JOIN concepts，回傳 `MasterySummaryEntry` 列表（tag + confidence + counts + bloom_level）
+- `backend/api/routes/concepts.py` 新增 `GET /concepts/mastery` 端點（auth-gated），回傳 `MasteryEntryOut[]`；無互動的 concept 不在回應中
+- 3 個測試（401 未授權 / 空 mastery 回 [] / 含資料時 tag/confidence 正確對位）
+
+### 新增（前端）
+- `web/components/knowledge/knowledge-graph-types.ts` 加 `MasteryEntry` + `MasteryBand` + `getMasteryBand(confidence)`：`mastered (≥0.8) / learning (0.4-0.8) / struggling (<0.4) / unseen (no row)`
+- `web/components/knowledge/concept-detail-panel.tsx` 新增 `MasterySection` — 顯示「已掌握 / 學習中 / 需加強 / 尚未互動」+ confidence% + 互動次數
+
+### 變更（前端）
+- `web/components/knowledge/knowledge-graph-style.ts` — `toElements` 加 masteryMap 參數；新增 3 條 underlay 規則（綠/黃/紅）對應 mastery_band；unseen 不畫
+- `web/components/knowledge/knowledge-graph.tsx` — 改 presentational：移除內部 fetch，改接 `data` + `masteryMap` props（120→100 行）
+- `web/app/(app)/knowledge/page.tsx` — 升為 container：Promise.all 平行 fetch graph + mastery，loading/error 集中管理，下傳 mastery 給 graph 與 panel（41→95 行）
+
+### 設計取捨
+- **用 `underlay-*` 而非 `outline-*`**：Cytoscape underlay 能畫在節點底層產生「光暈」感，與我們的 ellipse + Obsidian 風格更協調；outline 邊緣較硬
+- **顏色語意衝突**：mastery 用的綠/紅 也是 category 色（物件導向/記憶體）— 視為兩個獨立視覺通道（fill = subject area，underlay = proficiency），實測不會誤讀
+- **無互動概念不畫圈**：避免一張全紅圖嚇到新使用者；首次互動才會出現顏色
+- **fetch 上提至 page**：mastery 同時要餵給 graph（節點圈）與 panel（顯示百分比），page 層管 state 是唯一合理位置；graph 元件變 presentational 也更好測
+
+### 已知警告
+- `concept-detail-panel.tsx` 248 行（停止線 250 邊緣）— 5 個 sub-component 緊密耦合，下次再加功能必須拆檔（建議：MasterySection / NeighborSection 各獨立）
+
+### 驗證（自動）
+- 118 個測試全綠（115 既有 + 3 新增 mastery route 測試）
+- TS clean ✓
+
+### Phase 2-3 完整收尾
+- ✅ 2-3a `student_mastery` schema
+- ✅ 2-3b BKT 線上更新串入 chat 流程
+- ✅ 2-3c 圖譜精熟度視覺化 + Detail Panel 精熟度區塊
+
 ## [2026-05-04] — Phase 2-3b：BKT 線上精熟度更新
 
 ### 新增

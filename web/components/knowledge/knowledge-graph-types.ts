@@ -34,3 +34,24 @@ export type ConceptDetailData = {
   concept: ConceptNode;
   neighbors: NeighborRecord[];
 };
+
+/** 與後端 MasteryEntryOut 對齊。 */
+export type MasteryEntry = {
+  tag: string;
+  confidence: number;
+  exposure_count: number;
+  success_count: number;
+  error_count: number;
+  bloom_level: number | null;
+};
+
+/** 精熟度視覺分群（前端衍生）。 */
+export type MasteryBand = "mastered" | "learning" | "struggling" | "unseen";
+
+/** confidence → band 對應；undefined（無 row）= unseen。 */
+export function getMasteryBand(confidence: number | undefined): MasteryBand {
+  if (confidence === undefined) return "unseen";
+  if (confidence >= 0.8) return "mastered";
+  if (confidence >= 0.4) return "learning";
+  return "struggling";
+}

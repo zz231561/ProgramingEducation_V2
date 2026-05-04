@@ -35,7 +35,9 @@ class User(Base):
     name: Mapped[str] = mapped_column(String(100))
     avatar_url: Mapped[str | None] = mapped_column(String(500), default=None)
     role: Mapped[UserRole] = mapped_column(
-        Enum(UserRole, name="user_role"),
+        # values_callable：把 enum.value（小寫 "student"）寫入 Postgres，
+        # 而非預設的 enum.name（"STUDENT"）— 與 alembic migration 建的 ENUM 對齊。
+        Enum(UserRole, name="user_role", values_callable=lambda x: [e.value for e in x]),
         default=UserRole.STUDENT,
     )
     google_id: Mapped[str] = mapped_column(

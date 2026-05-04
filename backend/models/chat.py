@@ -62,7 +62,12 @@ class ChatMessage(Base):
         ForeignKey("chat_sessions.id", ondelete="CASCADE"),
     )
     role: Mapped[MessageRole] = mapped_column(
-        Enum(MessageRole, name="message_role"),
+        # values_callable：寫入 enum.value（小寫）對齊 Postgres ENUM；見 user.py 同款註解
+        Enum(
+            MessageRole,
+            name="message_role",
+            values_callable=lambda x: [e.value for e in x],
+        ),
     )
     content: Mapped[str] = mapped_column(Text)
     code_snapshot: Mapped[str | None] = mapped_column(Text, default=None)

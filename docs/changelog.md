@@ -1,5 +1,30 @@
 # 變更日誌
 
+## [2026-05-04] — Phase 2-2b：知識圖譜查詢 service + API
+
+### 新增
+- `backend/models/concept.py`（94 行）— `Concept` / `ConceptEdge` / `EdgeType` ORM models（schema 對齊 migration `c3d4e5f6a7b8`）
+- `backend/services/graph/queries.py`（89 行）—
+  - `get_full_graph(db) -> GraphSnapshot`：全圖一次回傳（concepts + edges）
+  - `get_concept_neighborhood(db, tag) -> ConceptNeighborhood | None`：單節點 + depth-1 鄰居（雙向掃描）
+- `backend/api/routes/concepts.py`（150 行）— REST 端點：
+  - `GET /concepts/graph` → Cytoscape 慣例格式 `{nodes, edges}`（`source`/`target` 而非 `source_id`）
+  - `GET /concepts/{tag}` → `{concept, neighbors: [{direction, edge, concept}]}`，不存在 → `404 CONCEPT_NOT_FOUND`
+  - 兩端點皆需 `get_current_db_user` 認證
+- `backend/tests/test_concept_graph.py`（162 行）— 9 個測試（5 service + 4 API）
+
+### 變更
+- `backend/models/__init__.py` — 註冊 Concept / ConceptEdge / EdgeType
+- `backend/main.py` — 註冊 `concepts_router`
+
+### 設計重點
+- **以 `tag` 為 URL 識別**（非 UUID）— `/concepts/pointer-arithmetic` 比 `/concepts/{uuid}` 穩定、URL 友善
+- **方向標記**：API 明確區分 `incoming` vs `outgoing`，給前端 Detail Panel 顯示「先修」vs「進階」
+- **service 回傳 ORM**，route 層做 Pydantic serialization — 兩層邊界乾淨
+
+### 驗證
+- 105 個測試全綠（96 既有 + 9 新增），zero regression
+
 ## [2026-05-04] — Phase 2-2a：知識圖譜 schema + 20 ConceptTag seed
 
 ### 新增

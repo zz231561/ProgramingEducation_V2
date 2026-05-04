@@ -82,7 +82,9 @@
   - 完成：alembic migration `c3d4e5f6a7b8`；`concepts` 含 unique(tag) + check(difficulty 1-5) + index(category)；`concept_edges` 含 4-value ENUM `concept_edge_type` + CASCADE FK + unique(source/target/type) + check(無自環)
   - 20 筆 seed 分 6 個 category（基礎語法 6 / 記憶體 4 / 物件導向 3 / STL 2 / 演算法 2 / 進階 3）
   - ⚠ category / difficulty / name_zh 為暫定值，記於 `docs/tech-debt.md`，2-2c 後校準
-- [ ] 2-2b 圖譜查詢 service（全圖 / 單節點 + 鄰居）
+- [x] 2-2b 圖譜查詢 service（全圖 / 單節點 + 鄰居）
+  - 完成：`models/concept.py` ORM + `services/graph/queries.py`（`get_full_graph` + `get_concept_neighborhood`） + `api/routes/concepts.py`（`GET /concepts/graph` + `GET /concepts/{tag}` 含方向標記）
+  - 9 個新測試 + 既有 96 全綠 = 105 passed（2026-05-04）
 - [ ] 2-2c Knowledge 頁面：Cytoscape.js 圖譜渲染
 - [ ] 2-2d Concept Detail Panel（點擊節點顯示詳情）
 

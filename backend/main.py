@@ -10,10 +10,11 @@ from core.config import settings
 from core.database import engine
 from core.redis import init_redis, close_redis
 from core.errors import AppError, app_error_handler, unhandled_error_handler
-from api.routes.health import router as health_router
 from api.routes.auth import router as auth_router
-from api.routes.code import router as code_router
 from api.routes.chat import router as chat_router
+from api.routes.code import router as code_router
+from api.routes.concepts import router as concepts_router
+from api.routes.health import router as health_router
 
 
 @asynccontextmanager
@@ -53,3 +54,4 @@ app.include_router(health_router)
 app.include_router(auth_router)
 app.include_router(code_router)
 app.include_router(chat_router)
+app.include_router(concepts_router)

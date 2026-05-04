@@ -73,7 +73,13 @@ class ConceptEdge(Base):
         ForeignKey("concepts.id", ondelete="CASCADE"),
     )
     edge_type: Mapped[EdgeType] = mapped_column(
-        Enum(EdgeType, name="concept_edge_type"),
+        # values_callable：與 user_role/message_role 同款修補；
+        # PG ENUM 用小寫 value，無此設定讀取時會以 enum.name 比對而 LookupError
+        Enum(
+            EdgeType,
+            name="concept_edge_type",
+            values_callable=lambda x: [e.value for e in x],
+        ),
     )
     weight: Mapped[float] = mapped_column(Float, default=1.0)
     created_at: Mapped[datetime] = mapped_column(

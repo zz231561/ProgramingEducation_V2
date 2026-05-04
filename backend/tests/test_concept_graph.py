@@ -5,14 +5,18 @@
 - queries.get_concept_neighborhood：tag 不存在 / 無鄰居 / 多向鄰居
 - API GET /concepts/graph：未登入 401 / 登入回傳完整圖
 - API GET /concepts/{tag}：未登入 401 / 不存在 404 / 鄰居方向正確
+- API GET /concepts/mastery：未登入 401 / 無資料 [] / 有資料正確回傳
 """
 
 import uuid
 
 import pytest
 from httpx import AsyncClient
+from sqlalchemy import select
 
 from models.concept import Concept, ConceptEdge, EdgeType
+from models.mastery import StudentMastery
+from models.user import User
 from services.graph import get_concept_neighborhood, get_full_graph
 from tests.helpers import TestSessionFactory, encrypt_test_token
 
@@ -20,6 +24,7 @@ STUDENT_PAYLOAD = {
     "sub": "graph-test-user",
     "email": "graph@test.com",
     "name": "Graph Tester",
+    "googleId": "g-graph-test-user",
 }
 
 
@@ -142,6 +147,73 @@ async def test_concept_detail_route_404(client: AsyncClient):
     )
     assert resp.status_code == 404
     assert resp.json()["error"] == "CONCEPT_NOT_FOUND"
+
+
+# --- /concepts/mastery ---
+
+
+async def test_mastery_route_requires_auth(client: AsyncClient):
+    resp = await client.get("/concepts/mastery")
+    assert resp.status_code == 401
+
+
+async def test_mastery_route_empty_when_no_interactions(client: AsyncClient):
+    """新使用者尚未互動 → 回傳空 list。"""
+    token = encrypt_test_token(STUDENT_PAYLOAD)
+    resp = await client.get(
+        "/concepts/mastery",
+        cookies={"authjs.session-token": token},
+    )
+    assert resp.status_code == 200
+    assert resp.json() == []
+
+
+async def test_mastery_route_returns_user_specific_rows(client: AsyncClient):
+    """登入後依當前 user 篩選 mastery rows，並含 tag 對位。"""
+    ids = await _seed_graph()
+    token = encrypt_test_token(STUDENT_PAYLOAD)
+
+    # 第一次 hit /concepts/mastery 觸發 user 自動建立（get_or_create_user）
+    await client.get("/concepts/mastery", cookies={"authjs.session-token": token})
+
+    # 從 DB 撈該 user，手動塞兩筆 mastery
+    async with TestSessionFactory() as db:
+        user = (
+            await db.execute(select(User).where(User.email == "graph@test.com"))
+        ).scalar_one()
+        db.add_all([
+            StudentMastery(
+                user_id=user.id,
+                concept_id=ids["syntax-basic"],
+                confidence=0.85,
+                exposure_count=4,
+                success_count=4,
+                error_count=0,
+                bloom_level=3,
+            ),
+            StudentMastery(
+                user_id=user.id,
+                concept_id=ids["control-flow"],
+                confidence=0.32,
+                exposure_count=2,
+                success_count=0,
+                error_count=2,
+                bloom_level=2,
+            ),
+        ])
+        await db.commit()
+
+    resp = await client.get(
+        "/concepts/mastery",
+        cookies={"authjs.session-token": token},
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert len(body) == 2
+    by_tag = {b["tag"]: b for b in body}
+    assert by_tag["syntax-basic"]["confidence"] == 0.85
+    assert by_tag["control-flow"]["confidence"] == 0.32
+    assert by_tag["control-flow"]["error_count"] == 2
 
 
 async def test_concept_detail_route_returns_directed_neighbors(client: AsyncClient):

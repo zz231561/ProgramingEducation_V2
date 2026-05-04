@@ -12,12 +12,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from api.deps import get_current_db_user, get_db
 from core.errors import AppError
 from models.concept import Concept, ConceptEdge
+from models.user import User
 from services.graph import (
     ConceptNeighborhood,
     GraphSnapshot,
     get_concept_neighborhood,
     get_full_graph,
 )
+from services.mastery import MasterySummaryEntry, get_user_mastery_summary
 
 router = APIRouter(prefix="/concepts", tags=["concepts"])
 
@@ -91,6 +93,28 @@ class ConceptDetailOut(BaseModel):
     neighbors: list[NeighborOut]
 
 
+class MasteryEntryOut(BaseModel):
+    """單一 concept 的精熟度（給前端 Knowledge Graph 著色用）。"""
+
+    tag: str
+    confidence: float = Field(ge=0, le=1)
+    exposure_count: int
+    success_count: int
+    error_count: int
+    bloom_level: int | None
+
+    @classmethod
+    def from_summary(cls, e: MasterySummaryEntry) -> "MasteryEntryOut":
+        return cls(
+            tag=e.tag,
+            confidence=e.confidence,
+            exposure_count=e.exposure_count,
+            success_count=e.success_count,
+            error_count=e.error_count,
+            bloom_level=e.bloom_level,
+        )
+
+
 # === Endpoints ===
 
 
@@ -105,6 +129,19 @@ async def get_graph(
         nodes=[ConceptOut.from_orm(c) for c in snapshot.concepts],
         edges=[EdgeOut.from_orm(e) for e in snapshot.edges],
     )
+
+
+@router.get("/mastery", response_model=list[MasteryEntryOut])
+async def get_my_mastery(
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_db_user),
+) -> list[MasteryEntryOut]:
+    """回傳當前使用者所有 concept 的精熟度（沒互動過的 concept 不會出現）。
+
+    供 Knowledge 頁面繪製節點外圈著色（綠/黃/紅 = mastered/learning/struggling）。
+    """
+    summaries = await get_user_mastery_summary(db, user.id)
+    return [MasteryEntryOut.from_summary(s) for s in summaries]
 
 
 @router.get("/{tag}", response_model=ConceptDetailOut)

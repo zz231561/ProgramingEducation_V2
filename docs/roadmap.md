@@ -118,7 +118,10 @@
   - 完成：alembic `f6a7b8c9d0e1` + `models/quiz.py`（Question + StudentAnswer + QuestionType / QuestionSource）
   - enum 改 String + CHECK（避開 PG ENUM enum.value/.name 同款坑）；concept_tags 用 JSON 而非 PG `text[]`（SQLite 測試相容）
   - Comprehension 擴充欄位（2-6）留給後續 migration
-- [ ] 2-4b Select 階段：弱項概念選取 + 知識圖譜關聯
+- [x] 2-4b Select 階段：弱項概念選取 + 知識圖譜關聯
+  - 完成：`services/quiz/select.py` `select_weak_concepts(db, user_id, top_k=5)`
+  - 弱項定義：`confidence < 0.4 AND exposure_count >= 1`；中心度加權 score = (1-conf) × (1 + 0.2 × out_degree)
+  - Cold-start 回 []；7 個單元測試（邊界條件 + 排序 + 中心度 + top_k）
 - [ ] 2-4c Generate 階段：LLM 出題 + RAG 教材注入
 - [ ] 2-4d Validate 階段：LLM 自我檢查答案
 - [ ] 2-4e Quiz API 端點（generate + submit + history）

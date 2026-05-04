@@ -1,5 +1,26 @@
 # 變更日誌
 
+## [2026-05-04] — Phase 2-4b：弱項概念選取 + 知識圖譜中心度加權
+
+### 新增
+- `backend/services/quiz/select.py`（83 行）— `select_weak_concepts(db, user_id, top_k=5)`：
+  - 弱項定義：`confidence < WEAK_THRESHOLD (0.4) AND exposure_count >= 1`（未互動不算弱）
+  - 圖譜中心度加權：score = `(1 - confidence) × (1 + CENTRALITY_BONUS × out_degree)`，被多個概念依賴的弱項排前面
+  - Cold-start（無 mastery rows）回 []，由 2-4c Generate 自行決定（例如挑入門 concept）
+- `backend/services/quiz/__init__.py` — 公開 API
+- `backend/tests/test_quiz_select.py`（180 行）— 7 個測試：
+  - 邊界：no mastery / 只有強項 / unexposed low-confidence 不入選
+  - 排序：純弱項 confidence 升冪、中心度加權促 hub 概念到前
+  - 限制：top_k 截斷、constant sanity
+
+### 設計決策
+- **中心度加權**：foundation 概念（如 syntax-basic 有 5 個後續依賴）若是弱項，補強的價值高於孤立弱項；公式 `1 + 0.2 × out_degree` 每多一個依賴 +20% 優先度
+- **不擴展未追蹤的鄰居**：只在「已有 student_mastery row 且 confidence < 0.4」中挑；前置概念若沒 row 表示學生沒接觸，不該主動測試（避免擾亂學生）
+- **Cold-start 回空 list**：本層只負責「弱項」語意；2-4c 自己處理「怎麼開始」
+
+### 驗證（自動）
+- 7 個新測試 + 118 既有 = **125 passed** ✓
+
 ## [2026-05-04] — Phase 2-4a：questions + student_answers schema
 
 ### 新增

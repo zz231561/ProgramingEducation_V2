@@ -158,7 +158,13 @@
   - Quiz 占位頁改造為 demo 觸發點：`POST /quiz/generate type=coding` → ReflectionFlow → 放行後顯示題目
   - 元件全部受控 prop-driven，預留給 2-5d 側邊欄、3-1e 練習 tab 復用
   - ESLint / TypeScript / next build 全綠
-- [ ] 2-5d 反思計畫側邊欄（Workspace 內持續顯示 + 可編輯）
+- [x] 2-5d 反思計畫側邊欄（Workspace 內持續顯示 + 可編輯）
+  - 完成：`lib/active-reflection.ts`（sessionStorage helper + 同/跨 tab event）+ `lib/reflection.ts` 補 `getReflection`
+  - 元件：`components/reflection/reflection-sidebar.{tsx,view.tsx,edit.tsx}` + `use-active-reflection.ts` hook
+  - Workspace 整合：Toolbar 加 ListChecks toggle（active reflection 時顯示綠色 dot）；左側 resizable Panel（28%/20%/40%）；進入頁面有 active reflection 自動展開
+  - Quiz demo ReflectionSummary 加「前往 Workspace 作答」`<Link>`，點擊寫 sessionStorage
+  - 編輯模式呼叫 PATCH /reflection/{id} → 觸發後端重新評分；404 自動清過期 ID 退回空狀態
+  - ESLint / TypeScript / next build 全綠
 - [ ] 2-5e 反思內容注入 EDF Evidence 層（AI Tutor 可引用學生計畫）
 
 ### 2-6 Post-Solution Comprehension Check（解題後理解驗證）

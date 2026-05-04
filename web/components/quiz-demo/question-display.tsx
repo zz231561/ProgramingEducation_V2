@@ -7,10 +7,13 @@
  * 確保學生有「先讀題、再反思、最後作答」的完整脈絡（PRIMM 強調對「具體題目」反思）。
  *
  * Phase 完整 Quiz UI 屬 Phase 3-2；此處僅為 2-5c 流程驗證。
+ * 2-5d：ready phase 加「前往 Workspace」按鈕，把 reflection_id 寫入 sessionStorage。
  */
 
-import { CheckCircle2, RotateCcw, Sparkles } from "lucide-react";
+import Link from "next/link";
+import { ArrowRight, CheckCircle2, RotateCcw, Sparkles } from "lucide-react";
 
+import { setActiveReflectionId } from "@/lib/active-reflection";
 import { Reflection } from "@/lib/reflection";
 
 export type DisplayPhase = "preview" | "reflecting" | "ready";
@@ -131,6 +134,7 @@ function ReflectingHint() {
 
 function ReflectionSummary({ reflection }: { reflection: Reflection }) {
   const score = reflection.quality_score;
+  const handleGoWorkspace = () => setActiveReflectionId(reflection.id);
   return (
     <div className="rounded-md border border-border-default bg-surface-2 p-4">
       <p className="mb-2 flex items-center gap-1.5 text-xs font-medium text-accent-green">
@@ -157,6 +161,19 @@ function ReflectionSummary({ reflection }: { reflection: Reflection }) {
           </li>
         )}
       </ul>
+      <div className="mt-3 border-t border-border-default pt-3">
+        <Link
+          href="/workspace"
+          onClick={handleGoWorkspace}
+          className="inline-flex h-8 items-center gap-1.5 rounded-md bg-btn-primary-bg px-3 text-xs font-medium text-white hover:bg-btn-primary-hover"
+        >
+          前往 Workspace 作答
+          <ArrowRight className="size-3.5" />
+        </Link>
+        <p className="mt-1.5 text-xs text-text-muted">
+          反思計畫會在 Workspace 左側持續顯示，可隨時編輯。
+        </p>
+      </div>
     </div>
   );
 }

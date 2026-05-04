@@ -1,6 +1,6 @@
 "use client";
 
-import { Play } from "lucide-react";
+import { ListChecks, Play } from "lucide-react";
 
 interface ToolbarProps {
   fileName?: string;
@@ -8,20 +8,46 @@ interface ToolbarProps {
   isDirty?: boolean;
   onRun?: () => void;
   isRunning?: boolean;
+  /** 反思側邊欄是否展開（無此 prop 則不顯示 toggle 按鈕）。 */
+  reflectionSidebarOpen?: boolean;
+  onToggleReflectionSidebar?: () => void;
+  /** 是否有 active reflection（用於在 toggle button 上顯示 dot 提示）。 */
+  hasActiveReflection?: boolean;
 }
 
 /**
  * Workspace 頁面 Toolbar — 檔名 + 修改狀態 dot + 語言 badge + Run 按鈕。
  * Chat Toggle 移至 GlobalNav（design-plan §2.5）。
+ * Reflection Sidebar Toggle 在最左側（Phase 2-5d）。
  */
 export function Toolbar({
   fileName = "main.cpp",
   isDirty = false,
   onRun,
   isRunning = false,
+  reflectionSidebarOpen,
+  onToggleReflectionSidebar,
+  hasActiveReflection = false,
 }: ToolbarProps) {
   return (
     <div className="flex h-10 shrink-0 items-center gap-2 border-b border-border-muted bg-bg-canvas px-3 body-ui">
+      {onToggleReflectionSidebar && (
+        <button
+          onClick={onToggleReflectionSidebar}
+          aria-pressed={reflectionSidebarOpen ?? false}
+          className="relative flex size-7 items-center justify-center rounded-md text-text-muted hover:bg-bg-subtle hover:text-text-primary aria-pressed:bg-bg-subtle aria-pressed:text-text-primary"
+          title={reflectionSidebarOpen ? "收合反思計畫" : "展開反思計畫"}
+        >
+          <ListChecks className="size-4" />
+          {hasActiveReflection && !reflectionSidebarOpen && (
+            <span
+              className="absolute right-1 top-1 size-1.5 rounded-pill bg-accent-green"
+              aria-hidden
+            />
+          )}
+        </button>
+      )}
+
       <div className="flex items-center gap-1.5">
         {/* 修改狀態 dot：黃色＝有未執行的變更；隱形佔位＝乾淨 */}
         <span

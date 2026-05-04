@@ -1,5 +1,33 @@
 # 變更日誌
 
+## [2026-05-04] — Phase 2-5d：Workspace 反思計畫側邊欄
+
+### 新增（持久化 + API helper）
+- `web/lib/active-reflection.ts`（48 行）— sessionStorage helper：`getActiveReflectionId` / `setActiveReflectionId` / `clearActiveReflectionId`；同 tab 變更透過 `active-reflection-change` custom event，跨 tab 透過 storage event
+- `web/lib/reflection.ts` 補 `getReflection(id)`
+
+### 新增（Sidebar 元件）
+- `web/components/reflection/use-active-reflection.ts`（85 行）— hook：訂閱 sessionStorage / event → 呼叫 GET /reflection；404 自動清過期 ID 顯示空狀態
+- `web/components/reflection/reflection-sidebar.tsx`（114 行）— 主元件：載入/錯誤/空狀態/顯示模式/編輯模式 5 種狀態切換
+- `web/components/reflection/reflection-sidebar-view.tsx`（109 行）— 顯示模式：QualityChip + 三 Section（理解/步驟/概念）+ AI 教練建議區塊 + 編輯/清除按鈕
+- `web/components/reflection/reflection-sidebar-edit.tsx`（95 行）— 編輯模式：復用 `ReflectionForm`；存檔呼叫 PATCH /reflection/{id}（後端會自動重新評分）
+
+### Workspace 整合
+- `web/components/workspace/toolbar.tsx`（55 → 80 行）— 最左加入 ListChecks toggle 按鈕；有 active reflection 時顯示綠色 dot 提示
+- `web/app/(app)/workspace/page.tsx`（103 → 153 行）— 反思側邊欄為左側 Panel（resizable，default 28% / min 20% / max 40%）；進入頁面若有 active reflection 自動展開；訂閱 sessionStorage 變化更新 Toolbar dot
+- `web/components/quiz-demo/question-display.tsx` — ReflectionSummary 加「前往 Workspace 作答」`<Link>` 按鈕，點擊時 `setActiveReflectionId` 寫 sessionStorage
+
+### 設計關鍵
+- **不擴後端**：純前端持久化（sessionStorage），不需新增 list/latest endpoint
+- **同 tab 通知**：`storage` event 預設只在「其他」tab 觸發；用 `CustomEvent('active-reflection-change')` 補上同 tab 場景
+- **404 自動清過期**：反思被刪除時清掉 sessionStorage，UI 退回空狀態而非顯示錯誤
+- **元件邊界**：Sidebar 全部 prop-driven + hook 化，方便 3-1e 練習 tab 直接復用
+- **R8.1 / R8.2 合規**：error UI 用 `border-l-2 + bg-surface-2`；toggle dot 用實心 `bg-accent-green` 純功能性，無半透明色填充；icon 全 lucide-react 無 emoji 符號字
+- **檔案大小**：所有檔案 ≤ 153 行，遠低於 250 硬性線
+
+### 驗證
+- ESLint / TypeScript / next build：全綠
+
 ## [2026-05-04] — Phase 2-5c 修正：先讀題再反思（PRIMM 對齊）
 
 ### 問題

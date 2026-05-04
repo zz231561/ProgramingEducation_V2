@@ -61,3 +61,7 @@ export async function patchReflection(
     body: JSON.stringify(payload),
   });
 }
+
+export async function getReflection(id: string): Promise<Reflection> {
+  return api<Reflection>(`/reflection/${id}`);
+}

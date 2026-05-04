@@ -5,29 +5,27 @@
  *
  * 完整 Quiz UI 屬於 Phase 3-2；此處先做反思流程 demo：
  * 1. 點「開始示範」→ 後端拿一道 coding 題
- * 2. 立刻彈出 ReflectionFlow modal（必填反思 + LLM 評估 + 追問）
- * 3. 放行後顯示題目本體（題幹 + starter_code）
+ * 2. 進入 preview：題目展示給學生讀，按「開始反思」才彈 modal
+ * 3. reflecting：modal 彈出，題目仍在背景
+ * 4. ready：反思摘要 + 題目（可作答上下文）
  *
  * 規格：roadmap 2-5c「程式撰寫題開題時觸發反思表單 UI」。
+ * 設計原則（PRIMM）：反思必須針對「已讀過的具體題目」，不能讓學生在沒看題就反思。
  */
 
 import { useCallback, useState } from "react";
-import { FileQuestion, Loader2, Play, RotateCcw } from "lucide-react";
+import { FileQuestion, Loader2, Play } from "lucide-react";
 
+import {
+  CodingQuestion,
+  DisplayPhase,
+  QuestionDisplay,
+} from "@/components/quiz-demo/question-display";
 import { ReflectionFlow } from "@/components/reflection/reflection-flow";
 import { ApiRequestError, api } from "@/lib/api";
 import { Reflection } from "@/lib/reflection";
 
-interface CodingQuestion {
-  id: string;
-  type: string;
-  concept_tags: string[];
-  bloom_level: number;
-  difficulty: number;
-  content: { stem: string; starter_code?: string };
-}
-
-type Phase = "idle" | "loading" | "reflecting" | "ready";
+type Phase = "idle" | "loading" | DisplayPhase;
 
 export default function QuizPage() {
   const [phase, setPhase] = useState<Phase>("idle");
@@ -44,12 +42,14 @@ export default function QuizPage() {
         body: JSON.stringify({ type: "coding", bloom_level: 3 }),
       });
       setQuestion(q);
-      setPhase("reflecting");
+      setPhase("preview");
     } catch (e) {
       setPhase("idle");
       setError(humanizeQuizError(e));
     }
   }, []);
+
+  const startReflect = useCallback(() => setPhase("reflecting"), []);
 
   const handleApprove = useCallback((r: Reflection) => {
     setReflection(r);
@@ -57,11 +57,8 @@ export default function QuizPage() {
   }, []);
 
   const handleClose = useCallback(() => {
-    if (phase === "reflecting") {
-      // 學生取消反思 → 回到 idle，question 也清掉（避免不一致）
-      setQuestion(null);
-      setPhase("idle");
-    }
+    // 關閉反思 modal → 回到 preview（題目仍可讀），不丟棄 question
+    if (phase === "reflecting") setPhase("preview");
   }, [phase]);
 
   const reset = useCallback(() => {
@@ -71,14 +68,20 @@ export default function QuizPage() {
     setError(null);
   }, []);
 
+  const showQuestion = question && phase !== "idle" && phase !== "loading";
+
   return (
     <div className="flex h-full flex-col items-center px-6 py-10">
-      {phase === "idle" && (
-        <IdleView onStart={startDemo} error={error} />
-      )}
+      {phase === "idle" && <IdleView onStart={startDemo} error={error} />}
       {phase === "loading" && <LoadingView />}
-      {phase === "ready" && question && (
-        <ReadyView question={question} reflection={reflection} onReset={reset} />
+      {showQuestion && (
+        <QuestionDisplay
+          question={question}
+          phase={phase as DisplayPhase}
+          reflection={reflection}
+          onStartReflect={startReflect}
+          onReset={reset}
+        />
       )}
       <ReflectionFlow
         open={phase === "reflecting"}
@@ -105,7 +108,7 @@ function IdleView({
         Pre-Coding Reflection 示範
       </h1>
       <p className="mt-2 text-sm leading-6 text-text-secondary">
-        點下方按鈕後，系統會生成一道程式撰寫題，並在開題前要求你先反思解題思路。
+        系統會生成一道程式撰寫題；你會先讀題，再寫下解題思路，最後才動手作答。
         完整 Quiz 介面屬於 Phase 3-2 的範疇。
       </p>
       <button
@@ -131,82 +134,6 @@ function LoadingView() {
       <Loader2 className="size-6 animate-spin" />
       <p className="text-sm">AI 正在生成題目（含自我審查 retry）...</p>
       <p className="text-xs text-text-muted">通常 5–15 秒</p>
-    </div>
-  );
-}
-
-function ReadyView({
-  question,
-  reflection,
-  onReset,
-}: {
-  question: CodingQuestion;
-  reflection: Reflection | null;
-  onReset: () => void;
-}) {
-  const tagList = question.concept_tags.join(", ");
-  return (
-    <div className="w-full max-w-3xl space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-lg font-medium text-text-primary">題目</h1>
-          <p className="mt-1 text-xs text-text-muted">
-            概念：{tagList} ・ Bloom {question.bloom_level} ・ 難度 {question.difficulty}/5
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={onReset}
-          className="flex h-7 items-center gap-1 rounded-md border border-border-default bg-btn-default-bg px-2.5 text-xs text-text-secondary hover:text-text-primary"
-        >
-          <RotateCcw className="size-3" />
-          重新開始
-        </button>
-      </div>
-
-      <div className="rounded-md border border-border-default bg-surface-1 p-4">
-        <p className="text-sm leading-6 text-text-primary">{question.content.stem}</p>
-      </div>
-
-      {question.content.starter_code && (
-        <div className="rounded-md border border-border-default bg-bg-inset p-4">
-          <p className="mb-2 text-xs text-text-muted">起手程式碼</p>
-          <pre className="overflow-x-auto font-mono text-xs leading-5 text-text-primary">
-            {question.content.starter_code}
-          </pre>
-        </div>
-      )}
-
-      {reflection && <ReflectionSummary reflection={reflection} />}
-    </div>
-  );
-}
-
-function ReflectionSummary({ reflection }: { reflection: Reflection }) {
-  const score = reflection.quality_score;
-  return (
-    <div className="rounded-md border border-border-default bg-surface-2 p-4">
-      <p className="mb-2 text-xs font-medium text-text-secondary">你的反思摘要</p>
-      <ul className="space-y-1.5 text-xs leading-5 text-text-primary">
-        <li>
-          <span className="text-text-muted">問題理解：</span>
-          {reflection.problem_understanding || "（空）"}
-        </li>
-        <li>
-          <span className="text-text-muted">步驟：</span>
-          {reflection.planned_steps.join(" → ") || "（空）"}
-        </li>
-        <li>
-          <span className="text-text-muted">預期概念：</span>
-          {reflection.expected_concepts || "（空）"}
-        </li>
-        {score !== null && (
-          <li>
-            <span className="text-text-muted">品質分數：</span>
-            <span className="font-mono">{Math.round(score * 100)}%</span>
-          </li>
-        )}
-      </ul>
     </div>
   );
 }

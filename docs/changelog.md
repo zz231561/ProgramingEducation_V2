@@ -1,5 +1,24 @@
 # 變更日誌
 
+## [2026-05-04] — Phase 2-5c 修正：先讀題再反思（PRIMM 對齊）
+
+### 問題
+原 demo 流程「拿題目 → 立即彈反思 modal」，學生在沒看到題目的狀態下被要求反思，違反 PRIMM 對「反思必須針對具體題目」的要求。
+
+### 修正
+- 新增 `preview` phase：拿到題目後先進入 preview 階段，題目持續顯示供讀題
+- preview footer 顯示「讀完題目了嗎？」+ 醒目「開始反思」按鈕，學生主動點才彈 modal
+- reflecting phase：modal 開啟，題目仍在背景；新增提示「請完成反思後再回到題目作答」
+- ready phase：題目持續顯示 + 反思摘要（顯示「反思已完成 — 你可以開始作答了」）
+- 取消反思 modal → 回到 preview（不丟棄已生成的題目）
+
+### 拆檔
+- `web/components/quiz-demo/question-display.tsx`（162 行）— 新檔，phase-aware 題目顯示元件，三 phase 共用 Header / Stem / StarterCode，footer 依 phase 切換
+- `web/app/(app)/quiz/page.tsx`（226 → 153 行）— 流程簡化，題目展示交給 QuestionDisplay
+
+### 驗證
+- ESLint / TypeScript 無錯誤；所有檔案 < 250 行
+
 ## [2026-05-04] — Phase 2-5c：Pre-Coding Reflection 表單 UI + Quiz demo 觸發點
 
 ### 新增（Reflection 元件）

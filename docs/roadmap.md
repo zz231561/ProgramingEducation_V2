@@ -122,7 +122,10 @@
   - 完成：`services/quiz/select.py` `select_weak_concepts(db, user_id, top_k=5)`
   - 弱項定義：`confidence < 0.4 AND exposure_count >= 1`；中心度加權 score = (1-conf) × (1 + 0.2 × out_degree)
   - Cold-start 回 []；7 個單元測試（邊界條件 + 排序 + 中心度 + top_k）
-- [ ] 2-4c Generate 階段：LLM 出題 + RAG 教材注入
+- [x] 2-4c Generate 階段：LLM 出題 + RAG 教材注入
+  - 完成：`services/quiz/generate.py` `generate_question(db, concept, type, difficulty, bloom)` + 三種 type Pydantic content 模型
+  - OpenAI `json_object` mode + RAG `retrieve_chunks` 注入；分層錯誤（LLM_ERROR / LLM_PARSE_ERROR / LLM_VALIDATION_ERROR）
+  - 寫入 `questions.validated=False`，等 2-4d 過審；8 個單元測試（mock LLM + RAG）
 - [ ] 2-4d Validate 階段：LLM 自我檢查答案
 - [ ] 2-4e Quiz API 端點（generate + submit + history）
 

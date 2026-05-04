@@ -1,5 +1,30 @@
 # 變更日誌
 
+## [2026-05-04] — Phase 2-4c：LLM 出題 + RAG 教材注入
+
+### 新增
+- `backend/services/quiz/generate.py`（221 行）— `generate_question(db, concept, question_type, difficulty, bloom_level)`：
+  - 三種題型各自 Pydantic content 模型（`_MCContent` / `_FillContent` / `_CodingContent`）做二次驗證
+  - System prompt 含 concept 完整 metadata（tag/zh/en/category/description）+ 題型 schema hint + 撰寫規則
+  - User prompt 注入 `services.rag.retrieve_chunks` 抓回的 top-3 教材片段；RAG 失敗（DB / embedding API down）靜默 fallback 空 list 仍能出題
+  - 沿用 `evidence.py` 的 `response_format json_object` + JSON 二次解析 pattern；錯誤分層（LLM_ERROR / LLM_PARSE_ERROR / LLM_VALIDATION_ERROR）
+  - 寫入 `questions.source='generated'`、`validated=False`，等 2-4d Validate 過審
+- `backend/tests/test_quiz_generate.py`（249 行）— 8 個測試：
+  - 三種 type 各自 success path（解析正確、Question 欄位齊全）
+  - 錯誤分層：非 JSON / schema 不符（缺 answer_index）/ LLM 例外
+  - RAG 失敗仍能出題
+  - DB 寫入欄位完整驗證
+
+### 設計決策
+- **content shape 二次驗證**：LLM 即使遵循 prompt 仍可能漏欄位，每個 type 用 Pydantic 模型驗證後才寫 DB；`_MCContent` 還有 `field_validator` 確保 `answer_index < len(options)`
+- **沿用 json_object 而非 json_schema strict**：與 evidence.py 一致；strict 模式對 model output 限制較嚴可能誤拒合理題目
+- **RAG 容錯**：`_fetch_rag_chunks_for_concept` 包 try/except，與 EDF Feedback 的 `fetch_rag_chunks_safe` 同款設計（增強而非必要）
+- **不 commit**：caller 負責 transaction（讓 2-4d Validate 可以在同 transaction 補標 validated=True 後再 commit）
+- **`patched_llm` contextmanager**：tests/test_quiz_generate.py 改用 `contextlib.contextmanager` 合併兩個 patch，避免原本 `_patch_llm(x)[0], _patch_llm(x)[1]` 重複呼叫的 anti-pattern
+
+### 驗證（自動）
+- 8 個新測試 + 125 既有 = **133 passed** ✓
+
 ## [2026-05-04] — Phase 2-4b：弱項概念選取 + 知識圖譜中心度加權
 
 ### 新增

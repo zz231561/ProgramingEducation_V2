@@ -151,7 +151,13 @@
   - 整合到 `create_reflection` / `update_reflection`：寫入後自動評分；no-op PATCH 不呼叫 LLM
   - 容錯：無 API key / LLM 異常 / parse error / schema 違反 / 分數超範圍 → fallback `quality_score=None` 不擋寫入
   - 16 個新測試（9 evaluate unit + 5 service integration + 2 HTTP integration）
-- [ ] 2-5c 程式撰寫題開題時觸發反思表單 UI（必填 → 品質評估 → 追問或放行）
+- [x] 2-5c 程式撰寫題開題時觸發反思表單 UI（必填 → 品質評估 → 追問或放行）
+  - 完成：`lib/reflection.ts`（API helper）+ `components/reflection/{reflection-form,reflection-followup,reflection-flow,reflection-flow-parts}.tsx`
+  - Modal 狀態機：form → submitting → (approved | followup) → resubmit → ...；MAX_FOLLOWUP_ROUNDS=2 後提供「已盡力直接看題」放行
+  - LLM 失敗（quality_score=null）視為通過，不擋學生
+  - Quiz 占位頁改造為 demo 觸發點：`POST /quiz/generate type=coding` → ReflectionFlow → 放行後顯示題目
+  - 元件全部受控 prop-driven，預留給 2-5d 側邊欄、3-1e 練習 tab 復用
+  - ESLint / TypeScript / next build 全綠
 - [ ] 2-5d 反思計畫側邊欄（Workspace 內持續顯示 + 可編輯）
 - [ ] 2-5e 反思內容注入 EDF Evidence 層（AI Tutor 可引用學生計畫）
 

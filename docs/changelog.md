@@ -1,5 +1,40 @@
 # 變更日誌
 
+## [2026-05-04] — Phase 2-5c：Pre-Coding Reflection 表單 UI + Quiz demo 觸發點
+
+### 新增（Reflection 元件）
+- `web/lib/reflection.ts`（63 行）— types + API helper：`Reflection` / `CreateReflectionPayload` / `PatchReflectionPayload` + `createReflection` / `patchReflection`
+- `web/components/reflection/reflection-form.tsx`（211 行）— 受控三欄位表單：
+  - `problem_understanding`（textarea，重述題目）
+  - `planned_steps`（動態列表，逐步增刪步驟）
+  - `expected_concepts`（input，預期會用到的概念）
+  - `isReflectionFormValid()` / `toBackendPayload()` 工具函式統一驗證與序列化
+- `web/components/reflection/reflection-followup.tsx`（84 行）— LLM 追問 + 補答 UI；含 `QualityBar`（紅 < 0.4 / 橘 < 0.6 / 綠 >= 0.6）
+- `web/components/reflection/reflection-flow.tsx`（161 行）— Modal 容器 + 狀態機：
+  - `form → submitting → (approved | followup) → submitting → ...`
+  - `MAX_FOLLOWUP_ROUNDS=2`：第二輪後提供「已盡力，直接看題」放行（避免無限 loop）
+  - LLM 失敗（quality_score=null）視為通過 → 不擋學生
+  - 內容 `ReflectionFlowContent` 條件 mount，open 切換時 state 自然重置（避開 React 19 `react-hooks/set-state-in-effect`）
+- `web/components/reflection/reflection-flow-parts.tsx`（151 行）— 拆出 `FlowHeader` / `FlowBody` / `FlowFooter` / `humanizeReflectionError`，主檔控制在 250 行硬性線下
+
+### Quiz demo 觸發點
+- `web/app/(app)/quiz/page.tsx`（226 行）— Quiz 占位頁改造為反思流程 demo：
+  - 「開始示範」→ `POST /quiz/generate type=coding bloom_level=3` → 立刻彈出 ReflectionFlow modal
+  - 反思放行後顯示題目本體（題幹 / starter_code / 反思摘要）
+  - 錯誤訊息友善處理：`QUIZ_VALIDATION_RETRY_EXHAUSTED` / `QUIZ_UNAVAILABLE` / 401 / 一般錯誤
+  - 完整 Quiz UI 仍屬 Phase 3-2；本頁僅為 2-5c 觸發點驗證
+
+### 設計關鍵
+- **R8.1 合規**：所有 error / 強調 UI 一律用 `border-l-2 border-accent-X bg-surface-2`（與 Toast 規格一致），不用 `bg-accent-X/N` 半透明色填充
+- **265 行 → 拆檔**：`reflection-flow.tsx` 一度寫到 328 行違反 250 行硬性線，依 CLAUDE.md 規則拆出 `reflection-flow-parts.tsx`；所有檔案都壓在 230 行內
+- **純受控元件設計**：每個元件 prop-driven，無內建 store / context — 為 2-5d 側邊欄與 3-1e 練習 tab 復用做準備
+- **狀態機與 React 19 lint**：Dialog 內容用 `{open && <Content />}` 條件 mount 取代 `useEffect` 重置 — 通過 `react-hooks/set-state-in-effect`
+
+### 驗證
+- ESLint：無錯誤
+- TypeScript：無錯誤
+- next build：exit 0（warnings 為 Google Fonts 離線抓取，與本次改動無關）
+
 ## [2026-05-04] — Phase 2-5b：反思品質評估 service（LLM 評分 + 蘇格拉底式追問）
 
 ### 新增（Service 層）

@@ -1,4 +1,4 @@
-"""Reflection API route 整合測試（roadmap 2-5a）。
+"""Reflection API route 整合測試（roadmap 2-5a + 2-5b）。
 
 涵蓋：
 - 401 未登入
@@ -6,15 +6,39 @@
 - POST 重複建立 → 409
 - GET 自己的反思 / 他人反思 → 404
 - PATCH 更新與權限隔離
+- 2-5b：HTTP 層 quality_score / followup_question 回傳
 """
 
 import uuid
+from unittest.mock import AsyncMock, patch
 
+import pytest
 from httpx import AsyncClient
 from sqlalchemy import select
 
 from models.quiz import Question
+from services.reflection.evaluate import ReflectionEvaluation
 from tests.helpers import TestSessionFactory, encrypt_test_token
+
+
+def _eval(quality: float | None = None, followup: str | None = None) -> ReflectionEvaluation:
+    return ReflectionEvaluation(
+        quality_score=quality,
+        understanding_score=quality,
+        plan_quality_score=quality,
+        concept_recall_score=quality,
+        followup_question=followup,
+    )
+
+
+@pytest.fixture(autouse=True)
+def _mock_evaluate():
+    """預設 fallback 評估，避免 HTTP 整合測試打 OpenAI。"""
+    with patch(
+        "services.reflection.crud.evaluate_reflection",
+        new=AsyncMock(return_value=_eval()),
+    ) as m:
+        yield m
 
 STUDENT_PAYLOAD = {
     "sub": "reflection-user",
@@ -246,3 +270,67 @@ async def test_patch_reflection_other_user_404(client: AsyncClient):
         cookies={"authjs.session-token": other_token},
     )
     assert resp.status_code == 404
+
+
+# === 2-5b LLM evaluation 整合（HTTP 層） ===
+
+
+async def test_post_returns_quality_score_and_followup(client: AsyncClient):
+    """POST /reflection 應回傳 LLM 評分結果（低分時帶追問）。"""
+    qid = await _seed_question()
+    token = encrypt_test_token(STUDENT_PAYLOAD)
+
+    with patch(
+        "services.reflection.crud.evaluate_reflection",
+        new=AsyncMock(return_value=_eval(quality=0.4, followup="可否說明你的步驟？")),
+    ):
+        resp = await client.post(
+            "/reflection",
+            json={
+                "source_type": "quiz",
+                "source_id": str(qid),
+                "problem_understanding": "短答",
+                "planned_steps": ["先想"],
+                "expected_concepts": "",
+            },
+            cookies={"authjs.session-token": token},
+        )
+    assert resp.status_code == 201
+    body = resp.json()
+    assert body["quality_score"] == 0.4
+    assert body["followup_question"] == "可否說明你的步驟？"
+
+
+async def test_patch_re_evaluates_and_clears_followup(client: AsyncClient):
+    """PATCH 補充 followup_answer 後 LLM 重新評分；高分清空追問。"""
+    qid = await _seed_question()
+    token = encrypt_test_token(STUDENT_PAYLOAD)
+
+    with patch(
+        "services.reflection.crud.evaluate_reflection",
+        new=AsyncMock(return_value=_eval(quality=0.3, followup="再具體點")),
+    ):
+        created = await client.post(
+            "/reflection",
+            json={
+                "source_type": "quiz",
+                "source_id": str(qid),
+                "planned_steps": ["想"],
+            },
+            cookies={"authjs.session-token": token},
+        )
+    rid = created.json()["id"]
+    assert created.json()["followup_question"] == "再具體點"
+
+    with patch(
+        "services.reflection.crud.evaluate_reflection",
+        new=AsyncMock(return_value=_eval(quality=0.9, followup=None)),
+    ):
+        patched = await client.patch(
+            f"/reflection/{rid}",
+            json={"followup_answer": "1.讀輸入 2.排序 3.輸出"},
+            cookies={"authjs.session-token": token},
+        )
+    body = patched.json()
+    assert body["quality_score"] == 0.9
+    assert body["followup_question"] is None

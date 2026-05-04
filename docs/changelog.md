@@ -1,5 +1,34 @@
 # 變更日誌
 
+## [2026-05-04] — Phase 2-5b：反思品質評估 service（LLM 評分 + 蘇格拉底式追問）
+
+### 新增（Service 層）
+- `backend/services/reflection/evaluate.py`（170 行）— LLM 評分服務：
+  - 三面向獨立評分（0–1）：`understanding_score` / `plan_quality_score` / `concept_recall_score`
+  - `quality_score` = 三者平均（簡單可解釋；非加權）
+  - `QUALITY_THRESHOLD = 0.6`：低於門檻才回 `followup_question`（蘇格拉底式追問，針對最弱面向）；高於門檻 LLM 多嘴的 followup 一律清成 None
+  - **無 API key / LLM 異常 / parse error / schema 違反** → 回 fallback `ReflectionEvaluation(None, None, None, None, None)`，不丟例外（不擋反思寫入）
+  - Pydantic `_EvaluatorResponse` 對 LLM 輸出做 ge=0/le=1 校驗，超範圍直接 fallback
+  - learning_unit 來源不需題目脈絡也能評分（question 可傳 None）
+
+### 整合（CRUD flow）
+- `services/reflection/crud.py`：
+  - `create_reflection`：INSERT 後 flush 取 id → 跑 LLM → 寫回 quality_score / followup_question → commit；單一 transaction
+  - `update_reflection`：任一內容欄位變動 → 重新評分（PRIMM Modify 階段）；no-op PATCH 不呼叫 LLM
+  - 拆分 `_validate_source_for_create`（404 守門）vs `_load_question_best_effort`（update 找不到題目仍能更新）
+
+### 測試
+- `backend/tests/test_reflection_evaluate.py`（9 個 unit）— 高分清空 followup / 低分保留 followup / 空白 followup 標準化 / 無 API key fallback / LLM 異常 fallback / JSON parse error / Pydantic schema 違反 / 分數超範圍 / learning_unit 無題目脈絡
+- `tests/test_reflection_service.py` 加 `_mock_evaluate` autouse fixture（避免測試打 OpenAI），新增 5 個 evaluate-aware 測試（高分 / 低分含 followup / LLM unavailable / PATCH 補答後再評分 / no-op 不呼叫 LLM）
+- `tests/test_reflection_route.py` 加 `_mock_evaluate` autouse fixture，新增 2 個 HTTP 整合測試（POST 回 quality_score+followup / PATCH 補答後清空 followup）
+- 全套 190 tests 全綠（174 → 190，+16 個新測試）
+
+### 設計關鍵
+- **三面向獨立評分而非單一 score**：可解釋性 + 為 2-5b 追問選最弱面向提供依據；UI 將來可顯示三個 sub-score 條
+- **LLM 失敗永遠 fallback 不阻擋寫入**：與 chat/quiz 容錯哲學一致；學生反思流程不能因 OpenAI 抖動中斷
+- **followup 高分強制清空**：避免 LLM 在合格反思上多嘴干擾學生（threshold 行為由本層保證，不靠 prompt 約束）
+- **PATCH 重評分時 question best-effort**：題目即使被刪反思仍可更新（不造成 reflection 孤兒）
+
 ## [2026-05-04] — Phase 2-5a：Pre-Coding Reflection schema + API（建立 / 取得 / 更新）
 
 ### 新增（DB / Model 層）

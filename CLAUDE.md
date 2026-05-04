@@ -26,14 +26,14 @@
 **Phase 1：基礎建設（MVP）✅**（1-1 ~ 1-6 全數完成；明細見 `docs/roadmap.md`）
 - 骨架 / Auth / 編輯與執行 / EDF 教學管線 / AI 對話介面 / 介面精修
 
-**🎯 進行中：Phase 2 — 下一任務：2-5b 反思品質評估 service（LLM 快速評分 + 追問生成）**
+**🎯 進行中：Phase 2 — 下一任務：2-5c 程式撰寫題開題時觸發反思表單 UI**
 > **每次 session 開頭先讀 `docs/dev-setup.md` §1**（Colima + docker-compose 啟動 SOP）；首次接手讀 §2~6。
 > ⚠ **環境前置**：`web/.env.local` `AUTH_SECRET` 必須與 `backend/.env` `NEXTAUTH_SECRET` 同值
 - ✅ 2-1 RAG 知識檢索（全部完成）
 - ✅ 2-2 知識圖譜（全部完成：schema / service / 圖譜渲染 / Detail Panel / Obsidian 風視覺精修）
 - ✅ 2-3 精熟度（全部完成：schema / BKT 線上更新 / 圖譜節點精熟度視覺化 + Detail Panel 顯示）
 - ✅ 2-4 智慧出題（全部完成：schema / Select / Generate / Validate / API endpoints）
-- 🔄 2-5 Pre-Coding Reflection：✅ 2-5a schema + CRUD API ｜ ⬜ 2-5b 品質評估 ｜ ⬜ 2-5c~e UI 觸發 / 側邊欄 / EDF 注入
+- 🔄 2-5 Pre-Coding Reflection：✅ 2-5a schema + CRUD API ｜ ✅ 2-5b LLM 品質評估 ｜ ⬜ 2-5c~e UI 觸發 / 側邊欄 / EDF 注入
 - ⬜ 2-6 Post-Solution Comprehension Check
 
 **Phase 3 學習體驗 → Phase 4 部署 → Phase 5 教師端**（詳見 roadmap）。**OSS 守則**：見守則 #7 + `references.md` §1。

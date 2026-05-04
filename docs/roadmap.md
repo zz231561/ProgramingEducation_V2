@@ -145,7 +145,12 @@
   - 端點：`POST /reflection`（201）/ `GET /reflection/{id}` / `PATCH /reflection/{id}`，對齊 api-spec.md
   - 權限：他人反思一律 404（避免列舉攻擊）；UNIQUE 衝突回 409
   - 18 個新測試（9 service + 9 HTTP integration）
-- [ ] 2-5b 反思品質評估 service（LLM 快速評分 + 追問生成）
+- [x] 2-5b 反思品質評估 service（LLM 快速評分 + 追問生成）
+  - 完成：`services/reflection/evaluate.py` `evaluate_reflection(reflection, question) -> ReflectionEvaluation`
+  - 三面向評分（understanding / plan_quality / concept_recall）平均成 quality_score；`QUALITY_THRESHOLD=0.6` 才回追問
+  - 整合到 `create_reflection` / `update_reflection`：寫入後自動評分；no-op PATCH 不呼叫 LLM
+  - 容錯：無 API key / LLM 異常 / parse error / schema 違反 / 分數超範圍 → fallback `quality_score=None` 不擋寫入
+  - 16 個新測試（9 evaluate unit + 5 service integration + 2 HTTP integration）
 - [ ] 2-5c 程式撰寫題開題時觸發反思表單 UI（必填 → 品質評估 → 追問或放行）
 - [ ] 2-5d 反思計畫側邊欄（Workspace 內持續顯示 + 可編輯）
 - [ ] 2-5e 反思內容注入 EDF Evidence 層（AI Tutor 可引用學生計畫）

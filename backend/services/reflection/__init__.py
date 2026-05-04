@@ -1,4 +1,4 @@
-"""Pre-Coding Reflection service — 2-5 Phase（CRUD 為主，LLM 評分留給 2-5b）。"""
+"""Pre-Coding Reflection service — 2-5 Phase（CRUD + LLM 品質評分）。"""
 
 from services.reflection.crud import (
     ReflectionUpdate,
@@ -6,10 +6,18 @@ from services.reflection.crud import (
     get_reflection,
     update_reflection,
 )
+from services.reflection.evaluate import (
+    QUALITY_THRESHOLD,
+    ReflectionEvaluation,
+    evaluate_reflection,
+)
 
 __all__ = [
+    "QUALITY_THRESHOLD",
+    "ReflectionEvaluation",
     "ReflectionUpdate",
     "create_reflection",
+    "evaluate_reflection",
     "get_reflection",
     "update_reflection",
 ]

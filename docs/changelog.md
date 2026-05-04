@@ -1,5 +1,36 @@
 # 變更日誌
 
+## [2026-05-04] — Phase 2-2c：Knowledge 頁面 Cytoscape 渲染 + 兩個阻塞 bug 修復
+
+### 新增（前端 2-2c）
+- `web/components/knowledge/knowledge-graph.tsx`（120 行）— Cytoscape React 元件，串 `GET /concepts/graph`、fcose 佈局、點擊回呼
+- `web/components/knowledge/knowledge-graph-style.ts`（121 行）— Stylesheet + 色票 + `toElements` 轉換
+- `web/components/knowledge/knowledge-graph-types.ts`（24 行）— 與後端對齊的 type
+- `web/types/cytoscape-fcose.d.ts`（5 行）— `cytoscape-fcose` 套件型別 stub
+- npm: `cytoscape ^3.33.3` + `cytoscape-fcose ^2.2.0` + `@types/cytoscape ^3.21.9`
+
+### 變更（前端 2-2c）
+- `web/app/(app)/knowledge/page.tsx` — 從 placeholder 換成圖譜 + 選取狀態 header
+
+### 修復（兩個既有 bug，連帶於 2-2c 端到端驗證時暴露）
+- **Auth.js v5 HKDF info 對不上 → 401 INVALID_TOKEN**：`backend/core/auth.py` 把 info 從舊版 `"NextAuth.js Generated Encryption Key"` 改為 v5 GA 格式 `"Auth.js Generated Encryption Key (cookie_name)"`，cookie_name 與 salt 從 request 動態傳入，dev/prod 各自衍生 key；`tests/helpers.py` `encrypt_test_token` 加 `cookie_name` 參數對齊；`tests/conftest.py` cache 清空改為 dict
+- **Postgres ENUM 接 enum.value 但 SQLAlchemy 預設送 enum.name → 500 InvalidTextRepresentation**：`models/user.py` 與 `models/chat.py` 的 `Enum(...)` 加 `values_callable=lambda x: [e.value for e in x]`；之前因測試走 SQLite（無 ENUM）一直沒抓到
+
+### 視覺規格
+- 節點顏色：基礎語法 blue / 記憶體 red / 物件導向 green / STL purple / 演算法 orange / 進階 muted（皆 GitHub Dark token，符合 R8 反 AI 感）
+- 節點大小：30 + difficulty × 6 px（36-60 px）
+- 邊樣式：實線箭頭 prerequisite / 虛線 contains / 點線箭頭 specialization / 細線 related（目前無 seed 邊資料）
+- 選取：邊框由 `border-default` → `border-emphasis` 變粗，不用色背景（符合 R8.5）
+
+### 設計取捨
+- 拆檔：`knowledge-graph.tsx` 原 261 行（超 250 停止線）拆為 component / style / types 三檔，最大 121 行
+- 範圍守則 #1：2-2c 只做圖譜本身，Detail Panel 留 2-2d；點擊目前僅在 header 顯示選取 tag
+
+### 驗證
+- TS clean (`npx tsc --noEmit`) ✓
+- 後端 105 測試全綠（含修 enum 後 SQLite 仍相容）✓
+- 使用者瀏覽器確認 20 節點正確渲染 ✓
+
 ## [2026-05-04] — Phase 2-2b：知識圖譜查詢 service + API
 
 ### 新增

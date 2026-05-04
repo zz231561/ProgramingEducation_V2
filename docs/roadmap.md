@@ -85,7 +85,10 @@
 - [x] 2-2b 圖譜查詢 service（全圖 / 單節點 + 鄰居）
   - 完成：`models/concept.py` ORM + `services/graph/queries.py`（`get_full_graph` + `get_concept_neighborhood`） + `api/routes/concepts.py`（`GET /concepts/graph` + `GET /concepts/{tag}` 含方向標記）
   - 9 個新測試 + 既有 96 全綠 = 105 passed（2026-05-04）
-- [ ] 2-2c Knowledge 頁面：Cytoscape.js 圖譜渲染
+- [x] 2-2c Knowledge 頁面：Cytoscape.js 圖譜渲染
+  - 完成：`web/components/knowledge/{knowledge-graph,*-style,*-types}.tsx` + 替換 `(app)/knowledge/page.tsx`
+  - fcose 自動佈局；節點顏色依 category、大小依 difficulty；點選擴增至 header（panel 留給 2-2d）
+  - 連帶修兩個阻塞 bug：Auth.js v5 HKDF info 字串對齊 + Postgres ENUM `values_callable`
 - [ ] 2-2d Concept Detail Panel（點擊節點顯示詳情）
 
 ### 2-3 精熟度追蹤

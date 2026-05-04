@@ -70,21 +70,32 @@ export function KnowledgeGraph({ onNodeClick }: KnowledgeGraphProps) {
       style: STYLESHEET,
       layout: {
         name: "fcose",
-        // quality=default 適合 < 50 節點；節點數成長後可改 proof
+        // quality=default 適合 < 50 節點；節點較小且 label 外置，間距放大避免標籤撞到鄰居
         quality: "default",
         animate: false,
-        nodeRepulsion: () => 8000,
-        idealEdgeLength: () => 100,
-        padding: 24,
+        nodeRepulsion: () => 12000,
+        idealEdgeLength: () => 130,
+        padding: 32,
       } as cytoscape.LayoutOptions,
       wheelSensitivity: 0.2,
-      minZoom: 0.4,
-      maxZoom: 2.5,
+      minZoom: 0.3,
+      maxZoom: 3,
     });
 
     cy.on("tap", "node", (evt: EventObject) => {
       const tag = evt.target.data("tag") as string;
       onNodeClick?.(tag);
+    });
+
+    // Obsidian 風 hover 高亮：點亮鄰居 + 淡化其他
+    cy.on("mouseover", "node", (evt: EventObject) => {
+      const node = evt.target;
+      const neighborhood = node.closedNeighborhood();
+      cy.elements().difference(neighborhood).addClass("faded");
+      neighborhood.addClass("highlighted");
+    });
+    cy.on("mouseout", "node", () => {
+      cy.elements().removeClass("faded highlighted");
     });
 
     cyRef.current = cy;

@@ -1,5 +1,32 @@
 # 變更日誌
 
+## [2026-05-04] — Phase 2-2e：Knowledge Graph 視覺精修 + edges seed（Obsidian Graph View 風）
+
+### 新增
+- `backend/alembic/versions/d4e5f6a7b8c9_seed_concept_edges.py` — 種 23 條邊：
+  - 20 prerequisite：5 條基礎放射（syntax-basic 樞紐）+ 控制流支線 / 函式支線 / 記憶體支線（5 條）/ OOP 線（3 條）/ STL 線（2 條）
+  - 3 related：recursion↔complexity、references↔pointer-arithmetic、template-meta↔stl-algorithms
+  - 寫法：`INSERT ... SELECT FROM (VALUES) JOIN concepts ON tag` 用 tag 對位查 UUID
+
+### 變更
+- `web/components/knowledge/knowledge-graph-style.ts`（121→158 行）：
+  - 節點 `round-rectangle` → `ellipse`；尺寸 36-60px → 22-38px（18 + difficulty × 4）
+  - Label 從節點內 → 節點外下方（`text-valign: bottom` + `text-margin-y: 6`）
+  - Label 預設 `text-secondary`，hover 鄰居時提亮為 `text-primary`
+  - 邊：bezier 曲線、箭頭縮 0.75x、預設 opacity 0.55、related 邊更細
+  - 新增 `.faded` (opacity 0.18) + `.highlighted` (border-emphasis) class
+- `web/components/knowledge/knowledge-graph.tsx`（120→131 行）— 加 `mouseover` / `mouseout` 處理：取 `closedNeighborhood()` 加 `.highlighted`，其他元素加 `.faded`；fcose 參數放大（nodeRepulsion 8000→12000、idealEdgeLength 100→130、padding 24→32）以容納外置 label
+
+### 修復
+- `backend/models/concept.py` `EdgeType` 加 `values_callable=lambda x: [e.value for e in x]`：與先前 UserRole / MessageRole 同款 bug（第三處）。先前 `concept_edges` 表為空從未讀取，2-2e 種了 23 筆才暴露 → 500 LookupError on enum 讀取
+
+### 視覺成效
+- 從「色塊網格」改為「Obsidian 風知識網絡」：圓點 + 細曲線 + 外置標籤 + hover 鄰居高亮
+- syntax-basic 自然形成中央放射樞紐；高難度節點（template-meta / undefined-behavior / concurrency）位於圖譜邊緣
+
+### 已知技術債
+- 23 條邊內容為 AI 暫定（記於 `tech-debt.md`），實際使用後依教師回饋調整
+
 ## [2026-05-04] — Phase 2-2d：Concept Detail Panel（Phase 2-2 完成）
 
 ### 新增

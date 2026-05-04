@@ -92,6 +92,10 @@
 - [x] 2-2d Concept Detail Panel（點擊節點顯示詳情）
   - 完成：`web/components/knowledge/concept-detail-panel.tsx`，串 `GET /concepts/{tag}`，渲染基本資訊 + 先修 + 進階 sections
   - 互動：點鄰居切換 concept、點 X 關閉、點圖上其他節點切換
+- [x] 2-2e Knowledge Graph 視覺精修（Obsidian Graph View 風格 + edges seed）
+  - Part 1 ✅：migration `d4e5f6a7b8c9` 種 23 條邊（20 prerequisite + 3 related）— 邊內容為暫定，記於 `tech-debt.md`
+  - Part 2 ✅：ellipse 節點 + 22-38px 尺寸 + label 外下方 + hover 點亮鄰居/淡化其他（opacity 0.18）
+  - 連帶修：`models/concept.py` `EdgeType` 加 `values_callable`（同 User/Chat enum bug 第三處）
 
 ### 2-3 精熟度追蹤
 > **OSS**：✅ Tier 1 **`pip install pyBKT`**（scikit-learn 風格 API，**禁止 port OATutor JS 版**）

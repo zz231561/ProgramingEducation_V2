@@ -1,6 +1,7 @@
 /**
  * Knowledge Graph 視覺樣式 — Cytoscape stylesheet + tokens。
  *
+ * 風格參考：Obsidian Graph View（小圓點 + 細曲線 + hover 點亮鄰居）。
  * 所有色票必須來自 GitHub Dark token（frontend.md），不可引入外來 hex。
  * 顏色僅用於功能性語意（category / edge_type），符合 R8.4。
  */
@@ -16,6 +17,7 @@ export const TOKEN = {
   borderDefault: "#30363D",
   borderEmphasis: "#6E7681",
   textPrimary: "#E6EDF3",
+  textSecondary: "#8B949E",
 } as const;
 
 // category → 節點背景色（語意：分類，非裝飾）— Detail Panel 也共用同一表
@@ -30,26 +32,31 @@ export const CATEGORY_COLOR: Record<string, string> = {
 
 export const DEFAULT_CATEGORY_COLOR = TOKEN.borderEmphasis;
 
-// === Stylesheet ===
+// === Stylesheet (Obsidian-style) ===
 
 export const STYLESHEET: StylesheetCSS[] = [
+  // --- Node base ---
   {
     selector: "node",
     css: {
       "background-color": "data(color)",
       "border-color": TOKEN.borderDefault,
       "border-width": 1,
-      label: "data(label)",
-      color: TOKEN.textPrimary,
-      "font-size": "11px",
-      "font-family": "Inter, 'Noto Sans TC', sans-serif",
-      "text-valign": "center",
-      "text-halign": "center",
-      "text-wrap": "wrap",
-      "text-max-width": "80px",
+      shape: "ellipse",
       width: "data(size)",
       height: "data(size)",
-      shape: "round-rectangle",
+      label: "data(label)",
+      color: TOKEN.textSecondary,
+      "font-size": "11px",
+      "font-family": "Inter, 'Noto Sans TC', sans-serif",
+      // 標籤外置於節點下方（Obsidian 風）
+      "text-valign": "bottom",
+      "text-halign": "center",
+      "text-margin-y": 6,
+      "text-wrap": "wrap",
+      "text-max-width": "100px",
+      "transition-property": "opacity, border-color, border-width, color",
+      "transition-duration": 120,
     },
   },
   {
@@ -59,14 +66,34 @@ export const STYLESHEET: StylesheetCSS[] = [
       "border-width": 2,
     },
   },
+  // --- Hover 鄰居高亮（label 變亮 + 邊框轉強）---
+  {
+    selector: "node.highlighted",
+    css: {
+      "border-color": TOKEN.borderEmphasis,
+      "border-width": 2,
+      color: TOKEN.textPrimary,
+    },
+  },
+  // --- 淡化非鄰居（hover 時其他元素降透明度）---
+  {
+    selector: ".faded",
+    css: { opacity: 0.18 },
+  },
+
+  // --- Edge base ---
   {
     selector: "edge",
     css: {
       "line-color": TOKEN.borderDefault,
       width: 1,
+      opacity: 0.55,
       "curve-style": "bezier",
+      "control-point-step-size": 30,
       "target-arrow-color": TOKEN.borderDefault,
-      opacity: 0.7,
+      "arrow-scale": 0.75,
+      "transition-property": "opacity, line-color, width",
+      "transition-duration": 120,
     },
   },
   {
@@ -89,7 +116,17 @@ export const STYLESHEET: StylesheetCSS[] = [
   },
   {
     selector: 'edge[edge_type = "related"]',
-    css: { "line-style": "solid", width: 0.5 },
+    css: { "line-style": "solid", width: 0.5, opacity: 0.4 },
+  },
+  // --- Edge hover 高亮 ---
+  {
+    selector: "edge.highlighted",
+    css: {
+      "line-color": TOKEN.borderEmphasis,
+      "target-arrow-color": TOKEN.borderEmphasis,
+      width: 1.5,
+      opacity: 0.95,
+    },
   },
 ];
 
@@ -102,8 +139,8 @@ export function toElements(data: GraphData): ElementDefinition[] {
       tag: n.tag,
       label: n.name_zh,
       color: CATEGORY_COLOR[n.category] ?? DEFAULT_CATEGORY_COLOR,
-      // 30 base + 6 per difficulty (1-5 → 36-60 px)
-      size: 30 + n.difficulty_level * 6,
+      // Obsidian 比例：18 base + 4 per difficulty (1-5 → 22-38 px)
+      size: 18 + n.difficulty_level * 4,
       category: n.category,
       difficulty_level: n.difficulty_level,
     },

@@ -69,7 +69,7 @@ def _set_test_secret():
     import core.auth
     original = settings.NEXTAUTH_SECRET
     settings.NEXTAUTH_SECRET = TEST_SECRET
-    core.auth._encryption_key = None
+    core.auth._encryption_keys.clear()
     yield
     settings.NEXTAUTH_SECRET = original
-    core.auth._encryption_key = None
+    core.auth._encryption_keys.clear()

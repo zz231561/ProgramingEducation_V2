@@ -1,5 +1,44 @@
 # 變更日誌
 
+## [2026-05-04] — Phase 2-4e：Quiz API 端點（Phase 2-4 完成）
+
+### 新增（service 層）
+- `backend/services/quiz/grade.py`（56 行）— 純判分：
+  - MC：比 `selected_index == content.answer_index`
+  - Fill：trim + casefold 後逐項比對 answers list
+  - Coding：MVP 不自動判分（is_correct=False，feedback 提示「待 Judge0 整合」）
+- `backend/services/quiz/orchestrator.py`（171 行）— 串接 Select/Generate/Validate/Grade/Mastery：
+  - `generate_for_student(db, user_id, type, bloom)`：弱項 fallback 到 syntax-basic；validate 失敗 retry up to 2；retry 全敗 → 503 `QUIZ_VALIDATION_RETRY_EXHAUSTED`
+  - `submit_answer(db, user_id, question_id, answer, ...)`：判分 → 寫 StudentAnswer → 餵 EvidenceResult 給 `update_mastery` → 404/400 錯誤
+  - `list_history(db, user_id, page, limit)`：分頁查詢
+
+### 新增（API 層）
+- `backend/api/routes/quiz.py`（161 行）— 三個端點：
+  - `POST /quiz/generate`：mask 答案欄位後回傳；MC 不回 `answer_index`、Fill 不回 `answers`、Coding 只給 `starter_code`
+  - `POST /quiz/submit`：作答後才回完整 `correct_content` + `explanation`
+  - `GET /quiz/history`：分頁列出該 user 的 StudentAnswer
+
+### 變更
+- `backend/main.py` — 註冊 `quiz_router`
+- `backend/services/quiz/__init__.py` — 增加 `grade_answer` / `generate_for_student` / `submit_answer` / `list_history` 匯出
+
+### 設計關鍵
+- **答案 mask**：`_mask_content_for_student()` 在 GET 端點移除答案欄位，避免 DOM 內洩漏；submit 後才把完整 content 回給前端做反饋
+- **validate retry**：generate 失敗（LLM 出爛題）就 rollback 重試；連續 3 次都壞才回 503，避免無限呼叫 LLM
+- **submit 同時更新 mastery**：把 `is_correct` 包成 `EvidenceResult` 餵 `update_mastery`，讓 BKT confidence 累積；mastery 失敗不阻擋 student_answer 寫入
+- **grade.py 與 orchestrator.py 拆檔**：純判分邏輯（無 DB / LLM）獨立，方便單元測試
+
+### 驗證（自動）
+- 8 grade 測試（MC/Fill/Coding 各邊界） + 7 route HTTP 整合測試（auth / mask / submit / history / 404 / 400）
+- 全套 **156 passed** ✓
+
+### Phase 2-4 完整收尾
+- ✅ 2-4a Schema
+- ✅ 2-4b Select（弱項 + 中心度加權）
+- ✅ 2-4c Generate（LLM + RAG 注入）
+- ✅ 2-4d Validate（三面向 LLM 自審）
+- ✅ 2-4e API 端點
+
 ## [2026-05-04] — Phase 2-4d：LLM 自我審查題目品質
 
 ### 新增

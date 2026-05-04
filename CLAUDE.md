@@ -32,8 +32,8 @@
 - ✅ 2-1 RAG 知識檢索（全部完成）
 - ✅ 2-2 知識圖譜（全部完成：schema / service / 圖譜渲染 / Detail Panel / Obsidian 風視覺精修）
 - ✅ 2-3 精熟度（全部完成：schema / BKT 線上更新 / 圖譜節點精熟度視覺化 + Detail Panel 顯示）
-- 🟡 2-4 智慧出題：2-4a/b/c/d ✅（schema / Select / Generate / Validate）→ **下一步 2-4e**（API：generate + submit + history 端點）
-- ⬜ 2-5/2-6 反思
+- ✅ 2-4 智慧出題（全部完成：schema / Select / Generate / Validate / API endpoints）
+- ⬜ **下一步 2-5 Pre-Coding Reflection**（解題前反思）｜ 2-6 Post-Solution Comprehension Check
 
 **Phase 3 學習體驗 → Phase 4 部署 → Phase 5 教師端**（詳見 roadmap）。**OSS 守則**：見守則 #7 + `references.md` §1。
 

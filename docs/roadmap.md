@@ -130,7 +130,12 @@
   - 完成：`services/quiz/validate.py` `validate_question(db, question) -> ValidationReport`
   - 三面向審查（answer_correct / concept_fits / bloom_appropriate）皆 True 才 flip `validated=True`；任一 False 回 `ValidationReport(passed=False, issues=[...])` 讓 caller 決定 retry / 丟棄
   - 8 個單元測試（pass / 各面向 fail / 多 fail / LLM error / parse error / schema error）
-- [ ] 2-4e Quiz API 端點（generate + submit + history）
+- [x] 2-4e Quiz API 端點（generate + submit + history）
+  - 完成：`services/quiz/{grade,orchestrator}.py` + `api/routes/quiz.py`
+  - 端點：`POST /quiz/generate`（auto-select + retry validation）/ `POST /quiz/submit`（grade + mastery 更新）/ `GET /quiz/history`（分頁）
+  - 答案 mask：generate 不回 answer_index/answers；submit 後才完整回 content
+  - Grading：MC 比 selected_index、Fill 用 trim+casefold；Coding MVP 不自動判分（待 Judge0 整合）
+  - 15 個新測試（8 grade + 7 route HTTP integration）
 
 ### 2-5 Pre-Coding Reflection（解題前反思）
 > 參考：CodeAid (不給直接答案)、PRIMM、Polya 解題四步驟、Self-explanation effect (Chi et al.)

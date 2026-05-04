@@ -16,6 +16,7 @@ from api.routes.code import router as code_router
 from api.routes.concepts import router as concepts_router
 from api.routes.health import router as health_router
 from api.routes.quiz import router as quiz_router
+from api.routes.reflection import router as reflection_router
 
 
 @asynccontextmanager
@@ -57,3 +58,4 @@ app.include_router(code_router)
 app.include_router(chat_router)
 app.include_router(concepts_router)
 app.include_router(quiz_router)
+app.include_router(reflection_router)

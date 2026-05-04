@@ -1,5 +1,42 @@
 # 變更日誌
 
+## [2026-05-04] — Phase 2-5a：Pre-Coding Reflection schema + API（建立 / 取得 / 更新）
+
+### 新增（DB / Model 層）
+- `backend/alembic/versions/a7b8c9d0e1f2_create_reflections_table.py` — 新增 `reflections` 表：
+  - 欄位對齊 db-schema.md 跨模組區塊（problem_understanding / planned_steps JSON / expected_concepts / quality_score / followup_question / followup_answer / is_modified / created_at / updated_at）
+  - `source_type` 用 `String + CHECK`（quiz / learning_unit），延續 quiz 表慣例避開 PG ENUM 雙重寫法
+  - `(user_id, source_type, source_id)` UNIQUE → 同一學生對同一題只允許一份反思
+  - `quality_score` CHECK 0.0–1.0、index：`ix_reflections_user_id` + `ix_reflections_source`
+- `backend/models/reflection.py`（83 行）— `Reflection` ORM + `ReflectionSourceType` 列舉
+- `backend/models/__init__.py` — 註冊 `Reflection` 至 `Base.metadata`
+
+### 新增（Service 層）
+- `backend/services/reflection/__init__.py` + `crud.py`（118 行）— 純 CRUD：
+  - `create_reflection`：quiz 來源驗證 `Question.id` 存在（404 `REFLECTION_SOURCE_NOT_FOUND`）；learning_unit 暫不驗證（表尚未建立）；UNIQUE 衝突回 409 `REFLECTION_ALREADY_EXISTS`
+  - `get_reflection`：權限隔離 — 非本人擁有回 404（避免列舉攻擊揭露存在性）
+  - `update_reflection`：任一欄位變動即標 `is_modified=True` + 刷新 `updated_at`；payload 全空時不標 modified
+  - **LLM 品質評分留給 2-5b** — 本層不打 LLM
+
+### 新增（API 層）
+- `backend/api/routes/reflection.py`（131 行）— 三個端點（對齊 api-spec.md）：
+  - `POST /reflection`（201）— 建立反思
+  - `GET /reflection/{id}` — 取得反思（owner-only）
+  - `PATCH /reflection/{id}` — 更新反思（補充 followup_answer / 修改 planned_steps）
+  - `_parse_source_type` 對非法 source_type 回 422 `INVALID_SOURCE_TYPE`
+- `backend/main.py` — 註冊 `reflection_router`
+
+### 測試
+- `backend/tests/test_reflection_service.py`（9 個 unit）— create / get / update 三組路徑：成功、404 source、duplicate 409、權限 404、no-op 更新、LEARNING_UNIT 略過驗證
+- `backend/tests/test_reflection_route.py`（9 個 HTTP）— 401 / 201 / 422 / 404 / 409 / GET / PATCH / 跨 user 權限隔離
+- 全套 174 tests 全綠（新增 18 個）；alembic upgrade 在 dev PG 落地，schema/index/CHECK/UNIQUE/FK 對齊
+
+### 設計關鍵
+- **source_id polymorphic UUID**：指向 questions.id 或 learning_units.id（Phase 3-1a 才建），不建 FK，靠 service 層在 quiz 來源驗證
+- **權限隔離不洩漏存在性**：他人反思一律回 404 而非 403，避免 ID 列舉攻擊
+- **LLM 評分解耦**：`quality_score` / `followup_question` 保持 nullable，2-5b 注入時不需 schema 變動
+- **2-5a 範圍嚴守**：純 CRUD + schema，不含 UI / EDF 注入（後者在 2-5c~e）
+
 ## [2026-05-04] — Phase 2-4e：Quiz API 端點（Phase 2-4 完成）
 
 ### 新增（service 層）

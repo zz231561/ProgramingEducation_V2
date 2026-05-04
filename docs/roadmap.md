@@ -139,7 +139,12 @@
 
 ### 2-5 Pre-Coding Reflection（解題前反思）
 > 參考：CodeAid (不給直接答案)、PRIMM、Polya 解題四步驟、Self-explanation effect (Chi et al.)
-- [ ] 2-5a reflections 表 migration + Reflection API 端點（create + update + get）
+- [x] 2-5a reflections 表 migration + Reflection API 端點（create + update + get）
+  - 完成：`alembic/versions/a7b8c9d0e1f2_create_reflections_table.py` + `models/reflection.py` + `services/reflection/crud.py` + `api/routes/reflection.py`
+  - schema：`source_type` (quiz/learning_unit) + `source_id` polymorphic UUID + UNIQUE(user, source_type, source_id) + `quality_score` 0–1 CHECK
+  - 端點：`POST /reflection`（201）/ `GET /reflection/{id}` / `PATCH /reflection/{id}`，對齊 api-spec.md
+  - 權限：他人反思一律 404（避免列舉攻擊）；UNIQUE 衝突回 409
+  - 18 個新測試（9 service + 9 HTTP integration）
 - [ ] 2-5b 反思品質評估 service（LLM 快速評分 + 追問生成）
 - [ ] 2-5c 程式撰寫題開題時觸發反思表單 UI（必填 → 品質評估 → 追問或放行）
 - [ ] 2-5d 反思計畫側邊欄（Workspace 內持續顯示 + 可編輯）

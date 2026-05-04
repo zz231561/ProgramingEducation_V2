@@ -4,6 +4,7 @@ from models.chat import ChatMessage, ChatSession
 from models.concept import Concept, ConceptEdge, EdgeType
 from models.mastery import StudentMastery
 from models.quiz import Question, QuestionSource, QuestionType, StudentAnswer
+from models.reflection import Reflection, ReflectionSourceType
 from models.user import User
 
 __all__ = [
@@ -15,6 +16,8 @@ __all__ = [
     "Question",
     "QuestionSource",
     "QuestionType",
+    "Reflection",
+    "ReflectionSourceType",
     "StudentAnswer",
     "StudentMastery",
     "User",

@@ -126,7 +126,10 @@
   - 完成：`services/quiz/generate.py` `generate_question(db, concept, type, difficulty, bloom)` + 三種 type Pydantic content 模型
   - OpenAI `json_object` mode + RAG `retrieve_chunks` 注入；分層錯誤（LLM_ERROR / LLM_PARSE_ERROR / LLM_VALIDATION_ERROR）
   - 寫入 `questions.validated=False`，等 2-4d 過審；8 個單元測試（mock LLM + RAG）
-- [ ] 2-4d Validate 階段：LLM 自我檢查答案
+- [x] 2-4d Validate 階段：LLM 自我檢查答案
+  - 完成：`services/quiz/validate.py` `validate_question(db, question) -> ValidationReport`
+  - 三面向審查（answer_correct / concept_fits / bloom_appropriate）皆 True 才 flip `validated=True`；任一 False 回 `ValidationReport(passed=False, issues=[...])` 讓 caller 決定 retry / 丟棄
+  - 8 個單元測試（pass / 各面向 fail / 多 fail / LLM error / parse error / schema error）
 - [ ] 2-4e Quiz API 端點（generate + submit + history）
 
 ### 2-5 Pre-Coding Reflection（解題前反思）

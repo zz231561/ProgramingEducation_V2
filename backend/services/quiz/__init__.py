@@ -6,10 +6,13 @@ from services.quiz.select import (
     WEAK_THRESHOLD,
     select_weak_concepts,
 )
+from services.quiz.validate import ValidationReport, validate_question
 
 __all__ = [
     "CENTRALITY_BONUS",
     "WEAK_THRESHOLD",
+    "ValidationReport",
     "generate_question",
     "select_weak_concepts",
+    "validate_question",
 ]

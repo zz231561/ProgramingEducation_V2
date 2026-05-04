@@ -1,5 +1,28 @@
 # 變更日誌
 
+## [2026-05-04] — Phase 2-4d：LLM 自我審查題目品質
+
+### 新增
+- `backend/services/quiz/validate.py`（167 行）— `validate_question(db, question) -> ValidationReport`：
+  - 對 generate 出來的題目做第二次 LLM call，三面向審查：
+    1. **answer_correct**：題目宣稱的答案在 C++ 語法/邏輯上是否真的對
+    2. **concept_fits**：題目實際測試的概念是否吻合 `intended_concept_tags`
+    3. **bloom_appropriate**：題目要求的認知層級是否 ≤ 目標 Bloom（避免進階題給初學者）
+  - 三項全 pass → `question.validated=True`（caller commit）；任一 fail → 不動 validated，回 issues
+  - 沿用 `response_format json_object` + Pydantic `_ValidatorResponse` 二次驗證 + 分層錯誤
+  - 與 generate 共用同一 transaction（service 不 commit）
+- `backend/tests/test_quiz_validate.py`（208 行）— 8 個測試：
+  - Pass / 三面向各自 fail / 多面向同時 fail（issues 列出全部）
+  - LLM 錯誤分層：例外 / 非 JSON / 缺欄位
+
+### 設計決策
+- **回傳 `ValidationReport` 而非 raise on fail**：失敗是正常情境（LLM 也會生出爛題），caller（2-4e API）需要看 issues 決定 retry 還是丟棄；只有「LLM 不可用」才 raise
+- **三面向 AND**：三題都對才算 pass；任一不對都回 issues 各別說明，方便 caller log + 改進 prompt
+- **不重新 fetch question**：caller 已 db.add 並把物件交來，直接 mutate `question.validated`；transaction 一致性靠 caller 統一 commit
+
+### 驗證（自動）
+- 8 個新測試 + 133 既有 = **141 passed** ✓
+
 ## [2026-05-04] — Phase 2-4c：LLM 出題 + RAG 教材注入
 
 ### 新增

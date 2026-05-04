@@ -18,7 +18,8 @@ router = APIRouter(prefix="/chat", tags=["chat"])
 class InteractRequest(BaseModel):
     """教學互動請求。"""
 
-    code: str = Field(..., min_length=1, max_length=50_000)
+    # code 允許空字串：學生剛開 Workspace 還沒打程式碼時，仍可向 AI 問「怎麼開始？」
+    code: str = Field(default="", max_length=50_000)
     question: str = Field(..., min_length=1, max_length=2_000)
     session_id: uuid.UUID | None = Field(default=None)
     hint_level: int = Field(default=0, ge=0, le=5)

@@ -1,5 +1,39 @@
 # 變更日誌
 
+## [2026-05-04] — Phase 2-5e：反思內容注入 EDF Pipeline（AI Tutor 可引用學生計畫）
+
+### 新增（Service 層）
+- `backend/services/edf/reflection_context.py`（66 行）— 純函式格式化 helper：
+  - `format_reflection_for_evidence`：簡短版（步驟 + 預期概念），給 Evidence LLM 判斷學生意圖
+  - `format_reflection_for_feedback`：詳細版（含理解/步驟/概念/補充回答/品質分數），給 Feedback LLM 引用做蘇格拉底式提問
+  - 空輸入 / None / 無有效內容 → 回 `""`，caller 直接 `if block: ...`
+  - 引導建議內建「嚴禁直接幫學生補完計畫」規則，避免 LLM 變成代寫工具
+
+### 整合（EDF Pipeline）
+- `services/edf/evidence.py`：`analyze_evidence()` 加 `reflection_summary: str = ""`，注入 user prompt 結尾（避免稀釋程式碼分析）
+- `services/edf/feedback.py`：`build_system_prompt()` 加 `reflection_block: str = ""`，順序 `preamble → persona → strategy → context → reflection → rag`（對齊 `.claude/rules/edf-pipeline.md`）；`generate_feedback()` 透傳
+- `services/chat.py`：`interact()` 加 `reflection_id: UUID | None`；`_load_reflection_safely` 做 best-effort 載入 + **權限隔離**（user_id 不符視為不存在）；找不到/異常都回 None 不擋流程
+- `api/routes/chat.py`：`InteractRequest` 加 `reflection_id` 欄位，透傳到 service
+
+### 前端整合
+- `web/hooks/use-chat.ts`：`sendMessage` 自動讀 sessionStorage 中 active reflection_id 並帶入 `/chat/interact` body — 學生在 Workspace 開始反思後，整個對話 session 內 AI 都能引用其計畫
+
+### 測試
+- `tests/test_reflection_context.py`（11 個 unit）：None / 空輸入 / steps trim 重編號 / Evidence 簡短不含 followup / Feedback 詳細含品質分數 / quality_score=None 不顯示 % / quality_score=0 顯示 0%
+- `tests/test_feedback_prompt.py`（+3）：無 reflection 不出現 block / 有 reflection 注入內容 / **順序檢查 reflection 在 RAG 之前**
+- `tests/test_chat.py`（+4）：注入 evidence/feedback 兩層 / 未傳 id 兩層收空字串 / **權限隔離（他人 reflection_id 被忽略）** / 不存在的 id fallback 為空
+- 全套 208 tests 全綠（190 → 208，+18 個新測試，零 regression）
+
+### 設計關鍵
+- **Evidence vs Feedback 分版**：Evidence 收簡短版（避免反思內容稀釋程式碼分析），Feedback 收詳細版（讓 AI 能直接引用學生計畫做提問）
+- **權限隔離在 service 層**：`_load_reflection_safely` 檢查 `row.user_id != user_id`，避免 ID 嗅探攻擊
+- **永遠 best-effort**：reflection 載入失敗（DB 異常 / 不存在 / 非本人）都不擋教學流程，與 mastery / RAG 容錯哲學一致
+- **prompt 順序明確**：`build_system_prompt` 把 reflection_block 放在 context 之後、rag 之前，由測試 `test_reflection_block_appears_before_rag_block` 強制保證
+
+### 驗證
+- ESLint / TypeScript / pytest 全綠
+- next build：見後續驗證
+
 ## [2026-05-04] — Phase 2-5d：Workspace 反思計畫側邊欄
 
 ### 新增（持久化 + API helper）

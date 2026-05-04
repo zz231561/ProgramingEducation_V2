@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useRef } from "react";
 import { api } from "@/lib/api";
+import { getActiveReflectionId } from "@/lib/active-reflection";
 import type { ExecutionResult } from "@/components/workspace/workspace-context";
 import type {
   ChatItem, MessageItem, ExecutionItem,
@@ -44,6 +45,8 @@ export function useChat(options: UseChatOptions = {}) {
 
       setIsLoading(true);
       try {
+        // Phase 2-5e：若 sessionStorage 有 active reflection_id，後端注入 EDF prompt
+        const reflectionId = getActiveReflectionId();
         const res = await api<InteractResponse>("/chat/interact", {
           method: "POST",
           body: JSON.stringify({
@@ -52,6 +55,7 @@ export function useChat(options: UseChatOptions = {}) {
             session_id: sessionIdRef.current,
             hint_level: 0,
             execution_result: options.getExecutionResult?.() ?? null,
+            reflection_id: reflectionId,
           }),
         });
 

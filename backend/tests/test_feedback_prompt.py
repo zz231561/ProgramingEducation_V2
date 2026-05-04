@@ -47,3 +47,36 @@ def test_system_prompt_with_empty_rag_list_omits_block():
     """空 list 應視為「沒有 RAG」，不要印出空白 RAG 區塊。"""
     prompt = build_system_prompt(make_evidence(), make_strategy(), rag_chunks=[])
     assert "教材參考片段" not in prompt
+
+
+# === Reflection block 注入（roadmap 2-5e） ===
+
+
+def test_system_prompt_without_reflection_has_no_block():
+    prompt = build_system_prompt(make_evidence(), make_strategy())
+    assert "下列反思" not in prompt
+
+
+def test_system_prompt_with_reflection_includes_block():
+    block = (
+        "學生在動手寫程式前提交了下列反思（反思品質分數：80%）：\n"
+        "- 對問題的理解：找最大值\n"
+        "引導建議：可引用學生計畫做蘇格拉底式提問。"
+    )
+    prompt = build_system_prompt(
+        make_evidence(), make_strategy(), reflection_block=block
+    )
+    assert "找最大值" in prompt
+    assert "蘇格拉底式提問" in prompt
+
+
+def test_reflection_block_appears_before_rag_block():
+    """規範要求 prompt 順序：context → reflection → rag。"""
+    chunks = [make_chunk("教材片段：迴圈定義")]
+    prompt = build_system_prompt(
+        make_evidence(),
+        make_strategy(),
+        rag_chunks=chunks,
+        reflection_block="REFLECTION_MARKER",
+    )
+    assert prompt.index("REFLECTION_MARKER") < prompt.index("教材參考片段")

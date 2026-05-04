@@ -54,8 +54,17 @@ def build_system_prompt(
     evidence: EvidenceResult,
     strategy: TeachingStrategy,
     rag_chunks: list[RetrievedChunk] | None = None,
+    reflection_block: str = "",
 ) -> str:
-    """組裝完整 system prompt。可選注入 RAG 教材片段。"""
+    """組裝完整 system prompt。
+
+    順序：preamble → persona → strategy → context → reflection → rag
+    （`.claude/rules/edf-pipeline.md` 規範的層次）
+
+    `reflection_block`（Phase 2-5e）：caller 透過
+    `services.edf.reflection_context.format_reflection_for_feedback` 預先渲染；
+    傳空字串等於不注入。
+    """
     strategy_block = f"""\
 教學策略指令：{strategy.instruction}
 允許程式碼片段：{"是（最多 8 行，必須含 TODO）" if strategy.allow_code_snippet else "否，不要提供任何程式碼"}
@@ -72,6 +81,9 @@ def build_system_prompt(
 """
 
     blocks = [PREAMBLE, PERSONA, strategy_block, context_block]
+
+    if reflection_block:
+        blocks.append(reflection_block)
 
     if rag_chunks:
         rag_lines = [f"[{i}] {c.text.strip()}" for i, c in enumerate(rag_chunks, 1)]
@@ -127,14 +139,18 @@ async def generate_feedback(
     strategy: TeachingStrategy,
     student_message: str,
     chat_history: list[dict[str, str]] | None = None,
+    reflection_block: str = "",
 ) -> str:
-    """組裝 prompt、呼叫 LLM、驗證輸出，回傳教學回應。"""
+    """組裝 prompt、呼叫 LLM、驗證輸出，回傳教學回應。
+
+    `reflection_block`（Phase 2-5e）：學生反思的詳細版字串；空字串代表不注入。
+    """
     client = _get_client()
 
     rag_chunks: list[RetrievedChunk] = (
         await fetch_rag_chunks_safe(evidence) if strategy.use_rag else []
     )
-    system_prompt = build_system_prompt(evidence, strategy, rag_chunks)
+    system_prompt = build_system_prompt(evidence, strategy, rag_chunks, reflection_block)
 
     messages: list[dict[str, str]] = [{"role": "system", "content": system_prompt}]
 

@@ -24,6 +24,8 @@ class InteractRequest(BaseModel):
     session_id: uuid.UUID | None = Field(default=None)
     hint_level: int = Field(default=0, ge=0, le=5)
     execution_result: dict | None = Field(default=None)
+    # Phase 2-5e：若前端帶上當前 active reflection_id，後端會載入並注入 EDF prompt
+    reflection_id: uuid.UUID | None = Field(default=None)
 
 
 class MessageOut(BaseModel):
@@ -88,6 +90,7 @@ async def chat_interact(
         session_id=body.session_id,
         hint_level=body.hint_level,
         execution_result=body.execution_result,
+        reflection_id=body.reflection_id,
     )
 
     return InteractResponse(

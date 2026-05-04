@@ -7,9 +7,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from models.chat import ChatSession, ChatMessage, MessageRole
+from models.reflection import Reflection
 from services.edf.evidence import analyze_evidence
 from services.edf.decision import decide_strategy
 from services.edf.feedback import generate_feedback
+from services.edf.reflection_context import (
+    format_reflection_for_evidence,
+    format_reflection_for_feedback,
+)
 from services.mastery import update_mastery
 from services.security.sanitizer import sanitize_input, wrap_student_input, wrap_student_code
 
@@ -35,6 +40,27 @@ async def get_or_create_session(
     return session
 
 
+async def _load_reflection_safely(
+    db: AsyncSession,
+    user_id: uuid.UUID,
+    reflection_id: uuid.UUID | None,
+) -> Reflection | None:
+    """Best-effort 載入學生本人的反思；找不到 / 非本人擁有 / 異常 → None（不擋教學流程）。"""
+    if reflection_id is None:
+        return None
+    try:
+        row = (
+            await db.execute(
+                select(Reflection).where(Reflection.id == reflection_id)
+            )
+        ).scalar_one_or_none()
+        if row is None or row.user_id != user_id:
+            return None
+        return row
+    except Exception:
+        return None
+
+
 async def interact(
     db: AsyncSession,
     user_id: uuid.UUID,
@@ -43,8 +69,12 @@ async def interact(
     session_id: uuid.UUID | None = None,
     hint_level: int = 0,
     execution_result: dict | None = None,
+    reflection_id: uuid.UUID | None = None,
 ) -> tuple[ChatSession, ChatMessage, ChatMessage]:
     """主要教學互動 — 串接 EDF 三層管線。
+
+    `reflection_id`（Phase 2-5e）：若提供，載入學生反思並注入 Evidence + Feedback 兩層 prompt；
+    無或載入失敗都不擋流程（容錯，與 mastery / RAG 同款）。
 
     回傳 (session, user_message, assistant_message)。
     """
@@ -62,12 +92,19 @@ async def interact(
     history_rows = (await db.execute(history_stmt)).scalars().all()
     chat_history = [{"role": m.role.value, "content": m.content} for m in history_rows]
 
+    # 反思（best-effort）— 在 Evidence 之前載入，兩層共用
+    reflection = await _load_reflection_safely(db, user_id, reflection_id)
+    reflection_evidence_summary = format_reflection_for_evidence(reflection)
+    reflection_feedback_block = format_reflection_for_feedback(reflection)
+
     # Evidence 層
     stdout = (execution_result or {}).get("stdout", "")
     stderr = (execution_result or {}).get("stderr", "")
     compile_output = (execution_result or {}).get("compile_output", "")
 
-    evidence = await analyze_evidence(code, stdout, stderr, compile_output)
+    evidence = await analyze_evidence(
+        code, stdout, stderr, compile_output, reflection_evidence_summary
+    )
 
     # 精熟度更新（roadmap 2-3b）— 在 Feedback 之前跑，確保 BKT state 與此次互動同步
     # 容錯：mastery 失敗不阻擋教學回應（與 RAG 同款處理）
@@ -85,6 +122,7 @@ async def interact(
         strategy=strategy,
         student_message=question,
         chat_history=chat_history,
+        reflection_block=reflection_feedback_block,
     )
 
     # 儲存 user message

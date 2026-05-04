@@ -49,8 +49,13 @@ def _build_user_prompt(
     stdout: str,
     stderr: str,
     compile_output: str,
+    reflection_summary: str = "",
 ) -> str:
-    """組裝送給 LLM 的使用者 prompt（XML 標籤隔離學生程式碼）。"""
+    """組裝送給 LLM 的使用者 prompt（XML 標籤隔離學生程式碼）。
+
+    `reflection_summary` 由 caller 透過 `services.edf.reflection_context` 預先格式化。
+    為何加在最後：避免反思內容稀釋 LLM 對程式碼/錯誤訊息的關注（核心仍是程式碼分析）。
+    """
     parts = [wrap_student_code(source_code)]
 
     if compile_output:
@@ -63,6 +68,9 @@ def _build_user_prompt(
     if not compile_output and not stderr:
         parts.append("程式執行成功，無錯誤。")
 
+    if reflection_summary:
+        parts.append(reflection_summary)
+
     return "\n\n".join(parts)
 
 
@@ -71,10 +79,17 @@ async def analyze_evidence(
     stdout: str = "",
     stderr: str = "",
     compile_output: str = "",
+    reflection_summary: str = "",
 ) -> EvidenceResult:
-    """呼叫 LLM 分析程式碼，回傳結構化 Evidence。"""
+    """呼叫 LLM 分析程式碼，回傳結構化 Evidence。
+
+    `reflection_summary`（Phase 2-5e）：學生先前提交的反思摘要字串。
+    傳空字串等於不注入；caller 應透過 `format_reflection_for_evidence` 預先渲染。
+    """
     client = _get_client()
-    user_prompt = _build_user_prompt(source_code, stdout, stderr, compile_output)
+    user_prompt = _build_user_prompt(
+        source_code, stdout, stderr, compile_output, reflection_summary
+    )
 
     try:
         response = await client.chat.completions.create(

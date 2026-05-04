@@ -165,7 +165,14 @@
   - Quiz demo ReflectionSummary 加「前往 Workspace 作答」`<Link>`，點擊寫 sessionStorage
   - 編輯模式呼叫 PATCH /reflection/{id} → 觸發後端重新評分；404 自動清過期 ID 退回空狀態
   - ESLint / TypeScript / next build 全綠
-- [ ] 2-5e 反思內容注入 EDF Evidence 層（AI Tutor 可引用學生計畫）
+- [x] 2-5e 反思內容注入 EDF Evidence 層（AI Tutor 可引用學生計畫）
+  - 完成：`services/edf/reflection_context.py`（兩種視圖：Evidence 簡短 / Feedback 詳細）
+  - Evidence：`analyze_evidence(reflection_summary)` 注入 user prompt 結尾
+  - Feedback：`build_system_prompt(reflection_block)` 注入順序 context → reflection → rag（測試強制保證）
+  - chat service：`_load_reflection_safely` best-effort + 權限隔離（user_id 不符視為不存在）
+  - chat API：`InteractRequest.reflection_id` 透傳；前端 use-chat 自動讀 sessionStorage 帶入
+  - 18 個新測試（11 reflection_context + 3 feedback prompt + 4 chat integration）
+  - 全套 208 tests 全綠；ESLint / TypeScript / next build 全綠
 
 ### 2-6 Post-Solution Comprehension Check（解題後理解驗證）
 > 參考：EPL (Fowler et al.)、Variation Theory (Marton)

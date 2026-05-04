@@ -1,5 +1,30 @@
 # 變更日誌
 
+## [2026-05-04] — Phase 2-1d：RAG 注入 EDF Feedback（Phase 2-1 完成）
+
+### 新增
+- `backend/services/edf/rag_integration.py`（44 行）— EDF ↔ RAG 整合 helper：
+  - `build_rag_query(evidence)` — 把 `error_message` + `concept_tags` + `code_analysis` 串成檢索 query
+  - `fetch_rag_chunks_safe(evidence)` — 安全包裝 `retrieve_chunks`，吞所有異常回傳 `[]`，**不阻擋教學回應**
+- `backend/tests/test_rag_integration.py`（88 行）— 5 個單元測試（query 組裝 / 異常吞食保證）
+
+### 變更
+- `backend/services/edf/feedback.py` — `build_system_prompt` 增加 `rag_chunks` 參數；`generate_feedback` 在 `strategy.use_rag=True` 時呼叫 `fetch_rag_chunks_safe`
+- `backend/tests/test_feedback.py` — 新增 6 個 RAG 注入測試（含 use_rag 開/關、空 list 不出 RAG block、失敗仍出回覆）
+
+### 設計重點
+- **失敗安全**：RAG 失敗（DB / OpenAI / 空索引）→ Feedback 層仍能正常回覆，只是少了教材引用
+- **觸發條件**：完全沿用 Decision 層 `strategy.use_rag`（`hint_level >= 2 AND bloom >= ANALYZE`）— Feedback 層不重複判斷
+- **prompt 注入位置**：`context_block` 之後加 `rag_block`，附明確指示「請以教材為依據，避免自編未驗證細節」
+
+### 驗證
+- 40 個測試全綠（test_evidence + test_decision + test_feedback + test_rag_integration）
+- 既有 8 個 feedback 測試零 regression
+
+### 已知技術債（下個 commit 處理）
+- `tests/test_feedback.py` 273 行，超過 250 行停止線 — 將拆為 `test_feedback_prompt.py` / `test_feedback_validate.py` / `test_feedback_generate.py`
+- `services/edf/feedback.py` 158 行（警告線 +8）— 暫不處理，等之後新增 streaming 等功能時再考慮把 `PREAMBLE/PERSONA` 拆到 `prompts.py`
+
 ## [2026-05-04] — Phase 2-1c：RAG 檢索 service
 
 ### 新增

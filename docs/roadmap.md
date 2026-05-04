@@ -71,7 +71,10 @@
 - [x] 2-1c 檢索 service（用 LlamaIndex query engine + 可選 BM25 reranking）
   - 完成：`backend/services/rag/retrieve.py`（`retrieve_chunks` + `RetrievedChunk`） + `scripts/verify_rag_retrieve.py`
   - 暫不實作 BM25（roadmap 標註可選；2-1d 後視需要補）；驗證通過 2026-05-04
-- [ ] 2-1d RAG 結果注入 EDF Feedback 層 prompt
+- [x] 2-1d RAG 結果注入 EDF Feedback 層 prompt
+  - 完成：`backend/services/edf/rag_integration.py`（44 行 helper）+ `feedback.py` 注入 `rag_block`；觸發條件沿用 Decision 層 `strategy.use_rag`
+  - 失敗安全：`fetch_rag_chunks_safe` 吞所有異常回傳 `[]`，RAG 失敗不阻擋教學回應
+  - 驗證通過：22 個 feedback/rag 測試 + 18 個 evidence/decision 測試全綠（2026-05-04）
 
 ### 2-2 知識圖譜
 > **OSS**：✅ Tier 1 Cytoscape.js + `cytoscape-fcose` layout（禁止自刻力導向圖）

@@ -1,7 +1,8 @@
 """Feedback 層 — 分層 prompt 組裝 + LLM 回應生成 + 輸出驗證。
 
-組裝順序：preamble → persona → strategy → context → student message
+組裝順序：preamble → persona → strategy → context → rag (optional) → student message
 輸出驗證：阻擋完整程式碼洩漏，保持教學引導。
+RAG 觸發條件由 Decision 層計算（strategy.use_rag）；本層只負責安全注入。
 """
 
 import re
@@ -10,9 +11,12 @@ from openai import AsyncOpenAI
 
 from core.config import settings
 from core.errors import AppError
-from .models import EvidenceResult
-from .decision import TeachingStrategy
+from services.edf.rag_integration import fetch_rag_chunks_safe
+from services.rag import RetrievedChunk
 from services.security.sanitizer import wrap_student_input
+
+from .decision import TeachingStrategy
+from .models import EvidenceResult
 
 _client: AsyncOpenAI | None = None
 
@@ -49,8 +53,9 @@ PERSONA = """\
 def build_system_prompt(
     evidence: EvidenceResult,
     strategy: TeachingStrategy,
+    rag_chunks: list[RetrievedChunk] | None = None,
 ) -> str:
-    """組裝完整 system prompt。"""
+    """組裝完整 system prompt。可選注入 RAG 教材片段。"""
     strategy_block = f"""\
 教學策略指令：{strategy.instruction}
 允許程式碼片段：{"是（最多 8 行，必須含 TODO）" if strategy.allow_code_snippet else "否，不要提供任何程式碼"}
@@ -66,7 +71,17 @@ def build_system_prompt(
 - 詳細分析：{evidence.code_analysis}\
 """
 
-    return "\n\n".join([PREAMBLE, PERSONA, strategy_block, context_block])
+    blocks = [PREAMBLE, PERSONA, strategy_block, context_block]
+
+    if rag_chunks:
+        rag_lines = [f"[{i}] {c.text.strip()}" for i, c in enumerate(rag_chunks, 1)]
+        rag_block = (
+            "教材參考片段（請以這些教材內容為依據引導學生，避免自編未驗證的細節）：\n"
+            + "\n\n".join(rag_lines)
+        )
+        blocks.append(rag_block)
+
+    return "\n\n".join(blocks)
 
 
 # === 輸出驗證 ===
@@ -115,7 +130,11 @@ async def generate_feedback(
 ) -> str:
     """組裝 prompt、呼叫 LLM、驗證輸出，回傳教學回應。"""
     client = _get_client()
-    system_prompt = build_system_prompt(evidence, strategy)
+
+    rag_chunks: list[RetrievedChunk] = (
+        await fetch_rag_chunks_safe(evidence) if strategy.use_rag else []
+    )
+    system_prompt = build_system_prompt(evidence, strategy, rag_chunks)
 
     messages: list[dict[str, str]] = [{"role": "system", "content": system_prompt}]
 

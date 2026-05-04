@@ -10,6 +10,7 @@ from models.chat import ChatSession, ChatMessage, MessageRole
 from services.edf.evidence import analyze_evidence
 from services.edf.decision import decide_strategy
 from services.edf.feedback import generate_feedback
+from services.mastery import update_mastery
 from services.security.sanitizer import sanitize_input, wrap_student_input, wrap_student_code
 
 
@@ -67,6 +68,13 @@ async def interact(
     compile_output = (execution_result or {}).get("compile_output", "")
 
     evidence = await analyze_evidence(code, stdout, stderr, compile_output)
+
+    # 精熟度更新（roadmap 2-3b）— 在 Feedback 之前跑，確保 BKT state 與此次互動同步
+    # 容錯：mastery 失敗不阻擋教學回應（與 RAG 同款處理）
+    try:
+        await update_mastery(db, user_id, evidence)
+    except Exception:
+        pass
 
     # Decision 層
     strategy = decide_strategy(evidence, hint_level)

@@ -30,6 +30,7 @@
 - [ ] **`backend/requirements.lock` 過時**
   - 缺少 `cryptography`、`PyJWT`、`authlib`、`openai`、`pgvector`、`alembic` 等實際使用的套件
   - **2-1b 新增**：`llama-index`、`llama-index-vector-stores-postgres`、`llama-index-embeddings-openai`、`psycopg2-binary`、`tiktoken`（共 28+ 個 transitive deps）也未進入 `pyproject.toml`
+  - **2-3b 新增**：`pyBKT==1.4.1` + scientific stack（`scipy`、`scikit-learn<1.7`、`pandas`、`numpy`、`joblib`、`threadpoolctl`、`python-dateutil`、`six`）— 注意 sklearn 必須 `<1.7`，pyBKT 1.4.1 與 1.7+ 的 `_log_loss` API 不相容
   - 目前 dev 依賴從 `pyproject.toml` 抽出後直接 `uv pip install`，未使用 lock
   - **如何處理**：Phase 4-1a 容器化前用 `uv pip compile pyproject.toml -o requirements.lock` 重產（並先把 2-1b 新增的 LlamaIndex 套件補進 `pyproject.toml`）
 - [ ] **`backend/pyproject.toml` 沒設 hatchling packages**

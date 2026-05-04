@@ -1,5 +1,34 @@
 # 變更日誌
 
+## [2026-05-04] — Phase 2-3b：BKT 線上精熟度更新
+
+### 新增
+- `backend/services/mastery/updater.py`（148 行）：
+  - `BKTParams` dataclass（prior/learn/slip/guess 四參數）+ `BKT_DEFAULT_PARAMS = (0.3, 0.3, 0.1, 0.2)` 預設值
+  - `bkt_online_update(prior, correct, params)` — 標準 BKT Bayes 後驗 + learning transition，clamp 0-1
+  - `update_mastery(db, user_id, evidence)` — 對 evidence.concept_tags 每個 tag lazy fetch/create `StudentMastery` row、套 BKT 更新、累計計數、bloom_level 取最大、更新 last_practiced_at；caller 負責 commit
+- `backend/services/mastery/__init__.py`（15 行）— 公開 API
+- `backend/tests/test_mastery_updater.py`（198 行）— 10 個測試（5 BKT 數學 + 5 整合）
+
+### 變更
+- `backend/services/chat.py` `interact()`：在 Decision 層之前呼叫 `update_mastery`；try/except 容錯（mastery 失敗不阻擋教學回應，與 RAG 同款）
+
+### 修復 / 安裝
+- `backend/.venv` 新增依賴：`pyBKT==1.4.1` + scientific stack（scipy/scikit-learn<1.7/pandas/numpy/joblib 等）— ⚠ scikit-learn 必須 `<1.7`，pyBKT 1.4.1 與 1.7+ 的 `_log_loss` API 不相容（記於 tech-debt）
+
+### 設計決策（OSS 守則 #7）
+- **pyBKT 使用策略**：套件已裝為宣告依賴；但 `Model.fit()` / `Roster` 需歷史資料才能用，cold-start 階段（無學生資料）改用標準 BKT Bayes 公式（Corbett & Anderson 1995，公開教科書數學，**非移植 OATutor JS 版**，符合 OSS 規則精神）
+- **未來 Phase 5 升級路徑**：有真實互動資料後跑 `pyBKT.Model.fit(df)` 學 per-concept 參數，把 `BKTParams` 從預設值改為 fitted values 即可，**演算法本身不需改**
+
+### 容錯設計
+- update_mastery 失敗不阻擋 chat 回應（與 RAG fetch_rag_chunks_safe 同款 try/except）
+- evidence.concept_tags 中不存在的 tag（LLM 產 hallucinated tag）→ skip 不擲錯
+
+### 驗證（自動）
+- 10 個新測試 + 105 既有測試 = **115 passed** ✓
+- 數學正確性測試：correct 提升、incorrect 降低、邊界 [0,1] clamp、no-slip-no-guess 答對接近 1
+- 整合測試：lazy create / 累計計數 / bloom 取最大 / unknown tag skip / 多 concept 同時更新 / 空 tags
+
 ## [2026-05-04] — Phase 2-3a：student_mastery 表 schema
 
 ### 新增

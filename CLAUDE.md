@@ -31,7 +31,7 @@
 > ⚠ **環境前置**：`web/.env.local` `AUTH_SECRET` 必須與 `backend/.env` `NEXTAUTH_SECRET` 同值
 - ✅ 2-1 RAG 知識檢索（全部完成）
 - ✅ 2-2 知識圖譜（全部完成：schema / service / 圖譜渲染 / Detail Panel / Obsidian 風視覺精修）
-- 🟡 2-3 精熟度：2-3a ✅（`student_mastery` 表）→ **下一步 2-3b**（pyBKT 整合 + EDF Evidence 餵入更新 confidence）｜ 2-3c 圖譜節點精熟度著色
+- 🟡 2-3 精熟度：2-3a ✅（schema）｜ 2-3b ✅（BKT 線上更新 + 串入 chat 流程）→ **下一步 2-3c**（前端圖譜節點依精熟度著色：綠/黃/紅/灰）
 - ⬜ 2-4 智慧出題 ｜ 2-5/2-6 反思
 
 **Phase 3 學習體驗 → Phase 4 部署 → Phase 5 教師端**（詳見 roadmap）。**OSS 守則**：見守則 #7 + `references.md` §1。

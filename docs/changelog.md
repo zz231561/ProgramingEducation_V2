@@ -1,5 +1,22 @@
 # 變更日誌
 
+## [2026-05-04] — Phase 2-1c：RAG 檢索 service
+
+### 新增
+- `backend/services/rag/retrieve.py`（55 行）— `retrieve_chunks(query, top_k=5)` async 介面：query → OpenAI embedding → `VectorStoreIndex` 包現有 pgvector 表 → cosine 相似度 top-k
+- `backend/services/rag/retrieve.py` 同檔暴露 `RetrievedChunk` Pydantic model（text/score/doc_id/metadata），避免 LlamaIndex 型別擴散到 EDF Feedback 上層
+- `backend/scripts/verify_rag_retrieve.py`（39 行）— 端到端檢索驗證腳本（query：「對 nullptr 解引用會發生什麼？」）
+
+### 變更
+- `backend/services/rag/pipeline.py` — `_build_vector_store` → `build_vector_store`（改 public，ingest/retrieve 兩端共用同一連線參數來源）
+- `backend/services/rag/__init__.py` — 新增匯出：`retrieve_chunks`、`RetrievedChunk`、`build_vector_store`
+
+### 設計取捨（CLAUDE.md「最小可用」）
+- 暫不實作 BM25 reranking（roadmap 標註「可選」），等 2-1d 整合 EDF Feedback 後若召回品質不足再補
+
+### 驗證
+- 對範例 query 回傳 2 筆 chunks（向量庫目前資料量），cosine score 0.5265 / 0.5207 依序遞減 ✅
+
 ## [2026-05-04] — Phase 2-1b：LlamaIndex 索引管線
 
 ### 新增

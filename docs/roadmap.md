@@ -68,7 +68,9 @@
 - [x] 2-1b LlamaIndex 索引管線（用 `IngestionPipeline`，不自刻）
   - 完成：`backend/services/rag/{pipeline,ingest}.py` + `scripts/verify_rag_ingest.py`；向量表 `data_codedge_rag` 自動建立（vector(1536)）
   - 驗證通過：範例教材 → chunk 寫入向量表（2026-05-04，使用者已確認）
-- [ ] 2-1c 檢索 service（用 LlamaIndex query engine + 可選 BM25 reranking）
+- [x] 2-1c 檢索 service（用 LlamaIndex query engine + 可選 BM25 reranking）
+  - 完成：`backend/services/rag/retrieve.py`（`retrieve_chunks` + `RetrievedChunk`） + `scripts/verify_rag_retrieve.py`
+  - 暫不實作 BM25（roadmap 標註可選；2-1d 後視需要補）；驗證通過 2026-05-04
 - [ ] 2-1d RAG 結果注入 EDF Feedback 層 prompt
 
 ### 2-2 知識圖譜

@@ -26,11 +26,13 @@ CHUNK_SIZE = 512
 CHUNK_OVERLAP = 64
 
 
-def _build_vector_store() -> PGVectorStore:
+def build_vector_store() -> PGVectorStore:
     """從 DATABASE_URL 解析 pg 連線參數並建立 PGVectorStore。
 
     DATABASE_URL 含 `+asyncpg` driver suffix（給 SQLAlchemy 用），
     這裡需要拆解成乾淨的 host/port/user/password/database 給 LlamaIndex。
+
+    Public：ingest 與 retrieve 兩端共用。
     """
     parsed = urlparse(settings.DATABASE_URL)
     return PGVectorStore.from_params(
@@ -58,5 +60,5 @@ def get_ingestion_pipeline() -> IngestionPipeline:
             SentenceSplitter(chunk_size=CHUNK_SIZE, chunk_overlap=CHUNK_OVERLAP),
             embed_model,
         ],
-        vector_store=_build_vector_store(),
+        vector_store=build_vector_store(),
     )

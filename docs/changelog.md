@@ -1,5 +1,26 @@
 # 變更日誌
 
+## [2026-05-04] — Phase 2-1b：LlamaIndex 索引管線
+
+### 新增
+- `backend/services/rag/` 模組（共 122 行，遠低於門檻）：
+  - `pipeline.py` — `get_ingestion_pipeline()` 工廠：`SentenceSplitter` (chunk 512/overlap 64) → `OpenAIEmbedding` (text-embedding-3-small, 1536d) → `PGVectorStore` (table `data_codedge_rag`)
+  - `ingest.py` — `ingest_document(db, doc_id, text, metadata)` async 介面，餵入 pipeline 並更新 `documents.indexed_at`
+  - `__init__.py` — 公開 API re-export
+- `backend/scripts/verify_rag_ingest.py` — 端到端驗證腳本（C++ 指標教材範例 → ingest → 檢查向量表 count）
+
+### 變更
+- `backend/.venv` 新增依賴：`llama-index 0.14.21`、`llama-index-vector-stores-postgres 0.8.1`、`llama-index-embeddings-openai 0.6.0`、`psycopg2-binary 2.9.12`、`tiktoken 0.12.0`（含相依套件 28 個）
+- `backend/pyproject.toml` 暫未列入新依賴（依 tech-debt 規劃，待 Phase 4-1a 容器化前一次重產 `requirements.lock`）
+
+### 驗證
+- `data_codedge_rag` 表由 LlamaIndex 自動建立（含 `embedding vector(1536)` + `ref_doc_id` btree index）
+- 範例教材 ingest 後 `SELECT count(*) FROM data_codedge_rag` = 1 ✅
+
+### OSS 守則合規（CLAUDE.md #7）
+- ✅ Tier 1 LlamaIndex `IngestionPipeline` + `PGVectorStore`（無自寫 chunking/embedding）
+- ✅ MIT license（無 AGPL/GPL 風險）
+
 ## [2026-04-29] — dev-setup.md §1 補上一鍵啟動指令
 
 ### 變更

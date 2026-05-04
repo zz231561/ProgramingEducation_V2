@@ -26,10 +26,9 @@
 **Phase 1：基礎建設（MVP）✅**（1-1 ~ 1-6 全數完成；明細見 `docs/roadmap.md`）
 - 骨架 / Auth / 編輯與執行 / EDF 教學管線 / AI 對話介面 / 介面精修
 
-**🎯 進行中：Phase 2 — 下一任務：2-1b LlamaIndex 索引管線**
+**🎯 進行中：Phase 2 — 下一任務：2-1c 檢索 service**
 > **每次 session 開頭先讀 `docs/dev-setup.md` §1**（Colima + docker-compose 啟動 SOP）；首次接手讀 §2~6。
-> ⚠ **動工前置條件**：(1) 使用者回覆 docker-compose 環境測試通過 (2) `backend/.env` 已填 `OPENAI_API_KEY`（見 `docs/tech-debt.md`）
-- 🟡 2-1 RAG 知識檢索（LlamaIndex `PGVectorStore`）— 2-1a ✅ → **下一步 2-1b**
+- 🟡 2-1 RAG：2-1a ✅（pgvector + documents 表）｜ 2-1b ✅（IngestionPipeline → `data_codedge_rag`）→ **下一步 2-1c**（query engine + BM25 reranking）
 - ⬜ 2-2 知識圖譜（Cytoscape.js + fcose）｜ 2-3 精熟度（pyBKT）｜ 2-4 智慧出題 ｜ 2-5/2-6 反思
 
 **Phase 3 學習體驗 → Phase 4 部署 → Phase 5 教師端**（詳見 roadmap）。**OSS 守則**：見守則 #7 + `references.md` §1。

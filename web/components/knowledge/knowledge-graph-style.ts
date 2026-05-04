@@ -18,8 +18,8 @@ export const TOKEN = {
   textPrimary: "#E6EDF3",
 } as const;
 
-// category → 節點背景色（語意：分類，非裝飾）
-const CATEGORY_COLOR: Record<string, string> = {
+// category → 節點背景色（語意：分類，非裝飾）— Detail Panel 也共用同一表
+export const CATEGORY_COLOR: Record<string, string> = {
   "基礎語法": "#58A6FF", // blue
   "記憶體": "#F85149",   // red
   "物件導向": "#3FB950", // green
@@ -28,7 +28,7 @@ const CATEGORY_COLOR: Record<string, string> = {
   "進階": "#8B949E",     // text-secondary
 };
 
-const DEFAULT_CATEGORY_COLOR = TOKEN.borderEmphasis;
+export const DEFAULT_CATEGORY_COLOR = TOKEN.borderEmphasis;
 
 // === Stylesheet ===
 

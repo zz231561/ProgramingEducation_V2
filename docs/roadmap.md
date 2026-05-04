@@ -89,7 +89,9 @@
   - 完成：`web/components/knowledge/{knowledge-graph,*-style,*-types}.tsx` + 替換 `(app)/knowledge/page.tsx`
   - fcose 自動佈局；節點顏色依 category、大小依 difficulty；點選擴增至 header（panel 留給 2-2d）
   - 連帶修兩個阻塞 bug：Auth.js v5 HKDF info 字串對齊 + Postgres ENUM `values_callable`
-- [ ] 2-2d Concept Detail Panel（點擊節點顯示詳情）
+- [x] 2-2d Concept Detail Panel（點擊節點顯示詳情）
+  - 完成：`web/components/knowledge/concept-detail-panel.tsx`，串 `GET /concepts/{tag}`，渲染基本資訊 + 先修 + 進階 sections
+  - 互動：點鄰居切換 concept、點 X 關閉、點圖上其他節點切換
 
 ### 2-3 精熟度追蹤
 > **OSS**：✅ Tier 1 **`pip install pyBKT`**（scikit-learn 風格 API，**禁止 port OATutor JS 版**）

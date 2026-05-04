@@ -1,5 +1,33 @@
 # 變更日誌
 
+## [2026-05-04] — Phase 2-2d：Concept Detail Panel（Phase 2-2 完成）
+
+### 新增
+- `web/components/knowledge/concept-detail-panel.tsx`（206 行）— 點節點顯示的右側詳情面板：
+  - 串 `GET /concepts/{tag}`，loading / error / 內容三態
+  - 顯示 `name_zh` + `tag` + category pill badge（同節點配色）+ 5 點難度 + `name_en` + description
+  - 先修概念（incoming neighbors）+ 進階概念（outgoing neighbors）兩個 section，每筆 neighbor 含 edge_type 標籤
+  - 點鄰居切到該 concept；點 X 關閉
+
+### 變更
+- `web/components/knowledge/knowledge-graph-types.ts` — 加 `NeighborRecord` + `ConceptDetailData` type，與後端 `ConceptDetailOut` 對齊
+- `web/components/knowledge/knowledge-graph-style.ts` — `CATEGORY_COLOR` / `DEFAULT_CATEGORY_COLOR` 改 export，給 panel 共用
+- `web/app/(app)/knowledge/page.tsx` — 在圖譜右側條件渲染 panel（320px），點節點開、X 關，狀態升至 page 層
+
+### 視覺規格遵循（frontend.md）
+- Panel 用 `bg-surface-1`、左邊框 `border-default`，避免跟 AppShell 的 chat panel 撞（chat 在更外層）
+- Category badge 實色填充（功能性，符合 R8.1）；Difficulty dots 用純黑白灰（符合 R8.4 例外白名單）
+- Neighbor 卡片 hover 用 surface 升階 + border-emphasis（不用色背景，符合 R8.5/R6）
+
+### 設計取捨
+- 5 個 sub-component（PanelHeader / PanelBody / DifficultyDots / NeighborSection / 主元件）放同檔，緊密耦合無重用，三行重複優於過早抽象
+- 點 panel 內鄰居只切 panel 內容，不同步 Cytoscape 內部選取狀態（簡化；後續若要 polish 再加 prop 雙向同步）
+
+### 驗證
+- TS clean (`npx tsc --noEmit`) ✓
+- 使用者瀏覽器確認：點節點開 panel、切換鄰居、X 關閉皆正常 ✓
+- Phase 2-2 知識圖譜（2-2a/b/c/d）全部完成
+
 ## [2026-05-04] — Phase 2-2c：Knowledge 頁面 Cytoscape 渲染 + 兩個阻塞 bug 修復
 
 ### 新增（前端 2-2c）

@@ -22,3 +22,15 @@ export type GraphData = {
   nodes: ConceptNode[];
   edges: ConceptEdge[];
 };
+
+/** 與後端 ConceptDetailOut 對齊。direction 標示邊相對於 center 的方向。*/
+export type NeighborRecord = {
+  direction: "incoming" | "outgoing";
+  edge: ConceptEdge;
+  concept: ConceptNode;
+};
+
+export type ConceptDetailData = {
+  concept: ConceptNode;
+  neighbors: NeighborRecord[];
+};

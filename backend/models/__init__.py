@@ -3,6 +3,7 @@
 from models.chat import ChatMessage, ChatSession
 from models.concept import Concept, ConceptEdge, EdgeType
 from models.mastery import StudentMastery
+from models.quiz import Question, QuestionSource, QuestionType, StudentAnswer
 from models.user import User
 
 __all__ = [
@@ -11,6 +12,10 @@ __all__ = [
     "Concept",
     "ConceptEdge",
     "EdgeType",
+    "Question",
+    "QuestionSource",
+    "QuestionType",
+    "StudentAnswer",
     "StudentMastery",
     "User",
 ]

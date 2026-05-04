@@ -1,5 +1,26 @@
 # 變更日誌
 
+## [2026-05-04] — Phase 2-4a：questions + student_answers schema
+
+### 新增
+- `backend/alembic/versions/f6a7b8c9d0e1_create_questions_and_answers.py` — 智慧出題基礎表：
+  - **questions**：id / type (CHECK in 3 values) / concept_tags JSON / bloom_level smallint (CHECK 1-6) / difficulty smallint (CHECK 1-5) / content JSON / explanation / source (CHECK in 3 values) / validated bool / created_at；3 個 secondary index (type / bloom_level / difficulty)
+  - **student_answers**：id / user_id FK CASCADE / question_id FK CASCADE / answer JSON / is_correct / time_spent_seconds (nullable, CHECK ≥0) / hint_level_used smallint (CHECK 0-5) / feedback / answered_at；composite index (user_id, answered_at) 供歷史查詢
+- `backend/models/quiz.py` — `Question` + `StudentAnswer` ORM + `QuestionType` / `QuestionSource` 字串列舉
+- 註冊至 `models/__init__.py`
+
+### 設計取捨
+- **enum 改 `String + CHECK`**：先前 user_role / message_role / concept_edge_type 三次踩過 PG ENUM enum.value/.name 同款坑，新欄位（type / source）改用字串 + CHECK 約束從根本避免；ORM 提供 `QuestionType` / `QuestionSource` 字串列舉維持型別語意
+- **bloom_level / difficulty / hint_level 用 SmallInteger + CHECK**：與 student_mastery 同款，避開 PG ENUM；CHECK 保證範圍
+- **`concept_tags` 用 JSON 不用 PG `text[]`**：避免 PG-only 型別讓 SQLite 測試壞；題庫規模 < 1000 全表掃可接受，未來若需 GIN index 再 migrate
+- **content / answer 用 JSON**：題幹/選項/答案形狀依 type 不同（multiple_choice / fill_blank / coding），JSON 容納所有形狀；shape 驗證留給 application 層（2-4d Validate stage）
+- **comprehension_* 擴充欄位**留給 Phase 2-6 自己的 migration，本次不加
+
+### 驗證（自動）
+- `alembic current` → `f6a7b8c9d0e1 (head)` ✓
+- 118 個測試全綠（zero regression）✓
+- DB schema：questions 10 欄 / 4 indexes / 4 checks；student_answers 9 欄 / 3 indexes / 2 checks / 2 FK CASCADE ✓
+
 ## [2026-05-04] — Phase 2-3c：圖譜節點精熟度著色（Phase 2-3 完成）
 
 ### 新增（後端）

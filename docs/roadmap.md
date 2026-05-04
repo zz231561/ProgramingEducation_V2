@@ -114,7 +114,10 @@
 ### 2-4 智慧出題
 > **OSS**：LlamaIndex 教材檢索注入 prompt（Tier 1）
 > 參考：OATutor adaptive selection 思路（Tier 3，不引程式碼）
-- [ ] 2-4a questions + student_answers 表 migration
+- [x] 2-4a questions + student_answers 表 migration
+  - 完成：alembic `f6a7b8c9d0e1` + `models/quiz.py`（Question + StudentAnswer + QuestionType / QuestionSource）
+  - enum 改 String + CHECK（避開 PG ENUM enum.value/.name 同款坑）；concept_tags 用 JSON 而非 PG `text[]`（SQLite 測試相容）
+  - Comprehension 擴充欄位（2-6）留給後續 migration
 - [ ] 2-4b Select 階段：弱項概念選取 + 知識圖譜關聯
 - [ ] 2-4c Generate 階段：LLM 出題 + RAG 教材注入
 - [ ] 2-4d Validate 階段：LLM 自我檢查答案

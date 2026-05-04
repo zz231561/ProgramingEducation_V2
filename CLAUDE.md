@@ -32,7 +32,8 @@
 - ✅ 2-1 RAG 知識檢索（全部完成）
 - ✅ 2-2 知識圖譜（全部完成：schema / service / 圖譜渲染 / Detail Panel / Obsidian 風視覺精修）
 - ✅ 2-3 精熟度（全部完成：schema / BKT 線上更新 / 圖譜節點精熟度視覺化 + Detail Panel 顯示）
-- ⬜ **下一步 2-4 智慧出題**（pyBKT 弱項選取 + LLM 出題 + RAG 注入 + LLM Validate）｜ 2-5/2-6 反思
+- 🟡 2-4 智慧出題：2-4a ✅（questions + student_answers schema）→ **下一步 2-4b**（Select 階段：弱項概念選取 + 知識圖譜關聯）｜ 2-4c Generate ｜ 2-4d Validate ｜ 2-4e API
+- ⬜ 2-5/2-6 反思
 
 **Phase 3 學習體驗 → Phase 4 部署 → Phase 5 教師端**（詳見 roadmap）。**OSS 守則**：見守則 #7 + `references.md` §1。
 

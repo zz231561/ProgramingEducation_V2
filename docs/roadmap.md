@@ -78,7 +78,10 @@
 
 ### 2-2 知識圖譜
 > **OSS**：✅ Tier 1 Cytoscape.js + `cytoscape-fcose` layout（禁止自刻力導向圖）
-- [ ] 2-2a concepts + concept_edges 表 migration + 初始 20 ConceptTag seed
+- [x] 2-2a concepts + concept_edges 表 migration + 初始 20 ConceptTag seed
+  - 完成：alembic migration `c3d4e5f6a7b8`；`concepts` 含 unique(tag) + check(difficulty 1-5) + index(category)；`concept_edges` 含 4-value ENUM `concept_edge_type` + CASCADE FK + unique(source/target/type) + check(無自環)
+  - 20 筆 seed 分 6 個 category（基礎語法 6 / 記憶體 4 / 物件導向 3 / STL 2 / 演算法 2 / 進階 3）
+  - ⚠ category / difficulty / name_zh 為暫定值，記於 `docs/tech-debt.md`，2-2c 後校準
 - [ ] 2-2b 圖譜查詢 service（全圖 / 單節點 + 鄰居）
 - [ ] 2-2c Knowledge 頁面：Cytoscape.js 圖譜渲染
 - [ ] 2-2d Concept Detail Panel（點擊節點顯示詳情）

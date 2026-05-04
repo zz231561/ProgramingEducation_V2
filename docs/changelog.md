@@ -1,5 +1,26 @@
 # 變更日誌
 
+## [2026-05-04] — Phase 2-2a：知識圖譜 schema + 20 ConceptTag seed
+
+### 新增
+- `backend/alembic/versions/c3d4e5f6a7b8_create_concept_tables.py`（170 行，含 seed 資料）：
+  - `concepts` 表：id (UUID PK) / tag (unique) / name_zh / name_en / description / difficulty_level (1-5 check) / category / created_at；index(category)
+  - `concept_edges` 表：source_id, target_id (CASCADE FK to concepts) / edge_type (4-value PG ENUM `concept_edge_type`：prerequisite/contains/specialization/related) / weight / created_at；unique(source/target/type) + check(無自環)
+  - 20 筆 ConceptTag seed（來源：`.claude/rules/edf-pipeline.md`），分 6 個 category
+
+### 設計重點
+- **schema 完全對齊 `db-schema.md` Module 5**（concepts + concept_edges + 預留給後續 student_mastery 的 concept_id FK）
+- **資料完整性 constraints**：`difficulty_level BETWEEN 1 AND 5`、`source_id <> target_id`（無自環）、`UNIQUE(source/target/edge_type)`（無重複邊）
+- **遇到的陷阱**：`sa.Enum` 在 PG 上由 `op.create_table` 自動 `CREATE TYPE`，不可預先 `enum.create()`，否則 `DuplicateObjectError`；已在 migration 註解中記錄
+
+### 已知技術債
+- `concepts.category` / `difficulty_level` / `name_zh` 為 AI 暫定值；20 個 `tag` 本身是 authoritative。等 2-2c 圖譜可視化後校準（記於 `docs/tech-debt.md`）
+
+### 驗證
+- `alembic current` → `c3d4e5f6a7b8 (head)` ✓
+- `SELECT count(*) FROM concepts` = 20，6 個 category 分布合理 ✓
+- 使用者已確認 schema + seed（暫定值接受）
+
 ## [2026-05-04] — Phase 2-1d：RAG 注入 EDF Feedback（Phase 2-1 完成）
 
 ### 新增

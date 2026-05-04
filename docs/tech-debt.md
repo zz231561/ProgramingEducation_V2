@@ -16,6 +16,12 @@
     git config --global user.email "你的 email"
     ```
 
+### 內容層（教學課綱）
+- [ ] **`concepts` seed 的 `category` / `difficulty_level` / `name_zh` 為暫定值**
+  - **影響**：知識圖譜 (2-2c) 的分類聚合、出題 (2-4) 的難度過濾、Learn 頁面 (3-1) 的學習路徑生成都會吃這些值
+  - **暫定來源**：AI 在 2-2a 依 C++ 教學常見譯名 + 經驗判斷填入；20 個 ConceptTag 本身是 authoritative（來自 `.claude/rules/edf-pipeline.md`），但 enrichment 欄位非
+  - **如何處理**：等 2-2c 圖譜可視化後校準（視覺上判斷 category 聚合是否協調）；之後可能要 patch migration 或建管理介面修改
+
 ### 程式碼層
 - [ ] **`backend/requirements.lock` 過時**
   - 缺少 `cryptography`、`PyJWT`、`authlib`、`openai`、`pgvector`、`alembic` 等實際使用的套件

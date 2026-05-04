@@ -99,7 +99,9 @@
 
 ### 2-3 精熟度追蹤
 > **OSS**：✅ Tier 1 **`pip install pyBKT`**（scikit-learn 風格 API，**禁止 port OATutor JS 版**）
-- [ ] 2-3a student_mastery 表 migration
+- [x] 2-3a student_mastery 表 migration
+  - 完成：alembic migration `e5f6a7b8c9d0` + `models/mastery.py` ORM
+  - schema：confidence (0-1) / exposure / success / error counts / bloom_level (1-6 nullable smallint) / last_practiced_at；UNIQUE(user_id, concept_id) + 3 check constraints + 2 indexes
 - [ ] 2-3b 精熟度更新邏輯（pyBKT Model + EDF Evidence 結果 → confidence 調整）
 - [ ] 2-3c 圖譜節點顏色依精熟度著色（綠/黃/紅/灰）
 

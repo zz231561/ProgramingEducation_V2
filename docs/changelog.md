@@ -1,5 +1,27 @@
 # 變更日誌
 
+## [2026-05-04] — Phase 2-3a：student_mastery 表 schema
+
+### 新增
+- `backend/alembic/versions/e5f6a7b8c9d0_create_student_mastery_table.py` — 精熟度追蹤基礎表：
+  - `id` UUID PK / `user_id` FK CASCADE / `concept_id` FK CASCADE
+  - `confidence` float (CHECK 0-1) — pyBKT 在 2-3b 維護
+  - `exposure_count` / `success_count` / `error_count` int (CHECK ≥ 0) — EDF Pipeline 累加
+  - `bloom_level` smallint nullable (CHECK 1-6 or null) — 對齊 `services/edf/models.py` BloomLevel(IntEnum)，避開 PG ENUM 同款 bug
+  - `last_practiced_at` timestamptz nullable
+  - `UNIQUE(user_id, concept_id)` + 2 個 FK 索引
+- `backend/models/mastery.py` — `StudentMastery` ORM model，註冊至 `models/__init__.py`
+
+### 設計重點
+- **bloom_level 用 SmallInteger 不用 PG ENUM**：避開先前已踩三次的 enum.value/.name bug（UserRole / MessageRole / EdgeType），且與 EDF 既有 IntEnum 一致
+- **Lazy 建列**：rows 在學生實際互動時建立，不批量初始化（避免 user × concept 笛卡兒積空白列）
+- **無 created_at**：`last_practiced_at` 已涵蓋意圖；db-schema.md 也未指定
+
+### 驗證（自動）
+- `alembic current` → `e5f6a7b8c9d0 (head)` ✓
+- 105 個測試全綠（zero regression）✓
+- DB schema：9 欄 / 3 indexes / 3 checks / 2 FKs ✓
+
 ## [2026-05-04] — Phase 2-2e：Knowledge Graph 視覺精修 + edges seed（Obsidian Graph View 風）
 
 ### 新增

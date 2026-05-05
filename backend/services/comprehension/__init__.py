@@ -28,6 +28,14 @@ from services.comprehension.predict_output import (
     generate_predict_test,
     grade_predict_answer,
 )
+from services.comprehension.variation import (
+    VariationGenerationResult,
+    VariationGradeResult,
+    generate_variation,
+    grade_variation,
+    start_variation_for_answer,
+    submit_variation_for_answer,
+)
 
 __all__ = [
     "EPL_PASS_THRESHOLD",
@@ -36,14 +44,20 @@ __all__ = [
     "EplGradeResult",
     "PredictGenerationResult",
     "PredictGradeResult",
+    "VariationGenerationResult",
+    "VariationGradeResult",
     "generate_epl_prompt",
     "generate_predict_test",
+    "generate_variation",
     "get_comprehension",
     "grade_epl_answer",
     "grade_predict_answer",
+    "grade_variation",
     "start_epl_for_answer",
     "start_predict_for_answer",
+    "start_variation_for_answer",
     "submit_epl_for_answer",
     "submit_predict_for_answer",
+    "submit_variation_for_answer",
     "upsert_comprehension",
 ]

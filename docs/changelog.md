@@ -1,5 +1,40 @@
 # 變更日誌
 
+## [2026-05-05] — Phase 2-6d：變體挑戰（LLM 生變體題 + 評分學生新解）
+
+### 新增（Service）
+- `backend/services/comprehension/variation.py`（242 行）：
+  - `VariationGenerationResult` / `VariationGradeResult` dataclass
+  - `_call_llm_json` 共用 helper（dedupe 兩 LLM 呼叫的 boilerplate；換取行數壓在 250 限制內）
+  - `generate_variation(question, student_code)` / `grade_variation(...)` LLM 函式
+  - `start_variation_for_answer` / `submit_variation_for_answer` workflow（DB + LLM 整合）
+  - **StrictBool**：`_GradeResponse.passed` 拒絕 `"yes"` / `"true"` / `1` 等 LLM 文字噪音的隱式轉型
+- `backend/services/comprehension/variation_prompts.py`（90 行）：
+  - `build_generate_prompt`：強調「同核心概念、變更非本質特徵」（情境 / 數值 / 邏輯方向）
+  - `build_grade_prompt`：LLM 心智模擬執行學生 code 對 test_cases；binary passed + feedback
+
+### API
+- `backend/api/routes/comprehension_variation.py`（99 行，獨立檔避免 comprehension.py 超 250 限制）：
+  - `POST /comprehension/{id}/variation/generate` — 露 stem/starter/test_cases/concept_focus
+  - `POST /comprehension/{id}/variation/grade` — body `{student_code: str}`
+- `backend/main.py`：註冊 `comprehension_variation_router`
+
+### 測試
+- `backend/tests/test_comprehension_variation.py`（13 個 unit）：prompt 組裝 / generate 5 種 fallback / grade 通過 + 不通過 + LLM 不可用 + StrictBool ValidationError + 空 feedback 正規化
+- `backend/tests/test_comprehension_variation_route.py`（10 個 HTTP 整合）：401 / generate 持久化 + 清空舊 / 422 非 coding / 503 LLM 失敗 / 跨使用者 404 / 400 未先 generate / grade 通過 / grade LLM 失敗 fallback / 跨使用者 grade 404
+- 全套 293 tests 全綠（270 → 293，+23 個新測試，零 regression）
+
+### 設計關鍵
+- **題型限制**：variation 僅對 coding 有效（其他 → 422 VARIATION_NOT_APPLICABLE）；MC/fill_blank 的「變體」概念意義有限
+- **Storage**：完整題目 payload（stem + starter_code + test_cases + concept_focus）JSON 編碼存 `comprehension_prompt`
+- **test_cases 公開**：學生需看 test_cases 才知道目標 I/O，與 predict_output 的「藏 expected」不同
+- **「禁用 AI」屬前端責任**：variation 流程不串接 chat / EDF / hint，純 LLM 出題 + 評分閉環；前端 UI 應隱藏 chat panel（後續 UI task 處理；docstring 註明 design intent）
+- **保守 fallback**：grade LLM 失敗 → `passed=False`（避免錯給通過拉高 mastery 信心度，與 EPL 的 `passed=None` 不同 — Variation 是「最後一關」更謹慎）
+- **StrictBool**：拒絕 LLM 文字噪音 `"yes"` 被隱式轉為 True；保證 passed 真實反映 LLM 判斷
+- **拆檔**：variation.py 原 269 行 → 抽 `_call_llm_json` helper 後 242 行；route 拆獨立檔避免 comprehension.py 超 250
+
+---
+
 ## [2026-05-05] — Phase 2-6c：預測輸出驗證（自動生新測資 + 兩階段比對）
 
 ### 新增（Service）

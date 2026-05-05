@@ -194,7 +194,13 @@
   - API：`POST /comprehension/{id}/predict_output/generate`、`POST /comprehension/{id}/predict_output/grade`，response 含 match_method ∈ {exact, semantic, mismatch}
   - expected 對「學生實際程式」推理（含 bug 行為），不是題目正解 — 對齊「能否預測自己程式行為」教學目標
   - 27 個新測試（16 unit + 11 HTTP），全套 270 tests 全綠
-- [ ] 2-6d 變體挑戰：LLM 生成變體題 + 禁用 AI 的作答環境
+- [x] 2-6d 變體挑戰：LLM 生成變體題 + 禁用 AI 的作答環境
+  - `services/comprehension/variation.py` + `variation_prompts.py`：LLM 生變體（同概念、不同情境/數值/方向）+ binary grade
+  - `_call_llm_json` 共用 helper dedupe LLM boilerplate；StrictBool 拒絕 `"yes"` 等隱式轉型
+  - 拆獨立 route 檔 `api/routes/comprehension_variation.py` 避免主 route 超 250 行
+  - 「禁用 AI」屬前端責任（後端流程不串接 chat / EDF / hint，docstring 註明）
+  - 保守 fallback：grade LLM 失敗 → `passed=False`（避免錯給通過拉高 mastery 信心度）
+  - 23 個新測試（13 unit + 10 HTTP），全套 293 tests 全綠
 - [ ] 2-6e 動態觸發頻率（依學生 EPL 通過率調整）+ 驗證結果影響精熟度
 
 ## Phase 3：學習體驗

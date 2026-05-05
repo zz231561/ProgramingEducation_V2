@@ -26,7 +26,7 @@
 **Phase 1：基礎建設（MVP）✅**（1-1 ~ 1-6 全數完成；明細見 `docs/roadmap.md`）
 - 骨架 / Auth / 編輯與執行 / EDF 教學管線 / AI 對話介面 / 介面精修
 
-**🎯 進行中：Phase 2-6 — 下一任務：2-6d 變體挑戰（LLM 生成變體題 + 禁用 AI 的作答環境）**
+**🎯 進行中：Phase 2-6 — 下一任務：2-6e 動態觸發頻率（依學生 EPL 通過率調整 + 驗證結果影響精熟度）**
 > **每次 session 開頭先讀 `docs/dev-setup.md` §1**（Colima + docker-compose 啟動 SOP）；首次接手讀 §2~6。
 > ⚠ **環境前置**：`web/.env.local` `AUTH_SECRET` 必須與 `backend/.env` `NEXTAUTH_SECRET` 同值
 - ✅ 2-1 RAG 知識檢索（全部完成）
@@ -38,7 +38,8 @@
   - ✅ 2-6a Schema 擴充 + Comprehension API（GET / PUT partial upsert）
   - ✅ 2-6b EPL 驗證（LLM generate + grade，3 面向評分）
   - ✅ 2-6c 預測輸出（LLM 生新測資 + 兩階段比對 exact/semantic/mismatch）
-  - ⬜ 2-6d 變體挑戰 / ⬜ 2-6e 動態觸發頻率
+  - ✅ 2-6d 變體挑戰（LLM 生變體題 + 評分；StrictBool；保守 fallback）
+  - ⬜ 2-6e 動態觸發頻率（依 EPL 通過率調整 + 影響精熟度）
 - ⬜ 2-6 Post-Solution Comprehension Check
 
 **Phase 3 學習體驗 → Phase 4 部署 → Phase 5 教師端**（詳見 roadmap）。**OSS 守則**：見守則 #7 + `references.md` §1。

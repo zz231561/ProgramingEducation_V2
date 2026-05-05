@@ -1,5 +1,52 @@
 # 變更日誌
 
+## [2026-05-05] — Phase 3-3a：學生 Dashboard 統計卡片 + 今日建議
+
+### 新增（Backend）
+- `backend/services/dashboard/queries.py`（231 行）：
+  - dataclass：`PathProgressSummary` / `WeekQuizStats` / `MasteryOverview` / `TodaySuggestion` / `DashboardStats`
+  - 4 個 fetch helper 對應 4 統計卡：
+    - `_path_progress`：取最早 path（與 `ensure_default_path_exists` 一致）+ 計算 completed/total/percent
+    - `_week_quiz_stats`：限近 7 天 student_answers + 答對率
+    - `_mastery_overview`：total_concepts / started_count（mastery 表 row 數）/ mastered_count（confidence ≥ 0.8）
+    - `_reflection_count`：累計反思次數
+  - `_today_suggestion`：規則版（無 LLM）— 依 unit status 推薦下一動作：
+    1. 有 `in_progress` unit → 「繼續學習：xxx」
+    2. 有 `available` unit → 「開始下一單元：xxx」
+    3. 全部 `completed` → 「課程完成，挑戰 Quiz」
+    4. 無 path → fallback「進入 Learn 開始」（ensure_default_path 後不該發生）
+  - 主入口 `get_dashboard_stats(db, user_id)` 組合所有
+- `backend/api/routes/dashboard.py`（91 行）：`GET /dashboard/stats` endpoint
+- `backend/main.py`：註冊 `dashboard_router`
+
+### 新增（Frontend）
+- `web/lib/dashboard.ts`：types + `getDashboardStats()` helper
+- `web/components/dashboard/`：
+  - `stats-cards.tsx`（145 行）— 4 張卡片網格（grid 1/2/4 列響應式）：路徑進度（含 progress bar）/ 本週 Quiz / 精熟度概覽 / 反思次數
+  - `today-suggestion.tsx`（38 行）— 建議標題 + 描述 + 「立即前往」按鈕
+- `web/app/(app)/dashboard/page.tsx`：完全重寫，從 placeholder 升級為功能頁
+  - View union（loading / error / ready）
+  - 統一 humanizeError（401 等）
+
+### 測試
+- `backend/tests/test_dashboard.py`（10 個 service + HTTP）：
+  - 401 / 空狀態 / path_progress 計算 / week_quiz 7 天篩選 / mastery 三欄 / reflection 計數
+  - today_suggestion 三規則（in_progress 優先 / 只 available / 全 completed）
+  - HTTP 完整 payload 結構檢查
+- 全套 422 backend tests 全綠（412 → 422，+10 個新測試，零 regression）
+- TypeScript / ESLint / next build 全綠
+
+### 設計關鍵
+- **規則版 today_suggestion 而非 LLM**：MVP 階段；個人化 LLM 建議留給 3-3b/c 或 Phase 4+；對學生而言「下一個該做什麼」清晰即可
+- **Mastered threshold = 0.8**：與 generator 的 `DEFAULT_SKIP_MASTERED_THRESHOLD` 一致；單一語意「熟練」
+- **Week 範圍 7 天**：rolling window（不是 ISO 週）；學生看到的是「最近 7 天」
+- **path 取最早建立**：與 onboarding 的「ensure default path」一致；學生通常只有 1 條，無爭議
+- **Path Progress percent 用整數**：避免顯示 24.5% 這種偽精確；`int((c/t)*100)`
+- **空狀態完整可顯示**：cold start 學生 path=None / 全 0 也能正常渲染卡片（顯示「尚未建立」/「本週尚未作答」）
+- **R8 反 AI 感**：4 卡片用 lucide icon，無 emoji；色彩僅用於語意（accent-green 進度條 / accent-purple 建議）
+
+---
+
 ## [2026-05-05] — Phase 3-2c：作答後 EDF 回饋（Phase 3-2 完成 🎉）
 
 ### 重點

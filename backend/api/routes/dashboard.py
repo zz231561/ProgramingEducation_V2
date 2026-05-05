@@ -1,0 +1,91 @@
+"""學生 Dashboard API（roadmap 3-3a）。
+
+API：
+- GET /dashboard/stats — 4 統計卡片 + 今日建議
+"""
+
+import uuid
+
+from fastapi import APIRouter, Depends
+from pydantic import BaseModel
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from api.deps import get_current_db_user, get_db
+from models.user import User
+from services.dashboard import get_dashboard_stats
+
+router = APIRouter(prefix="/dashboard", tags=["dashboard"])
+
+
+class PathProgressOut(BaseModel):
+    path_id: uuid.UUID
+    title: str
+    total_units: int
+    completed_units: int
+    percent: int
+
+
+class WeekQuizOut(BaseModel):
+    total_attempts: int
+    correct_count: int
+    accuracy_percent: int
+
+
+class MasteryOut(BaseModel):
+    total_concepts: int
+    started_count: int
+    mastered_count: int
+
+
+class TodaySuggestionOut(BaseModel):
+    title: str
+    description: str
+    link: str
+    next_concept_name: str | None
+
+
+class DashboardStatsResponse(BaseModel):
+    path_progress: PathProgressOut | None
+    week_quiz: WeekQuizOut
+    mastery: MasteryOut
+    reflection_count: int
+    today_suggestion: TodaySuggestionOut
+
+
+@router.get("/stats", response_model=DashboardStatsResponse)
+async def stats(
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_db_user),
+) -> DashboardStatsResponse:
+    """取當前學生的 dashboard 概覽資料。"""
+    s = await get_dashboard_stats(db, user.id)
+    return DashboardStatsResponse(
+        path_progress=(
+            PathProgressOut(
+                path_id=s.path_progress.path_id,
+                title=s.path_progress.title,
+                total_units=s.path_progress.total_units,
+                completed_units=s.path_progress.completed_units,
+                percent=s.path_progress.percent,
+            )
+            if s.path_progress is not None
+            else None
+        ),
+        week_quiz=WeekQuizOut(
+            total_attempts=s.week_quiz.total_attempts,
+            correct_count=s.week_quiz.correct_count,
+            accuracy_percent=s.week_quiz.accuracy_percent,
+        ),
+        mastery=MasteryOut(
+            total_concepts=s.mastery.total_concepts,
+            started_count=s.mastery.started_count,
+            mastered_count=s.mastery.mastered_count,
+        ),
+        reflection_count=s.reflection_count,
+        today_suggestion=TodaySuggestionOut(
+            title=s.today_suggestion.title,
+            description=s.today_suggestion.description,
+            link=s.today_suggestion.link,
+            next_concept_name=s.today_suggestion.next_concept_name,
+        ),
+    )

@@ -276,7 +276,13 @@
   - 14 個新後端測試（6 unit + 4 service integration + 4 HTTP），全套 412 tests 全綠
 
 ### 3-3 Dashboard
-- [ ] 3-3a Dashboard 頁面：統計卡片 + 今日建議
+- [x] 3-3a Dashboard 頁面：統計卡片 + 今日建議
+  - Backend：`services/dashboard/queries.py` (231) + `api/routes/dashboard.py` (91)；`GET /dashboard/stats`
+  - 4 統計卡：路徑進度 / 本週 Quiz / 精熟度概覽 / 反思次數
+  - today_suggestion 規則版（in_progress > available > all_completed > no_path）
+  - Frontend：`lib/dashboard.ts` + `stats-cards.tsx` (145, 響應式 4 卡網格) + `today-suggestion.tsx` (38)
+  - 重寫 dashboard page（loading/error/ready 三狀態）
+  - 10 個新後端測試，全套 422 tests 全綠
 - [ ] 3-3b 最近活動時間線
 - [ ] 3-3c 精熟度總覽圖表
 

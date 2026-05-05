@@ -323,7 +323,10 @@
   - 刪除過時 root `.env.example`；新增 `.env.prod.example`（72 行）self-host 完整範本
   - `.gitignore` 加 judge0.conf 規則（保留 .example）
   - `deployment.md` 加「環境變數分層」章節：3 套配置一覽 + 變數敏感性分類 + Zeabur Secret 標記指引
-- [ ] 4-2b Zeabur service 串接（internal DNS / Postgres / Redis / Judge0）— `zeabur.json` 已存在，需驗證
+- [x] 4-2b Zeabur service 串接（internal DNS / Postgres / Redis / Judge0）— `zeabur.json` 已存在，需驗證
+  - 修正 zeabur.json：backend 加 `BACKEND_HOST` expose（web 引用必要）；redis 從 marketplace 改 image-based 統一風格
+  - 重寫 deployment.md §A（80 → 138 行）：service 串接架構圖 + 變數插值規則說明 + zeabur template deploy 一鍵部署 + Project Variables 設定表 + 部署 checklist + 疑難排解
+  - **未實際 Zeabur 部署驗證**（記入 tech-debt；4-3 整合驗證時實測）
 - [ ] 4-2c NextAuth callback URL + CORS 設定（前後端網域）
 
 ### 4-3 上線驗證

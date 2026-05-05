@@ -55,81 +55,119 @@ backend 啟動時會跑 `alembic upgrade head`，其中 migration `b2c3d4e5f6a7`
 
 ## 前置條件
 
-- Zeabur 帳號 + Project 建立完成
-- Google OAuth credentials（已設定 redirect URI 為正式 domain）
-- OpenAI API Key
-- Judge0 API URL + Key
+- Zeabur 帳號（無需先建 Project — template deploy 會自動建）
+- Google OAuth credentials
+  - 在 Google Cloud Console 先建 OAuth Client
+  - **Authorized redirect URI** 暫填佔位（部署完拿到 web domain 後再回頭補；見 §A Step 5）
+- OpenAI API Key（已啟用 GPT-4o + text-embedding-3-small）
+- Judge0：選 RapidAPI（Zeabur 不能跑 self-host Judge0；見 §C 警告）
 
-## Step 1：透過 zeabur.json 部署
+## Service 串接架構
 
-`zeabur.json` 已配置 4 個服務：
-1. **postgres** — `template: PREBUILT` + `source.image: pgvector/pgvector:pg16`（自架 pgvector）
-2. **redis** — marketplace
-3. **backend** — Git source + Dockerfile（`backend/`）
-4. **web** — Git source + Dockerfile（`web/`）
+`zeabur.json` 定義 4 個 service 與其變數引用鏈：
 
-> **若 Zeabur 拒絕 `template: PREBUILT` + `source.type: IMAGE` schema**：
-> 改用 marketplace pgvector 服務（在 Zeabur dashboard 搜尋 "pgvector"），或建一個
-> Git service 指向 `pgvector/` 目錄（內含一行 `FROM pgvector/pgvector:pg16` 的 Dockerfile）。
-> 普通 marketplace `postgresql` 不含 pgvector，**不可使用**。
+```
+postgres (pgvector image, expose POSTGRES_HOST/PORT/DATABASE/USERNAME/PASSWORD)
+  ↓ 引用變數
+backend (Dockerfile build, expose BACKEND_HOST)
+  ↓ 引用變數
+web (Dockerfile build, domain key WEB_DOMAIN)
 
-## Step 2：部署 backend
+redis (image redis:7-alpine, expose REDIS_HOST/REDIS_PORT)
+  ↓ 引用變數
+backend
+```
 
-1. 新增 Git Service → 選擇本 repo
-2. **Root Directory** 設為 `backend`
-3. 設定環境變數：
+**Zeabur 變數插值規則**：
+- `${POSTGRES_HOST}` 等 expose 變數會自動跨 service 解析
+- `${CONTAINER_HOSTNAME}` 由 Zeabur 注入（每個 service 自己的內部 DNS 名稱）
+- `${PASSWORD}` 由 Zeabur 自動產生強隨機密碼（用於 POSTGRES_PASSWORD）
+- `${WEB_DOMAIN}` 由 web service 的 domainKey 產生（綁定 domain 後可用）
 
-| 變數 | 值 |
-|------|-----|
-| `DATABASE_URL` | `postgresql+asyncpg://${POSTGRES_USERNAME}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DATABASE}` |
-| `REDIS_URL` | `redis://${REDIS_HOST}:${REDIS_PORT}/0` |
-| `NEXTAUTH_SECRET` | 與前端 `AUTH_SECRET` 相同 |
-| `NEXTAUTH_URL` | `https://<your-web-domain>` |
-| `GOOGLE_CLIENT_ID` | Google OAuth Client ID |
-| `GOOGLE_CLIENT_SECRET` | Google OAuth Client Secret |
-| `OPENAI_API_KEY` | OpenAI API Key |
-| `JUDGE0_API_URL` | Judge0 API 端點 |
-| `JUDGE0_API_KEY` | Judge0 API Key |
+## Step 1：使用 zeabur.json 部署
 
-> Zeabur 支援 `${POSTGRES_HOST}` 等變數引用，會自動解析同 Project 內的服務。
+最簡途徑：在 Zeabur dashboard 用 "Deploy from template" 上傳 `zeabur.json`，
+或安裝 [Zeabur CLI](https://zeabur.com/docs/zh-TW/devops/zeabur-cli) 後：
 
-## Step 3：部署 web
+```bash
+# 在 repo 根目錄
+zeabur template deploy --file zeabur.json
+```
 
-1. 新增 Git Service → 選擇本 repo
-2. **Root Directory** 設為 `web`
-3. 綁定自訂 Domain
-4. 設定環境變數：
+四個 service 會一次建好：postgres / redis / backend / web。
 
-| 變數 | 值 |
-|------|-----|
-| `AUTH_SECRET` | `npx auth secret` 產生的值 |
-| `AUTH_GOOGLE_ID` | Google OAuth Client ID |
-| `AUTH_GOOGLE_SECRET` | Google OAuth Client Secret |
-| `BACKEND_URL` | `http://<backend-service-name>.zeabur.internal:8000` |
-| `AUTH_TRUST_HOST` | `true` |
+> **若 Zeabur 拒絕 `template: PREBUILT` + `source.type: IMAGE` schema**（兩處 — postgres / redis）：
+> 1. 移除 `source.type` + `source.image`，改回 `source: "MARKETPLACE"` + `id: "pgvector"`（如有）
+> 2. 或建一個 GIT service 指向含一行 `FROM pgvector/pgvector:pg16` 的 Dockerfile
+>
+> Redis 同理可改 marketplace `redis`。**標準 marketplace `postgresql`（無 pgvector）不可使用**。
 
-> `BACKEND_URL` 使用 Zeabur 內部 DNS（`<service-name>.zeabur.internal`）。
+## Step 2：在 Zeabur dashboard 設定 Project Variables
 
-## Step 4：驗證
+zeabur.json 內的 `${VAR}` 會從 Project 層級的變數解析。在 Project Settings → Variables 設：
 
-Golden path 測試：
+| 變數 | 值 | Secret? |
+|------|------|---------|
+| `AUTH_SECRET` | `npx auth secret` 產生的 32+ 字元 random | 🔒 |
+| `AUTH_GOOGLE_ID` | Google OAuth Client ID | 公開 |
+| `AUTH_GOOGLE_SECRET` | Google OAuth Client Secret | 🔒 |
+| `OPENAI_API_KEY` | `sk-proj-...` | 🔒 |
+| `JUDGE0_API_URL` | `https://judge0-ce.p.rapidapi.com` | 公開 |
+| `JUDGE0_API_KEY` | RapidAPI Key | 🔒 |
+
+> **`POSTGRES_PASSWORD` 不需手動設**：zeabur.json 用 `${PASSWORD}`，Zeabur 自動產生。
+> **Secret 標記方式**：見上方「環境變數分層」章節。
+
+## Step 3：綁定 web domain
+
+1. Zeabur dashboard → web service → Domains → 綁定自訂域名（或用免費 `.zeabur.app`）
+2. 等 SSL 自動下發
+3. domain 對應的變數 `${WEB_DOMAIN}` 自動填入 backend `NEXTAUTH_URL=https://${WEB_DOMAIN}`
+
+## Step 4：等部署完成 + 驗證
+
+部署順序（Zeabur 會依依賴鏈處理）：postgres → redis → backend → web。
+backend 啟動時會自動跑 `alembic upgrade head`，含 `CREATE EXTENSION vector`。
+
+Health check：
+```bash
+curl https://<your-web-domain>/api/health
+# → {"status": "ok"}
+```
+
+## Step 5：補上 Google OAuth redirect URI
+
+回 Google Cloud Console → Credentials → 編輯 OAuth Client → **Authorized redirect URIs** 加：
+- `https://<your-web-domain>/api/auth/callback/google`
+
+接著測 Golden path：
 1. 開啟前端 Domain → 應看到登入頁
 2. Google OAuth 登入 → 成功進入 Workspace
 3. 撰寫 C++ 程式 → 點擊 Run → Output Panel 顯示結果
 4. 開啟 Chat Panel → 發送訊息 → AI 回覆正常
 
-Health check：
-- `https://<web-domain>/api/health` → `{"status": "ok"}`
+## 部署 checklist（實際操作前 dry-run）
+
+- [ ] Google Cloud OAuth Client 已建（先填佔位 redirect URI）
+- [ ] OpenAI API Key 已備好
+- [ ] RapidAPI Judge0 帳號 + key 已備好
+- [ ] `npx auth secret` 已產生 AUTH_SECRET
+- [ ] Zeabur 帳號 + 信用卡已 ready（生產實例需付費 plan）
+- [ ] `zeabur.json` 已 commit 到 repo（最新版含 4-2b 改動）
+- [ ] `requirements.lock` 已是 4-1a 後的 272 行版（`grep -c '==' backend/requirements.lock` 應 ≥ 100）
+- [ ] 部署完成後回 Google Console 補 redirect URI
 
 ## 疑難排解
 
 | 問題 | 檢查 |
 |------|------|
-| 502 Bad Gateway | `BACKEND_URL` 是否正確指向 backend 內部地址 |
-| DB 連線失敗 | `DATABASE_URL` 格式是否為 `postgresql+asyncpg://...` |
-| OAuth 失敗 | Google Console redirect URI 是否包含正式 domain |
-| Migration 失敗 `CREATE EXTENSION vector`：permission denied / type "vector" does not exist | PG 不是 pgvector image —— 換用 `pgvector/pgvector:pg16` |
-| Migration 失敗（其他） | 查看 backend logs，確認 PostgreSQL 已啟動 |
+| Template deploy 失敗：unknown schema field | Zeabur 不接受 `source.type: IMAGE`；用 fallback（marketplace pgvector / GIT + Dockerfile）|
+| 502 Bad Gateway | web 的 `BACKEND_URL` 是否正確（應為 `http://${BACKEND_HOST}:8000`，由 backend service expose）|
+| backend 502 / 一直 restart | 看 logs：alembic 失敗或 DATABASE_URL 拼錯 |
+| DB 連線失敗 | `DATABASE_URL` 格式是否為 `postgresql+asyncpg://...`（非 `postgresql://`）|
+| OAuth 失敗 redirect_uri_mismatch | Google Console redirect URI 是否含 `https://<web-domain>/api/auth/callback/google` |
+| Migration 失敗 `CREATE EXTENSION vector`：permission denied / type "vector" does not exist | PG 不是 pgvector image —— Step 1 fallback 切換 |
+| 變數 `${BACKEND_HOST}` 解析失敗 | 確認 zeabur.json 的 backend service 含 `BACKEND_HOST` expose（4-2b 已加；舊版 zeabur.json 漏）|
 
 ---
 

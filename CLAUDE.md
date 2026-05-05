@@ -35,10 +35,11 @@
 - 3-1 結構化學習路徑（7 sub-tasks）/ 3-2 Quiz 完整版（3 sub-tasks）/ 3-3 Dashboard（3 sub-tasks）
 - 學生端完整閉環：登入 → Learn → Quiz → Dashboard；後端 439 tests 全綠
 
-**🎯 進行中：Phase 4 — 部署上線（下一任務：4-2b Zeabur service 串接驗證）**
+**🎯 進行中：Phase 4 — 部署上線（下一任務：4-2c NextAuth callback URL + CORS 設定）**
 - ✅ 4-1 容器化（Dockerfile build / pgvector / Judge0 自架）
 - ✅ 4-2a 環境變數分層配置（.env.prod.example + 變數敏感性分類）
-- ⬜ 4-2b Zeabur 串接驗證 / ⬜ 4-2c NextAuth callback + CORS / ⬜ 4-3 整合驗證
+- ✅ 4-2b Zeabur service 串接驗證（BACKEND_HOST expose 修正 + deployment.md §A 重寫）
+- ⬜ 4-2c NextAuth callback URL + CORS / ⬜ 4-3 整合驗證
 
 **OSS 守則**：見守則 #7 + `references.md` §1。
 

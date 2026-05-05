@@ -1,5 +1,39 @@
 # 變更日誌
 
+## [2026-05-05] — Phase 4-2b：Zeabur service 串接驗證 + 部署 checklist
+
+### 修正（zeabur.json 串接漏洞）
+- **backend service 加 `BACKEND_HOST` expose**：原 web 引用 `${BACKEND_HOST}` 但 backend 沒 expose 此變數 → 部署會 fail
+  - 加 `"BACKEND_HOST": {"default": "${CONTAINER_HOSTNAME}", "expose": true, "readonly": true}`
+  - 與 postgres / redis 的 `${CONTAINER_HOSTNAME}` 慣例一致
+- **redis 從 marketplace 改為 image-based**：與 postgres 一致，明確 expose `REDIS_HOST` / `REDIS_PORT`
+  - 使用 `redis:7-alpine` image（與 dev compose 一致）
+  - 加 ports / env / volumes spec
+
+### 文件（deployment.md §A 重寫）
+- 80 → 138 行新版 §A，重點變更：
+  - **Service 串接架構圖**：postgres/redis → backend → web 變數引用鏈視覺化
+  - **Zeabur 變數插值規則說明**：`${POSTGRES_HOST}` / `${CONTAINER_HOSTNAME}` / `${PASSWORD}` / `${WEB_DOMAIN}` 各自意義
+  - **Step 1 改用 zeabur template deploy**：一鍵部署 vs 舊「手動建 4 個 service」
+  - **Step 2 Project Variables 表**：6 個必設變數 + Secret 標記建議
+  - **Step 5 補 Google OAuth redirect URI**：明確順序「先部署拿 domain → 回 Google Console 補 callback」
+  - **部署 checklist**：8 項 dry-run 檢查（OAuth Client / API key / AUTH_SECRET / Zeabur 帳號 / commit 狀態）
+  - **疑難排解擴增**：加 `${BACKEND_HOST}` 解析失敗 / template schema 拒絕 / OAuth redirect_uri_mismatch
+
+### 設計關鍵
+- **expose / readonly 對齊 Zeabur 慣例**：唯讀變數（HOST / PORT / DATABASE / USERNAME）標 `readonly: true` 防止使用者誤改
+- **`${CONTAINER_HOSTNAME}` 自動內部 DNS**：每個 service 自己的內部主機名，不需手填
+- **Redis 也改 image-based**：避免 marketplace expose 行為猜測 — 與 postgres 統一
+- **部署 checklist 在 deploy 文件中**：實際操作前可逐項勾選；用戶不需記順序
+- **fallback 仍寫在 Step 1 footnote**：若 Zeabur 拒絕 PREBUILT IMAGE schema，明確兩條備案
+
+### Phase 4-2 進度
+- ✅ 4-2a 環境變數分層配置
+- ✅ 4-2b Zeabur service 串接驗證（zeabur.json schema + deployment.md 重寫）
+- ⬜ 4-2c NextAuth callback URL + CORS 設定
+
+---
+
 ## [2026-05-05] — Phase 4-2a：環境變數分層配置 + Zeabur Secret 指引
 
 ### 整理（env 範本）

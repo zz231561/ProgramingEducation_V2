@@ -1,5 +1,42 @@
 # 變更日誌
 
+## [2026-05-05] — Phase 4-1c：Judge0 自架 docker-compose（取代 RapidAPI 配額）
+
+### 新增（self-host Judge0 stack）
+- `docker-compose.judge0.yml`（87 行）— Judge0 1.13.1 4 服務獨立 stack：
+  - `judge0-server`：API 端點（接 submission，丟進 Redis queue）；port 2358
+  - `judge0-workers`：實際 sandboxed 執行（讀 queue + cgroups 隔離）；同 image 不同 command
+  - `judge0-db`：PostgreSQL 13（Judge0 metadata；獨立於 app PG）
+  - `judge0-redis`：Redis 6（job queue；獨立於 app Redis，含密碼）
+  - 兩個執行容器 `privileged: true`（cgroups 限制學生程式時間/記憶體/process）
+  - healthcheck-gated 依賴鏈
+- `judge0.conf.example`：Judge0 配置範本
+  - `CPU_TIME_LIMIT=5` / `WALL_TIME_LIMIT=10` / `MEMORY_LIMIT=128000`
+  - `ALLOW_ENABLE_NETWORK=false`（防學生程式對外連線）
+  - `ENABLE_WAIT_RESULT=true`（同步等結果，簡化 backend）
+  - 使用者複製為 `judge0.conf` 並填密碼後**勿 commit**
+
+### 文件
+- `docs/deployment.md` 加 §C Judge0 自架（80 行）：
+  - **⚠ Zeabur 不支援警告**：privileged container 被禁 → Zeabur 部署仍走 RapidAPI Judge0
+  - Step 1-5：準備 conf → 補 .env.prod → 啟動 stack → 驗證 `/about` → 合併 backend 網路（3 種方式）
+  - 疑難排解表：`/about` 502 / privileged 被拒 / timeout / status=1 卡住
+- `docs/tech-debt.md`：加「Judge0 自架未在生產驗證」條目
+
+### 設計關鍵
+- **獨立 compose 而非整合 prod**：Judge0 是可選；4 服務 + privileged 整合進 prod compose 會臃腫
+- **Judge0 1.13.1 而非 v6.x**：1.13.1 文件多 + 多家驗證
+- **API key 留空表示自架**：backend `judge0.py` 的 `_build_headers` 已支援 — `JUDGE0_API_KEY=""` → 不加 RapidAPI header
+- **Zeabur fallback 寫在文件**：明確指引 Zeabur 部署改 RapidAPI
+
+### Phase 4-1 整體進度
+- ✅ 4-1a Dockerfile build 驗證
+- ✅ 4-1b pgvector 容器配置
+- ✅ 4-1c Judge0 自架
+- 4-1 容器化階段就緒；4-2 進入實際 Zeabur 部署
+
+---
+
 ## [2026-05-05] — Phase 4-1b：pgvector 容器配置驗證 + 生產 compose
 
 ### 驗證（dev pgvector 完整就緒）

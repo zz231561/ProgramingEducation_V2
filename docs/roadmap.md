@@ -312,7 +312,11 @@
   - 新增 `docker-compose.prod.yml`（84 行）self-host 替代方案
   - 擴充 `deployment.md`（80 → 174 行）為兩種部署選項 + pgvector 風險警告
   - tech-debt：Zeabur PREBUILT IMAGE schema 待 4-2 實測
-- [ ] 4-1c Judge0 自架 docker-compose（取代 RapidAPI 50 次/天限制）
+- [x] 4-1c Judge0 自架 docker-compose（取代 RapidAPI 50 次/天限制）
+  - `docker-compose.judge0.yml`（87 行）— Judge0 1.13.1 4 服務（server / workers / PG13 / Redis6）含 healthcheck 鏈 + privileged
+  - `judge0.conf.example` — 配置範本（資源限制 + 安全 disable + 預設值）
+  - `deployment.md` 加 §C 自架完整流程 + Zeabur privileged 限制警告
+  - tech-debt：self-host VPS 部署時實測 workers 啟動 + backend 接通
 
 ### 4-2 Zeabur 部署
 - [ ] 4-2a 環境變數分層配置（dev/prod，敏感資訊用 Zeabur Secrets）

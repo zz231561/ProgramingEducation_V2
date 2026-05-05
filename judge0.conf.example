@@ -1,0 +1,42 @@
+# Judge0 1.13.1 配置範本（roadmap 4-1c）
+# 複製為 judge0.conf 後填入密碼，**勿 commit**
+# 對應的密碼也需放入 .env.prod 的 JUDGE0_POSTGRES_PASSWORD / JUDGE0_REDIS_PASSWORD
+# 確保 docker-compose.judge0.yml 的服務變數一致。
+
+# === Redis（job queue） ===
+REDIS_HOST=judge0-redis
+REDIS_PORT=6379
+REDIS_PASSWORD=<改成與 .env.prod JUDGE0_REDIS_PASSWORD 相同>
+
+# === PostgreSQL（Judge0 metadata） ===
+POSTGRES_HOST=judge0-db
+POSTGRES_PORT=5432
+POSTGRES_DB=judge0
+POSTGRES_USER=judge0
+POSTGRES_PASSWORD=<改成與 .env.prod JUDGE0_POSTGRES_PASSWORD 相同>
+
+# === API 行為 ===
+RAILS_MAX_THREADS=10
+RAILS_ENV=production
+
+# 同步等執行結果（簡化 backend 不需 polling）；改 false 則需設 callback
+ENABLE_WAIT_RESULT=true
+
+# Disable 危險 syscalls（fork bomb / network access 預防）
+ALLOW_ENABLE_NETWORK=false
+ALLOW_ENABLE_PER_PROCESS_AND_THREAD_TIME_LIMIT=true
+ALLOW_ENABLE_PER_PROCESS_AND_THREAD_MEMORY_LIMIT=true
+
+# === 資源限制（保守預設；CTF / 課程作業足夠） ===
+CPU_TIME_LIMIT=5
+WALL_TIME_LIMIT=10
+MEMORY_LIMIT=128000
+MAX_FILE_SIZE=1024
+NUMBER_OF_RUNS=1
+MAX_PROCESSES_AND_OR_THREADS=60
+
+# === Auth（self-host 內網不需，留空即可；外網暴露時建議啟用） ===
+AUTHN_HEADER=
+AUTHN_TOKEN=
+AUTHZ_HEADER=
+AUTHZ_TOKEN=

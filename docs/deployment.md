@@ -171,4 +171,71 @@ curl http://localhost:3000/api/health
 |------|------|
 | backend 容器一直 restart | `docker compose ... logs backend` 查 alembic / DB 連線錯誤 |
 | `vector` extension 找不到 | 確認 image 是 `pgvector/pgvector:pg16` 不是 `postgres:16` |
-| Judge0 部分功能失效 | Phase 4-1c 整合自架 Judge0 後再驗證 |
+| Judge0 部分功能失效 | 見 §C 自架 Judge0 / 或在 .env.prod 改 JUDGE0_API_URL 為 RapidAPI |
+
+---
+
+## §C. Judge0 自架（取代 RapidAPI 50 次/天限制）
+
+適用：self-host VPS（§B）情境；想擺脫 RapidAPI 配額或在內網執行學生程式碼。
+
+### ⚠ Zeabur 不支援
+
+Judge0 worker 需要 **`privileged: true`**（用 Linux cgroups 對使用者程式做時間 / 記憶體 /
+process 隔離）。Zeabur 等多數雲平台禁用 privileged container → **Zeabur 部署仍應走
+RapidAPI Judge0**（在 Zeabur dashboard 為 backend 設 `JUDGE0_API_URL=https://judge0-ce.p.rapidapi.com`
++ `JUDGE0_API_KEY=<RapidAPI key>`）。
+
+### Step 1：準備 judge0.conf
+
+複製範本並填密碼：
+```bash
+cp judge0.conf.example judge0.conf
+# 編輯 judge0.conf 把 REDIS_PASSWORD / POSTGRES_PASSWORD 填入強隨機值
+```
+
+### Step 2：補 .env.prod
+
+把 §B 的 `.env.prod` 補上 Judge0 自架密碼（與 judge0.conf 內**完全一致**）：
+```bash
+# Judge0 自架專用（與 judge0.conf 內密碼一致）
+JUDGE0_POSTGRES_PASSWORD=<與 judge0.conf POSTGRES_PASSWORD 相同>
+JUDGE0_REDIS_PASSWORD=<與 judge0.conf REDIS_PASSWORD 相同>
+
+# backend 連 Judge0 改自架 endpoint
+JUDGE0_API_URL=http://judge0-server:2358
+JUDGE0_API_KEY=  # 自架不需 RapidAPI key
+```
+
+### Step 3：啟動 Judge0 stack
+
+```bash
+docker compose --env-file .env.prod -f docker-compose.judge0.yml up -d
+# 等 ~30 秒 worker 啟動 + 註冊 languages
+
+# 驗證
+curl http://localhost:2358/about
+# 應回 Judge0 metadata JSON（version / homepage 等）
+```
+
+### Step 4：合併 backend 與 Judge0 網路
+
+`docker-compose.prod.yml` 與 `docker-compose.judge0.yml` 預設不同 docker network。
+要讓 backend 用 service name 連線 Judge0，三種方式擇一：
+
+1. **同 network（推薦）**：在兩個 compose 加共同 `networks:` 區塊（命名一致），backend 用 `JUDGE0_API_URL=http://judge0-server:2358`
+2. **走 host.docker.internal**：backend 用 `JUDGE0_API_URL=http://host.docker.internal:2358`（Linux 需加 `extra_hosts`）
+3. **同一個 compose**：把 docker-compose.judge0.yml 的服務 inline 進 docker-compose.prod.yml
+
+### Step 5：驗證 backend 接通
+
+進入 Workspace → 撰寫 C++ 程式 → 點「執行」→ Output panel 應顯示 stdout/stderr。
+
+### Judge0 疑難排解
+
+| 問題 | 檢查 |
+|------|------|
+| `/about` 502 / 連不上 | Judge0 worker 容器是否 healthy；`docker compose -f docker-compose.judge0.yml ps` |
+| Worker 啟動 fail：privileged 被拒 | 主機 Docker daemon 是否啟用 privileged；雲平台需自己 VPS / 不能用 Zeabur |
+| backend 端 Judge0 timeout | 確認 `JUDGE0_API_URL` 指對；workers 啟動較慢首次需等 30-60s |
+| Submission 結果一直 status=1（in queue） | workers 容器沒起 / cgroups 不可用；查 worker logs |

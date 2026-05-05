@@ -1,0 +1,88 @@
+# Judge0 自架 — 取代 RapidAPI 50 次/天限制（roadmap 4-1c）。
+#
+# Judge0 1.13.1 官方建議的最小 stack：
+# - judge0-server：API 端點（接收 submission，丟進 Redis queue）
+# - judge0-workers：實際 sandboxed 執行（讀 Redis queue，cgroups 隔離）
+# - judge0-db：PG 13（Judge0 自己的 metadata；獨立於 app PG）
+# - judge0-redis：Redis 6（job queue；獨立於 app Redis）
+#
+# ⚠ 必要條件：privileged 容器
+# Judge0 worker 需要 Linux cgroups 對使用者程式做時間 / 記憶體 / process 限制；
+# privileged 在多數雲平台（含 Zeabur）被禁用 → 自架 Judge0 通常只在自己的 VPS 才行。
+# Zeabur 部署建議走 RapidAPI Judge0（在 backend env 設 JUDGE0_API_KEY）。
+#
+# 用法（self-host VPS）：
+#   1. 複製範本：cp judge0.conf.example judge0.conf  並填密碼
+#   2. 啟動：docker compose -f docker-compose.judge0.yml up -d
+#   3. 等 ~30 秒 (workers 啟動 + 註冊 languages)
+#   4. 在 backend .env.prod 設 JUDGE0_API_URL=http://<host>:2358 / JUDGE0_API_KEY=
+#   5. 驗證：curl http://localhost:2358/about → 應回 Judge0 metadata JSON
+#
+# 與 docker-compose.prod.yml 整合：
+# - 兩個 compose 檔可同時跑；backend 透過 JUDGE0_API_URL 環境變數連線
+# - 若想合併到同一 docker network，把 judge0-server 加 networks 即可
+
+services:
+  judge0-server:
+    image: judge0/judge0:1.13.1
+    volumes:
+      - ./judge0.conf:/judge0.conf:ro
+    ports:
+      - "2358:2358"
+    privileged: true
+    restart: always
+    depends_on:
+      judge0-db:
+        condition: service_healthy
+      judge0-redis:
+        condition: service_healthy
+
+  judge0-workers:
+    image: judge0/judge0:1.13.1
+    command: ["./scripts/workers"]
+    volumes:
+      - ./judge0.conf:/judge0.conf:ro
+    privileged: true
+    restart: always
+    depends_on:
+      judge0-db:
+        condition: service_healthy
+      judge0-redis:
+        condition: service_healthy
+
+  judge0-db:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: judge0
+      POSTGRES_PASSWORD: ${JUDGE0_POSTGRES_PASSWORD}
+      POSTGRES_DB: judge0
+    volumes:
+      - judge0_db:/var/lib/postgresql/data
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U judge0 -d judge0"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  judge0-redis:
+    image: redis:6
+    command:
+      - bash
+      - -c
+      - |
+        docker-entrypoint.sh --appendonly yes --requirepass "$$JUDGE0_REDIS_PASSWORD"
+    environment:
+      JUDGE0_REDIS_PASSWORD: ${JUDGE0_REDIS_PASSWORD}
+    volumes:
+      - judge0_redis:/data
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a $$JUDGE0_REDIS_PASSWORD ping | grep PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  judge0_db:
+  judge0_redis:

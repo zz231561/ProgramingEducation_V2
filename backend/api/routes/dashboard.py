@@ -1,18 +1,19 @@
-"""學生 Dashboard API（roadmap 3-3a）。
+"""學生 Dashboard API（roadmap 3-3a/b）。
 
 API：
-- GET /dashboard/stats — 4 統計卡片 + 今日建議
+- GET /dashboard/stats               — 4 統計卡片 + 今日建議
+- GET /dashboard/timeline?limit=30   — 最近活動時間線（quiz / reflection / unit_completed）
 """
 
 import uuid
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.deps import get_current_db_user, get_db
 from models.user import User
-from services.dashboard import get_dashboard_stats
+from services.dashboard import get_dashboard_stats, list_recent_activities
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 
@@ -50,6 +51,42 @@ class DashboardStatsResponse(BaseModel):
     mastery: MasteryOut
     reflection_count: int
     today_suggestion: TodaySuggestionOut
+
+
+class ActivityItemOut(BaseModel):
+    type: str  # quiz | reflection | unit_completed
+    timestamp: str  # ISO
+    title: str
+    detail: str
+    link: str | None
+    is_correct: bool | None
+
+
+class TimelineResponse(BaseModel):
+    items: list[ActivityItemOut]
+
+
+@router.get("/timeline", response_model=TimelineResponse)
+async def timeline(
+    limit: int = Query(default=30, ge=1, le=100),
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_db_user),
+) -> TimelineResponse:
+    """最近活動（quiz / reflection / unit_completed）合併按時間排序。"""
+    activities = await list_recent_activities(db, user.id, limit=limit)
+    return TimelineResponse(
+        items=[
+            ActivityItemOut(
+                type=a.type,
+                timestamp=a.timestamp.isoformat(),
+                title=a.title,
+                detail=a.detail,
+                link=a.link,
+                is_correct=a.is_correct,
+            )
+            for a in activities
+        ]
+    )
 
 
 @router.get("/stats", response_model=DashboardStatsResponse)

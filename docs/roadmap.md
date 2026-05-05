@@ -283,7 +283,11 @@
   - Frontend：`lib/dashboard.ts` + `stats-cards.tsx` (145, 響應式 4 卡網格) + `today-suggestion.tsx` (38)
   - 重寫 dashboard page（loading/error/ready 三狀態）
   - 10 個新後端測試，全套 422 tests 全綠
-- [ ] 3-3b 最近活動時間線
+- [x] 3-3b 最近活動時間線
+  - Backend：`services/dashboard/timeline.py` (142) + `GET /dashboard/timeline?limit=N`
+  - 3 種事件 (quiz / reflection / unit_completed)，每類各取 limit 筆 → merge → 取 limit
+  - Frontend：`activity-timeline.tsx` (150) — async load + 4 狀態 + 4 種 icon + 相對時間格式
+  - 9 個新後端測試，全套 431 tests 全綠
 - [ ] 3-3c 精熟度總覽圖表
 
 ## Phase 4：部署上線（學生端完成後）

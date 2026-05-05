@@ -10,6 +10,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 
+import { ActivityTimeline } from "@/components/dashboard/activity-timeline";
 import { StatsCards } from "@/components/dashboard/stats-cards";
 import { TodaySuggestionCard } from "@/components/dashboard/today-suggestion";
 import { ApiRequestError } from "@/lib/api";
@@ -70,6 +71,7 @@ export default function DashboardPage() {
 
         <StatsCards stats={view.stats} />
         <TodaySuggestionCard suggestion={view.stats.today_suggestion} />
+        <ActivityTimeline />
       </div>
     </div>
   );

@@ -44,3 +44,25 @@ export interface DashboardStats {
 export async function getDashboardStats(): Promise<DashboardStats> {
   return api<DashboardStats>("/dashboard/stats");
 }
+
+// === 3-3b 活動時間線 ===
+
+export type ActivityType = "quiz" | "reflection" | "unit_completed";
+
+export interface ActivityItem {
+  type: ActivityType;
+  timestamp: string;  // ISO
+  title: string;
+  detail: string;
+  link: string | null;
+  is_correct: boolean | null;
+}
+
+export async function getRecentActivities(
+  limit: number = 30,
+): Promise<ActivityItem[]> {
+  const data = await api<{ items: ActivityItem[] }>(
+    `/dashboard/timeline?limit=${limit}`,
+  );
+  return data.items;
+}

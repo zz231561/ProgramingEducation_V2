@@ -1,5 +1,49 @@
 # 變更日誌
 
+## [2026-05-05] — Phase 3-3b：Dashboard 最近活動時間線
+
+### 新增（Backend）
+- `backend/services/dashboard/timeline.py`（142 行）：
+  - dataclass: `ActivityType` Literal["quiz", "reflection", "unit_completed"] + `ActivityItem`
+  - 3 個 fetch helper（每類各取 limit 筆）：
+    - `_list_quiz`：student_answers join question；標題含對錯與題幹截斷；detail 含題型/難度/提示用量
+    - `_list_reflection`：reflections；含 quality_score 百分比 + 步驟數
+    - `_list_completed_units`：learning_units WHERE completed_at IS NOT NULL（透過 path.user_id 過濾）
+  - `list_recent_activities` 主流程：merge 三類 → sort by timestamp desc → 取 limit
+- `backend/api/routes/dashboard.py`：加 `GET /dashboard/timeline?limit=N`
+  - 422 if limit out of [1, 100]
+  - response: `{ items: [{ type, timestamp(ISO), title, detail, link?, is_correct? }] }`
+
+### 新增（Frontend）
+- `web/lib/dashboard.ts`：加 `ActivityType` / `ActivityItem` types + `getRecentActivities(limit)` helper
+- `web/components/dashboard/activity-timeline.tsx`（150 行）：
+  - useEffect async fetch + cancelled flag 防 race
+  - 4 狀態：loading skeleton / error / empty / list
+  - `ActivityIcon` 依 type 與 is_correct 顯示對應 lucide icon + 顏色：
+    - quiz 對 → CheckCircle2 綠 / quiz 錯 → XCircle 紅
+    - reflection → ClipboardList 紫
+    - unit_completed → GraduationCap 藍
+  - `formatRelative(iso)` 相對時間（剛才 / N 分前 / N 小時前 / N 天前 / 完整日期）
+  - 有 link 的 item 整列為 Link；無 link 為純 div
+- `web/app/(app)/dashboard/page.tsx`：在 today suggestion 下加 `<ActivityTimeline />` section
+
+### 測試
+- `backend/tests/test_dashboard_timeline.py`（9 個 service + HTTP）：
+  - 401 / 空狀態 / 三種事件類型完整出現 / quiz 含 is_correct + 提示用量 detail / reflection 品質百分比 / unit 限 completed / limit 截斷 / HTTP ISO timestamp / HTTP 422 limit 範圍
+- 全套 431 backend tests 全綠（422 → 431，+9 個新測試，零 regression）
+- TypeScript / ESLint / next build 全綠
+
+### 設計關鍵
+- **每類各取 limit 後合併**：避免單一事件類型（如 quiz）量大時遮蔽其他類型；merge 後再取最終 limit
+- **不含 comprehension 事件**：schema 沒專屬 completed_at；後續加欄位再加（記入 tech-debt）
+- **不含 chat 訊息**：量大且不算「學習進度」級別的事件
+- **R8 反 AI 感**：4 種 icon 全 lucide（無 emoji）；色彩僅用於語意（綠對 / 紅錯 / 紫反思 / 藍完成）
+- **link 可空**：reflection 無對應 detail 頁面 → link=null；前端 row 渲染區分
+- **相對時間在前端格式化**：後端只給 ISO；不在 JSON 預處理（避免時區邊界判斷複雜化）
+- **限 limit ≤ 100**：避免 SQL 大 query；前端預設 20（dashboard 概覽用）
+
+---
+
 ## [2026-05-05] — Phase 3-3a：學生 Dashboard 統計卡片 + 今日建議
 
 ### 新增（Backend）

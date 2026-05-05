@@ -71,6 +71,8 @@ export interface SubmitQuestionPayload {
 
 /** 提交後 server 回傳 — 含完整 content（含答案）+ feedback + explanation。 */
 export interface SubmitResponse {
+  /** 3-2c：供前端 fetch /quiz/answers/{id}/feedback */
+  answer_id: string;
   is_correct: boolean;
   feedback: string;
   /** 完整題目內容（已含 answer_index / answers / 等揭露欄位）。 */
@@ -109,4 +111,36 @@ export async function requestHint(
     method: "POST",
     body: JSON.stringify(payload),
   });
+}
+
+// === 3-2c 作答後 EDF 回饋 ===
+
+export interface ConceptMasteryItem {
+  concept_tag: string;
+  concept_name_zh: string;
+  /** 0.0-1.0；未練過視為 0 */
+  confidence: number;
+}
+
+export interface RecommendedUnit {
+  unit_id: string;
+  path_id: string;
+  concept_tag: string;
+  concept_name_zh: string;
+  video_order: number | null;
+  status: "locked" | "available" | "in_progress" | "completed";
+}
+
+export interface QuizFeedbackResponse {
+  concept_mastery: ConceptMasteryItem[];
+  suggestion: string;
+  /** true = LLM 失敗用了固定 fallback 模板 */
+  suggestion_fallback: boolean;
+  recommended_units: RecommendedUnit[];
+}
+
+export async function getQuizFeedback(
+  answerId: string,
+): Promise<QuizFeedbackResponse> {
+  return api<QuizFeedbackResponse>(`/quiz/answers/${answerId}/feedback`);
 }

@@ -36,10 +36,8 @@
   - 3-1a Schema + ORM / 3-1b 路徑生成 / 3-1c Learn 頁面 / 3-1c+ Concept 重建 /
   - 3-1c++ UX 簡化 / 3-1d 學習單元 4 tab / 3-1e 練習 tab Reflection 觸發
 
-**🎯 進行中：Phase 3-2 — 下一任務：3-2c 作答結果頁 + EDF 回饋顯示**
-- ✅ 3-2a Quiz 頁面：選擇題 + 程式撰寫題 UI（quiz-runner + 4 元件 + CodeEditor 復用）
-- ✅ 3-2b 計時器 + 提示系統（5 級 ladder + LLM hint + fallback）
-- ⬜ 3-2c 作答結果頁 + EDF 回饋顯示
+**🎯 下一任務：Phase 3-3 Dashboard（統計卡片 + 活動時間線 + 精熟度總覽）**
+- ✅ 3-2 Quiz 完整版（3-2a UI / 3-2b 計時器+提示 / 3-2c EDF 回饋；全部完成）
 - ⬜ 3-2 Quiz 完整版（Quiz 頁面 + 計時器 + EDF 回饋）
 - ⬜ 3-3 Dashboard（統計卡片 + 活動時間線 + 精熟度總覽）
 - ⬜ 2-6 Post-Solution Comprehension Check

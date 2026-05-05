@@ -1,5 +1,63 @@
 # 變更日誌
 
+## [2026-05-05] — Phase 3-2c：作答後 EDF 回饋（Phase 3-2 完成 🎉）
+
+### 重點
+作答後的個人化回饋頁，整合 BKT 精熟度 + LLM 建議 + 推薦學習單元連結。
+與 `/quiz/submit` 即時對錯分離（async fetch），保持結果頁載入快但內容豐富。
+
+### 新增（Backend）
+- `backend/services/quiz/feedback.py`（250 行）：
+  - dataclass: `ConceptMasteryItem` / `RecommendedUnit` / `QuizFeedbackResult`
+  - `_get_owned_answer` 擁有權檢查（非本人 → 404 STUDENT_ANSWER_NOT_FOUND）
+  - `_fetch_concept_mastery`：outerjoin Concept × StudentMastery，未練概念視為 0
+  - `_fetch_recommended_units`：限同 user 路徑 + 未完成 + concept 匹配
+  - `_llm_suggestion`：依對錯 + mastery 給 1-2 句建議；4 種 fallback 路徑保證不擋學生
+  - `generate_quiz_feedback` 主流程
+- `backend/api/routes/quiz.py`：`SubmitResponse` 加 `answer_id`（前端要能拿來 fetch feedback）
+- `backend/api/routes/quiz_feedback.py`（77 行，獨立檔避免主 quiz.py 超 250）：
+  - `GET /quiz/answers/{answer_id}/feedback` endpoint
+  - response 含 mastery 列表 + suggestion + suggestion_fallback flag + recommended_units
+- `backend/main.py`：註冊 `quiz_feedback_router`
+
+### 新增（Frontend）
+- `web/lib/quiz.ts`：
+  - `SubmitResponse` 加 `answer_id` 欄位
+  - 加 `ConceptMasteryItem` / `RecommendedUnit` / `QuizFeedbackResponse` types
+  - 加 `getQuizFeedback(answerId)` helper
+- `web/components/quiz/feedback-section.tsx`（172 行）：
+  - useEffect async fetch + cancelled flag 防 race
+  - SkeletonView（loading）+ SuggestionCard / MasteryCard / RecommendedCard 三段式
+  - MasteryRow 進度條（0-100%）對齊 design tokens（accent-green）
+  - RecommendedUnit Link 帶 video_order 編號顯示
+  - 統一 humanizeError
+- `web/components/quiz/result-view.tsx`：在 CorrectAnswerSection 與導航按鈕之間嵌入 `<FeedbackSection answerId={result.answer_id} />`
+
+### 測試
+- `backend/tests/test_quiz_feedback.py`（14 個 unit + HTTP）：
+  - 6 unit：5 種 _llm_suggestion fallback 路徑（no client / exception / invalid JSON / empty / 對錯各一）+ success
+  - 4 service integration：擁有權 404 / mastery 0 補位 / 推薦 unit 過濾（已完成 / 不匹配 concept）/ 推薦 unit 正向案例
+  - 4 HTTP：401 / 跨使用者 404 / success 完整 payload / submit response 含 answer_id（3-2c 新增欄位）
+- 全套 412 backend tests 全綠（398 → 412，+14 個新測試，零 regression）
+- TypeScript / ESLint / next build 全綠
+
+### 設計關鍵
+- **submit 與 feedback 分離**：submit 立即回對錯（快）；feedback async fetch（LLM 慢，UI loading state 不擋畫面）
+- **不重做 EDF Evidence**：quiz answer 結構化已知（is_correct + concept_tags），不需 LLM 拆解錯誤類型；EDF Evidence Pipeline 仍服務 chat 場景（學生提問時用）
+- **未練概念視為 0**：`outerjoin` + 預設 0.0 — 顯示完整 concept_tags 不留空白，cold start 學生看到 0% 也比看到「無資料」直覺
+- **推薦過濾三層**：同 user 的 path × 未完成 × concept_tag 匹配；避免推已學完的 unit 或他人路徑的 unit
+- **獨立 route 檔**：`quiz_feedback.py` 拆出避免主 quiz.py 超 250 行（schema 定義較長）
+- **LLM 失敗 fallback 對稱**：與 hint / EPL / Comprehension 設計一致；`suggestion_fallback` flag 讓前端顯示「離線」狀態
+- **RecommendedUnit 連結到 /learn**：MVP 直接導向學習路徑首頁；未來可加深 deep-link 直跳特定 unit
+
+### Phase 3-2 整體里程碑
+- ✅ 3-2a Quiz 頁面：選擇題 + 程式撰寫題 UI
+- ✅ 3-2b 計時器 + 提示系統（5 級 hint ladder）
+- ✅ 3-2c 作答結果頁 + EDF 回饋顯示
+- 全套 412 backend tests 全綠；學生 Quiz 完整閉環：選題型 → 取題 → 作答（含計時 + 提示）→ 對錯 + 解釋 + EDF 個人化回饋
+
+---
+
 ## [2026-05-05] — Phase 3-2b：Quiz 計時器 + 5 級提示系統
 
 ### 新增（Backend）

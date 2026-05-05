@@ -268,7 +268,12 @@
   - Frontend：`timer.tsx`（mm:ss 每秒更新）+ `hint-panel.tsx`（強制遞增按鈕）+ runner 整合
   - hint_level_used 透過既有 /quiz/submit 持久化；hint 本身不寫 DB
   - 13 個新後端測試（6 unit + 7 HTTP），全套 398 tests 全綠
-- [ ] 3-2c 作答結果頁 + EDF 回饋顯示
+- [x] 3-2c 作答結果頁 + EDF 回饋顯示
+  - Backend：`services/quiz/feedback.py` (250) + `api/routes/quiz_feedback.py` (77，獨立檔)；SubmitResponse 加 answer_id
+  - Frontend：`feedback-section.tsx` (172) async load + 3 卡片（建議/精熟度/推薦單元）；result-view 嵌入
+  - mastery 未練概念視為 0；推薦 units 限同 user 路徑 + 未完成 + concept 匹配
+  - LLM suggestion 4 種 fallback 不擋學生
+  - 14 個新後端測試（6 unit + 4 service integration + 4 HTTP），全套 412 tests 全綠
 
 ### 3-3 Dashboard
 - [ ] 3-3a Dashboard 頁面：統計卡片 + 今日建議

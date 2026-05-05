@@ -1,5 +1,11 @@
-"""智慧出題 service — 2-4 Phase（Select / Generate / Validate / Grade / Orchestrate / Hint）。"""
+"""智慧出題 service — 2-4 Phase（Select / Generate / Validate / Grade / Orchestrate / Hint / Feedback）。"""
 
+from services.quiz.feedback import (
+    ConceptMasteryItem,
+    QuizFeedbackResult,
+    RecommendedUnit,
+    generate_quiz_feedback,
+)
 from services.quiz.generate import generate_question
 from services.quiz.grade import grade_answer
 from services.quiz.hint import HintResult, generate_hint
@@ -17,12 +23,16 @@ from services.quiz.validate import ValidationReport, validate_question
 
 __all__ = [
     "CENTRALITY_BONUS",
+    "ConceptMasteryItem",
     "HintResult",
+    "QuizFeedbackResult",
+    "RecommendedUnit",
     "WEAK_THRESHOLD",
     "ValidationReport",
     "generate_for_student",
     "generate_hint",
     "generate_question",
+    "generate_quiz_feedback",
     "grade_answer",
     "list_history",
     "select_weak_concepts",

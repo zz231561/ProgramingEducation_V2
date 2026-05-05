@@ -11,6 +11,8 @@ import { CheckCircle2, XCircle } from "lucide-react";
 
 import { Question, SubmitResponse } from "@/lib/quiz";
 
+import { FeedbackSection } from "./feedback-section";
+
 interface Props {
   question: Question;
   result: SubmitResponse;
@@ -35,6 +37,8 @@ export function ResultView({ question, result, onNext, onExit }: Props) {
         questionType={question.type}
         correctContent={result.correct_content}
       />
+
+      <FeedbackSection answerId={result.answer_id} />
 
       <div className="flex items-center justify-end gap-2 pt-2">
         <button

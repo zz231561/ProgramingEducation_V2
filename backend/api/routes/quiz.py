@@ -12,7 +12,7 @@ from core.errors import AppError
 from models.quiz import Question, QuestionType, StudentAnswer
 from models.user import User
 from services.quiz import generate_for_student, generate_hint, list_history, submit_answer
-from sqlalchemy import select as sa_select
+from sqlalchemy import select as sa_select  # noqa: F401  used by hint endpoint
 
 router = APIRouter(prefix="/quiz", tags=["quiz"])
 
@@ -76,6 +76,7 @@ class SubmitRequest(BaseModel):
 class SubmitResponse(BaseModel):
     """作答結果 + 完整解答 + LLM 解釋。"""
 
+    answer_id: uuid.UUID  # 3-2c：供前端 fetch /quiz/answers/{id}/feedback
     is_correct: bool
     feedback: str
     correct_content: dict  # 含答案欄位（提交後才回傳）
@@ -138,6 +139,7 @@ async def submit(
         hint_level_used=body.hint_level_used,
     )
     return SubmitResponse(
+        answer_id=student_answer.id,
         is_correct=student_answer.is_correct,
         feedback=student_answer.feedback,
         correct_content=question.content or {},

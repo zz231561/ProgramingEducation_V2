@@ -236,6 +236,11 @@
   - Seed migration `e1f2a3b4c5d6`：清空舊 20 EDF concept → seed 59 影片（編號 04-62）+ 58 條線性邊
   - tag 命名 `cpp-NN-keyword`；8 主題分類；difficulty 1-5 漸進
   - PG 驗證 59 + 58；YT video_id 等教授補後 PATCH
+- [x] 3-1c++ Learn UX 簡化：onboarding 自動 seed + 移除手動生成 UI
+  - 反思：concept graph 固定後，每位學生「生成」結果相同 → 手動 UI 無意義
+  - Backend：`ensure_default_path_exists` + `GET /learning/paths/default` lazy seed
+  - Frontend 大幅精簡：刪 path-card / generate-path-dialog；page 改為自動 fetch + 直顯 detail
+  - 4 個新後端測試，全套 383 tests 全綠
 - [x] 3-1d 學習單元內容頁（概念說明 / 範例 / 練習 / 摘要 tab）
   - Backend：`PATCH /learning/units/{id}` + `services/learning/units.py` (status transition 查表驗證 + 解鎖邏輯)
   - 合法 transition: available→in_progress / in_progress→completed (解鎖下一) / in_progress→available (revisit)

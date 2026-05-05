@@ -1,5 +1,48 @@
 # 變更日誌
 
+## [2026-05-05] — Phase 3-1c+ 簡化：onboarding 自動 seed 預設路徑（移除無意義的「生成路徑」UX）
+
+### 重新評估
+- 3-1c 原設計含「+ 生成新路徑」按鈕 + EmptyState + 多路徑列表，預期學生會手動建立多條路徑
+- 但 3-1c+ concept graph 重建為固定 59 影片線性鏈後，每位學生「生成」結果完全相同
+  → category filter 是唯一變數但 99% 學生會學完整課程
+  → 「生成」變無意義儀式，違反「不為不存在的需求設計」原則（YAGNI / CLAUDE.md 守則 #7）
+- 結論：移除手動生成 UI，改為 onboarding 自動 seed
+
+### Backend
+- `backend/services/learning/queries.py`：
+  - 加 `DEFAULT_PATH_TITLE = "C++ 完整課程"` + `DEFAULT_PATH_DESCRIPTION` 常數
+  - 加 `ensure_default_path_exists(db, user_id) -> LearningPath`：學生有任何路徑 → 回最早建立的；無 → 呼叫 generate_learning_path 用預設 title/description
+- `backend/api/routes/learning.py`：
+  - 加 `GET /learning/paths/default` endpoint — Learn 頁面唯一入口
+  - 抽 `_build_path_detail` helper 共用於 GET /paths/{id} / POST /paths / GET /paths/default 三處
+  - **保留** POST/DELETE/GET list endpoints 供未來教師端 / 自訂路徑使用，前端不暴露
+
+### Frontend
+- `web/lib/learning.ts`：精簡 — 加 `getDefaultPath()`；**刪除** `listPaths` / `generatePath` / `deletePath` / `progressPercent` / `GeneratePathPayload` / `PathSummary`（前端不再需要）
+- `web/components/learn/path-card.tsx`：**整檔刪除**
+- `web/components/learn/generate-path-dialog.tsx`：**整檔刪除**
+- `web/components/learn/path-detail.tsx`：移除 `onBack` prop + 「返回路徑列表」按鈕（無 list 可返）
+- `web/app/(app)/learn/page.tsx`：**完全重寫**
+  - 兩模式：detail（預設視圖）/ unit（內容頁）— 移除原 list / loading-detail
+  - 進入 → 自動 fetch `/learning/paths/default`（後端 lazy seed）→ 直接顯示 detail
+  - 移除：EmptyState / 「+ 生成新路徑」按鈕 / 刪除按鈕 / dialog 整套
+  - 學生 onboarding 體驗：登入 → Learn → 立刻看到「C++ 完整課程」59 個 unit
+
+### 測試
+- `backend/tests/test_learning_route.py` 加 4 個 HTTP 測試：401 / lazy seed 首次 / 已有路徑回最早建立 / 422 無 concepts
+- 全套 383 backend tests 全綠（379 → 383，+4 個新測試，零 regression）
+- TypeScript / ESLint / next build 全綠（Route summary 含 `/learn` ○ static prerender）
+
+### 設計關鍵
+- **「ensure 而非 default-named」語意**：`ensure_default_path_exists` 回任何已存在路徑（不檢驗 title），避免使用者手動建立非預設 title 後又被自動建一條重複的
+- **Backend endpoints 完全保留**：POST/DELETE/GET list 仍在；schema 完全保留；前端不暴露但 schema 仍支援多 path（為未來教師端 / 複習路徑預留）
+- **無 list 視圖反而更簡潔**：原 path-card.tsx 在只有 1 條路徑時是視覺噪音；直接顯示 detail 更直覺
+- **path-detail 移除 onBack**：detail 變主畫面，無「返回」目的地；unit-content 內仍有「返回路徑：xxx」按鈕（unit → detail 的返回有意義）
+- **不刪除 schema/migration**：方案 A 純 UX 簡化，零 schema 變動；未來真有教師端再 git revert 復活 path-card / generate-dialog 即可
+
+---
+
 ## [2026-05-05] — Phase 3-1d：學習單元內容頁（4 tab + status transition + 自動解鎖）
 
 ### 新增（Backend）

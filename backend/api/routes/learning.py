@@ -18,6 +18,7 @@ from models.user import User
 from services.learning import (
     DEFAULT_SKIP_MASTERED_THRESHOLD,
     delete_path,
+    ensure_default_path_exists,
     generate_learning_path,
     get_path_with_units,
     list_paths_for_user,
@@ -87,7 +88,7 @@ async def create_path(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_db_user),
 ) -> PathDetailOut:
-    """生成新學習路徑（拓撲排序 + 弱項補強）。"""
+    """生成新學習路徑（拓撲排序 + 弱項補強）。供未來教師端 / 自訂路徑使用，前端目前不暴露。"""
     path = await generate_learning_path(
         db,
         user_id=user.id,
@@ -96,8 +97,12 @@ async def create_path(
         category=body.category,
         skip_mastered_threshold=body.skip_mastered_threshold,
     )
-    # 重新讀完整 detail（含 units + concept join）以對齊 GET 形狀
     _, units = await get_path_with_units(db, path.id, user.id)
+    return _build_path_detail(path, units)
+
+
+def _build_path_detail(path, units) -> "PathDetailOut":
+    """共用 helper：把 (path, [UnitWithConcept]) 組成 PathDetailOut。"""
     return PathDetailOut(
         id=path.id,
         title=path.title,
@@ -119,6 +124,21 @@ async def create_path(
         created_at=path.created_at.isoformat(),
         updated_at=path.updated_at.isoformat(),
     )
+
+
+@router.get("/paths/default", response_model=PathDetailOut)
+async def get_default_path(
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_db_user),
+) -> PathDetailOut:
+    """取（並 lazy seed）使用者的預設學習路徑。
+
+    使用者第一次呼叫 → 自動 seed「C++ 完整課程」（59 unit + 線性鏈）；
+    後續呼叫 → 直接回該路徑詳細。Learn 頁面進入時呼叫此 endpoint 即可。
+    """
+    path = await ensure_default_path_exists(db, user.id)
+    _, units = await get_path_with_units(db, path.id, user.id)
+    return _build_path_detail(path, units)
 
 
 @router.get("/paths", response_model=ListPathsOut)
@@ -153,27 +173,7 @@ async def get_path(
 ) -> PathDetailOut:
     """取單一路徑詳細（含 units + concept 資訊）。404 若非本人擁有。"""
     path, units = await get_path_with_units(db, path_id, user.id)
-    return PathDetailOut(
-        id=path.id,
-        title=path.title,
-        description=path.description,
-        units=[
-            UnitOut(
-                id=u.unit.id,
-                concept_id=u.unit.concept_id,
-                concept_tag=u.concept_tag,
-                concept_name_zh=u.concept_name_zh,
-                concept_difficulty=u.concept_difficulty,
-                order_index=u.unit.order_index,
-                status=u.unit.status,
-                completed_at=u.unit.completed_at.isoformat() if u.unit.completed_at else None,
-                content=u.unit.content or {},
-            )
-            for u in units
-        ],
-        created_at=path.created_at.isoformat(),
-        updated_at=path.updated_at.isoformat(),
-    )
+    return _build_path_detail(path, units)
 
 
 @router.delete("/paths/{path_id}", status_code=status.HTTP_204_NO_CONTENT)

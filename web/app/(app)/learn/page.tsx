@@ -1,78 +1,58 @@
 "use client";
 
 /**
- * Learn 頁面（roadmap 3-1c）— 學習路徑視覺化 + 進度條。
+ * Learn 頁面（roadmap 3-1c+ 簡化版）— 直接顯示使用者的預設學習路徑。
  *
- * 三模式：
- * - list：所有路徑卡片 + 「+ 生成新路徑」按鈕
- * - detail：點選某條後顯示 unit 列表
- * - generating：modal 表單填寫並送出
+ * 設計轉變：原 3-1c 含「list / 生成新路徑 / 刪除」介面，但 concept graph 重建為固定
+ * 59 影片線性鏈後，每位學生「生成」結果完全相同，路徑列表只有 1 條，新增/刪除按鈕無意義。
+ * → 改為自動 lazy seed 預設「C++ 完整課程」+ 進入頁面直接顯示 detail。
  *
- * 點擊 unit 進入學習單元頁屬於 3-1d 範圍。
+ * 兩模式：
+ * - detail：59 unit 列表（預設視圖）
+ * - unit：點選某 unit 後的單元內容頁（4 tab）
+ *
+ * 後端 POST /paths / DELETE /paths / GET /paths 仍保留，供未來教師端 / 自訂路徑使用。
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { BookOpen, Loader2, Plus } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
-import { GeneratePathDialog } from "@/components/learn/generate-path-dialog";
-import { PathCard } from "@/components/learn/path-card";
 import { PathDetailView } from "@/components/learn/path-detail";
 import { UnitContent } from "@/components/learn/unit-content";
 import { ApiRequestError } from "@/lib/api";
 import {
-  GeneratePathPayload,
   PathDetail,
-  PathSummary,
   Unit,
-  deletePath,
-  generatePath,
+  getDefaultPath,
   getPath,
-  listPaths,
   updateUnitStatus,
 } from "@/lib/learning";
 
 type View =
-  | { mode: "list" }
+  | { mode: "loading" }
+  | { mode: "error"; message: string }
   | { mode: "detail"; detail: PathDetail }
-  | { mode: "loading-detail" }
   | { mode: "unit"; detail: PathDetail; unitIndex: number };
 
 export default function LearnPage() {
-  const [paths, setPaths] = useState<PathSummary[] | null>(null);
-  const [listError, setListError] = useState<string | null>(null);
-  const [view, setView] = useState<View>({ mode: "list" });
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [generating, setGenerating] = useState(false);
-  const [generateError, setGenerateError] = useState<string | null>(null);
+  const [view, setView] = useState<View>({ mode: "loading" });
 
-  const refreshList = useCallback(async () => {
-    setListError(null);
+  const loadDefault = useCallback(async () => {
+    setView({ mode: "loading" });
     try {
-      setPaths(await listPaths());
+      const detail = await getDefaultPath();
+      setView({ mode: "detail", detail });
     } catch (e) {
-      setListError(humanizeError(e));
+      setView({ mode: "error", message: humanizeError(e) });
     }
   }, []);
 
   useEffect(() => {
-    refreshList();
-  }, [refreshList]);
-
-  const handleSelect = useCallback(async (pathId: string) => {
-    setView({ mode: "loading-detail" });
-    try {
-      const detail = await getPath(pathId);
-      setView({ mode: "detail", detail });
-    } catch (e) {
-      setView({ mode: "list" });
-      setListError(humanizeError(e));
-    }
-  }, []);
-
-  const handleBack = useCallback(() => {
-    setView({ mode: "list" });
-    refreshList();
-  }, [refreshList]);
+    // 初次載入：fetch 預設路徑（loadDefault 內含 setView 是必要的初始化，
+    // 屬「effect → external state」典型場景，故停用 react-hooks/set-state-in-effect）
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadDefault();
+  }, [loadDefault]);
 
   const handleSelectUnit = useCallback((unit: Unit) => {
     setView((prev) => {
@@ -83,61 +63,28 @@ export default function LearnPage() {
     });
   }, []);
 
-  const handleBackToDetail = useCallback(async () => {
+  const handleBackToDetail = useCallback(() => {
     setView((prev) => {
       if (prev.mode !== "unit") return prev;
       return { mode: "detail", detail: prev.detail };
     });
   }, []);
 
-  const handleDelete = useCallback(
-    async (pathId: string) => {
-      if (!window.confirm("確定要刪除這條學習路徑嗎？此操作不可復原。")) return;
-      try {
-        await deletePath(pathId);
-        await refreshList();
-      } catch (e) {
-        setListError(humanizeError(e));
-      }
-    },
-    [refreshList],
-  );
-
-  const handleGenerate = useCallback(
-    async (payload: GeneratePathPayload) => {
-      setGenerating(true);
-      setGenerateError(null);
-      try {
-        const detail = await generatePath(payload);
-        setDialogOpen(false);
-        setView({ mode: "detail", detail });
-        await refreshList();
-      } catch (e) {
-        setGenerateError(humanizeError(e));
-      } finally {
-        setGenerating(false);
-      }
-    },
-    [refreshList],
-  );
-
-  if (view.mode === "loading-detail") {
+  if (view.mode === "loading") {
     return (
       <div className="flex h-full items-center justify-center text-text-secondary">
         <Loader2 className="mr-2 size-5 animate-spin" />
-        載入路徑...
+        載入學習路徑...
       </div>
     );
   }
 
-  if (view.mode === "detail") {
+  if (view.mode === "error") {
     return (
-      <div className="h-full overflow-y-auto px-6 py-8">
-        <PathDetailView
-          detail={view.detail}
-          onBack={handleBack}
-          onSelectUnit={handleSelectUnit}
-        />
+      <div className="flex h-full items-center justify-center px-6 text-center">
+        <div className="max-w-md rounded-md border-l-2 border-accent-red bg-surface-2 px-4 py-3 text-sm text-accent-red">
+          {view.message}
+        </div>
       </div>
     );
   }
@@ -157,65 +104,10 @@ export default function LearnPage() {
     );
   }
 
+  // detail 模式
   return (
     <div className="h-full overflow-y-auto px-6 py-8">
-      <div className="mx-auto w-full max-w-3xl space-y-6">
-        <header className="flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-medium text-text-primary">
-              學習路徑
-            </h1>
-            <p className="mt-1 text-sm text-text-secondary">
-              依概念依賴關係 + 你的精熟度動態安排的學習順序
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={() => {
-              setGenerateError(null);
-              setDialogOpen(true);
-            }}
-            className="inline-flex h-8 items-center gap-1.5 rounded-md bg-btn-primary-bg px-3 text-sm font-medium text-white hover:bg-btn-primary-hover"
-          >
-            <Plus className="size-4" />
-            生成新路徑
-          </button>
-        </header>
-
-        {listError && (
-          <div className="rounded-md border-l-2 border-accent-red bg-surface-2 px-3 py-2 text-xs text-accent-red">
-            {listError}
-          </div>
-        )}
-
-        {paths === null ? (
-          <div className="flex items-center justify-center py-12 text-text-secondary">
-            <Loader2 className="mr-2 size-4 animate-spin" />
-            載入中...
-          </div>
-        ) : paths.length === 0 ? (
-          <EmptyState onGenerate={() => setDialogOpen(true)} />
-        ) : (
-          <div className="space-y-3">
-            {paths.map((p) => (
-              <PathCard
-                key={p.id}
-                summary={p}
-                onSelect={handleSelect}
-                onDelete={handleDelete}
-              />
-            ))}
-          </div>
-        )}
-      </div>
-
-      <GeneratePathDialog
-        open={dialogOpen}
-        loading={generating}
-        error={generateError}
-        onClose={() => setDialogOpen(false)}
-        onSubmit={handleGenerate}
-      />
+      <PathDetailView detail={view.detail} onSelectUnit={handleSelectUnit} />
     </div>
   );
 }
@@ -245,7 +137,6 @@ function UnitView({
     return (offset: number) => {
       const target = unitIndex + offset;
       if (target < 0 || target >= detail.units.length) return null;
-      // 鎖定單元不可導航
       if (detail.units[target].status === "locked") return null;
       return () => onAfterStatusChange(detail, target);
     };
@@ -294,30 +185,10 @@ function UnitView({
   );
 }
 
-function EmptyState({ onGenerate }: { onGenerate: () => void }) {
-  return (
-    <div className="rounded-md border border-border-default bg-surface-1 px-6 py-12 text-center">
-      <BookOpen className="mx-auto size-10 text-text-muted/60" />
-      <p className="mt-4 text-sm text-text-primary">尚未建立學習路徑</p>
-      <p className="mt-1 text-xs text-text-secondary">
-        點擊上方「生成新路徑」依你目前的精熟度建立第一條
-      </p>
-      <button
-        type="button"
-        onClick={onGenerate}
-        className="mt-4 inline-flex h-8 items-center gap-1.5 rounded-md border border-btn-default-border bg-btn-default-bg px-3 text-sm text-text-primary hover:bg-surface-2"
-      >
-        <Plus className="size-4" />
-        立即生成
-      </button>
-    </div>
-  );
-}
-
 function humanizeError(e: unknown): string {
   if (e instanceof ApiRequestError) {
     if (e.status === 422 && e.body.error === "LEARNING_PATH_EMPTY") {
-      return e.body.message || "找不到符合條件的概念，請先建立或選擇其他分類。";
+      return e.body.message || "課程尚未建立（請聯絡管理員 seed concepts）。";
     }
     if (e.status === 404 && e.body.error === "LEARNING_PATH_NOT_FOUND") {
       return "找不到此學習路徑（可能已被刪除）。";

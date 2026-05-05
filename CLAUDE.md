@@ -35,8 +35,9 @@
 - 🚧 3-1 結構化學習路徑
   - ✅ 3-1a Schema + ORM（learning_paths + learning_units + LearningUnitStatus）
   - ✅ 3-1b 路徑生成 service（priority Kahn's 拓撲 + 弱項補強）
-  - ✅ 3-1c Learn 頁面：路徑視覺化 + 進度條（4 endpoints + page 三模式）
+  - ✅ 3-1c Learn 頁面：路徑視覺化 + 進度條
   - ✅ 3-1c+ Concept Graph 重建（59 影片 concept + 線性 PREREQUISITE）
+  - ✅ 3-1c++ Learn UX 簡化（onboarding lazy seed + 移除「生成路徑」UI）
   - ✅ 3-1d 學習單元內容頁（4 tab + status transition + 自動解鎖）
   - ⬜ 3-1e 練習 tab 嵌入 Pre-Coding Reflection 觸發點
 - ⬜ 3-2 Quiz 完整版（Quiz 頁面 + 計時器 + EDF 回饋）

@@ -286,3 +286,70 @@ async def test_delete_other_user_path_returns_404(client: AsyncClient):
         cookies={"authjs.session-token": other_token},
     )
     assert resp.status_code == 404
+
+
+# === GET /learning/paths/default (3-1c+) ===
+
+
+async def test_get_default_path_requires_auth(client: AsyncClient):
+    resp = await client.get("/learning/paths/default")
+    assert resp.status_code == 401
+
+
+async def test_get_default_path_lazy_seeds_when_none(client: AsyncClient):
+    """首次呼叫 → 自動建立預設路徑（標題為 DEFAULT_PATH_TITLE）+ 含 units。"""
+    await _ensure_user(OWNER_PAYLOAD, client)
+    await _seed_concepts([{"tag": "a"}, {"tag": "b"}])
+    token = encrypt_test_token(OWNER_PAYLOAD)
+
+    resp = await client.get(
+        "/learning/paths/default",
+        cookies={"authjs.session-token": token},
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["title"] == "C++ 完整課程"
+    assert len(body["units"]) == 2
+    assert body["units"][0]["status"] == "available"
+
+
+async def test_get_default_path_returns_existing_when_present(client: AsyncClient):
+    """已有路徑 → 回最早建立的那條（不重複 seed）。"""
+    await _ensure_user(OWNER_PAYLOAD, client)
+    await _seed_concepts([{"tag": "a"}])
+    token = encrypt_test_token(OWNER_PAYLOAD)
+
+    # 先手動建一條（非預設標題）
+    first = await client.post(
+        "/learning/paths",
+        json={"title": "我的自訂路徑"},
+        cookies={"authjs.session-token": token},
+    )
+    first_id = first.json()["id"]
+
+    # 呼叫 default → 應回該手動建立的，不另建
+    resp = await client.get(
+        "/learning/paths/default",
+        cookies={"authjs.session-token": token},
+    )
+    body = resp.json()
+    assert body["id"] == first_id
+    assert body["title"] == "我的自訂路徑"
+
+    # 確認資料庫只有 1 條
+    listing = await client.get(
+        "/learning/paths",
+        cookies={"authjs.session-token": token},
+    )
+    assert len(listing.json()["paths"]) == 1
+
+
+async def test_get_default_path_no_concepts_returns_422(client: AsyncClient):
+    """無任何 concept → seed 失敗 → 422 LEARNING_PATH_EMPTY。"""
+    await _ensure_user(OWNER_PAYLOAD, client)
+    token = encrypt_test_token(OWNER_PAYLOAD)
+    resp = await client.get(
+        "/learning/paths/default",
+        cookies={"authjs.session-token": token},
+    )
+    assert resp.status_code == 422

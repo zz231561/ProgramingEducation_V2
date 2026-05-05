@@ -3,10 +3,9 @@
 /**
  * 學習路徑詳細頁 — unit 列表 + 進度（roadmap 3-1c/d）。
  *
- * 3-1d 起：unit 變可點，locked 不可點；點擊由 caller 決定切換到 unit-content。
+ * 3-1d 起：unit 變可點，locked 不可點。
+ * 3-1c+ 簡化：Learn 頁面直接以此頁為主畫面（無 list 模式可返），故不顯示「返回」按鈕。
  */
-
-import { ArrowLeft } from "lucide-react";
 
 import { PathDetail, Unit } from "@/lib/learning";
 
@@ -14,26 +13,16 @@ import { UnitStatusIcon, statusLabel } from "./unit-status-icon";
 
 interface Props {
   detail: PathDetail;
-  onBack: () => void;
   onSelectUnit: (unit: Unit) => void;
 }
 
-export function PathDetailView({ detail, onBack, onSelectUnit }: Props) {
+export function PathDetailView({ detail, onSelectUnit }: Props) {
   const total = detail.units.length;
   const completed = detail.units.filter((u) => u.status === "completed").length;
   const percent = total === 0 ? 0 : Math.round((completed / total) * 100);
 
   return (
     <div className="mx-auto w-full max-w-3xl space-y-6">
-      <button
-        type="button"
-        onClick={onBack}
-        className="inline-flex items-center gap-1.5 text-sm text-text-secondary hover:text-text-primary"
-      >
-        <ArrowLeft className="size-4" />
-        返回路徑列表
-      </button>
-
       <header className="space-y-2">
         <h1 className="text-2xl font-medium text-text-primary">
           {detail.title}

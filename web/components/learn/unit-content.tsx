@@ -105,7 +105,7 @@ export function UnitContent({
       <div className="min-h-[240px]">
         {tab === "concept" && <ConceptTab unit={unit} />}
         {tab === "examples" && <ExamplesTab unit={unit} />}
-        {tab === "exercises" && <ExercisesTab unit={unit} />}
+        {tab === "exercises" && <ExercisesTab />}
         {tab === "summary" && <SummaryTab unit={unit} />}
       </div>
 
@@ -192,7 +192,7 @@ function ExamplesTab({ unit }: { unit: Unit }) {
   );
 }
 
-function ExercisesTab(_props: { unit: Unit }) {
+function ExercisesTab() {
   return (
     <EmptyTab text="練習題整合屬 3-1e 範圍 — 將復用 Pre-Coding Reflection 流程，從本單元概念出題並觸發反思表單" />
   );

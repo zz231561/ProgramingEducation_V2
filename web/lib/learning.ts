@@ -36,50 +36,14 @@ export interface PathDetail {
   updated_at: string;
 }
 
-export interface PathSummary {
-  id: string;
-  title: string;
-  description: string;
-  total_units: number;
-  completed_units: number;
-  available_units: number;
-  created_at: string;
-  updated_at: string;
+/** 取（並 lazy seed）使用者的預設學習路徑 — Learn 頁面進入時的唯一入口。 */
+export async function getDefaultPath(): Promise<PathDetail> {
+  return api<PathDetail>("/learning/paths/default");
 }
 
-export interface GeneratePathPayload {
-  title: string;
-  description?: string;
-  category?: string;
-  skip_mastered_threshold?: number;
-}
-
-export async function listPaths(): Promise<PathSummary[]> {
-  const data = await api<{ paths: PathSummary[] }>("/learning/paths");
-  return data.paths;
-}
-
+/** 重 fetch 已知 ID 的路徑（unit status 變動後同步用）。 */
 export async function getPath(pathId: string): Promise<PathDetail> {
   return api<PathDetail>(`/learning/paths/${pathId}`);
-}
-
-export async function generatePath(
-  payload: GeneratePathPayload,
-): Promise<PathDetail> {
-  return api<PathDetail>("/learning/paths", {
-    method: "POST",
-    body: JSON.stringify(payload),
-  });
-}
-
-export async function deletePath(pathId: string): Promise<void> {
-  await api<void>(`/learning/paths/${pathId}`, { method: "DELETE" });
-}
-
-/** 計算進度百分比（0-100，無單元時為 0）。 */
-export function progressPercent(summary: PathSummary): number {
-  if (summary.total_units === 0) return 0;
-  return Math.round((summary.completed_units / summary.total_units) * 100);
 }
 
 // === 3-1d unit status transitions ===

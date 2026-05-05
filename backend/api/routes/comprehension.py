@@ -1,12 +1,14 @@
-"""Comprehension API — Post-Solution Comprehension Check 端點（roadmap 2-6a + 2-6b）。
+"""Comprehension API — Post-Solution Comprehension Check 端點（roadmap 2-6a/b/c）。
 
 API 設計：
-- GET  /comprehension/{student_answer_id}              — 讀取 comprehension 狀態
-- PUT  /comprehension/{student_answer_id}              — partial upsert（手動寫入）
-- POST /comprehension/{student_answer_id}/epl/generate — LLM 生成 EPL 題（2-6b）
-- POST /comprehension/{student_answer_id}/epl/grade    — LLM 評分學生 EPL 回答（2-6b）
+- GET  /comprehension/{id}                          — 讀取 comprehension 狀態
+- PUT  /comprehension/{id}                          — partial upsert（手動寫入）
+- POST /comprehension/{id}/epl/generate             — LLM 生成 EPL 題（2-6b）
+- POST /comprehension/{id}/epl/grade                — LLM 評分 EPL 回答（2-6b）
+- POST /comprehension/{id}/predict_output/generate  — LLM 生新測資供學生預測（2-6c）
+- POST /comprehension/{id}/predict_output/grade     — 兩階段比對學生預測 vs expected（2-6c）
 
-PUT 採 partial：未提供欄位保留原值。EPL endpoints 採重置/順序語意：generate 會清空舊
+PUT 採 partial：未提供欄位保留原值。LLM endpoints 採重置/順序語意：generate 會清空舊
 answer/passed，grade 必須在 generate 之後呼叫。
 """
 
@@ -24,7 +26,9 @@ from services.comprehension import (
     ComprehensionUpdate,
     get_comprehension,
     start_epl_for_answer,
+    start_predict_for_answer,
     submit_epl_for_answer,
+    submit_predict_for_answer,
     upsert_comprehension,
 )
 
@@ -170,5 +174,69 @@ async def epl_grade(
         conceptual_correctness=result.conceptual_correctness,
         specificity=result.specificity,
         causality=result.causality,
+        feedback=result.feedback,
+    )
+
+
+# === Predict Output endpoints (roadmap 2-6c) ===
+
+
+class PredictGenerateOut(BaseModel):
+    """generate 只露 input；expected 存 server 端 prompt JSON 內，避免洩漏答案。"""
+
+    student_answer_id: uuid.UUID
+    comprehension_type: str
+    test_input: str
+
+
+class GradePredictRequest(BaseModel):
+    predicted_output: str = Field(..., min_length=0, max_length=4000)
+
+
+class PredictGradeOut(BaseModel):
+    """grade 通過後才回 expected_output（學生已答完，可對照學習）。"""
+
+    student_answer_id: uuid.UUID
+    comprehension_passed: bool
+    expected_output: str
+    match_method: str  # exact / semantic / mismatch
+    feedback: str | None
+
+
+@router.post(
+    "/{student_answer_id}/predict_output/generate", response_model=PredictGenerateOut
+)
+async def predict_generate(
+    student_answer_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_db_user),
+) -> PredictGenerateOut:
+    """LLM 生新測資並寫入。422 若非 coding；503 若 LLM 失敗。"""
+    answer, test_input = await start_predict_for_answer(db, user.id, student_answer_id)
+    return PredictGenerateOut(
+        student_answer_id=answer.id,
+        comprehension_type=answer.comprehension_type or "",
+        test_input=test_input,
+    )
+
+
+@router.post(
+    "/{student_answer_id}/predict_output/grade", response_model=PredictGradeOut
+)
+async def predict_grade(
+    student_answer_id: uuid.UUID,
+    body: GradePredictRequest,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_db_user),
+) -> PredictGradeOut:
+    """兩階段比對學生預測 vs expected。需先呼叫 generate。"""
+    answer, result = await submit_predict_for_answer(
+        db, user.id, student_answer_id, body.predicted_output
+    )
+    return PredictGradeOut(
+        student_answer_id=answer.id,
+        comprehension_passed=result.passed,
+        expected_output=result.expected_output,
+        match_method=result.match_method,
         feedback=result.feedback,
     )

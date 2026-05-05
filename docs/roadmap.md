@@ -188,7 +188,12 @@
   - API：`POST /comprehension/{id}/epl/generate`、`POST /comprehension/{id}/epl/grade`
   - 失敗策略：generate → 503；grade → 200 + passed=None（不擋學生）
   - 25 個新測試（16 unit + 9 HTTP），全套 243 tests 全綠
-- [ ] 2-6c 預測輸出驗證：自動生成新測資 + 比對學生預測
+- [x] 2-6c 預測輸出驗證：自動生成新測資 + 比對學生預測
+  - `services/comprehension/predict_output.py` + `predict_output_prompts.py`：LLM 生 (input, expected) + 兩階段 grade（normalize 嚴格 → LLM 語意 fallback → mismatch fallback）
+  - orchestrator 加 `start_predict_for_answer`（拒非 coding → 422，JSON 編碼存 prompt 不洩漏 expected）+ `submit_predict_for_answer`
+  - API：`POST /comprehension/{id}/predict_output/generate`、`POST /comprehension/{id}/predict_output/grade`，response 含 match_method ∈ {exact, semantic, mismatch}
+  - expected 對「學生實際程式」推理（含 bug 行為），不是題目正解 — 對齊「能否預測自己程式行為」教學目標
+  - 27 個新測試（16 unit + 11 HTTP），全套 270 tests 全綠
 - [ ] 2-6d 變體挑戰：LLM 生成變體題 + 禁用 AI 的作答環境
 - [ ] 2-6e 動態觸發頻率（依學生 EPL 通過率調整）+ 驗證結果影響精熟度
 

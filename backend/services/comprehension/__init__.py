@@ -18,7 +18,15 @@ from services.comprehension.epl import (
 )
 from services.comprehension.orchestrator import (
     start_epl_for_answer,
+    start_predict_for_answer,
     submit_epl_for_answer,
+    submit_predict_for_answer,
+)
+from services.comprehension.predict_output import (
+    PredictGenerationResult,
+    PredictGradeResult,
+    generate_predict_test,
+    grade_predict_answer,
 )
 
 __all__ = [
@@ -26,10 +34,16 @@ __all__ = [
     "ComprehensionUpdate",
     "EplGenerationResult",
     "EplGradeResult",
+    "PredictGenerationResult",
+    "PredictGradeResult",
     "generate_epl_prompt",
+    "generate_predict_test",
     "get_comprehension",
     "grade_epl_answer",
+    "grade_predict_answer",
     "start_epl_for_answer",
+    "start_predict_for_answer",
     "submit_epl_for_answer",
+    "submit_predict_for_answer",
     "upsert_comprehension",
 ]

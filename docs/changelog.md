@@ -1,5 +1,42 @@
 # 變更日誌
 
+## [2026-05-05] — Phase 2-6c：預測輸出驗證（自動生新測資 + 兩階段比對）
+
+### 新增（Service）
+- `backend/services/comprehension/predict_output.py`（199 行）：
+  - `PredictGenerationResult` / `PredictGradeResult` dataclass（frozen）
+  - `normalize_output(text)` — trim + 折疊內部空白 + 去空行（Stage 1 嚴格比對前置）
+  - `generate_predict_test(question, student_code)` — LLM 生新測資 + expected
+  - `grade_predict_answer(...)` — 兩階段：嚴格 → LLM 語意 → fallback mismatch
+  - `match_method` ∈ {exact, semantic, mismatch}
+- `backend/services/comprehension/predict_output_prompts.py`（86 行）：
+  - `build_generate_prompt`：強調「不重複 test_cases」+「對學生實際程式」推理 expected（含 bug 行為）
+  - `build_semantic_grade_prompt`：判斷「語意一致」（允許格式差異 / 拒絕邏輯錯誤）
+- `backend/services/comprehension/orchestrator.py`（+108 行）：
+  - `start_predict_for_answer` — 拒非 coding（422）→ LLM → JSON 寫入 prompt（input + expected）+ 清空舊 answer/passed
+  - `submit_predict_for_answer` — 從 prompt 解 JSON → 比對 → 寫 answer/passed
+
+### API
+- `backend/api/routes/comprehension.py`（242 行，+68）：
+  - `POST /comprehension/{id}/predict_output/generate` — 回 input；不洩漏 expected
+  - `POST /comprehension/{id}/predict_output/grade` — body `{predicted_output: str}`；回 passed + match_method + expected_output（學生已答完可對照）
+  - `PredictGenerateOut` / `PredictGradeOut` response schemas
+
+### 測試
+- `backend/tests/test_comprehension_predict.py`（16 個 unit）：normalize 5 案 / generate 成功 + 4 種 fallback / grade exact / normalize match / semantic 通過 / semantic 不通過 / LLM unavailable + exception fallback
+- `backend/tests/test_comprehension_predict_route.py`（11 個 HTTP 整合）：401 / generate 持久化 + hide expected / 清空舊 / 422 非 coding / 503 LLM 失敗 / 跨使用者 404 / 400 未先 generate / exact 通過 / mismatch fallback / 跨使用者 grade 404
+- 全套 270 tests 全綠（243 → 270，+27 個新測試，零 regression）
+
+### 設計關鍵
+- **題型限制**：predict_output 只對 coding 有意義（其他 → 422 PREDICT_OUTPUT_NOT_APPLICABLE），避免「對 MC 預測輸出」這種無意義操作
+- **expected 不洩漏**：generate response 只回 `test_input`；server 把 `{"input", "expected"}` 用 JSON 編碼存入 `comprehension_prompt`，grade 時解出比對
+- **expected 對學生實際程式**：LLM 推理時被告知「對學生這份程式（含可能的 bug）」的輸出，而非題目正解 — 教學目標是「能否預測自己程式行為」
+- **兩階段比對**：先嚴格 normalize（trim + 折疊空白）→ 不通過再 LLM 語意 → 任一通過即 passed=True；學生友善（容忍 `1, 2, 3` vs `1 2 3`）但保留精確性（順序 / 數值錯誤一律不過）
+- **LLM 失敗對稱**：generate → 503；grade Stage 2 失敗 → fallback 用 Stage 1 結果（mismatch passed=False，不擋學生流程）
+- **expected 即時回前端**：grade response 帶 `expected_output`，學生答完可自我對照學習
+
+---
+
 ## [2026-05-05] — Phase 2-6b：EPL 驗證（LLM 出題 + 評分學生回答）
 
 ### 新增（Service）

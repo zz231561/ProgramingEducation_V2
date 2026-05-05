@@ -9,9 +9,27 @@ from services.comprehension.crud import (
     get_comprehension,
     upsert_comprehension,
 )
+from services.comprehension.epl import (
+    EPL_PASS_THRESHOLD,
+    EplGenerationResult,
+    EplGradeResult,
+    generate_epl_prompt,
+    grade_epl_answer,
+)
+from services.comprehension.orchestrator import (
+    start_epl_for_answer,
+    submit_epl_for_answer,
+)
 
 __all__ = [
+    "EPL_PASS_THRESHOLD",
     "ComprehensionUpdate",
+    "EplGenerationResult",
+    "EplGradeResult",
+    "generate_epl_prompt",
     "get_comprehension",
+    "grade_epl_answer",
+    "start_epl_for_answer",
+    "submit_epl_for_answer",
     "upsert_comprehension",
 ]

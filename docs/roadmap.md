@@ -182,7 +182,12 @@
   - Service `services/comprehension/`：get + upsert（擁有權檢查 → 404）
   - API：`GET /comprehension/{id}`、`PUT /comprehension/{id}` partial upsert
   - 10 個新測試，全套 218 tests 全綠
-- [ ] 2-6b EPL 驗證：LLM 生成「用自己的話解釋」題 + 評估學生回答
+- [x] 2-6b EPL 驗證：LLM 生成「用自己的話解釋」題 + 評估學生回答
+  - `services/comprehension/epl.py` + `epl_prompts.py`：generate / grade 兩條 LLM 流程，3 面向評分（conceptual / specificity / causality）avg ≥ 0.6 為 passed
+  - `services/comprehension/orchestrator.py`：start_epl（重置語意）/ submit_epl（強制順序：必須先 generate）
+  - API：`POST /comprehension/{id}/epl/generate`、`POST /comprehension/{id}/epl/grade`
+  - 失敗策略：generate → 503；grade → 200 + passed=None（不擋學生）
+  - 25 個新測試（16 unit + 9 HTTP），全套 243 tests 全綠
 - [ ] 2-6c 預測輸出驗證：自動生成新測資 + 比對學生預測
 - [ ] 2-6d 變體挑戰：LLM 生成變體題 + 禁用 AI 的作答環境
 - [ ] 2-6e 動態觸發頻率（依學生 EPL 通過率調整）+ 驗證結果影響精熟度

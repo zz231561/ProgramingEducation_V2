@@ -1,5 +1,42 @@
 # 變更日誌
 
+## [2026-05-05] — Phase 2-6b：EPL 驗證（LLM 出題 + 評分學生回答）
+
+### 新增（Service）
+- `backend/services/comprehension/epl.py`（159 行）— LLM 客戶端 + dataclass + async 流程：
+  - `EplGenerationResult` / `EplGradeResult` dataclass（frozen）
+  - `generate_epl_prompt(question, student_answer)` — 出 EPL 題；失敗回 prompt=None
+  - `grade_epl_answer(question, student_answer, epl_prompt, epl_answer)` — 評分；失敗回 fallback
+  - 評分 3 面向：conceptual_correctness / specificity / causality；passed = (avg ≥ 0.6)
+- `backend/services/comprehension/epl_prompts.py`（111 行）— 純 prompt 模板獨立檔（避免 epl.py 超過 250 行硬性限制）：
+  - `format_student_answer` — 題型決定格式（coding 出 code block / MC 解析選項文字 / fill_blank 列出填空）
+  - `build_generate_prompt` — 生成 EPL 題的 system prompt
+  - `build_grade_prompt` — 評分學生 EPL 回答的 system prompt
+- `backend/services/comprehension/orchestrator.py`（106 行）— 整合 LLM + DB：
+  - `start_epl_for_answer` — 取作答 + 題目 → LLM → 寫 type/prompt + 清空舊 answer/passed
+  - `submit_epl_for_answer` — 校驗已 generate → LLM → 寫 answer/passed
+  - LLM 失敗：generate → 503；grade → 200 但 passed=None（不擋學生）
+
+### API
+- `backend/api/routes/comprehension.py`（174 行）：
+  - `POST /comprehension/{student_answer_id}/epl/generate` — 出題（重置語意）
+  - `POST /comprehension/{student_answer_id}/epl/grade` — 評分，body `{epl_answer: str}`
+  - `EplGenerateOut` / `EplGradeOut` response schemas（細項分數即時回傳，不入庫）
+
+### 測試
+- `backend/tests/test_comprehension_epl.py`（16 個 unit）：format / prompt building / LLM 成功 / fallback (no client / exception / invalid JSON / empty prompt / ValidationError) / 通過閾值 / 不通過 / feedback 空字串正規化
+- `backend/tests/test_comprehension_epl_route.py`（9 個 HTTP 整合）：401 / generate 持久化 + 清空舊 / generate LLM 失敗 503 / generate 跨使用者 404 / grade 未先 generate 400 / grade 成功 / grade LLM 失敗 200 但 passed=None / grade 跨使用者 404
+- 全套 243 tests 全綠（218 → 243，+25 個新測試，零 regression）
+
+### 設計關鍵
+- **重置語意**：generate 每次都清空 `comprehension_answer/passed`，避免新 prompt 搭配舊回答的資料錯亂
+- **順序強制**：grade 必須先 generate（無 prompt → 400 EPL_NOT_STARTED），確保 LLM 評分時有完整脈絡
+- **失敗策略不對稱**：generate 失敗 503（前端可重試）；grade 失敗 200 + passed=None（學生回答仍持久化方便重試評分，不擋流程）
+- **細項分數不入庫**：schema 只有 `comprehension_passed: bool`；conceptual/specificity/causality 屬即時回饋，前端顯示一次即可，不需歷史追蹤
+- **拆檔對齊 250 行限制**：epl.py 原 264 行 → 拆出 epl_prompts.py（純字串模板）後 159 行，符合 CLAUDE.md 硬性門檻
+
+---
+
 ## [2026-05-05] — Phase 2-6a：Post-Solution Comprehension Check 持久化基礎
 
 ### 新增（Schema / Migration）

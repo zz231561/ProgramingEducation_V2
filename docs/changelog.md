@@ -1,5 +1,48 @@
 # 變更日誌
 
+## [2026-05-05] — Phase 3-1e：練習 tab 嵌入 Pre-Coding Reflection 觸發點（Phase 3-1 完成 🎉）
+
+### 新增（Backend）
+- `backend/services/quiz/orchestrator.py`：
+  - 新增 `_resolve_concept_by_tag(db, tag)` helper（404 CONCEPT_NOT_FOUND if missing）
+  - `generate_for_student` 加 optional `concept_tag` 參數：指定時直接針對該 concept 出題（跳過弱項邏輯）；省略則維持原弱項補強行為（向後相容）
+- `backend/api/routes/quiz.py`：`GenerateRequest` 加 `concept_tag: str | None`，透傳到 service
+
+### 新增（Frontend）
+- `web/lib/quiz.ts`（55 行）：Question / Content type union + `generateQuestion(payload)` helper
+- `web/components/learn/exercises-tab.tsx`（206 行）：
+  - 三狀態流程：idle（「開始練習」按鈕）→ loading → question（顯示題目 + 「開始反思」）→ reflecting（彈 ReflectionFlow modal）→ done（反思摘要 + 後續導引）
+  - 取題：`generateQuestion({ type: "coding", bloom_level: 3, concept_tag: unit.concept_tag })`
+  - 復用 `ReflectionFlow` 元件（Phase 2-5）：`sourceType="quiz"` + `sourceId=question.id`
+  - 反思 approve → 顯示反思摘要（含 quality_score 百分比 + followup question 若有）+ 提示「在 Workspace 作答」連結 + 「回上方點完成單元」
+  - 「重新出題」按鈕（reset 狀態）
+  - humanizeError 處理 CONCEPT_NOT_FOUND / QUIZ_VALIDATION_RETRY_EXHAUSTED / QUIZ_UNAVAILABLE / 401
+- `web/components/learn/unit-content.tsx`：把原 `ExercisesTab` placeholder 改用新元件，傳入 `unit.concept_tag` + `unit.concept_name_zh`
+
+### 測試
+- `backend/tests/test_quiz_route.py` 加 2 個 HTTP 測試：concept_tag 指定 → 該 concept 出題；不存在 tag → 404 CONCEPT_NOT_FOUND
+- 全套 385 backend tests 全綠（383 → 385，+2 個新測試，零 regression）
+- TypeScript / ESLint / next build 全綠
+
+### 設計關鍵
+- **「觸發點」非「完整作答」**：3-1e 範圍嚴格限於「在練習 tab 內取題 + 觸發反思」；完整 coding 作答 UI（編輯器 + Judge0 提交 + 判分回饋）屬 Phase 3-2 Quiz 完整版
+- **向後相容的 quiz/generate**：新增 `concept_tag` 為 optional，原 cold-start fallback / 弱項補強邏輯不變
+- **復用 ReflectionFlow 而非重寫**：對齊「不重複造輪子」（CLAUDE.md 守則 #7）；reflection 元件已成熟，直接 import 即可
+- **Workspace 導引**：反思 approve 後的「在 Workspace 作答」連結會配合 Phase 2-5d 的 `setActiveReflectionId`（reflection_id 寫 sessionStorage）— 學生跳到 /workspace 寫程式時 AI Tutor 自動帶入此反思（EDF Pipeline 注入），完整閉環
+- **題型固定 coding**：教學影片內容多為 coding 練習；MC/fill_blank 對「練習」概念意義較弱，3-1e 不暴露選擇
+
+### Phase 3-1 整體里程碑
+- ✅ 3-1a Schema + ORM
+- ✅ 3-1b 路徑生成 service（priority Kahn's）
+- ✅ 3-1c Learn 頁面 + 4 endpoints
+- ✅ 3-1c+ Concept Graph 重建（59 影片）
+- ✅ 3-1c++ Learn UX 簡化（lazy seed + 移除生成 UI）
+- ✅ 3-1d 學習單元內容頁（4 tab + status transition）
+- ✅ 3-1e 練習 tab 嵌入 Reflection 觸發點
+- 全套 385 backend tests 全綠；學生 onboarding → 學習 → 練習 → 反思 → 完成單元的完整閉環就緒
+
+---
+
 ## [2026-05-05] — Phase 3-1c+ 簡化：onboarding 自動 seed 預設路徑（移除無意義的「生成路徑」UX）
 
 ### 重新評估

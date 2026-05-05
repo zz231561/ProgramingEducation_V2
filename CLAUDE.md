@@ -32,14 +32,11 @@
 **🎯 進行中：Phase 3 — 下一任務：3-1b 路徑生成 service（拓撲排序 + 弱項補強）**
 > **每次 session 開頭先讀 `docs/dev-setup.md` §1**（Colima + docker-compose 啟動 SOP）；首次接手讀 §2~6。
 > ⚠ **環境前置**：`web/.env.local` `AUTH_SECRET` 必須與 `backend/.env` `NEXTAUTH_SECRET` 同值
-- 🚧 3-1 結構化學習路徑
-  - ✅ 3-1a Schema + ORM（learning_paths + learning_units + LearningUnitStatus）
-  - ✅ 3-1b 路徑生成 service（priority Kahn's 拓撲 + 弱項補強）
-  - ✅ 3-1c Learn 頁面：路徑視覺化 + 進度條
-  - ✅ 3-1c+ Concept Graph 重建（59 影片 concept + 線性 PREREQUISITE）
-  - ✅ 3-1c++ Learn UX 簡化（onboarding lazy seed + 移除「生成路徑」UI）
-  - ✅ 3-1d 學習單元內容頁（4 tab + status transition + 自動解鎖）
-  - ⬜ 3-1e 練習 tab 嵌入 Pre-Coding Reflection 觸發點
+- ✅ 3-1 結構化學習路徑（全部完成 🎉）
+  - 3-1a Schema + ORM / 3-1b 路徑生成 / 3-1c Learn 頁面 / 3-1c+ Concept 重建 /
+  - 3-1c++ UX 簡化 / 3-1d 學習單元 4 tab / 3-1e 練習 tab Reflection 觸發
+
+**🎯 下一任務：3-2 Quiz 完整版（選擇題 + 程式撰寫題 UI + 計時器 + 提示系統 + 結果頁）**
 - ⬜ 3-2 Quiz 完整版（Quiz 頁面 + 計時器 + EDF 回饋）
 - ⬜ 3-3 Dashboard（統計卡片 + 活動時間線 + 精熟度總覽）
 - ⬜ 2-6 Post-Solution Comprehension Check

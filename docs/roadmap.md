@@ -248,7 +248,12 @@
   - Frontend：unit-content.tsx 4 tab + 上下單元導航 + ActionButton 依 status 變化；path-detail unit 變可點
   - 13 個新後端測試，全套 379 tests 全綠
   - YT player / 範例 / 摘要為 placeholder，等教授補影片資料或 LLM 生成（見 tech-debt.md）
-- [ ] 3-1e 練習 tab 嵌入 Pre-Coding Reflection 觸發點（復用 Phase 2-5 元件）
+- [x] 3-1e 練習 tab 嵌入 Pre-Coding Reflection 觸發點（復用 Phase 2-5 元件）
+  - Backend：`generate_for_student` 加 optional `concept_tag`；`_resolve_concept_by_tag` helper（404）
+  - Frontend：`lib/quiz.ts` + `components/learn/exercises-tab.tsx`（三狀態 idle/question/done）
+  - 復用 `ReflectionFlow`（Phase 2-5）；反思 approve 後顯示摘要 + 「在 Workspace 作答」導引（透過 setActiveReflectionId 串接 Phase 2-5d 的 EDF Pipeline）
+  - 完整作答 UI（編輯器 + Judge0 提交 + 判分）屬 Phase 3-2 範圍
+  - 2 個新後端測試，全套 385 tests 全綠
 
 ### 3-2 Quiz 完整版
 - [ ] 3-2a Quiz 頁面：選擇題 + 程式撰寫題 UI

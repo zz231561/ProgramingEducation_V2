@@ -38,6 +38,8 @@ def _mask_content_for_student(question_type: str, content: dict[str, Any]) -> di
 class GenerateRequest(BaseModel):
     type: str = Field(default=QuestionType.MULTIPLE_CHOICE.value)
     bloom_level: int = Field(default=3, ge=1, le=6)
+    # 3-1e：Learn 練習 tab 指定本單元 concept；None → 走弱項補強邏輯
+    concept_tag: str | None = Field(default=None, max_length=50)
 
 
 class QuestionForStudentOut(BaseModel):
@@ -104,12 +106,16 @@ async def generate(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_db_user),
 ) -> QuestionForStudentOut:
-    """產生一題給當前學生。Server 自動選弱項 + 生成 + LLM 自審（retry）。"""
+    """產生一題給當前學生。Server 自動選弱項 + 生成 + LLM 自審（retry）。
+
+    可選指定 concept_tag（3-1e）→ 直接對該 concept 出題，跳過弱項邏輯。
+    """
     question = await generate_for_student(
         db,
         user_id=user.id,
         question_type=QuestionType(body.type),
         bloom_level=body.bloom_level,
+        concept_tag=body.concept_tag,
     )
     return QuestionForStudentOut.from_question(question)
 

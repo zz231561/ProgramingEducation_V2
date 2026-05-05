@@ -122,6 +122,45 @@ async def test_generate_returns_masked_question(client: AsyncClient):
         assert q.validated is True
 
 
+async def test_generate_with_concept_tag_targets_specified_concept(client: AsyncClient):
+    """3-1e：指定 concept_tag → 直接針對該 concept 出題（跳過弱項邏輯）。"""
+    # 兩個 concept；學生若用弱項邏輯會選 control-flow（mastery=0）；指定 syntax-basic 應蓋過
+    async with TestSessionFactory() as db:
+        db.add(Concept(
+            tag="syntax-basic", name_zh="X", name_en="X",
+            description="", difficulty_level=1, category="基礎",
+        ))
+        db.add(Concept(
+            tag="control-flow", name_zh="Y", name_en="Y",
+            description="", difficulty_level=2, category="進階",
+        ))
+        await db.commit()
+
+    token = encrypt_test_token(STUDENT_PAYLOAD)
+    with patched_quiz_llms(_VALID_MC_JSON):
+        resp = await client.post(
+            "/quiz/generate",
+            json={"type": "multiple_choice", "bloom_level": 3, "concept_tag": "syntax-basic"},
+            cookies={"authjs.session-token": token},
+        )
+
+    assert resp.status_code == 200
+    body = resp.json()
+    assert "syntax-basic" in body["concept_tags"]
+
+
+async def test_generate_with_unknown_concept_tag_returns_404(client: AsyncClient):
+    await _seed_starter_concept()
+    token = encrypt_test_token(STUDENT_PAYLOAD)
+    resp = await client.post(
+        "/quiz/generate",
+        json={"type": "multiple_choice", "bloom_level": 3, "concept_tag": "nonexistent-tag"},
+        cookies={"authjs.session-token": token},
+    )
+    assert resp.status_code == 404
+    assert resp.json()["error"] == "CONCEPT_NOT_FOUND"
+
+
 # === submit ===
 
 

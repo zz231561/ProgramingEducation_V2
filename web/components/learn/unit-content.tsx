@@ -20,6 +20,7 @@ import { ArrowLeft, ChevronLeft, ChevronRight, MonitorPlay, Play } from "lucide-
 
 import { Unit } from "@/lib/learning";
 
+import { ExercisesTab } from "./exercises-tab";
 import { UnitStatusIcon, statusLabel } from "./unit-status-icon";
 
 type Tab = "concept" | "examples" | "exercises" | "summary";
@@ -105,7 +106,12 @@ export function UnitContent({
       <div className="min-h-[240px]">
         {tab === "concept" && <ConceptTab unit={unit} />}
         {tab === "examples" && <ExamplesTab unit={unit} />}
-        {tab === "exercises" && <ExercisesTab />}
+        {tab === "exercises" && (
+          <ExercisesTab
+            conceptTag={unit.concept_tag}
+            conceptNameZh={unit.concept_name_zh}
+          />
+        )}
         {tab === "summary" && <SummaryTab unit={unit} />}
       </div>
 
@@ -189,12 +195,6 @@ function ExamplesTab({ unit }: { unit: Unit }) {
         </pre>
       ))}
     </div>
-  );
-}
-
-function ExercisesTab() {
-  return (
-    <EmptyTab text="練習題整合屬 3-1e 範圍 — 將復用 Pre-Coding Reflection 流程，從本單元概念出題並觸發反思表單" />
   );
 }
 

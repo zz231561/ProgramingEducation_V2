@@ -43,11 +43,22 @@ async def _pick_target_concept(db: AsyncSession, user_id: UUID) -> Concept:
     return fallback
 
 
+async def _resolve_concept_by_tag(db: AsyncSession, tag: str) -> Concept:
+    """依 tag 取 concept；不存在 → 404。"""
+    concept = (
+        await db.execute(select(Concept).where(Concept.tag == tag))
+    ).scalar_one_or_none()
+    if concept is None:
+        raise AppError(404, "CONCEPT_NOT_FOUND", f"找不到概念：{tag}")
+    return concept
+
+
 async def generate_for_student(
     db: AsyncSession,
     user_id: UUID,
     question_type: QuestionType,
     bloom_level: int = int(BloomLevel.APPLY),
+    concept_tag: str | None = None,
 ) -> Question:
     """為學生產生一題。流程：select → generate → validate（retry）→ commit。
 
@@ -56,14 +67,21 @@ async def generate_for_student(
         user_id: 學生 UUID
         question_type: 期望題型
         bloom_level: 目標 Bloom 等級（1-6，預設 APPLY=3）
+        concept_tag: 指定 concept tag（3-1e Learn 練習 tab 用）；
+                     若提供 → 直接針對該 concept 出題；
+                     若 None → 走原弱項補強邏輯（_pick_target_concept）
 
     Returns:
         validated=True 的 Question 物件
 
     Raises:
+        AppError 404 CONCEPT_NOT_FOUND — concept_tag 指定但不存在
         AppError 503 QUIZ_VALIDATION_RETRY_EXHAUSTED — 連續多次 validate 失敗
     """
-    concept = await _pick_target_concept(db, user_id)
+    if concept_tag is not None:
+        concept = await _resolve_concept_by_tag(db, concept_tag)
+    else:
+        concept = await _pick_target_concept(db, user_id)
     difficulty = max(1, min(5, concept.difficulty_level))
 
     last_report: ValidationReport | None = None

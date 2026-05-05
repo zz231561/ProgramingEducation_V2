@@ -1,7 +1,8 @@
-"""智慧出題 service — 2-4 Phase（Select / Generate / Validate / Grade / Orchestrate）。"""
+"""智慧出題 service — 2-4 Phase（Select / Generate / Validate / Grade / Orchestrate / Hint）。"""
 
 from services.quiz.generate import generate_question
 from services.quiz.grade import grade_answer
+from services.quiz.hint import HintResult, generate_hint
 from services.quiz.orchestrator import (
     generate_for_student,
     list_history,
@@ -16,9 +17,11 @@ from services.quiz.validate import ValidationReport, validate_question
 
 __all__ = [
     "CENTRALITY_BONUS",
+    "HintResult",
     "WEAK_THRESHOLD",
     "ValidationReport",
     "generate_for_student",
+    "generate_hint",
     "generate_question",
     "grade_answer",
     "list_history",

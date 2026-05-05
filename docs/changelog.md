@@ -1,5 +1,53 @@
 # 變更日誌
 
+## [2026-05-05] — Phase 3-2b：Quiz 計時器 + 5 級提示系統
+
+### 新增（Backend）
+- `backend/services/quiz/hint.py`（164 行）：
+  - `HintResult` dataclass（level + hint + fallback flag）
+  - `_FALLBACK_HINTS` dict — 對應 1-5 level 各一句固定鼓勵句（LLM 不可用時用）
+  - `_ladder_description(level)` — 對應 .claude/rules/edf-pipeline.md 的 Hint Ladder 規則文字
+  - `_format_question_for_prompt` — 題型 dispatcher（MC 含選項 / coding 含 starter）
+  - `generate_hint(question, hint_level, student_attempt?)` async LLM；失敗回 fallback
+- `backend/api/routes/quiz.py`（209 行）：加 `POST /quiz/hint` endpoint
+  - body: `{ question_id, hint_level (1-5), student_attempt? }`
+  - 404 QUESTION_NOT_FOUND / 400 QUESTION_NOT_VALIDATED / 422 invalid level
+  - response 含 `fallback` flag 讓前端顯示「離線 fallback」標籤
+
+### 新增（Frontend）
+- `web/lib/quiz.ts`：加 `requestHint(payload)` helper + `HintResponse` type
+- `web/components/quiz/timer.tsx`（39 行）：
+  - 純 prop-driven，caller 傳 `startedAt: number`（Date.now() 時戳）
+  - useEffect 每秒 setState tick；mm:ss 格式
+- `web/components/quiz/hint-panel.tsx`（57 行）：
+  - 累計顯示已取得 hints（依 level 排）+ 「取得第 N 個提示」遞增按鈕
+  - **強制遞增**：學生不能跳級看 level 5（避免直接看答案）
+  - 達到 max=5 後按鈕 disabled
+  - fallback 提示加「（離線 fallback）」標示
+- `web/components/quiz/quiz-runner.tsx`：
+  - 加 `hints: HintResponse[]` + `hintBusy` state
+  - `handleRequestHint` 永遠請 next level（current count + 1）
+  - submit 時帶 `hint_level_used = hints.length`（持久化）
+  - 換題時清空 hints
+  - 顯示 Timer（question 模式）+ HintPanel（始終顯示）
+
+### 測試
+- `backend/tests/test_quiz_hint.py`（13 個 unit + HTTP）：
+  - 6 unit：prompt ladder 描述 / MC prompt 含 options / LLM 成功 / no client fallback / exception fallback / invalid JSON fallback / empty hint fallback
+  - 7 HTTP：401 / 422 (4 種 invalid level) / 404 / 400 / 200 success / 200 fallback
+- 全套 398 backend tests 全綠（385 → 398，+13 個新測試，零 regression）
+- TypeScript / ESLint / next build 全綠
+
+### 設計關鍵
+- **Hint Ladder 對齊 EDF Pipeline 規則**：`_ladder_description` 直接引用 `.claude/rules/edf-pipeline.md` 5 級定義；保證 hint 風格與 chat 評估的「直接給答案」防護一致
+- **LLM 失敗 fallback 不擋學生**：類似 EPL/Comprehension 設計；fallback 句子分 5 個 level 預先寫好，前端用 `fallback` flag 提示「離線」狀態
+- **強制遞增不可跳級**：教學原則防止學生直接看 level 5；後端不限制（接收 1-5 任何值），由前端 UX 控制
+- **Hint 不寫入 DB**：純即時生成；`hint_level_used` 已透過 `/quiz/submit` 持久化（quiz history 可分析學生提示依賴度）
+- **Timer 純前端**：不影響 submit 流程；submit 時 caller 仍從 startedAt 計算 time_spent_seconds（與 3-2a 邏輯一致）
+- **MC 也支援 hint**：UI 統一；雖然 MC hint 教學意義較弱，但保留選擇權
+
+---
+
 ## [2026-05-05] — Phase 3-2a：Quiz 頁面 — 選擇題 + 程式撰寫題正式版
 
 ### 新增（Frontend）

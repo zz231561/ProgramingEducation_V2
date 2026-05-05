@@ -263,7 +263,11 @@
   - 設計分工：Quiz = 純測驗、Learn 練習 tab = 學習含反思
   - Coding 題目前 is_correct=False（Judge0 整合屬 Phase 4，UI 已說明）
   - 後端無動 / 385 tests 全綠 / TS+ESLint+build 全綠
-- [ ] 3-2b 計時器 + 提示系統（hint_level 0-5）
+- [x] 3-2b 計時器 + 提示系統（hint_level 0-5）
+  - Backend：`services/quiz/hint.py` LLM 依 5 級 ladder 生成 + fallback；`POST /quiz/hint` endpoint
+  - Frontend：`timer.tsx`（mm:ss 每秒更新）+ `hint-panel.tsx`（強制遞增按鈕）+ runner 整合
+  - hint_level_used 透過既有 /quiz/submit 持久化；hint 本身不寫 DB
+  - 13 個新後端測試（6 unit + 7 HTTP），全套 398 tests 全綠
 - [ ] 3-2c 作答結果頁 + EDF 回饋顯示
 
 ### 3-3 Dashboard

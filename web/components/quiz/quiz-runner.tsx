@@ -16,17 +16,21 @@ import { FileQuestion, Loader2, Play } from "lucide-react";
 
 import { ApiRequestError } from "@/lib/api";
 import {
+  HintResponse,
   Question,
   QuestionType,
   SubmitAnswer,
   SubmitResponse,
   generateQuestion,
+  requestHint,
   submitAnswer,
 } from "@/lib/quiz";
 
 import { CodingQuestion } from "./coding-question";
+import { HintPanel } from "./hint-panel";
 import { MCQuestion } from "./mc-question";
 import { ResultView } from "./result-view";
+import { Timer } from "./timer";
 
 type Phase =
   | { mode: "idle" }
@@ -45,9 +49,13 @@ export function QuizRunner() {
   const [phase, setPhase] = useState<Phase>({ mode: "idle" });
   const [type, setType] = useState<QuestionType>("multiple_choice");
   const [error, setError] = useState<string | null>(null);
+  // 3-2b：累計提示（每換題清空）+ hint LLM 載入旗標
+  const [hints, setHints] = useState<HintResponse[]>([]);
+  const [hintBusy, setHintBusy] = useState(false);
 
   const fetchQuestion = useCallback(async () => {
     setError(null);
+    setHints([]);
     setPhase({ mode: "loading" });
     try {
       const q = await generateQuestion({ type, bloom_level: 3 });
@@ -68,7 +76,7 @@ export function QuizRunner() {
           question_id: question.id,
           answer,
           time_spent_seconds: Math.max(0, Math.round((Date.now() - startedAt) / 1000)),
-          hint_level_used: 0,
+          hint_level_used: hints.length,
         });
         setPhase({ mode: "result", question, result });
       } catch (e) {
@@ -76,11 +84,29 @@ export function QuizRunner() {
         setError(humanizeError(e));
       }
     },
-    [phase],
+    [phase, hints.length],
   );
+
+  const handleRequestHint = useCallback(async () => {
+    if (phase.mode !== "question" || hintBusy || hints.length >= 5) return;
+    setHintBusy(true);
+    setError(null);
+    try {
+      const next = await requestHint({
+        question_id: phase.question.id,
+        hint_level: hints.length + 1,
+      });
+      setHints((prev) => [...prev, next]);
+    } catch (e) {
+      setError(humanizeError(e));
+    } finally {
+      setHintBusy(false);
+    }
+  }, [phase, hints.length, hintBusy]);
 
   const reset = useCallback(() => {
     setPhase({ mode: "idle" });
+    setHints([]);
     setError(null);
   }, []);
 
@@ -112,9 +138,14 @@ export function QuizRunner() {
 
   // question / submitting
   const busy = phase.mode === "submitting";
+  // submitting 時找不到 startedAt（phase 沒帶），用 question 模式的 timer 即可，這裡 fallback 0 不顯示
+  const startedAt = phase.mode === "question" ? phase.startedAt : null;
   return (
     <div className="space-y-4">
-      <QuestionMeta question={phase.question} />
+      <div className="flex items-center justify-between gap-3">
+        <QuestionMeta question={phase.question} />
+        {startedAt !== null && <Timer startedAt={startedAt} />}
+      </div>
       {phase.question.type === "multiple_choice" ? (
         <MCQuestion
           question={phase.question}
@@ -130,6 +161,11 @@ export function QuizRunner() {
       ) : (
         <UnsupportedTypeNote type={phase.question.type} />
       )}
+      <HintPanel
+        hints={hints}
+        busy={hintBusy}
+        onRequestNext={handleRequestHint}
+      />
       {error && (
         <div className="rounded-md border-l-2 border-accent-red bg-surface-2 px-3 py-2 text-xs text-accent-red">
           {error}

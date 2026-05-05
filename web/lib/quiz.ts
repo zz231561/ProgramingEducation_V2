@@ -86,3 +86,27 @@ export async function submitAnswer(
     body: JSON.stringify(payload),
   });
 }
+
+// === 3-2b 提示系統 ===
+
+export interface HintRequestPayload {
+  question_id: string;
+  hint_level: number; // 1-5
+  student_attempt?: string;
+}
+
+export interface HintResponse {
+  level: number;
+  hint: string;
+  /** true = LLM 失敗用了固定 fallback 句 */
+  fallback: boolean;
+}
+
+export async function requestHint(
+  payload: HintRequestPayload,
+): Promise<HintResponse> {
+  return api<HintResponse>("/quiz/hint", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}

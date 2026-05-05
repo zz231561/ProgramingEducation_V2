@@ -8,9 +8,11 @@ from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.deps import get_current_db_user, get_db
+from core.errors import AppError
 from models.quiz import Question, QuestionType, StudentAnswer
 from models.user import User
-from services.quiz import generate_for_student, list_history, submit_answer
+from services.quiz import generate_for_student, generate_hint, list_history, submit_answer
+from sqlalchemy import select as sa_select
 
 router = APIRouter(prefix="/quiz", tags=["quiz"])
 
@@ -141,6 +143,46 @@ async def submit(
         correct_content=question.content or {},
         explanation=question.explanation,
     )
+
+
+# === Hint endpoint (3-2b) ===
+
+
+class HintRequest(BaseModel):
+    question_id: uuid.UUID
+    hint_level: int = Field(..., ge=1, le=5)
+    student_attempt: str = Field(default="", max_length=4000)
+
+
+class HintResponse(BaseModel):
+    level: int
+    hint: str
+    fallback: bool  # True = LLM 失敗用了固定句子
+
+
+@router.post("/hint", response_model=HintResponse)
+async def hint(
+    body: HintRequest,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_db_user),
+) -> HintResponse:
+    """為當前題目生成對應 hint_level 的提示（1-5）。
+
+    純即時生成，不寫入 DB；學生實際使用的最高 level 由 /quiz/submit 的
+    hint_level_used 欄位帶回持久化。
+    """
+    question = (
+        await db.execute(sa_select(Question).where(Question.id == body.question_id))
+    ).scalar_one_or_none()
+    if question is None:
+        raise AppError(404, "QUESTION_NOT_FOUND", f"找不到題目：{body.question_id}")
+    if not question.validated:
+        raise AppError(400, "QUESTION_NOT_VALIDATED", "此題尚未通過審查，無法取得提示")
+
+    result = await generate_hint(
+        question, hint_level=body.hint_level, student_attempt=body.student_attempt
+    )
+    return HintResponse(level=result.level, hint=result.hint, fallback=result.fallback)
 
 
 @router.get("/history", response_model=HistoryResponse)

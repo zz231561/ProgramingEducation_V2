@@ -3,6 +3,7 @@
 import pytest
 from httpx import ASGITransport, AsyncClient
 
+from core.config import Settings
 from main import app
 
 
@@ -35,3 +36,24 @@ async def test_cors_blocks_unknown_origin(client: AsyncClient):
     )
     acao = resp.headers.get("access-control-allow-origin")
     assert acao != "http://evil.com"
+
+
+# === 4-2c：cors_origins 容錯（trailing slash） ===
+
+
+def test_cors_origins_strips_trailing_slash():
+    """生產 NEXTAUTH_URL 帶尾斜線時 cors_origins 應自動 rstrip。"""
+    settings = Settings(NEXTAUTH_URL="https://domain.com/")
+    assert settings.cors_origins == ["https://domain.com"]
+
+
+def test_cors_origins_keeps_no_trailing_slash():
+    """無尾斜線情況不應變動。"""
+    settings = Settings(NEXTAUTH_URL="https://domain.com")
+    assert settings.cors_origins == ["https://domain.com"]
+
+
+def test_cors_origins_strips_multiple_trailing_slashes():
+    """多個尾斜線（極端情況）也清乾淨。"""
+    settings = Settings(NEXTAUTH_URL="https://domain.com///")
+    assert settings.cors_origins == ["https://domain.com"]

@@ -327,7 +327,12 @@
   - 修正 zeabur.json：backend 加 `BACKEND_HOST` expose（web 引用必要）；redis 從 marketplace 改 image-based 統一風格
   - 重寫 deployment.md §A（80 → 138 行）：service 串接架構圖 + 變數插值規則說明 + zeabur template deploy 一鍵部署 + Project Variables 設定表 + 部署 checklist + 疑難排解
   - **未實際 Zeabur 部署驗證**（記入 tech-debt；4-3 整合驗證時實測）
-- [ ] 4-2c NextAuth callback URL + CORS 設定（前後端網域）
+- [x] 4-2c NextAuth callback URL + CORS 設定（前後端網域）
+  - zeabur.json web 加 `AUTH_TRUST_HOST=true`（NextAuth v5 在反代後必要）
+  - backend `cors_origins` 加 `.rstrip("/")` 防呆（trailing slash 字串比對 origin 不符）
+  - `web/.env.example` 補 AUTH_TRUST_HOST 註釋
+  - `deployment.md §D` 新章節：callback URL 產生規則 + 三環境 trust_host 一覽 + CORS 設計理由 + 疑難排解
+  - 3 個新 cors 容錯測試，全套 442 tests 全綠
 
 ### 4-3 上線驗證
 - [ ] 4-3a Golden path：登入 → 寫碼 → 執行 → AI 對話 → RAG 檢索 → 出題作答

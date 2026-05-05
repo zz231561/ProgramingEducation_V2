@@ -171,6 +171,62 @@ curl https://<your-web-domain>/api/health
 
 ---
 
+## §D. NextAuth callback URL 與 CORS 機制（roadmap 4-2c）
+
+### Callback URL 是怎麼產生的
+
+NextAuth v5 的 OAuth callback URL 規則：
+- 路徑固定：`/api/auth/callback/{provider}` →  Google 是 `/api/auth/callback/google`
+- 主機名來自：**`AUTH_TRUST_HOST=true`** 時讀 `X-Forwarded-Host` header，否則讀容器 internal hostname
+
+→ 所以 **生產環境（Zeabur / nginx 反代後）必須設 `AUTH_TRUST_HOST=true`**，不然 callback 會變
+`https://<container-hostname>/api/auth/callback/google` 而非 `https://your-domain.com/...`，導致：
+- Google Console redirect URI 無法對齊（即使你填了正式 domain）
+- 出現 `redirect_uri_mismatch` 錯誤
+
+### 三種環境的設定
+
+| 環境 | `AUTH_TRUST_HOST` | Google Console redirect URI |
+|------|-------------------|----------------------------|
+| Dev (localhost) | 不需設（NextAuth 自動 trust localhost）| `http://localhost:3000/api/auth/callback/google` |
+| Self-host prod | `.env.prod` 中設 `AUTH_TRUST_HOST=true` | `https://your-domain.com/api/auth/callback/google` |
+| Zeabur prod | zeabur.json web env 已含（4-2c 加）| `https://<your-zeabur-domain>/api/auth/callback/google` |
+
+### 後端 CORS 設計
+
+backend `core/config.py` 的 `cors_origins` property：
+```python
+return [self.NEXTAUTH_URL.rstrip("/")]
+```
+
+- 只允許 `NEXTAUTH_URL` 一個 origin（無 wildcard）
+- **rstrip 防呆**：`https://domain.com/` 與 `https://domain.com` 對 CORSMiddleware 是不同字串
+- 多 staging origin 場景目前不支援（YAGNI；未來真的要再改 list）
+
+### 為什麼前後端同 domain 仍要設 CORS
+
+本專案架構：
+```
+Browser → web (Next.js, /api/* proxy 到 backend) → backend (FastAPI)
+```
+
+瀏覽器只看到 web origin，**不直接打 backend** → 不會跨域。但 CORS 仍保留作為**防禦深度**：
+- 萬一未來某 endpoint 直接暴露給 browser（如 SSE 串流不走 proxy）
+- 萬一 proxy 配置變動讓部分請求繞過
+
+→ 多此一舉的安全網成本 < 0；保留。
+
+### 疑難排解（NextAuth）
+
+| 錯誤訊息 | 檢查 |
+|---------|------|
+| `redirect_uri_mismatch`（Google）| Google Console redirect URI 是否含 `/api/auth/callback/google` 完整路徑（含 https） |
+| Login 後 redirect 到 `localhost` 或 internal hostname | `AUTH_TRUST_HOST=true` 是否設定（Zeabur web service env / .env.prod）|
+| `NEXTAUTH_SECRET` mismatch | backend `NEXTAUTH_SECRET` 與 web `AUTH_SECRET` 必須**完全一致**（zeabur.json 已用 `${AUTH_SECRET}` 同 source）|
+| CORS preflight 失敗（OPTIONS 401）| 確認 backend `NEXTAUTH_URL` 與 web 實際 origin 一致（含 scheme + 無尾斜線）|
+
+---
+
 ## §B. Self-host VPS 部署（docker-compose.prod.yml）
 
 適用：有自己 VPS（如 Tencent Tokyo）+ 想完全控制資料的場景。

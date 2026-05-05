@@ -1,5 +1,42 @@
 # 變更日誌
 
+## [2026-05-05] — Phase 4-2c：NextAuth callback URL + CORS 設定（Phase 4-2 完成）
+
+### 修補（部署阻擋風險）
+- **`zeabur.json` web env 加 `AUTH_TRUST_HOST=true`**：NextAuth v5 在反向代理後（Zeabur）的必要設定；缺此設定 callback URL 會用 container internal hostname 而非公開 domain → Google OAuth `redirect_uri_mismatch`
+- **`backend/core/config.py` `cors_origins` 加 `.rstrip("/")` 防呆**：CORSMiddleware 對 origin 嚴格字串比對，若 `NEXTAUTH_URL` 含尾斜線（`https://domain.com/`）會與 browser 送的 `https://domain.com` 不符 → 403
+
+### 新增（測試）
+- `backend/tests/test_cors.py` 加 3 個 cors_origins 容錯測試：
+  - 帶尾斜線 → 應 strip
+  - 無尾斜線 → 不變
+  - 多個尾斜線（極端）→ 全清
+- 全套 442 backend tests 全綠（439 → 442，+3 個新測試，零 regression）
+
+### 文件
+- `docs/deployment.md` 加 §D NextAuth callback URL + CORS 機制章節（56 行）：
+  - **Callback URL 怎麼產生**：`/api/auth/callback/{provider}` + `AUTH_TRUST_HOST` 決定主機名來源（X-Forwarded-Host vs internal hostname）
+  - **三環境 AUTH_TRUST_HOST 設定一覽**：dev / self-host / Zeabur
+  - **後端 CORS 設計說明**：為何單 origin、為何 rstrip
+  - **「同 domain 仍要設 CORS」防禦深度說明**：架構上瀏覽器經 Next.js proxy 不直接打 backend，CORS 是萬一架構變動的安全網
+  - **NextAuth 疑難排解表**：`redirect_uri_mismatch` / 登入後跳到 internal hostname / `NEXTAUTH_SECRET` mismatch / CORS preflight 401
+- `web/.env.example`：補 `AUTH_TRUST_HOST=true` 註釋（dev 不需，prod 必要；含 NextAuth v5 預設不信 X-Forwarded-Host 的說明）
+
+### 設計關鍵
+- **`AUTH_TRUST_HOST` 是 Zeabur / 反代必填**：NextAuth v5 安全預設不信 forwarded headers；不設會卡 callback redirect
+- **CORS rstrip 防呆而非禁尾斜線**：使用者填 `.env` 時可能習慣帶尾斜線，與其要求紀律不如 server 容錯
+- **三環境設定表 vs 開放式描述**：學生 / 教師部署時直接看自己情境那行
+- **`NEXTAUTH_SECRET` 同源**：zeabur.json backend / web 都用 `${AUTH_SECRET}` 同 Project variable → 自動一致；自架 `.env.prod` 用同一變數注入兩個 service
+- **CORS preflight 401 疑難排解條目**：學生 / 教師最常踩的 trailing slash 坑寫進表格
+
+### Phase 4-2 整體進度
+- ✅ 4-2a 環境變數分層配置
+- ✅ 4-2b Zeabur service 串接驗證
+- ✅ 4-2c NextAuth callback URL + CORS 設定
+- 4-2 配置層就緒；4-3 進入實際上線驗證 + 整合測試
+
+---
+
 ## [2026-05-05] — Phase 4-2b：Zeabur service 串接驗證 + 部署 checklist
 
 ### 修正（zeabur.json 串接漏洞）

@@ -43,8 +43,13 @@ class Settings(BaseSettings):
 
     @property
     def cors_origins(self) -> list[str]:
-        """CORS 允許的 origins — 僅 NEXTAUTH_URL。"""
-        return [self.NEXTAUTH_URL]
+        """CORS 允許的 origins — 僅 NEXTAUTH_URL。
+
+        生產環境 NEXTAUTH_URL 可能因填寫習慣帶尾斜線（如 `https://domain.com/`），
+        但 CORSMiddleware 對 origin 嚴格字串比對，會與 browser 送的 `https://domain.com`
+        不符 → 一律 rstrip 防呆。
+        """
+        return [self.NEXTAUTH_URL.rstrip("/")]
 
 
 settings = Settings()

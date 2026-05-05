@@ -1,24 +1,24 @@
 "use client";
 
 /**
- * 學習路徑詳細頁 — 展示所有 units（roadmap 3-1c）。
+ * 學習路徑詳細頁 — unit 列表 + 進度（roadmap 3-1c/d）。
  *
- * 3-1c 範圍只做「視覺化」：unit 列表 + 狀態 + 進度。
- * 點擊 unit 進入學習單元頁屬於 3-1d 的範圍 → 此處先 disabled callback。
+ * 3-1d 起：unit 變可點，locked 不可點；點擊由 caller 決定切換到 unit-content。
  */
 
 import { ArrowLeft } from "lucide-react";
 
-import { PathDetail } from "@/lib/learning";
+import { PathDetail, Unit } from "@/lib/learning";
 
 import { UnitStatusIcon, statusLabel } from "./unit-status-icon";
 
 interface Props {
   detail: PathDetail;
   onBack: () => void;
+  onSelectUnit: (unit: Unit) => void;
 }
 
-export function PathDetailView({ detail, onBack }: Props) {
+export function PathDetailView({ detail, onBack, onSelectUnit }: Props) {
   const total = detail.units.length;
   const completed = detail.units.filter((u) => u.status === "completed").length;
   const percent = total === 0 ? 0 : Math.round((completed / total) * 100);
@@ -52,28 +52,12 @@ export function PathDetailView({ detail, onBack }: Props) {
 
       <ol className="space-y-2">
         {detail.units.map((unit, index) => (
-          <li
+          <UnitRow
             key={unit.id}
-            className="flex items-start gap-3 rounded-md border border-border-default bg-surface-1 px-3 py-2.5"
-          >
-            <UnitStatusIcon status={unit.status} className="mt-0.5 size-4" />
-            <div className="min-w-0 flex-1">
-              <div className="flex items-baseline gap-2">
-                <span className="font-mono text-xs text-text-muted">
-                  {String(index + 1).padStart(2, "0")}
-                </span>
-                <span className="text-sm text-text-primary">
-                  {unit.concept_name_zh}
-                </span>
-                <span className="rounded-pill border border-border-default px-1.5 text-[10px] text-text-muted">
-                  難度 {unit.concept_difficulty}
-                </span>
-              </div>
-              <div className="mt-0.5 text-xs text-text-muted">
-                {unit.concept_tag} · {statusLabel(unit.status)}
-              </div>
-            </div>
-          </li>
+            unit={unit}
+            index={index}
+            onSelect={() => onSelectUnit(unit)}
+          />
         ))}
       </ol>
 
@@ -83,5 +67,50 @@ export function PathDetailView({ detail, onBack }: Props) {
         </div>
       )}
     </div>
+  );
+}
+
+function UnitRow({
+  unit,
+  index,
+  onSelect,
+}: {
+  unit: Unit;
+  index: number;
+  onSelect: () => void;
+}) {
+  const clickable = unit.status !== "locked";
+  return (
+    <li
+      role={clickable ? "button" : undefined}
+      tabIndex={clickable ? 0 : undefined}
+      onClick={clickable ? onSelect : undefined}
+      onKeyDown={(e) => {
+        if (clickable && (e.key === "Enter" || e.key === " ")) onSelect();
+      }}
+      className={`flex items-start gap-3 rounded-md border border-border-default bg-surface-1 px-3 py-2.5 transition-colors ${
+        clickable
+          ? "cursor-pointer hover:border-border-emphasis"
+          : "opacity-60"
+      }`}
+    >
+      <UnitStatusIcon status={unit.status} className="mt-0.5 size-4" />
+      <div className="min-w-0 flex-1">
+        <div className="flex items-baseline gap-2">
+          <span className="font-mono text-xs text-text-muted">
+            {String(index + 1).padStart(2, "0")}
+          </span>
+          <span className="text-sm text-text-primary">
+            {unit.concept_name_zh}
+          </span>
+          <span className="rounded-pill border border-border-default px-1.5 text-[10px] text-text-muted">
+            難度 {unit.concept_difficulty}
+          </span>
+        </div>
+        <div className="mt-0.5 text-xs text-text-muted">
+          {unit.concept_tag} · {statusLabel(unit.status)}
+        </div>
+      </div>
+    </li>
   );
 }

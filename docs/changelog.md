@@ -1,5 +1,53 @@
 # 變更日誌
 
+## [2026-05-05] — Phase 3-1d：學習單元內容頁（4 tab + status transition + 自動解鎖）
+
+### 新增（Backend）
+- `backend/services/learning/units.py`（129 行）：
+  - `update_unit_status(db, user_id, unit_id, new_status)` — status transition + 解鎖下一單元
+  - 合法 transition：available → in_progress、in_progress → completed、in_progress → available（revisit）
+  - 非法 transition 一律 422 LEARNING_UNIT_INVALID_TRANSITION（locked 不可手動設、completed 不可重置）
+  - completed 自動連動：同 path 內 order_index = current+1 的 unit（若 locked）→ available
+  - 擁有權檢查透過 unit.path_id → path.user_id；非本人 → 404
+- `backend/api/routes/learning_units.py`（85 行，獨立檔避免主 learning.py 超 250）：
+  - `PATCH /learning/units/{unit_id}` body `{ status: "available" | "in_progress" | "completed" }`
+  - `_parse_status` 422：非合法 enum / locked
+  - `UnitTransitionOut` 含 `unit` + `next_unlocked_unit`（若有）
+
+### 新增（Frontend）
+- `web/lib/learning.ts`：加 `updateUnitStatus(unitId, status)` + types `WritableUnitStatus` / `UnitBasic` / `UnitTransitionResult`
+- `web/components/learn/unit-content.tsx`（230 行）：
+  - 4 tab：概念說明 / 範例程式 / 練習題 / 摘要
+  - 概念說明 tab：YT player placeholder（待教授補 video_id）+ concept 簡介
+  - 範例程式 / 摘要：unit.content 為空時顯示 EmptyTab placeholder
+  - 練習題：3-1e 整合 placeholder
+  - 上一/下一單元導航（locked unit 不可導航）
+  - ActionButton 依 status 顯示「開始學習」/「完成單元」/「已完成 ✓」/「尚未解鎖」
+- `web/components/learn/path-detail.tsx`：unit 變可點，locked 用 opacity-60 + cursor-default
+- `web/app/(app)/learn/page.tsx`：
+  - View union 加 `unit` 模式（持 detail + unitIndex）
+  - 新增 `UnitView` 包裝 — status transition 後重 fetch path detail + 維持當前 unitIndex
+  - 解鎖的下一 unit 經 path detail 同步刷新自動可見
+
+### 測試
+- `backend/tests/test_learning_units.py`（13 個 service + HTTP）：
+  - Service：合法 transition / completed 解鎖 / last unit no next / locked rejected / completed→available rejected / revisit 清 completed_at / 跨使用者 404
+  - HTTP：401 / 422 invalid status string / 422 locked / 200 + next_unlocked / 422 invalid transition / 跨使用者 404
+- 全套 379 backend tests 全綠（366 → 379，+13 個新測試，零 regression）
+- TypeScript / ESLint / next build 全綠
+
+### 設計關鍵
+- **status transition 用查表** (`_VALID_TRANSITIONS: dict[str, set[str]]`)：宣告式比 if/else 易擴充與檢驗
+- **completed → 任何狀態都拒絕**：避免精熟度反覆波動造成 BKT 信心度震盪（現實中重學的學生應該再走 quiz/comprehension 重新評估，不是直接 reset unit）
+- **revisit 路徑（in_progress → available）**：學生想重看不算完成，清空 `completed_at`；不影響後續解鎖（解鎖只發生在 completed transition）
+- **解鎖只往前推一個**：unit N 完成 → unit N+1 解鎖；不會跨章節同時解鎖（教學節奏控制）
+- **route 拆獨立檔**：`learning_units.py` 與 `learning.py` 分檔避免單檔超 250 行；前綴都用 `/learning` 路由 namespace
+- **`_basic` response 不含 concept join**：transition response 給前端最小欄位（id/order_index/status/completed_at），需要完整 unit 資料時前端重 fetch path detail
+- **前端切換 view 用 union state**：相比 nested route 簡化，不需設計 layout 共用 / breadcrumb；學生在 unit 頁完成 transition 後直接看到下一 unit 解鎖
+- **YT player placeholder + content 空骨架 placeholder**：3-1d 範圍只做 UI 容器，內容（video_id / examples / summary）等教授補資料或 LLM 生成（見 tech-debt.md）
+
+---
+
 ## [2026-05-05] — Phase 3-1c+：Concept Graph 重建（教授 C++ 課程 59 影片整合）
 
 ### 重大決策

@@ -81,3 +81,29 @@ export function progressPercent(summary: PathSummary): number {
   if (summary.total_units === 0) return 0;
   return Math.round((summary.completed_units / summary.total_units) * 100);
 }
+
+// === 3-1d unit status transitions ===
+
+export type WritableUnitStatus = "available" | "in_progress" | "completed";
+
+export interface UnitBasic {
+  id: string;
+  order_index: number;
+  status: UnitStatus;
+  completed_at: string | null;
+}
+
+export interface UnitTransitionResult {
+  unit: UnitBasic;
+  next_unlocked_unit: UnitBasic | null;
+}
+
+export async function updateUnitStatus(
+  unitId: string,
+  status: WritableUnitStatus,
+): Promise<UnitTransitionResult> {
+  return api<UnitTransitionResult>(`/learning/units/${unitId}`, {
+    method: "PATCH",
+    body: JSON.stringify({ status }),
+  });
+}

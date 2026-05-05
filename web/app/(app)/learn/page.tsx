@@ -11,27 +11,31 @@
  * 點擊 unit 進入學習單元頁屬於 3-1d 範圍。
  */
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { BookOpen, Loader2, Plus } from "lucide-react";
 
 import { GeneratePathDialog } from "@/components/learn/generate-path-dialog";
 import { PathCard } from "@/components/learn/path-card";
 import { PathDetailView } from "@/components/learn/path-detail";
+import { UnitContent } from "@/components/learn/unit-content";
 import { ApiRequestError } from "@/lib/api";
 import {
   GeneratePathPayload,
   PathDetail,
   PathSummary,
+  Unit,
   deletePath,
   generatePath,
   getPath,
   listPaths,
+  updateUnitStatus,
 } from "@/lib/learning";
 
 type View =
   | { mode: "list" }
   | { mode: "detail"; detail: PathDetail }
-  | { mode: "loading-detail" };
+  | { mode: "loading-detail" }
+  | { mode: "unit"; detail: PathDetail; unitIndex: number };
 
 export default function LearnPage() {
   const [paths, setPaths] = useState<PathSummary[] | null>(null);
@@ -69,6 +73,22 @@ export default function LearnPage() {
     setView({ mode: "list" });
     refreshList();
   }, [refreshList]);
+
+  const handleSelectUnit = useCallback((unit: Unit) => {
+    setView((prev) => {
+      if (prev.mode !== "detail") return prev;
+      const idx = prev.detail.units.findIndex((u) => u.id === unit.id);
+      if (idx < 0) return prev;
+      return { mode: "unit", detail: prev.detail, unitIndex: idx };
+    });
+  }, []);
+
+  const handleBackToDetail = useCallback(async () => {
+    setView((prev) => {
+      if (prev.mode !== "unit") return prev;
+      return { mode: "detail", detail: prev.detail };
+    });
+  }, []);
 
   const handleDelete = useCallback(
     async (pathId: string) => {
@@ -113,7 +133,26 @@ export default function LearnPage() {
   if (view.mode === "detail") {
     return (
       <div className="h-full overflow-y-auto px-6 py-8">
-        <PathDetailView detail={view.detail} onBack={handleBack} />
+        <PathDetailView
+          detail={view.detail}
+          onBack={handleBack}
+          onSelectUnit={handleSelectUnit}
+        />
+      </div>
+    );
+  }
+
+  if (view.mode === "unit") {
+    return (
+      <div className="h-full overflow-y-auto px-6 py-8">
+        <UnitView
+          detail={view.detail}
+          unitIndex={view.unitIndex}
+          onBackToDetail={handleBackToDetail}
+          onAfterStatusChange={(updatedDetail, newIndex) =>
+            setView({ mode: "unit", detail: updatedDetail, unitIndex: newIndex })
+          }
+        />
       </div>
     );
   }
@@ -181,6 +220,80 @@ export default function LearnPage() {
   );
 }
 
+/**
+ * 學習單元 view 包裝 — 處理 status transition + path detail 同步刷新。
+ *
+ * status 變動後從 server 重 fetch 整個 path detail（含所有 units 狀態），
+ * 確保解鎖的下一單元也即時可見。
+ */
+function UnitView({
+  detail,
+  unitIndex,
+  onBackToDetail,
+  onAfterStatusChange,
+}: {
+  detail: PathDetail;
+  unitIndex: number;
+  onBackToDetail: () => void;
+  onAfterStatusChange: (detail: PathDetail, newIndex: number) => void;
+}) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const unit = detail.units[unitIndex];
+
+  const navByOffset = useMemo(() => {
+    return (offset: number) => {
+      const target = unitIndex + offset;
+      if (target < 0 || target >= detail.units.length) return null;
+      // 鎖定單元不可導航
+      if (detail.units[target].status === "locked") return null;
+      return () => onAfterStatusChange(detail, target);
+    };
+  }, [detail, unitIndex, onAfterStatusChange]);
+
+  const refreshAndStay = useCallback(async () => {
+    const fresh = await getPath(detail.id);
+    onAfterStatusChange(fresh, unitIndex);
+  }, [detail.id, unitIndex, onAfterStatusChange]);
+
+  const transition = useCallback(
+    async (target: "in_progress" | "completed") => {
+      setBusy(true);
+      setError(null);
+      try {
+        await updateUnitStatus(unit.id, target);
+        await refreshAndStay();
+      } catch (e) {
+        setError(humanizeError(e));
+      } finally {
+        setBusy(false);
+      }
+    },
+    [unit.id, refreshAndStay],
+  );
+
+  return (
+    <>
+      <UnitContent
+        unit={unit}
+        pathTitle={detail.title}
+        totalUnits={detail.units.length}
+        onBack={onBackToDetail}
+        onPrev={navByOffset(-1)}
+        onNext={navByOffset(1)}
+        onStart={() => transition("in_progress")}
+        onComplete={() => transition("completed")}
+        busy={busy}
+      />
+      {error && (
+        <div className="mx-auto mt-4 max-w-3xl rounded-md border-l-2 border-accent-red bg-surface-2 px-3 py-2 text-xs text-accent-red">
+          {error}
+        </div>
+      )}
+    </>
+  );
+}
+
 function EmptyState({ onGenerate }: { onGenerate: () => void }) {
   return (
     <div className="rounded-md border border-border-default bg-surface-1 px-6 py-12 text-center">
@@ -208,6 +321,12 @@ function humanizeError(e: unknown): string {
     }
     if (e.status === 404 && e.body.error === "LEARNING_PATH_NOT_FOUND") {
       return "找不到此學習路徑（可能已被刪除）。";
+    }
+    if (e.status === 404 && e.body.error === "LEARNING_UNIT_NOT_FOUND") {
+      return "找不到此學習單元（可能已被刪除）。";
+    }
+    if (e.status === 422 && e.body.error === "LEARNING_UNIT_INVALID_TRANSITION") {
+      return e.body.message || "目前狀態不允許此操作。";
     }
     if (e.status === 401) return "請先登入。";
     return e.body.message || "操作失敗。";

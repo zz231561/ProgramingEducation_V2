@@ -236,7 +236,13 @@
   - Seed migration `e1f2a3b4c5d6`：清空舊 20 EDF concept → seed 59 影片（編號 04-62）+ 58 條線性邊
   - tag 命名 `cpp-NN-keyword`；8 主題分類；difficulty 1-5 漸進
   - PG 驗證 59 + 58；YT video_id 等教授補後 PATCH
-- [ ] 3-1d 學習單元內容頁（概念說明 / 範例 / 練習 / 摘要 tab）
+- [x] 3-1d 學習單元內容頁（概念說明 / 範例 / 練習 / 摘要 tab）
+  - Backend：`PATCH /learning/units/{id}` + `services/learning/units.py` (status transition 查表驗證 + 解鎖邏輯)
+  - 合法 transition: available→in_progress / in_progress→completed (解鎖下一) / in_progress→available (revisit)
+  - 非法一律 422 (locked/completed 不可手動設)
+  - Frontend：unit-content.tsx 4 tab + 上下單元導航 + ActionButton 依 status 變化；path-detail unit 變可點
+  - 13 個新後端測試，全套 379 tests 全綠
+  - YT player / 範例 / 摘要為 placeholder，等教授補影片資料或 LLM 生成（見 tech-debt.md）
 - [ ] 3-1e 練習 tab 嵌入 Pre-Coding Reflection 觸發點（復用 Phase 2-5 元件）
 
 ### 3-2 Quiz 完整版

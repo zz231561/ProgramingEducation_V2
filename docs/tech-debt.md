@@ -17,14 +17,37 @@
     ```
 
 ### 內容層（教學課綱）
-- [ ] **`concept_edges` seed 的 23 條邊為 AI 暫定值**
-  - **影響**：知識圖譜佈局聚類、Detail Panel 的「先修/進階」清單、未來路徑生成 (3-1) 都會用到
-  - **內容**：20 prerequisite + 3 related，依常見 C++ 教學順序；其中 `function-design → oop-encapsulation` 與 `oop-polymorphism → template-meta` 屬可爭議選擇
-  - **如何處理**：實際使用後依教師回饋調整；可發 patch migration 增刪邊或建管理介面
-- [ ] **`concepts` seed 的 `category` / `difficulty_level` / `name_zh` 為暫定值**
-  - **影響**：知識圖譜 (2-2c) 的分類聚合、出題 (2-4) 的難度過濾、Learn 頁面 (3-1) 的學習路徑生成都會吃這些值
-  - **暫定來源**：AI 在 2-2a 依 C++ 教學常見譯名 + 經驗判斷填入；20 個 ConceptTag 本身是 authoritative（來自 `.claude/rules/edf-pipeline.md`），但 enrichment 欄位非
-  - **如何處理**：等 2-2c 圖譜可視化後校準（視覺上判斷 category 聚合是否協調）；之後可能要 patch migration 或建管理介面修改
+- ✅ ~~`concept_edges` seed 的 23 條邊為 AI 暫定值~~ — 2026-05-05 完全替換為 58 條線性 PREREQUISITE（隨 e1f2a3b4c5d6 重 seed）
+- ✅ ~~`concepts` seed 的 `category` / `difficulty_level` / `name_zh` 為暫定值~~ — 2026-05-05 完全替換為 59 影片 concept
+
+### 內容層（教學課綱）— 新一批待補
+- [ ] **YT video metadata 未補**（59 個影片 concept 全部 `video_youtube_id` / `video_duration_seconds` 為 NULL）
+  - **影響**：3-1d 學習單元頁的概念說明 tab 無法 embed YT player；只能顯示影片標題與「待補」placeholder
+  - **如何處理**：教授整理 59 個影片的 YT URL + 時長 → AI 寫 PATCH script 一次匯入（不需新 migration）
+  - **建議格式**：CSV 或 JSON，欄位 `video_order, youtube_id, duration_seconds`
+- [ ] **跨章節 PREREQUISITE 邊未標**（目前只有線性 04→05→...→62 共 58 條）
+  - **影響**：拓撲排序生成路徑時，學生 confidence 高跳過某 unit 後不會牽連解鎖實際依賴的後續 unit
+  - **範例**：47 遞迴函式真正依賴 36 函式 + 29 for 迴圈；52 指標與陣列依賴 48 陣列 + 51 指標；目前圖譜只有 N→N+1 線性鏈
+  - **如何處理**：教授標關鍵跨章依賴（< 30 條）→ AI 加 patch migration
+- [ ] **學習單元 content 為空骨架**（`{summary: "", examples: [], exercise_question_ids: []}`）
+  - **影響**：3-1d 學習單元頁的「範例程式」「摘要」tab 無實質內容
+  - **如何處理**：兩種策略可選 —
+    - (a) LLM 依 concept name + difficulty 自動生成 summary + examples（成本低）
+    - (b) 教授/助教手動填寫（品質高，工時大）
+  - **建議**：先 (a) MVP，看品質再決定是否人工校對
+
+### Learn 頁面視覺化升級
+- [ ] **3-1c 卡片版 ≠ ui-wireframes.md 期望的「節點+箭頭」graph 版**
+  - **影響**：與知識圖譜頁 (`/knowledge`) 風格不統一；無法直觀顯示 PREREQUISITE 依賴的分支
+  - **如何處理**：3-1d/e 完成後，回頭把 detail 頁從 ordered list 升級為 reactflow / d3 graph（可復用 knowledge 頁的元件）
+
+### EDF Mastery 連動暫時退場
+- [ ] **EDF chat 評估的 ConceptTag 不再寫入 BKT mastery**
+  - **背景**：3-1c+ 把 concepts 表完全替換為 59 影片 concept；EDF 的 20 粗 tag 只留在 `services/edf/models.py` enum 給 LLM 提示用；`update_mastery` 找不到 concept 自動跳過
+  - **影響**：學生在 Workspace 與 AI Tutor 對話時的 mastery 不再上下調；只有 quiz 答題 + comprehension 驗證會驅動 BKT
+  - **如何處理**：兩種策略可選 —
+    - (a) 接受現狀（chat 評估本來噪音多，quiz/comprehension 是更可信信號）
+    - (b) 在 concepts 表加 `edf_parent_tag` 欄位，建立粗 tag → 多影片 concept 的 mapping，讓 EDF 評估平均更新到對應影片 concept
 
 ### 程式碼層
 - [ ] **`backend/requirements.lock` 過時**

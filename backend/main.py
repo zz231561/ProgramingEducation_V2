@@ -18,6 +18,7 @@ from api.routes.comprehension_trigger import router as comprehension_trigger_rou
 from api.routes.comprehension_variation import router as comprehension_variation_router
 from api.routes.concepts import router as concepts_router
 from api.routes.health import router as health_router
+from api.routes.learning import router as learning_router
 from api.routes.quiz import router as quiz_router
 from api.routes.reflection import router as reflection_router
 
@@ -65,3 +66,4 @@ app.include_router(reflection_router)
 app.include_router(comprehension_router)
 app.include_router(comprehension_variation_router)
 app.include_router(comprehension_trigger_router)
+app.include_router(learning_router)

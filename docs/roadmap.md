@@ -227,7 +227,11 @@
   - Cycle 容錯：殘留節點附加尾端不擲錯
   - `DEFAULT_SKIP_MASTERED_THRESHOLD = 0.8`；`content` 預留空骨架 `{summary, examples, exercise_question_ids}`
   - 21 個新測試（12 unit + 9 DB 整合），全套 353 tests 全綠
-- [ ] 3-1c Learn 頁面：路徑視覺化 + 進度條
+- [x] 3-1c Learn 頁面：路徑視覺化 + 進度條
+  - Backend：4 endpoints (POST/GET list/GET detail/DELETE) + queries service（避免 N+1 + join concepts）
+  - Frontend：page 三模式（list/detail/loading）+ path-card 進度條 + unit-status-icon 4 狀態 + generate-path-dialog
+  - 13 個新後端測試，全套 366 tests 全綠；TypeScript/ESLint/next build 全綠
+  - **需使用者手動測 UI**：登入 → 進 Learn 頁 → 點「生成新路徑」→ 預期看到拓撲排序的 unit 列表
 - [ ] 3-1d 學習單元內容頁（概念說明 / 範例 / 練習 / 摘要 tab）
 - [ ] 3-1e 練習 tab 嵌入 Pre-Coding Reflection 觸發點（復用 Phase 2-5 元件）
 

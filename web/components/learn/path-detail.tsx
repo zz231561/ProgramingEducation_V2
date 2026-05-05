@@ -1,0 +1,87 @@
+"use client";
+
+/**
+ * 學習路徑詳細頁 — 展示所有 units（roadmap 3-1c）。
+ *
+ * 3-1c 範圍只做「視覺化」：unit 列表 + 狀態 + 進度。
+ * 點擊 unit 進入學習單元頁屬於 3-1d 的範圍 → 此處先 disabled callback。
+ */
+
+import { ArrowLeft } from "lucide-react";
+
+import { PathDetail } from "@/lib/learning";
+
+import { UnitStatusIcon, statusLabel } from "./unit-status-icon";
+
+interface Props {
+  detail: PathDetail;
+  onBack: () => void;
+}
+
+export function PathDetailView({ detail, onBack }: Props) {
+  const total = detail.units.length;
+  const completed = detail.units.filter((u) => u.status === "completed").length;
+  const percent = total === 0 ? 0 : Math.round((completed / total) * 100);
+
+  return (
+    <div className="mx-auto w-full max-w-3xl space-y-6">
+      <button
+        type="button"
+        onClick={onBack}
+        className="inline-flex items-center gap-1.5 text-sm text-text-secondary hover:text-text-primary"
+      >
+        <ArrowLeft className="size-4" />
+        返回路徑列表
+      </button>
+
+      <header className="space-y-2">
+        <h1 className="text-2xl font-medium text-text-primary">
+          {detail.title}
+        </h1>
+        {detail.description && (
+          <p className="text-sm text-text-secondary">{detail.description}</p>
+        )}
+        <div className="flex items-center gap-3 text-xs text-text-muted">
+          <span>
+            <span className="text-text-primary">{completed}</span> / {total} 完成
+          </span>
+          <span>·</span>
+          <span>{percent}%</span>
+        </div>
+      </header>
+
+      <ol className="space-y-2">
+        {detail.units.map((unit, index) => (
+          <li
+            key={unit.id}
+            className="flex items-start gap-3 rounded-md border border-border-default bg-surface-1 px-3 py-2.5"
+          >
+            <UnitStatusIcon status={unit.status} className="mt-0.5 size-4" />
+            <div className="min-w-0 flex-1">
+              <div className="flex items-baseline gap-2">
+                <span className="font-mono text-xs text-text-muted">
+                  {String(index + 1).padStart(2, "0")}
+                </span>
+                <span className="text-sm text-text-primary">
+                  {unit.concept_name_zh}
+                </span>
+                <span className="rounded-pill border border-border-default px-1.5 text-[10px] text-text-muted">
+                  難度 {unit.concept_difficulty}
+                </span>
+              </div>
+              <div className="mt-0.5 text-xs text-text-muted">
+                {unit.concept_tag} · {statusLabel(unit.status)}
+              </div>
+            </div>
+          </li>
+        ))}
+      </ol>
+
+      {total === 0 && (
+        <div className="rounded-md border border-border-default bg-surface-1 px-4 py-6 text-center text-sm text-text-secondary">
+          此路徑沒有任何單元。
+        </div>
+      )}
+    </div>
+  );
+}

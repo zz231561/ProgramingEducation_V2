@@ -1,5 +1,49 @@
 # 變更日誌
 
+## [2026-05-05] — Phase 3-1c：Learn 頁面 — 路徑視覺化 + 進度條
+
+### 新增（Backend）
+- `backend/services/learning/queries.py`（135 行）：
+  - `PathProgress` / `UnitWithConcept` dataclass
+  - `list_paths_for_user`（一次取所有 units 算進度，避免 N+1）
+  - `get_path_with_units`（join concepts 取 tag/name_zh/difficulty，避免前端再 join）
+  - `delete_path`（CASCADE 連動 units）
+  - `_get_owned_path` 擁有權檢查 → 404（避免列舉攻擊）
+- `backend/api/routes/learning.py`（186 行）— 4 endpoints：
+  - `POST /learning/paths`（201）→ 完整 detail
+  - `GET /learning/paths` → list + 進度概覽
+  - `GET /learning/paths/{id}` → detail + units
+  - `DELETE /learning/paths/{id}`（204）
+
+### 新增（Frontend）
+- `web/lib/learning.ts`（76 行）：types + 4 API helpers + `progressPercent` utility
+- `web/components/learn/`：
+  - `path-card.tsx`（83 行）— 卡片含進度條 + hover 顯示刪除按鈕
+  - `unit-status-icon.tsx`（37 行）— 4 種 status icon（CheckCircle2/PlayCircle/Circle/Lock）+ 中文 label
+  - `path-detail.tsx`（76 行）— 路徑詳細頁含 unit ordered list
+  - `generate-path-dialog.tsx`（132 行）— 表單 modal（title/description/category）
+- `web/app/(app)/learn/page.tsx`（重寫，180 行）：
+  - 三模式：list / detail / loading-detail
+  - 整合：listPaths / getPath / generatePath / deletePath
+  - 統一 error handling 翻譯成中文（LEARNING_PATH_EMPTY / LEARNING_PATH_NOT_FOUND / 401）
+  - EmptyState（無路徑時引導生成）
+
+### 測試
+- `backend/tests/test_learning_route.py`（13 個 HTTP 整合）：4 endpoint × 401 / POST 完整流程 / POST 422 / list 空 + 含進度 / GET 排序 / GET 跨使用者 404 / GET 不存在 404 / DELETE 移除 / DELETE 跨使用者 404
+- 全套後端 366 tests 全綠（353 → 366，+13 個新測試，零 regression）
+- TypeScript / ESLint / next build 全綠
+
+### 設計關鍵
+- **單元擁有權檢查走 path**：unit 沒獨立 user_id；過 path.user_id 過濾即可（DB schema 設計就如此）
+- **list 一次撈避免 N+1**：`list_paths_for_user` 先撈所有 paths 後一次 IN 撈所有 units，application 層分群算進度
+- **detail join concepts**：`get_path_with_units` server-side join，避免前端再 fetch concept 資訊
+- **GET 路徑不存在 vs 跨使用者**：兩者都回 LEARNING_PATH_NOT_FOUND（避免列舉攻擊揭露存在性）
+- **R8 反 AI 感**：UI 全用 lucide icon（無 emoji），status 顏色僅 4 種語意化（綠=完成 / 藍=進行 / 白=可學 / 灰=鎖定）
+- **元件控制反向**：page.tsx 持狀態，子元件純 prop-driven（path-card / path-detail / dialog 全 stateless）
+- **生成 dialog 預填 title**：「C++ 基礎學習路徑」減少使用者打字成本（cold start 友善）
+
+---
+
 ## [2026-05-05] — Phase 3-1b：學習路徑生成 service（拓撲排序 + 弱項補強）
 
 ### 新增（Service）

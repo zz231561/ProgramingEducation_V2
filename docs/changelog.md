@@ -1,5 +1,47 @@
 # 變更日誌
 
+## [2026-05-05] — Phase 3-1c+：Concept Graph 重建（教授 C++ 課程 59 影片整合）
+
+### 重大決策
+- **完全替換 V1 20 個 EDF concept** → 改為 62 部 YT 影片中排除 01-03 介紹後的 **59 個影片 concept**（每影片 = 1 concept node）
+- EDF 的 20 個 ConceptTag enum **保留**在 `services/edf/models.py` 純粹做 LLM 錯誤分類提示用，**不再寫入 concepts 表**
+- chat-driven mastery 暫時退場（EDF 評估 LLM 回的粗 tag 在 concepts 表找不到 → 既有 fallback 跳過更新）；mastery 改由 quiz 答題 + comprehension 驅動（這些用 question.concept_tags = 影片 tag）
+
+### Schema
+- `backend/alembic/versions/d0e1f2a3b4c5_add_video_metadata_to_concepts.py`（67 行）：
+  - `concepts` 加 3 nullable 欄位：`video_youtube_id` (VARCHAR 20) / `video_duration_seconds` (INT) / `video_order` (INT)
+  - 2 個 CHECK constraints + 1 個 index on `video_order`
+- `backend/models/concept.py`：對應 ORM 加 3 欄位
+
+### 內容（destructive seed）
+- `backend/alembic/versions/e1f2a3b4c5d6_seed_cpp_video_concepts.py`（180 行）：
+  - ⚠ 清空 `learning_units` / `learning_paths` / `concept_edges` / `student_mastery` / `concepts`
+  - Seed **59 個影片 concept**，依教授課程順序 04-62
+  - tag 命名：`cpp-NN-keyword`（NN 兩位編號 + 簡短英文）
+  - 8 個 category：入門 / 變數與型別 / 運算子 / 流程控制 / 迴圈 / 函式 / 陣列 / 指標與記憶體 / 物件導向
+  - difficulty_level 1-5 依教學順序漸進
+  - Seed **58 條 PREREQUISITE 線性鏈**（04→05→...→61→62）
+  - YT video_id / duration 暫 NULL，等教授補後 PATCH
+- 修正：`concept_edges.edge_type` 是 PG ENUM `concept_edge_type` 不能從 VARCHAR 隱式轉型 → 用 `sa.Enum(..., create_type=False)` 顯式宣告
+
+### 驗證
+- PG 上 alembic upgrade head 成功；`SELECT COUNT(*) FROM concepts` = 59；`prerequisite` edges = 58
+- 全套 366 backend tests 全綠，零 regression（ORM 加 nullable 欄位無破壞性）
+
+### 設計關鍵
+- **方案 B（完全替換）vs A（共存）/ C（替換+對應）**：選 B 因為 chat-driven mastery 本來噪音多，真正可信信號來自 quiz/comprehension；簡化 99% 複雜度，符合 YAGNI 原則
+- **線性 PREREQUISITE 鏈為主**：跨章節依賴（如 47 遞迴 ← 29 for）等教授後續標註；MVP 先簡單可用
+- **Migration 不可重跑（destructive）**：alembic 只跑一次此 revision，OK；dev/prod 都會清掉舊 concept；目前未上線無真實學生資料風險
+- **學習路徑生成可立即運作**：拓撲排序在 59 個 concept + 58 條線性邊上產生有意義路徑；弱項補強仍能依 BKT 信心度排序
+- **YT player 整合延後**：`video_youtube_id` 已在 schema，等教授補資料後 3-1d 學習單元頁實作
+
+### 待辦（教授提供資料後）
+- [ ] PATCH script 一次更新 59 影片的 `video_youtube_id` + `video_duration_seconds`
+- [ ] 跨章節 PREREQUISITE 邊補強（如 47 遞迴 ← 29 for；65 條左右）
+- [ ] Learn 頁面影片 thumbnail / duration 顯示（需 youtube_id）
+
+---
+
 ## [2026-05-05] — Phase 3-1c：Learn 頁面 — 路徑視覺化 + 進度條
 
 ### 新增（Backend）

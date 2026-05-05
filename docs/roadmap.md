@@ -231,7 +231,11 @@
   - Backend：4 endpoints (POST/GET list/GET detail/DELETE) + queries service（避免 N+1 + join concepts）
   - Frontend：page 三模式（list/detail/loading）+ path-card 進度條 + unit-status-icon 4 狀態 + generate-path-dialog
   - 13 個新後端測試，全套 366 tests 全綠；TypeScript/ESLint/next build 全綠
-  - **需使用者手動測 UI**：登入 → 進 Learn 頁 → 點「生成新路徑」→ 預期看到拓撲排序的 unit 列表
+- [x] 3-1c+ Concept Graph 重建：59 影片 concept + 線性 PREREQUISITE 鏈
+  - Schema migration `d0e1f2a3b4c5`：concepts 加 3 video 欄位
+  - Seed migration `e1f2a3b4c5d6`：清空舊 20 EDF concept → seed 59 影片（編號 04-62）+ 58 條線性邊
+  - tag 命名 `cpp-NN-keyword`；8 主題分類；difficulty 1-5 漸進
+  - PG 驗證 59 + 58；YT video_id 等教授補後 PATCH
 - [ ] 3-1d 學習單元內容頁（概念說明 / 範例 / 練習 / 摘要 tab）
 - [ ] 3-1e 練習 tab 嵌入 Pre-Coding Reflection 觸發點（復用 Phase 2-5 元件）
 

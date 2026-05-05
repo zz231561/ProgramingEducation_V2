@@ -35,7 +35,7 @@ class EdgeType(str, enum.Enum):
 
 
 class Concept(Base):
-    """知識圖譜節點 — 對應 EDF ConceptTag enum。"""
+    """知識圖譜節點 — 對應教學影片內容（roadmap 3-1c+：每影片 1 節點）。"""
 
     __tablename__ = "concepts"
 
@@ -46,6 +46,10 @@ class Concept(Base):
     description: Mapped[str] = mapped_column(Text, default="")
     difficulty_level: Mapped[int] = mapped_column(Integer)
     category: Mapped[str] = mapped_column(String(50))
+    # 3-1c+ 影片 metadata（教學影片 1:1 映射）— P1 階段 youtube_id/duration 暫 nullable
+    video_youtube_id: Mapped[str | None] = mapped_column(String(20), default=None)
+    video_duration_seconds: Mapped[int | None] = mapped_column(Integer, default=None)
+    video_order: Mapped[int | None] = mapped_column(Integer, default=None)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
@@ -56,7 +60,16 @@ class Concept(Base):
             "difficulty_level BETWEEN 1 AND 5",
             name="ck_concepts_difficulty_range",
         ),
+        CheckConstraint(
+            "video_duration_seconds IS NULL OR video_duration_seconds > 0",
+            name="ck_concepts_video_duration_positive",
+        ),
+        CheckConstraint(
+            "video_order IS NULL OR video_order > 0",
+            name="ck_concepts_video_order_positive",
+        ),
         Index("ix_concepts_category", "category"),
+        Index("ix_concepts_video_order", "video_order"),
     )
 
 

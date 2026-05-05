@@ -1,0 +1,84 @@
+# 生產環境 — self-host VPS 部署用（roadmap 4-1b）。
+# Zeabur 部署走 zeabur.json，本檔僅用於 self-host 場景（如 Tencent Tokyo VPS）。
+#
+# 用法：
+#   1. 從 .env.prod 載入密碼 / API key（請見下方 environment 區段）
+#   2. docker compose -f docker-compose.prod.yml up -d
+#   3. 首次啟動 backend 會自動跑 alembic upgrade head（含 CREATE EXTENSION vector）
+#
+# 與 dev 差異：
+# - PG/Redis 不暴露 host port（只在內部網路）→ 安全
+# - 密碼從 env 讀取，不寫入檔案
+# - 加 restart: always 取代 unless-stopped
+# - backend / web 由本機 build（CI/CD 可改 push image 到 registry）
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    restart: always
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  backend:
+    build: ./backend
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      REDIS_URL: redis://redis:6379/0
+      NEXTAUTH_SECRET: ${AUTH_SECRET}
+      NEXTAUTH_URL: ${WEB_URL}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      JUDGE0_API_URL: ${JUDGE0_API_URL}
+      JUDGE0_API_KEY: ${JUDGE0_API_KEY:-}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  web:
+    build: ./web
+    restart: always
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "3000:3000"  # 唯一對外暴露的 port；建議套上 nginx/caddy reverse proxy
+    environment:
+      AUTH_SECRET: ${AUTH_SECRET}
+      AUTH_GOOGLE_ID: ${GOOGLE_CLIENT_ID}
+      AUTH_GOOGLE_SECRET: ${GOOGLE_CLIENT_SECRET}
+      AUTH_TRUST_HOST: "true"
+      BACKEND_URL: http://backend:8000
+
+volumes:
+  postgres_data:
+  redis_data:

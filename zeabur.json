@@ -70,8 +70,25 @@
       "name": "postgres",
       "template": "PREBUILT",
       "spec": {
-        "source": "MARKETPLACE",
-        "id": "postgresql"
+        "source": {
+          "type": "IMAGE",
+          "image": "pgvector/pgvector:pg16"
+        },
+        "ports": [
+          {"id": "postgres", "port": 5432, "type": "TCP"}
+        ],
+        "env": {
+          "POSTGRES_USER": {"default": "postgres", "expose": true},
+          "POSTGRES_PASSWORD": {"default": "${PASSWORD}", "expose": true},
+          "POSTGRES_DB": {"default": "programing_education", "expose": true},
+          "POSTGRES_HOST": {"default": "${CONTAINER_HOSTNAME}", "expose": true, "readonly": true},
+          "POSTGRES_PORT": {"default": "5432", "expose": true, "readonly": true},
+          "POSTGRES_DATABASE": {"default": "${POSTGRES_DB}", "expose": true, "readonly": true},
+          "POSTGRES_USERNAME": {"default": "${POSTGRES_USER}", "expose": true, "readonly": true}
+        },
+        "volumes": [
+          {"id": "data", "dir": "/var/lib/postgresql/data"}
+        ]
       }
     },
     {

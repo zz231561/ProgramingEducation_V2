@@ -4,6 +4,12 @@
 
 ## ⚠ 待處理
 
+### 部署相關（待實測）
+- [ ] **Zeabur PREBUILT + source.type=IMAGE schema 未實測**
+  - 4-1b 將 `zeabur.json` 的 postgres 從 marketplace `postgresql`（不含 pgvector）改為 `template: PREBUILT` + `source: {type: "IMAGE", image: "pgvector/pgvector:pg16"}`
+  - 此 schema 細節依 Zeabur template.json 規範撰寫，但**未經實際部署驗證**
+  - **如何處理**：4-2 實際 Zeabur 部署時若 schema 被拒，依 deployment.md §A 的 fallback 改用 marketplace pgvector 或 GIT + 一行 Dockerfile
+
 ### 環境設定（使用者手動）
 - [ ] **`backend/.env` 的 `OPENAI_API_KEY` 未填**
   - **影響**：2-1b 跑 LlamaIndex 索引、EDF Chat 互動會 401

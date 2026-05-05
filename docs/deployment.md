@@ -1,12 +1,26 @@
-# 部署指南 — Zeabur
+# 部署指南
+
+兩種部署選項：
+- **A. Zeabur**（推薦 MVP 上線）— 走 `zeabur.json`，details 見 §A
+- **B. Self-host VPS**（如 Tencent Tokyo）— 走 `docker-compose.prod.yml`，details 見 §B
 
 ## 架構概覽
 
 ```
 Browser → web (Next.js, port 3000) → backend (FastAPI, port 8000)
-                                          ├── PostgreSQL
+                                          ├── PostgreSQL (pgvector)
                                           └── Redis
 ```
+
+## ⚠ pgvector 必要性
+
+backend 啟動時會跑 `alembic upgrade head`，其中 migration `b2c3d4e5f6a7` 會執行
+`CREATE EXTENSION IF NOT EXISTS vector` — **PG image 必須預裝 pgvector**，否則部署
+會 fail。本專案統一用 `pgvector/pgvector:pg16`（dev / prod 一致）。
+
+---
+
+## §A. Zeabur 部署
 
 ## 前置條件
 
@@ -15,12 +29,18 @@ Browser → web (Next.js, port 3000) → backend (FastAPI, port 8000)
 - OpenAI API Key
 - Judge0 API URL + Key
 
-## Step 1：建立 Marketplace 服務
+## Step 1：透過 zeabur.json 部署
 
-在 Zeabur Project 中新增以下 Marketplace 服務：
+`zeabur.json` 已配置 4 個服務：
+1. **postgres** — `template: PREBUILT` + `source.image: pgvector/pgvector:pg16`（自架 pgvector）
+2. **redis** — marketplace
+3. **backend** — Git source + Dockerfile（`backend/`）
+4. **web** — Git source + Dockerfile（`web/`）
 
-1. **PostgreSQL** — 記下自動產生的連線資訊
-2. **Redis** — 記下自動產生的連線資訊
+> **若 Zeabur 拒絕 `template: PREBUILT` + `source.type: IMAGE` schema**：
+> 改用 marketplace pgvector 服務（在 Zeabur dashboard 搜尋 "pgvector"），或建一個
+> Git service 指向 `pgvector/` 目錄（內含一行 `FROM pgvector/pgvector:pg16` 的 Dockerfile）。
+> 普通 marketplace `postgresql` 不含 pgvector，**不可使用**。
 
 ## Step 2：部署 backend
 
@@ -77,4 +97,78 @@ Health check：
 | 502 Bad Gateway | `BACKEND_URL` 是否正確指向 backend 內部地址 |
 | DB 連線失敗 | `DATABASE_URL` 格式是否為 `postgresql+asyncpg://...` |
 | OAuth 失敗 | Google Console redirect URI 是否包含正式 domain |
-| Migration 失敗 | 查看 backend logs，確認 PostgreSQL 已啟動 |
+| Migration 失敗 `CREATE EXTENSION vector`：permission denied / type "vector" does not exist | PG 不是 pgvector image —— 換用 `pgvector/pgvector:pg16` |
+| Migration 失敗（其他） | 查看 backend logs，確認 PostgreSQL 已啟動 |
+
+---
+
+## §B. Self-host VPS 部署（docker-compose.prod.yml）
+
+適用：有自己 VPS（如 Tencent Tokyo）+ 想完全控制資料的場景。
+
+### Step 1：準備 .env.prod
+
+在專案根目錄建立 `.env.prod`（**勿 commit**）：
+
+```bash
+# DB
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=<強隨機密碼>
+POSTGRES_DB=programing_education
+
+# Auth
+AUTH_SECRET=<npx auth secret 產生>
+GOOGLE_CLIENT_ID=...
+GOOGLE_CLIENT_SECRET=...
+WEB_URL=https://your-domain.com
+
+# AI
+OPENAI_API_KEY=sk-proj-...
+
+# Judge0（自架）
+JUDGE0_API_URL=http://judge0:2358
+JUDGE0_API_KEY=
+```
+
+### Step 2：啟動
+
+```bash
+docker compose --env-file .env.prod -f docker-compose.prod.yml up -d --build
+```
+
+首次啟動 backend 會自動跑 `alembic upgrade head`（含 CREATE EXTENSION vector）。
+
+### Step 3：反向代理
+
+`docker-compose.prod.yml` 只暴露 web 的 3000 port。建議前置 nginx / caddy 提供 HTTPS：
+
+```nginx
+server {
+    listen 443 ssl;
+    server_name your-domain.com;
+    ssl_certificate ...;
+    location / {
+        proxy_pass http://localhost:3000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+}
+```
+
+### Step 4：健康檢查
+
+```bash
+docker compose --env-file .env.prod -f docker-compose.prod.yml ps
+# 確認 postgres / redis / backend / web 都是 healthy / running
+
+curl http://localhost:3000/api/health
+# {"status": "ok"}
+```
+
+### Self-host 疑難排解
+
+| 問題 | 檢查 |
+|------|------|
+| backend 容器一直 restart | `docker compose ... logs backend` 查 alembic / DB 連線錯誤 |
+| `vector` extension 找不到 | 確認 image 是 `pgvector/pgvector:pg16` 不是 `postgres:16` |
+| Judge0 部分功能失效 | Phase 4-1c 整合自架 Judge0 後再驗證 |

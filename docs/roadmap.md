@@ -306,7 +306,12 @@
   - requirements.lock 重產（38 → 272 行，含全部 transitive deps）
   - `docker build` backend ✅（667 MB）/ web ✅（285 MB）
   - 確認 pyBKT 未實際 import（純 BKT 公式 updater）→ 不加依賴
-- [ ] 4-1b `pgvector/pgvector:pg16` 容器配置（Phase 2-1 完成後驗證）
+- [x] 4-1b `pgvector/pgvector:pg16` 容器配置（Phase 2-1 完成後驗證）
+  - dev compose 已用 pgvector image；vector extension v0.8.2 + documents + data_codedge_rag 完整就緒
+  - 修 zeabur.json：postgres 從 marketplace `postgresql`（不含 pgvector）→ `PREBUILT + source.image: pgvector/pgvector:pg16`
+  - 新增 `docker-compose.prod.yml`（84 行）self-host 替代方案
+  - 擴充 `deployment.md`（80 → 174 行）為兩種部署選項 + pgvector 風險警告
+  - tech-debt：Zeabur PREBUILT IMAGE schema 待 4-2 實測
 - [ ] 4-1c Judge0 自架 docker-compose（取代 RapidAPI 50 次/天限制）
 
 ### 4-2 Zeabur 部署

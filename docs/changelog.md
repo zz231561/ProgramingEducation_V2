@@ -1,5 +1,45 @@
 # 變更日誌
 
+## [2026-05-05] — Phase 4-1b：pgvector 容器配置驗證 + 生產 compose
+
+### 驗證（dev pgvector 完整就緒）
+- `docker-compose.dev.yml` 已用 `pgvector/pgvector:pg16` image，container 跑 6 天 healthy
+- `vector` extension 已啟用（v0.8.2）
+- `documents` 業務表 + LlamaIndex 自動建的 `data_codedge_rag` 表（含 `embedding vector` column）就緒
+- `alembic upgrade head` 含 `CREATE EXTENSION IF NOT EXISTS vector`（migration b2c3d4e5f6a7）
+
+### 修正（zeabur.json 部署風險）
+- 原 `zeabur.json` 的 postgres 用 `marketplace.postgresql` — **標準 PG 不含 pgvector** → 部署會 fail 在 alembic
+- 改為 `template: PREBUILT` + `source: {type: "IMAGE", image: "pgvector/pgvector:pg16"}`：
+  - 加 ports / env / volumes 完整 spec
+  - 暴露 `POSTGRES_HOST` / `POSTGRES_PORT` / `POSTGRES_DATABASE` / `POSTGRES_USERNAME` 給 backend service 引用（`${POSTGRES_HOST}` 等變數）
+- ⚠ Schema 細節未經實際 Zeabur 部署驗證（記入 tech-debt.md）；4-2 部署當下若 Zeabur 拒絕，依 deployment.md §A fallback：marketplace pgvector 或 GIT + 一行 Dockerfile
+
+### 新增（self-host 部署）
+- `docker-compose.prod.yml`（84 行）：
+  - 完整 4 服務（postgres / redis / backend / web）依賴鏈 healthy gate
+  - 密碼從 `.env.prod` env 讀取，**不寫入檔案**
+  - PG/Redis 不暴露 host port（內部網路），只 web `3000` 對外（前置 nginx/caddy）
+  - backend healthcheck（30s interval + 30s start_period）
+  - 與 `docker-compose.dev.yml` 同 pgvector image（dev/prod 一致）
+
+### 文件
+- `docs/deployment.md` 大幅擴充（80 → 174 行）：
+  - 章節分為 §A Zeabur / §B Self-host VPS
+  - 加 ⚠ pgvector 必要性說明（migration 會 CREATE EXTENSION vector）
+  - 加 §A Zeabur fallback 指引（schema 被拒時的兩種替代方案）
+  - 加 §B 完整 self-host 流程（.env.prod / 啟動 / nginx 反代 / 健康檢查 / 疑難排解）
+  - 疑難排解表加 `permission denied / type "vector" does not exist` 條目對應 PG image 錯誤
+- `docs/tech-debt.md`：加「Zeabur PREBUILT IMAGE schema 待實測」條目
+
+### 設計關鍵
+- **dev / prod 同 image**：兩個 compose 都用 `pgvector/pgvector:pg16`；避免 dev 過 / prod 在 alembic 才 fail 的尷尬
+- **prod compose 不暴露 PG/Redis host port**：MVP 安全考量；未來若需 backup/管理可加 `--profile admin` 服務
+- **Zeabur schema fallback 文件先寫**：4-2 實測前先把 fallback 路徑寫清楚，部署當下不需重新研究
+- **不刪 dev compose**：dev / prod 分檔，dev 仍方便 host port 連線除錯
+
+---
+
 ## [2026-05-05] — Phase 4-1a：Dockerfile 驗證 + 依賴 lock 重產
 
 ### 修補（依賴）

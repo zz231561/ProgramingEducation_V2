@@ -29,10 +29,12 @@
 **Phase 2 完成 ✅**（2-1 ~ 2-6 全數完成；明細見 `docs/roadmap.md`）
 - RAG / 知識圖譜 / BKT 精熟度 / 智慧出題 / Pre-Coding Reflection / Post-Solution Comprehension（EPL+Predict+Variation+動態觸發+BKT 串接）
 
-**🎯 進行中：Phase 3 — 學習體驗（Learn / Quiz / Dashboard 頁面）**
+**🎯 進行中：Phase 3 — 下一任務：3-1b 路徑生成 service（拓撲排序 + 弱項補強）**
 > **每次 session 開頭先讀 `docs/dev-setup.md` §1**（Colima + docker-compose 啟動 SOP）；首次接手讀 §2~6。
 > ⚠ **環境前置**：`web/.env.local` `AUTH_SECRET` 必須與 `backend/.env` `NEXTAUTH_SECRET` 同值
-- ⬜ 3-1 結構化學習路徑（learning_paths schema + 拓撲排序 + Learn 頁面）
+- 🚧 3-1 結構化學習路徑
+  - ✅ 3-1a Schema + ORM（learning_paths + learning_units + LearningUnitStatus）
+  - ⬜ 3-1b 路徑生成 service / ⬜ 3-1c Learn 頁面 / ⬜ 3-1d 學習單元內容頁 / ⬜ 3-1e Reflection 觸發點
 - ⬜ 3-2 Quiz 完整版（Quiz 頁面 + 計時器 + EDF 回饋）
 - ⬜ 3-3 Dashboard（統計卡片 + 活動時間線 + 精熟度總覽）
 - ⬜ 2-6 Post-Solution Comprehension Check

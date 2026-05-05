@@ -2,6 +2,7 @@
 
 from models.chat import ChatMessage, ChatSession
 from models.concept import Concept, ConceptEdge, EdgeType
+from models.learning import LearningPath, LearningUnit, LearningUnitStatus
 from models.mastery import StudentMastery
 from models.quiz import (
     ComprehensionType,
@@ -20,6 +21,9 @@ __all__ = [
     "Concept",
     "ConceptEdge",
     "EdgeType",
+    "LearningPath",
+    "LearningUnit",
+    "LearningUnitStatus",
     "Question",
     "QuestionSource",
     "QuestionType",

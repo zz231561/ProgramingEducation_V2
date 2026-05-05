@@ -1,5 +1,35 @@
 # 變更日誌
 
+## [2026-05-05] — Phase 3-1a：學習路徑基礎 schema（Module 7 啟動）
+
+### 新增（Schema / Migration）
+- `backend/alembic/versions/c9d0e1f2a3b4_create_learning_paths_and_units.py`（114 行）：
+  - `learning_paths`：id / user_id (FK CASCADE) / title (VARCHAR 200) / description / created_at / updated_at + index user_id
+  - `learning_units`：id / path_id (FK CASCADE) / concept_id (FK RESTRICT) / order_index / content (JSON) / status (VARCHAR 20 + CHECK enum) / completed_at + UNIQUE(path_id, order_index) + CHECK order_index >= 0 + index path_id, concept_id
+  - status enum 4 值：`locked` (預設) / `available` / `in_progress` / `completed`
+
+### ORM
+- `backend/models/learning.py`（109 行）：
+  - `LearningUnitStatus(str, Enum)` — locked/available/in_progress/completed
+  - `LearningPath` + `LearningUnit` model（與 alembic 對齊）
+- `backend/models/__init__.py`：export `LearningPath` / `LearningUnit` / `LearningUnitStatus`
+
+### 測試
+- `backend/tests/test_learning_models.py`（12 個）：metadata / 欄位 / status enum 值 / 預設 status=locked / UNIQUE(path, order) 衝突 / status CHECK 阻擋非法值 / order_index < 0 阻擋 / FK ondelete CASCADE 宣告
+- 全套 332 tests 全綠（320 → 332，+12 個新測試，零 regression）
+
+### 設計關鍵
+- **status 用 String + CHECK**：與 quiz/concept/reflection/comprehension 慣例一致；避開 PG ENUM 雙寫法 + SQLite 測試相容
+- **`(path_id, order_index)` UNIQUE**：強制同路徑內位置唯一，禁止碰撞
+- **`concept_id` ON DELETE RESTRICT**：概念被刪需先處理路徑（避免遺孤學習單元）
+- **`path.user_id` ON DELETE CASCADE**：使用者刪除帳號連動刪除路徑與單元
+- **預設 status='locked'**：路徑生成（3-1b）後由 service 解鎖第一單元，後續漸進解鎖
+- **`content` 用 JSON dict 不強制 shape**：unit 內容（summary / examples / exercise_question_ids）依教學需求演進，application 層驗證
+- **不加 `is_active` / `archived_at`**：MVP 不支援軟刪除，避免不必要欄位（精準修改不擴散）
+- **預留 polymorphic target**：reflections.source_type='learning_unit' 已預留指向 learning_units.id（無 FK，application 層驗證）
+
+---
+
 ## [2026-05-05] — Phase 2-6e：動態觸發頻率 + 驗證結果驅動 BKT（Phase 2-6 完成 🎉）
 
 ### 新增（Service）

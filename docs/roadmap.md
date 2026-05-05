@@ -215,7 +215,11 @@
 
 ### 3-1 結構化學習路徑
 > **OSS**：拓撲排序 + 弱項補強（**不採用 EduAdapt-AI 的 RL 方案**，過度工程）
-- [ ] 3-1a learning_paths + learning_units 表 migration
+- [x] 3-1a learning_paths + learning_units 表 migration
+  - Migration `c9d0e1f2a3b4`：兩表 + status CHECK enum + UNIQUE(path_id, order_index) + order_index ≥ 0 CHECK
+  - ORM `models/learning.py`：`LearningPath` + `LearningUnit` + `LearningUnitStatus(str, Enum)` (locked/available/in_progress/completed)
+  - FK 策略：path.user_id CASCADE / unit.path_id CASCADE / unit.concept_id RESTRICT
+  - 12 個新測試，全套 332 tests 全綠
 - [ ] 3-1b 路徑生成 service（拓撲排序 + 弱項補強，純 Python 實作）
 - [ ] 3-1c Learn 頁面：路徑視覺化 + 進度條
 - [ ] 3-1d 學習單元內容頁（概念說明 / 範例 / 練習 / 摘要 tab）

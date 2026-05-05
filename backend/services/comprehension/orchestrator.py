@@ -29,6 +29,7 @@ from services.comprehension.epl import (
     generate_epl_prompt,
     grade_epl_answer,
 )
+from services.comprehension.mastery_hook import apply_comprehension_mastery
 from services.comprehension.predict_output import (
     PredictGradeResult,
     generate_predict_test,
@@ -108,6 +109,9 @@ async def submit_epl_for_answer(
     # 寫入學生回答（即使評分失敗也保留答案，方便重新評分）
     answer.comprehension_answer = epl_answer
     answer.comprehension_passed = result.passed  # 可能為 None（fallback）
+
+    # 2-6e：通過/不通過驅動 BKT；passed=None 跳過（無有效信號）
+    await apply_comprehension_mastery(db, user_id, question, result.passed)
 
     await db.commit()
     await db.refresh(answer)
@@ -208,6 +212,10 @@ async def submit_predict_for_answer(
 
     answer.comprehension_answer = student_predicted
     answer.comprehension_passed = result.passed
+
+    # 2-6e：predict 永遠回 bool（無 None fallback），一律驅動 BKT
+    question = await _load_question(db, answer.question_id)
+    await apply_comprehension_mastery(db, user_id, question, result.passed)
 
     await db.commit()
     await db.refresh(answer)

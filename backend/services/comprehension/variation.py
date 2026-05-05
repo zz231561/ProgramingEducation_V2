@@ -28,6 +28,7 @@ from core.config import settings
 from core.errors import AppError
 from models.quiz import ComprehensionType, Question, QuestionType, StudentAnswer
 from services.comprehension.crud import _get_owned_answer
+from services.comprehension.mastery_hook import apply_comprehension_mastery
 from services.comprehension.variation_prompts import (
     build_generate_prompt,
     build_grade_prompt,
@@ -236,6 +237,12 @@ async def submit_variation_for_answer(
 
     answer.comprehension_answer = student_code
     answer.comprehension_passed = result.passed
+
+    # 2-6e：variation 永遠回 bool（fallback 也是 False），一律驅動 BKT
+    question = (
+        await db.execute(select(Question).where(Question.id == answer.question_id))
+    ).scalar_one()
+    await apply_comprehension_mastery(db, user_id, question, result.passed)
 
     await db.commit()
     await db.refresh(answer)

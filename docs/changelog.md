@@ -1,5 +1,54 @@
 # 變更日誌
 
+## [2026-05-05] — Phase 2-6e：動態觸發頻率 + 驗證結果驅動 BKT（Phase 2-6 完成 🎉）
+
+### 新增（Service）
+- `backend/services/comprehension/mastery_hook.py`（51 行）：
+  - `apply_comprehension_mastery(db, user_id, question, passed)` — comprehension 通過/不通過 → BKT
+  - `passed=True` → Evidence(NONE) 上調 confidence；`passed=False` → Evidence(LOGIC) 下調
+  - `passed=None`（EPL fallback）→ no-op（無有效信號避免噪音）
+  - `update_mastery` 異常 swallow（best-effort，與 quiz/submit 容錯一致）
+- `backend/services/comprehension/trigger.py`（120 行）：
+  - `TriggerDecision` dataclass + `decide_trigger(db, user_id, student_answer_id)`
+  - 純規則 `_decide(pass_rate, is_coding)`（獨立函式方便 unit test）
+  - 取近 5 筆有 `comprehension_passed` 的紀錄算 pass_rate；無紀錄 = cold start
+  - 規則表：cold start → EPL；≥0.8 → 不觸發；[0.6, 0.8) → VARIATION；[0.3, 0.6) → PREDICT_OUTPUT；<0.3 → EPL
+  - 非 coding 題 → PREDICT_OUTPUT/VARIATION 自動 fallback EPL（reason 補上 `（題型非 coding，fallback EPL）`）
+
+### Workflow 整合
+- `services/comprehension/orchestrator.py`：`submit_epl_for_answer` + `submit_predict_for_answer` 在 commit 前呼叫 `apply_comprehension_mastery(...)`
+- `services/comprehension/variation.py`：`submit_variation_for_answer` 同樣串接 mastery hook
+- 三條 grade pipeline 通過後皆驅動 BKT；EPL passed=None 跳過
+
+### API
+- `backend/api/routes/comprehension_trigger.py`（57 行）：
+  - `GET /comprehension/trigger-suggestion/{student_answer_id}` → `TriggerDecisionOut`（should_trigger / suggested_type / pass_rate / sample_size / reason）
+- `backend/main.py`：註冊 `comprehension_trigger_router`
+
+### 測試
+- `backend/tests/test_comprehension_trigger.py`（12 個 unit）：cold start / 高 / 中高 coding+非 coding / 中等 coding+非 coding / 低；threshold 邊界值
+- `backend/tests/test_comprehension_mastery_hook.py`（4 個 unit）：passed=True/False/None / update_mastery 異常 swallow
+- `backend/tests/test_comprehension_trigger_route.py`（6 個 HTTP）：401 / 跨使用者 404 / cold start / 高 skip / 中等 predict / 中高非 coding fallback / 低 EPL
+- `backend/tests/test_comprehension_mastery_integration.py`（4 個整合）：EPL grade 通過 → mastery confidence > 0；EPL passed=None → mastery row 不存在；Predict / Variation grade 通過 → mastery 上調
+- 全套 320 tests 全綠（293 → 320，+27 個新測試，零 regression）
+
+### 設計關鍵
+- **passed=None 不觸碰 mastery**：BKT 演算法對「答錯」與「未評分」應有差別 — fallback 不該被當作扣分，否則 LLM 偶發失敗會誤傷學生信心度
+- **trigger 純規則 + DB 查詢**：可預測、易測；不引入隨機性 / RL（避免過度工程，符合守則 #7「不過度設計」）
+- **threshold 集中常數**：`HIGH_PASS_THRESHOLD` / `MID_HIGH_PASS_THRESHOLD` / `MID_LOW_PASS_THRESHOLD` 提到 module 頂端，方便未來 A/B test 調參
+- **`_decide` 獨立函式**：12 個 unit test 直接覆蓋規則矩陣，不需 DB；`decide_trigger` 只負責 fetch + dispatch
+- **route 拆獨立檔**：trigger endpoint 放 `comprehension_trigger.py`，主 `comprehension.py` 維持 242 行不超 250
+
+### Phase 2-6 整體里程碑
+- ✅ 2-6a Schema 擴充 + Comprehension API
+- ✅ 2-6b EPL 驗證
+- ✅ 2-6c 預測輸出驗證
+- ✅ 2-6d 變體挑戰
+- ✅ 2-6e 動態觸發 + BKT 串接
+- 全套後端 320 tests 全綠，準備迎接 Phase 3 學習體驗（Learn / Quiz / Dashboard 頁面）
+
+---
+
 ## [2026-05-05] — Phase 2-6d：變體挑戰（LLM 生變體題 + 評分學生新解）
 
 ### 新增（Service）

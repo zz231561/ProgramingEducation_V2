@@ -201,7 +201,13 @@
   - 「禁用 AI」屬前端責任（後端流程不串接 chat / EDF / hint，docstring 註明）
   - 保守 fallback：grade LLM 失敗 → `passed=False`（避免錯給通過拉高 mastery 信心度）
   - 23 個新測試（13 unit + 10 HTTP），全套 293 tests 全綠
-- [ ] 2-6e 動態觸發頻率（依學生 EPL 通過率調整）+ 驗證結果影響精熟度
+- [x] 2-6e 動態觸發頻率（依學生 EPL 通過率調整）+ 驗證結果影響精熟度
+  - `services/comprehension/mastery_hook.py`：comprehension passed → Evidence(NONE/LOGIC) → `update_mastery` BKT 上下調；passed=None 跳過；異常 swallow
+  - `services/comprehension/trigger.py`：純規則 `_decide(pass_rate, is_coding)` — cold start → EPL；≥0.8 不觸發；[0.6,0.8)→VARIATION；[0.3,0.6)→PREDICT_OUTPUT；<0.3→EPL；非 coding 自動 fallback EPL
+  - 三條 grade workflow（EPL/Predict/Variation）皆在 commit 前串接 mastery hook
+  - API：`GET /comprehension/trigger-suggestion/{student_answer_id}`（獨立 route 檔）
+  - 27 個新測試（16 unit + 6 HTTP + 4 mastery integration），全套 320 tests 全綠
+  - **Phase 2-6 完成 🎉** — 後端教學引擎 + comprehension 驗證閉環就緒
 
 ## Phase 3：學習體驗
 > 完成標準：學生可從頭到尾跟隨學習路徑，完成測驗，查看進度

@@ -9,6 +9,15 @@ from services.comprehension.crud import (
     get_comprehension,
     upsert_comprehension,
 )
+from services.comprehension.mastery_hook import apply_comprehension_mastery
+from services.comprehension.trigger import (
+    HIGH_PASS_THRESHOLD,
+    LOOKBACK_LIMIT,
+    MID_HIGH_PASS_THRESHOLD,
+    MID_LOW_PASS_THRESHOLD,
+    TriggerDecision,
+    decide_trigger,
+)
 from services.comprehension.epl import (
     EPL_PASS_THRESHOLD,
     EplGenerationResult,
@@ -39,13 +48,20 @@ from services.comprehension.variation import (
 
 __all__ = [
     "EPL_PASS_THRESHOLD",
+    "HIGH_PASS_THRESHOLD",
+    "LOOKBACK_LIMIT",
+    "MID_HIGH_PASS_THRESHOLD",
+    "MID_LOW_PASS_THRESHOLD",
     "ComprehensionUpdate",
     "EplGenerationResult",
     "EplGradeResult",
     "PredictGenerationResult",
     "PredictGradeResult",
+    "TriggerDecision",
     "VariationGenerationResult",
     "VariationGradeResult",
+    "apply_comprehension_mastery",
+    "decide_trigger",
     "generate_epl_prompt",
     "generate_predict_test",
     "generate_variation",

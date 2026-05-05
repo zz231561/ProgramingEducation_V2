@@ -9,6 +9,11 @@ venv/
 .env
 .env.*
 !.env.example
+!.env.prod.example
+
+# Judge0 self-host（含 PG / Redis 密碼）
+judge0.conf
+!judge0.conf.example
 
 # IDE
 .idea/

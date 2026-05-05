@@ -1,5 +1,34 @@
 # 變更日誌
 
+## [2026-05-05] — Phase 4-2a：環境變數分層配置 + Zeabur Secret 指引
+
+### 整理（env 範本）
+- **刪除**：root `.env.example`（過時且與 backend/.env.example 重疊；誤導 dev 用 root .env）
+- **新增**：`.env.prod.example`（72 行）— self-host VPS 完整範本：
+  - 6 區段：Application PG / Auth / OpenAI / Judge0（A 自架 / B RapidAPI 二選一）/ Judge0 密碼 / 可選 debug 變數
+  - 標明每組密碼的「對應出處」（與 judge0.conf 一致 / 與 docker-compose 服務變數一致）
+  - 提示「強隨機密碼，至少 16 字元」
+- `.gitignore`：加 `!.env.prod.example` 與 `judge0.conf` ignore 規則（保留 `.example`）
+
+### 文件（環境變數分層）
+- `docs/deployment.md` 加「環境變數分層」章節（268 行 → 272 行細）：
+  - 三套配置一覽表（dev backend / dev web / self-host prod / Zeabur prod）禁混用
+  - 變數分類一覽（敏感 vs 公開；每變數的 dev / self-host / Zeabur 來源）
+  - **Zeabur Secret 標記方式**：Project Settings → Environment Variables → 詳情頁 → 開「Hidden / Secret」開關
+
+### 設計關鍵
+- **三套配置 vs 全部混用**：dev/self-host/Zeabur 三條獨立路徑；避免一個 .env 跨環境造成密碼洩漏
+- **公開 vs 敏感清楚標記**：表格用 🔒 標敏感變數；Zeabur 部署時知道哪些必須設 Secret
+- **`POSTGRES_PASSWORD` 在 Zeabur 自動產生**：zeabur.json 用 `${PASSWORD}`，由 Zeabur 注入隨機強密碼，使用者不需手動設
+- **`JUDGE0_*_PASSWORD` 不在 Zeabur**：Zeabur 不能跑 Judge0 自架（privileged 限制），所以不適用
+- **Self-host 路徑明確**：`.env.prod.example` 內標註「對應 docker-compose 服務」+ Judge0 密碼必須與 judge0.conf **完全一致**
+
+### Phase 4-2 進度
+- ✅ 4-2a 環境變數分層配置
+- ⬜ 4-2b Zeabur service 串接驗證 / ⬜ 4-2c NextAuth callback + CORS
+
+---
+
 ## [2026-05-05] — Phase 4-1c：Judge0 自架 docker-compose（取代 RapidAPI 配額）
 
 ### 新增（self-host Judge0 stack）

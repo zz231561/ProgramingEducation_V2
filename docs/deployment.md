@@ -20,6 +20,37 @@ backend 啟動時會跑 `alembic upgrade head`，其中 migration `b2c3d4e5f6a7`
 
 ---
 
+## 環境變數分層（roadmap 4-2a）
+
+三套環境配置，**禁止混用**：
+
+| 環境 | 範本 | 來源 | 敏感資訊處理 |
+|------|------|------|----------------|
+| **本機 dev**（backend）| `backend/.env.example` → `backend/.env` | 開發者本機檔案 | 視個人安全習慣 |
+| **本機 dev**（web）| `web/.env.example` → `web/.env.local` | 開發者本機檔案 | 同上 |
+| **Self-host prod** | `.env.prod.example` → `.env.prod` | 部署 VPS 上的 dotenv 檔 | 強隨機密碼 + .gitignore 防誤 commit |
+| **Zeabur prod** | （無檔案）| Zeabur dashboard 的 Project env | 必須在 dashboard 標記為 **Secret**（隱藏顯示）|
+
+### 變數分類一覽
+
+| 變數 | 是否敏感 | dev | self-host prod | Zeabur prod |
+|------|---------|-----|----------------|-------------|
+| `OPENAI_API_KEY` | 🔒 敏感 | backend/.env | .env.prod | Zeabur **Secret** |
+| `GOOGLE_CLIENT_SECRET` | 🔒 敏感 | backend/.env | .env.prod | Zeabur **Secret** |
+| `AUTH_SECRET` / `NEXTAUTH_SECRET` | 🔒 敏感 | 各自 .env | .env.prod | Zeabur **Secret** |
+| `POSTGRES_PASSWORD` | 🔒 敏感 | docker-compose.dev.yml hardcode | .env.prod | Zeabur 自動產生（`${PASSWORD}`） |
+| `JUDGE0_API_KEY` | 🔒 敏感（RapidAPI）| backend/.env | .env.prod | Zeabur **Secret** |
+| `JUDGE0_POSTGRES_PASSWORD` / `JUDGE0_REDIS_PASSWORD` | 🔒 敏感 | — | .env.prod + judge0.conf | Zeabur 不適用 |
+| `GOOGLE_CLIENT_ID` | 公開 | 各自 .env | .env.prod | Zeabur 一般 env |
+| `DATABASE_URL` / `REDIS_URL` | 公開 | dev hardcode | .env.prod 拼裝 | Zeabur 用 `${POSTGRES_HOST}` 等引用 |
+| `WEB_URL` / `NEXTAUTH_URL` | 公開 | localhost | .env.prod | Zeabur `${WEB_DOMAIN}` |
+| `LLM_MODEL` / `EMBEDDING_MODEL` / `LOG_LEVEL` | 公開 | 預設值 | 預設值 | 預設值（如需覆寫才設）|
+
+> **Zeabur Secret 標記方式**：Project Settings → Environment Variables → 點 variable 詳情 →
+> 將「Hidden」/「Secret」開關打開。標記後 dashboard 不再顯示原值，也不會出現在 log 中。
+
+---
+
 ## §A. Zeabur 部署
 
 ## 前置條件

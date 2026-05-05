@@ -319,7 +319,10 @@
   - tech-debt：self-host VPS 部署時實測 workers 啟動 + backend 接通
 
 ### 4-2 Zeabur 部署
-- [ ] 4-2a 環境變數分層配置（dev/prod，敏感資訊用 Zeabur Secrets）
+- [x] 4-2a 環境變數分層配置（dev/prod，敏感資訊用 Zeabur Secrets）
+  - 刪除過時 root `.env.example`；新增 `.env.prod.example`（72 行）self-host 完整範本
+  - `.gitignore` 加 judge0.conf 規則（保留 .example）
+  - `deployment.md` 加「環境變數分層」章節：3 套配置一覽 + 變數敏感性分類 + Zeabur Secret 標記指引
 - [ ] 4-2b Zeabur service 串接（internal DNS / Postgres / Redis / Judge0）— `zeabur.json` 已存在，需驗證
 - [ ] 4-2c NextAuth callback URL + CORS 設定（前後端網域）
 

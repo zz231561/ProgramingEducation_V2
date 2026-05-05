@@ -34,7 +34,8 @@
 > ⚠ **環境前置**：`web/.env.local` `AUTH_SECRET` 必須與 `backend/.env` `NEXTAUTH_SECRET` 同值
 - 🚧 3-1 結構化學習路徑
   - ✅ 3-1a Schema + ORM（learning_paths + learning_units + LearningUnitStatus）
-  - ⬜ 3-1b 路徑生成 service / ⬜ 3-1c Learn 頁面 / ⬜ 3-1d 學習單元內容頁 / ⬜ 3-1e Reflection 觸發點
+  - ✅ 3-1b 路徑生成 service（priority Kahn's 拓撲 + 弱項補強）
+  - ⬜ 3-1c Learn 頁面 / ⬜ 3-1d 學習單元內容頁 / ⬜ 3-1e Reflection 觸發點
 - ⬜ 3-2 Quiz 完整版（Quiz 頁面 + 計時器 + EDF 回饋）
 - ⬜ 3-3 Dashboard（統計卡片 + 活動時間線 + 精熟度總覽）
 - ⬜ 2-6 Post-Solution Comprehension Check

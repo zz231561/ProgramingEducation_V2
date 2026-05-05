@@ -1,5 +1,39 @@
 # 變更日誌
 
+## [2026-05-05] — Phase 3-1b：學習路徑生成 service（拓撲排序 + 弱項補強）
+
+### 新增（Service）
+- `backend/services/learning/topology.py`（73 行）：
+  - `topological_sort_with_priority(nodes, edges, priority, default_priority)` — priority Kahn's algorithm
+  - 純函式無 DB 依賴；O((N+E) log N)
+  - 同層內按 priority 升序（弱項優先）；priority tie 用插入順序穩定破除
+  - Cycle 容錯：殘留節點按 priority 附加到尾端，不擲錯
+  - 邊指向 nodes 集合外的節點 → 忽略不擲錯（filter 後常見）
+- `backend/services/learning/generator.py`（160 行）：
+  - `generate_learning_path(db, user_id, title, description, category, skip_mastered_threshold)`
+  - 流程：fetch concepts → fetch PREREQUISITE edges → fetch user mastery → 篩除已熟練 → priority Kahn's 拓撲 → 寫入 LearningPath + LearningUnits
+  - 第一個 unit 設 `available`，其餘 `locked`（漸進解鎖機制）
+  - 預設 `DEFAULT_SKIP_MASTERED_THRESHOLD = 0.8`
+  - `content` 預留空骨架 `{"summary": "", "examples": [], "exercise_question_ids": []}`，由後續 service 填入
+  - 422 LEARNING_PATH_EMPTY：無概念 / 全部已熟練 / category filter 無匹配
+- `backend/services/learning/__init__.py`：export
+
+### 測試
+- `backend/tests/test_learning_topology.py`（12 個 unit）：空圖 / 單節點 / 線性鏈 / 弱項優先 / 拓撲約束維持 / cold start default / 穩定性 / diamond / cycle 容錯 / 外部邊忽略 / 多獨立鏈
+- `backend/tests/test_learning_generator.py`（9 個 DB 整合）：3 種 422 / 線性鏈生成 / 跳過已熟練 / 同層弱項優先 / content 骨架 / category filter / 邊指向已熟練節點不破壞拓撲
+- 全套 353 tests 全綠（332 → 353，+21 個新測試，零 regression）
+
+### 設計關鍵
+- **不採 RL**（守則 #7）：純拓撲 + 弱項補強已足夠；OATutor RL 屬過度工程，明確排除
+- **priority Kahn's**：在 in-degree=0 候選中用 min-heap 選 confidence 最低 → 同時保證拓撲安全 + 弱項優先
+- **Cold start = 弱項**：未練概念 confidence=0 → 自動排前面，符合「先學最不會的」直覺
+- **跳過已熟練 (≥ 0.8)**：避免重複學；篩除後重算 edges 集合，剔除指向已熟練節點的邊（不破壞剩餘拓撲）
+- **content 空骨架**：`{summary, examples, exercise_question_ids}` 預留 shape，後續 LLM 生成或編輯介面填入；不一次到位避免綁死
+- **Cycle 容錯不擲錯**：PREREQUISITE 理論上 DAG，但程式不假設；殘留節點附加比硬報錯實用
+- **演算法 vs DB 拆分**：topology.py 純函式無 DB 依賴 → 12 unit test 直接覆蓋演算法；generator.py 整合 DB → 9 integration test
+
+---
+
 ## [2026-05-05] — Phase 3-1a：學習路徑基礎 schema（Module 7 啟動）
 
 ### 新增（Schema / Migration）

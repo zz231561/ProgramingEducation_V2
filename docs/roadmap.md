@@ -220,7 +220,13 @@
   - ORM `models/learning.py`：`LearningPath` + `LearningUnit` + `LearningUnitStatus(str, Enum)` (locked/available/in_progress/completed)
   - FK 策略：path.user_id CASCADE / unit.path_id CASCADE / unit.concept_id RESTRICT
   - 12 個新測試，全套 332 tests 全綠
-- [ ] 3-1b 路徑生成 service（拓撲排序 + 弱項補強，純 Python 實作）
+- [x] 3-1b 路徑生成 service（拓撲排序 + 弱項補強，純 Python 實作）
+  - `services/learning/topology.py`：priority Kahn's algorithm（純函式，O((N+E) log N)）
+  - `services/learning/generator.py`：fetch concepts/edges/mastery → 篩除已熟練 → 拓撲 → 寫入；第一個 unit `available` 其餘 `locked`
+  - 弱項優先：confidence 低排前；cold start (未練=0) 自動最前；priority 同 → 插入順序穩定
+  - Cycle 容錯：殘留節點附加尾端不擲錯
+  - `DEFAULT_SKIP_MASTERED_THRESHOLD = 0.8`；`content` 預留空骨架 `{summary, examples, exercise_question_ids}`
+  - 21 個新測試（12 unit + 9 DB 整合），全套 353 tests 全綠
 - [ ] 3-1c Learn 頁面：路徑視覺化 + 進度條
 - [ ] 3-1d 學習單元內容頁（概念說明 / 範例 / 練習 / 摘要 tab）
 - [ ] 3-1e 練習 tab 嵌入 Pre-Coding Reflection 觸發點（復用 Phase 2-5 元件）

@@ -29,21 +29,13 @@
 **Phase 2 完成 ✅**（2-1 ~ 2-6 全數完成；明細見 `docs/roadmap.md`）
 - RAG / 知識圖譜 / BKT 精熟度 / 智慧出題 / Pre-Coding Reflection / Post-Solution Comprehension（EPL+Predict+Variation+動態觸發+BKT 串接）
 
-**🎯 進行中：Phase 3 — 下一任務：3-1b 路徑生成 service（拓撲排序 + 弱項補強）**
+**Phase 3 完成 ✅**（學習體驗，3-1 / 3-2 / 3-3 全數完成）
 > **每次 session 開頭先讀 `docs/dev-setup.md` §1**（Colima + docker-compose 啟動 SOP）；首次接手讀 §2~6。
 > ⚠ **環境前置**：`web/.env.local` `AUTH_SECRET` 必須與 `backend/.env` `NEXTAUTH_SECRET` 同值
-- ✅ 3-1 結構化學習路徑（全部完成 🎉）
-  - 3-1a Schema + ORM / 3-1b 路徑生成 / 3-1c Learn 頁面 / 3-1c+ Concept 重建 /
-  - 3-1c++ UX 簡化 / 3-1d 學習單元 4 tab / 3-1e 練習 tab Reflection 觸發
+- 3-1 結構化學習路徑（7 sub-tasks）/ 3-2 Quiz 完整版（3 sub-tasks）/ 3-3 Dashboard（3 sub-tasks）
+- 學生端完整閉環：登入 → Learn → Quiz → Dashboard；後端 439 tests 全綠
 
-**🎯 進行中：Phase 3-3 — 下一任務：3-3b 最近活動時間線**
-- ✅ 3-3a Dashboard 統計卡片 + 今日建議（4 卡 + 規則版建議）
-- ⬜ 3-3b 最近活動時間線 / ⬜ 3-3c 精熟度總覽圖表
-- ⬜ 3-2 Quiz 完整版（Quiz 頁面 + 計時器 + EDF 回饋）
-- ⬜ 3-3 Dashboard（統計卡片 + 活動時間線 + 精熟度總覽）
-- ⬜ 2-6 Post-Solution Comprehension Check
-
-**Phase 3 學習體驗 → Phase 4 部署 → Phase 5 教師端**（詳見 roadmap）。**OSS 守則**：見守則 #7 + `references.md` §1。
+**🎯 下一階段：Phase 4 — 部署上線**（Docker / Zeabur / Judge0 自架；詳見 roadmap）。**OSS 守則**：見守則 #7 + `references.md` §1。
 
 ## 文件索引
 > 本文件目標 ≤ 60 行。新增內容先判斷歸屬，禁止回填 roadmap/日誌/UI 參數/Schema。

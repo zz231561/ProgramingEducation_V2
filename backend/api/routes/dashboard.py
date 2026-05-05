@@ -1,8 +1,9 @@
-"""學生 Dashboard API（roadmap 3-3a/b）。
+"""學生 Dashboard API（roadmap 3-3a/b/c）。
 
 API：
 - GET /dashboard/stats               — 4 統計卡片 + 今日建議
-- GET /dashboard/timeline?limit=30   — 最近活動時間線（quiz / reflection / unit_completed）
+- GET /dashboard/timeline?limit=30   — 最近活動時間線
+- GET /dashboard/mastery-overview    — 依 category 分組的精熟度詳細總覽
 """
 
 import uuid
@@ -13,7 +14,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.deps import get_current_db_user, get_db
 from models.user import User
-from services.dashboard import get_dashboard_stats, list_recent_activities
+from services.dashboard import (
+    get_dashboard_stats,
+    get_mastery_breakdown,
+    list_recent_activities,
+)
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 
@@ -85,6 +90,56 @@ async def timeline(
                 is_correct=a.is_correct,
             )
             for a in activities
+        ]
+    )
+
+
+class ConceptMasteryDetailOut(BaseModel):
+    concept_tag: str
+    concept_name_zh: str
+    video_order: int | None
+    difficulty: int
+    confidence: float
+
+
+class CategoryBreakdownOut(BaseModel):
+    name: str
+    total: int
+    started: int
+    mastered: int
+    concepts: list[ConceptMasteryDetailOut]
+
+
+class MasteryOverviewResponse(BaseModel):
+    categories: list[CategoryBreakdownOut]
+
+
+@router.get("/mastery-overview", response_model=MasteryOverviewResponse)
+async def mastery_overview(
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_db_user),
+) -> MasteryOverviewResponse:
+    """依 category 分組返回精熟度總覽。"""
+    result = await get_mastery_breakdown(db, user.id)
+    return MasteryOverviewResponse(
+        categories=[
+            CategoryBreakdownOut(
+                name=cat.name,
+                total=cat.total,
+                started=cat.started,
+                mastered=cat.mastered,
+                concepts=[
+                    ConceptMasteryDetailOut(
+                        concept_tag=c.concept_tag,
+                        concept_name_zh=c.concept_name_zh,
+                        video_order=c.video_order,
+                        difficulty=c.difficulty,
+                        confidence=c.confidence,
+                    )
+                    for c in cat.concepts
+                ],
+            )
+            for cat in result.categories
         ]
     )
 

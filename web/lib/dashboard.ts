@@ -66,3 +66,30 @@ export async function getRecentActivities(
   );
   return data.items;
 }
+
+// === 3-3c 精熟度詳細總覽 ===
+
+export interface ConceptMasteryDetail {
+  concept_tag: string;
+  concept_name_zh: string;
+  video_order: number | null;
+  difficulty: number;
+  /** 0.0-1.0；未練 = 0 */
+  confidence: number;
+}
+
+export interface CategoryBreakdown {
+  name: string;
+  total: number;
+  started: number;
+  mastered: number;
+  concepts: ConceptMasteryDetail[];
+}
+
+export interface MasteryOverviewData {
+  categories: CategoryBreakdown[];
+}
+
+export async function getMasteryOverview(): Promise<MasteryOverviewData> {
+  return api<MasteryOverviewData>("/dashboard/mastery-overview");
+}

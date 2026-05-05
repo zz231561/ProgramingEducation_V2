@@ -176,7 +176,12 @@
 
 ### 2-6 Post-Solution Comprehension Check（解題後理解驗證）
 > 參考：EPL (Fowler et al.)、Variation Theory (Marton)
-- [ ] 2-6a student_answers 表擴充 comprehension 欄位 + Comprehension API
+- [x] 2-6a student_answers 表擴充 comprehension 欄位 + Comprehension API
+  - Migration `b8c9d0e1f2a3`：4 個 nullable 欄位（type/prompt/answer/passed）+ CHECK enum
+  - ORM：`ComprehensionType` enum（epl/predict_output/variation）+ `StudentAnswer` 加欄位
+  - Service `services/comprehension/`：get + upsert（擁有權檢查 → 404）
+  - API：`GET /comprehension/{id}`、`PUT /comprehension/{id}` partial upsert
+  - 10 個新測試，全套 218 tests 全綠
 - [ ] 2-6b EPL 驗證：LLM 生成「用自己的話解釋」題 + 評估學生回答
 - [ ] 2-6c 預測輸出驗證：自動生成新測資 + 比對學生預測
 - [ ] 2-6d 變體挑戰：LLM 生成變體題 + 禁用 AI 的作答環境

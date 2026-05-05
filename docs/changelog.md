@@ -1,5 +1,45 @@
 # 變更日誌
 
+## [2026-05-05] — Phase 2-6a：Post-Solution Comprehension Check 持久化基礎
+
+### 新增（Schema / Migration）
+- `backend/alembic/versions/b8c9d0e1f2a3_add_comprehension_to_student_answers.py`（66 行）— `student_answers` 表加 4 個 nullable 欄位：
+  - `comprehension_type` (varchar 20, nullable) — `epl` / `predict_output` / `variation`
+  - `comprehension_prompt` (text, nullable) — 系統出的驗證題目
+  - `comprehension_answer` (text, nullable) — 學生回答
+  - `comprehension_passed` (boolean, nullable) — 是否通過驗證
+  - CHECK constraint：`comprehension_type IS NULL OR ∈ enum`
+
+### ORM
+- `backend/models/quiz.py`：`StudentAnswer` 加 4 欄位 + `ComprehensionType(str, Enum)`（EPL / PREDICT_OUTPUT / VARIATION）
+- `backend/models/__init__.py`：export `ComprehensionType`
+
+### Service
+- `backend/services/comprehension/__init__.py` + `crud.py`（79 行）：
+  - `get_comprehension(db, student_answer_id, user_id)` — 擁有權檢查（非本人 → 404）
+  - `upsert_comprehension(db, student_answer_id, user_id, payload)` — partial upsert，未提供欄位保留原值
+  - `ComprehensionUpdate` dataclass
+
+### API
+- `backend/api/routes/comprehension.py`（108 行）：
+  - `GET /comprehension/{student_answer_id}` — 讀取 4 欄位狀態
+  - `PUT /comprehension/{student_answer_id}` — partial upsert
+  - 422 type 非法 / 404 跨使用者或不存在
+- `backend/main.py`：註冊 `comprehension_router`
+
+### 測試
+- `backend/tests/test_comprehension_route.py`（10 個整合測試）：401 未登入 / GET 初始狀態 null / 完整 PUT / partial PUT 保留欄位 / 422 type 非法 / 404 跨使用者 / 404 不存在
+- 全套 218 tests 全綠（208 → 218，+10 個新測試，零 regression）
+
+### 設計關鍵
+- **nullable + 同表擴充**：comprehension 為「解題後選擇性驗證」，多數作答不觸發；nullable 欄位比 1:1 副表省一個 join
+- **404 而非 403**：跨使用者一律回 STUDENT_ANSWER_NOT_FOUND，避免列舉攻擊揭露存在性（與 reflection / chat 服務一致）
+- **partial PUT**：未提供欄位保留原值，方便分階段寫入（例：先存 prompt，學生答完再寫 answer + passed）
+- **Service 不做 LLM**：本層僅持久化；EPL / 預測輸出 / 變體題的 LLM 生成與評分屬 2-6b/c/d
+- **不加 `comprehension_completed_at`**：嚴格對齊 db-schema.md 4 欄位規格；2-6e 動態觸發頻率需要時再 migrate
+
+---
+
 ## [2026-05-04] — Phase 2-5e：反思內容注入 EDF Pipeline（AI Tutor 可引用學生計畫）
 
 ### 新增（Service 層）

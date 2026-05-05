@@ -42,6 +42,14 @@ class QuestionSource(str, enum.Enum):
     LEETCODE = "leetcode"    # 第三方題庫匯入
 
 
+class ComprehensionType(str, enum.Enum):
+    """Post-Solution Comprehension Check 驗證類型（roadmap 2-6）。"""
+
+    EPL = "epl"  # Explain in Plain Language：用自己的話解釋
+    PREDICT_OUTPUT = "predict_output"  # 預測新測資輸出
+    VARIATION = "variation"  # 變體題挑戰
+
+
 class Question(Base):
     """題目資料表。
 
@@ -107,6 +115,11 @@ class StudentAnswer(Base):
         DateTime(timezone=True),
         server_default=func.now(),
     )
+    # Post-Solution Comprehension Check（roadmap 2-6a）— 解題後選擇性驗證，預設 NULL
+    comprehension_type: Mapped[str | None] = mapped_column(String(20), default=None)
+    comprehension_prompt: Mapped[str | None] = mapped_column(Text, default=None)
+    comprehension_answer: Mapped[str | None] = mapped_column(Text, default=None)
+    comprehension_passed: Mapped[bool | None] = mapped_column(Boolean, default=None)
 
     __table_args__ = (
         CheckConstraint(
@@ -115,6 +128,11 @@ class StudentAnswer(Base):
         CheckConstraint(
             "time_spent_seconds IS NULL OR time_spent_seconds >= 0",
             name="ck_student_answers_time_non_negative",
+        ),
+        CheckConstraint(
+            "comprehension_type IS NULL OR comprehension_type IN "
+            "('epl', 'predict_output', 'variation')",
+            name="ck_student_answers_comprehension_type_enum",
         ),
         Index("ix_student_answers_user_answered", "user_id", "answered_at"),
         Index("ix_student_answers_question", "question_id"),

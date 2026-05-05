@@ -3,13 +3,20 @@
 from models.chat import ChatMessage, ChatSession
 from models.concept import Concept, ConceptEdge, EdgeType
 from models.mastery import StudentMastery
-from models.quiz import Question, QuestionSource, QuestionType, StudentAnswer
+from models.quiz import (
+    ComprehensionType,
+    Question,
+    QuestionSource,
+    QuestionType,
+    StudentAnswer,
+)
 from models.reflection import Reflection, ReflectionSourceType
 from models.user import User
 
 __all__ = [
     "ChatMessage",
     "ChatSession",
+    "ComprehensionType",
     "Concept",
     "ConceptEdge",
     "EdgeType",

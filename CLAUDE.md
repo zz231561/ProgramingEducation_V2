@@ -35,7 +35,11 @@
 - 3-1 結構化學習路徑（7 sub-tasks）/ 3-2 Quiz 完整版（3 sub-tasks）/ 3-3 Dashboard（3 sub-tasks）
 - 學生端完整閉環：登入 → Learn → Quiz → Dashboard；後端 439 tests 全綠
 
-**🎯 下一階段：Phase 4 — 部署上線**（Docker / Zeabur / Judge0 自架；詳見 roadmap）。**OSS 守則**：見守則 #7 + `references.md` §1。
+**🎯 進行中：Phase 4 — 部署上線（下一任務：4-1b pgvector/pgvector:pg16 容器配置）**
+- ✅ 4-1a Dockerfile build 驗證（補 lock + LlamaIndex 套件）
+- ⬜ 4-1b pgvector / ⬜ 4-1c Judge0 自架 / ⬜ 4-2 Zeabur / ⬜ 4-3 整合驗證
+
+**OSS 守則**：見守則 #7 + `references.md` §1。
 
 ## 文件索引
 > 本文件目標 ≤ 60 行。新增內容先判斷歸屬，禁止回填 roadmap/日誌/UI 參數/Schema。

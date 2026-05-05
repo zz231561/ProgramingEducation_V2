@@ -288,7 +288,12 @@
   - 3 種事件 (quiz / reflection / unit_completed)，每類各取 limit 筆 → merge → 取 limit
   - Frontend：`activity-timeline.tsx` (150) — async load + 4 狀態 + 4 種 icon + 相對時間格式
   - 9 個新後端測試，全套 431 tests 全綠
-- [ ] 3-3c 精熟度總覽圖表
+- [x] 3-3c 精熟度總覽圖表
+  - Backend：`services/dashboard/mastery.py` (111) + `GET /dashboard/mastery-overview`
+  - 一次 outerjoin 取所有 (concept, mastery)；application 層分群 + 排序
+  - Category 依 earliest video_order ASC；concept 內依 video_order ASC
+  - Frontend：`mastery-breakdown.tsx` (130) — 全展開 8 個 category + concept progress bars
+  - 8 個新後端測試，全套 439 tests 全綠
 
 ## Phase 4：部署上線（學生端完成後）
 > 完成標準：學生端 Phase 1~3 全數完成後，一次性處理 Docker / Zeabur / Judge0 自架 / NextAuth callback / CORS / API proxy 串接。
@@ -296,7 +301,11 @@
 > **前置條件**：Phase 1-3 全部完成。
 
 ### 4-1 容器化
-- [ ] 4-1a Dockerfile（前端 + 後端）— 配置檔已存在，需重新驗證 build
+- [x] 4-1a Dockerfile（前端 + 後端）— 配置檔已存在，需重新驗證 build
+  - pyproject.toml 補完 LlamaIndex 三套件 + psycopg2-binary
+  - requirements.lock 重產（38 → 272 行，含全部 transitive deps）
+  - `docker build` backend ✅（667 MB）/ web ✅（285 MB）
+  - 確認 pyBKT 未實際 import（純 BKT 公式 updater）→ 不加依賴
 - [ ] 4-1b `pgvector/pgvector:pg16` 容器配置（Phase 2-1 完成後驗證）
 - [ ] 4-1c Judge0 自架 docker-compose（取代 RapidAPI 50 次/天限制）
 

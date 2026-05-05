@@ -1,5 +1,76 @@
 # 變更日誌
 
+## [2026-05-05] — Phase 4-1a：Dockerfile 驗證 + 依賴 lock 重產
+
+### 修補（依賴）
+- `backend/pyproject.toml`：補完 `dependencies` — 加 LlamaIndex 三套件 + `psycopg2-binary`：
+  - `llama-index-core>=0.13,<1`
+  - `llama-index-embeddings-openai>=0.5,<1`
+  - `llama-index-vector-stores-postgres>=0.5,<1`
+  - `psycopg2-binary>=2.9,<3`（PGVectorStore 同步初始化用）
+- `backend/requirements.lock`：用 `uv pip compile pyproject.toml -o requirements.lock` 重產（38 → 272 行；含全部 transitive deps 鎖定版本）
+- 確認 pyBKT **未實際 import**（updater.py 註解保留說明 BKT 數學公式來自 Corbett & Anderson 1995；pyBKT 是 Phase 5 行為分析後可選用）→ 不加入依賴
+
+### 驗證
+- `docker build -t prog-edu-backend ./backend` ✅ 成功（667 MB；含 LlamaIndex / pgvector / cryptography 等）
+- `docker build -t prog-edu-web ./web` ✅ 成功（285 MB；Next.js standalone output 已啟用）
+- 兩個 Dockerfile 結構保持原樣，僅補 lock 內容讓 `pip install -r requirements.lock` 完整
+
+### 設計關鍵
+- **lock 重產一次到位**：tech-debt 累積已久（Phase 2-1 / 2-3 加套件後一直未更新）；4-1a 是部署前最後機會修正
+- **pyBKT 不加**：純 BKT 公式線上更新無需套件；pyBKT 用於 fit 真實學生資料，Phase 5 才需要
+- **Multi-stage build 暫不做**：backend Dockerfile 單階段；後續若要瘦身可改 multi-stage（builder 含編譯 deps，runtime 只裝 runtime deps）— 屬優化非阻塞
+
+### Phase 4-1 整體進度
+- ✅ 4-1a Dockerfile 驗證 build
+- ⬜ 4-1b pgvector/pgvector:pg16 容器配置
+- ⬜ 4-1c Judge0 自架 docker-compose
+
+---
+
+## [2026-05-05] — Phase 3-3c：Dashboard 精熟度詳細總覽（Phase 3 完成 🎉）
+
+### 新增（Backend）
+- `backend/services/dashboard/mastery.py`（111 行）：
+  - dataclass：`ConceptMasteryDetail` / `CategoryBreakdown` / `MasteryBreakdown`
+  - `get_mastery_breakdown(db, user_id)`：一次 outerjoin 取所有 (concept, mastery_for_user)；application 層分群 + 排序
+  - 分群：依 `concept.category`
+  - 排序：concept 內依 `video_order ASC`（None 排尾）+ tag 穩定 fallback；category 依 earliest video_order ASC
+  - `MASTERED_THRESHOLD = 0.8` 與 dashboard.queries / generator 一致
+- `backend/api/routes/dashboard.py`：加 `GET /dashboard/mastery-overview`
+  - response：`{ categories: [{ name, total, started, mastered, concepts: [{ tag, name_zh, video_order, difficulty, confidence }] }] }`
+
+### 新增（Frontend）
+- `web/lib/dashboard.ts`：加 types + `getMasteryOverview()` helper
+- `web/components/dashboard/mastery-breakdown.tsx`（130 行）：
+  - useEffect async fetch + cancelled flag
+  - 4 狀態：loading / error / empty / list
+  - 全展開（無摺疊互動）— 8 個 category section 全部顯示
+  - Category header：name + 摘要 (mastered/total) + overall progress bar
+  - Concept row：video_order + name + difficulty pill + mini progress bar + percent
+  - 顏色語意：mastered 用 accent-green / 其他用 accent-blue
+- `web/app/(app)/dashboard/page.tsx`：加 `<MasteryBreakdown />` section
+
+### 測試
+- `backend/tests/test_dashboard_mastery.py`（8 個 service + HTTP）：
+  - 401 / 空狀態 / 多 category 分群 + summary / category 排序 / video_order=None 排尾 / 未練 confidence=0 / threshold 0.8 邊界 / HTTP 完整 payload
+- 全套 439 backend tests 全綠（431 → 439，+8 個新測試，零 regression）
+
+### 設計關鍵
+- **單次 outerjoin 而非 N+1**：59 concepts 只 1 個 query，不是 60+
+- **教學順序排序**：concept video_order ASC / category 依 earliest video_order
+- **MASTERED_THRESHOLD = 0.8 共用**：與 generator / dashboard.queries 一致；單一語意
+- **全展開 vs 摺疊**：60 rows 一覽比 click ladder 直觀
+
+### Phase 3 整體里程碑（學習體驗 🎉）
+- ✅ 3-1 結構化學習路徑（7 個 sub-tasks）
+- ✅ 3-2 Quiz 完整版（3 個 sub-tasks）
+- ✅ 3-3 Dashboard（3 個 sub-tasks）
+- 學生端完整體驗就緒：登入 → Learn → Quiz → Dashboard 全閉環
+- 後端測試從 Phase 3 開始時的 320 → 完成時的 439（+119）
+
+---
+
 ## [2026-05-05] — Phase 3-3b：Dashboard 最近活動時間線
 
 ### 新增（Backend）

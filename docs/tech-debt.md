@@ -50,12 +50,7 @@
     - (b) 在 concepts 表加 `edf_parent_tag` 欄位，建立粗 tag → 多影片 concept 的 mapping，讓 EDF 評估平均更新到對應影片 concept
 
 ### 程式碼層
-- [ ] **`backend/requirements.lock` 過時**
-  - 缺少 `cryptography`、`PyJWT`、`authlib`、`openai`、`pgvector`、`alembic` 等實際使用的套件
-  - **2-1b 新增**：`llama-index`、`llama-index-vector-stores-postgres`、`llama-index-embeddings-openai`、`psycopg2-binary`、`tiktoken`（共 28+ 個 transitive deps）也未進入 `pyproject.toml`
-  - **2-3b 新增**：`pyBKT==1.4.1` + scientific stack（`scipy`、`scikit-learn<1.7`、`pandas`、`numpy`、`joblib`、`threadpoolctl`、`python-dateutil`、`six`）— 注意 sklearn 必須 `<1.7`，pyBKT 1.4.1 與 1.7+ 的 `_log_loss` API 不相容
-  - 目前 dev 依賴從 `pyproject.toml` 抽出後直接 `uv pip install`，未使用 lock
-  - **如何處理**：Phase 4-1a 容器化前用 `uv pip compile pyproject.toml -o requirements.lock` 重產（並先把 2-1b 新增的 LlamaIndex 套件補進 `pyproject.toml`）
+- ✅ ~~`backend/requirements.lock` 過時~~ — 2026-05-05（4-1a）已透過 `uv pip compile pyproject.toml -o requirements.lock` 重產（38 行 → 272 行，含全部 transitive）；pyproject.toml 補完 LlamaIndex 三套件 + psycopg2-binary。pyBKT 註解確認**未實際 import**（updater.py 註解保留為未來演算法升級線索），無需安裝
 - [ ] **`backend/pyproject.toml` 沒設 hatchling packages**
   - 直接 `pip install -e .` 會失敗（hatchling 找不到 wheel target）
   - 目前繞過：直接列依賴而非 install self

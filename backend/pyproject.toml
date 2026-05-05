@@ -23,6 +23,11 @@ dependencies = [
     "httpx>=0.28,<1",
     "pgvector>=0.3,<1",
     "alembic>=1.13,<2",
+    # 2-1 RAG：LlamaIndex + pgvector 整合（PGVectorStore 用同步 psycopg2 初始化）
+    "llama-index-core>=0.13,<1",
+    "llama-index-embeddings-openai>=0.5,<1",
+    "llama-index-vector-stores-postgres>=0.5,<1",
+    "psycopg2-binary>=2.9,<3",
 ]
 
 [project.optional-dependencies]

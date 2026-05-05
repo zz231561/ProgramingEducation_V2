@@ -1,5 +1,40 @@
 # 變更日誌
 
+## [2026-05-05] — Phase 3-2a：Quiz 頁面 — 選擇題 + 程式撰寫題正式版
+
+### 新增（Frontend）
+- `web/lib/quiz.ts`（+30 行）：
+  - `SubmitAnswer` discriminated union（依題型不同）：`{selected_index}` / `{code}` / `{answers}`
+  - `SubmitQuestionPayload` / `SubmitResponse` types
+  - `submitAnswer(payload)` helper → POST `/quiz/submit`
+- `web/components/quiz/`（4 新元件）：
+  - `quiz-runner.tsx`（200 行）— 主流程容器；五狀態 union（idle / loading / question / submitting / result）；題型 dropdown（選擇題 / 程式撰寫題）；計時 startedAt → time_spent_seconds 提交時帶入；統一 humanizeError
+  - `mc-question.tsx`（68 行）— radio-style options + Lucide CheckCircle2/Circle 圖示；提交按鈕 disabled until 選中
+  - `coding-question.tsx`（68 行）— 復用 `CodeEditor`（CodeMirror 6 + cpp + oneDark）；提示「Judge0 自動判分屬 Phase 4」；切題自動 reset content
+  - `result-view.tsx`（115 行）— 對錯 banner（綠勾 ✓ / 紅叉 ✗ + Lucide）；feedback + explanation；MC/fill_blank 揭露正確答案；coding 不揭露（待 Judge0）；下一題 / 結束按鈕
+- `web/app/(app)/quiz/page.tsx`：完全重寫，從 Phase 2-5c demo 升級為正式 Quiz 頁面；純包裝 `<QuizRunner />`
+
+### Backend
+- 無變動（既有 `/quiz/generate` + `/quiz/submit` API 已支援整個 3-2a 流程）
+- 後端 385 tests 仍全綠（純前端任務）
+
+### 設計關鍵
+- **設計分工釐清**：Quiz 頁面 = 純測驗（取題 → 作答 → 結果），無反思流程；Learn 練習 tab（3-1e）= 學習場景含 Pre-Coding Reflection。避免在 Quiz 頁面強制反思打斷測驗節奏
+- **Coding 題目前 is_correct=False**：`backend/services/quiz/grade.py` 的 coding 分支永遠回 False（Judge0 整合屬 Phase 4）；UI 提示這點，避免使用者困惑
+- **Discriminated union for SubmitAnswer**：對應後端 `answer: dict` 但 TS 端用 union 強制型別 — 防止 caller 對 MC 傳 code 等錯誤
+- **time_spent_seconds 自動計**：runner 在 question 模式記錄 `startedAt`，submit 時計算秒差送 server（為 3-2b 計時器顯示鋪路）
+- **hint_level_used = 0 hardcoded**：3-2b 提示系統未實作前一律 0；submit API 已支援 0-5 範圍
+- **coding 不揭露答案**：Phase 4 Judge0 整合後改用實際執行結果判分；3-2a 階段保留學生再思考空間
+- **fill_blank UI 未做**：roadmap 明列 3-2a 為「選擇題 + 程式撰寫題」；fill_blank 在 result-view 已支援揭露答案邏輯，UI 待後續任務（顯示 `UnsupportedTypeNote` placeholder）
+- **CodeEditor 復用**：直接 import 現有元件（守則 #7 不重複造輪子）；CodeMirror 6 + cpp + oneDark 已調整為 GitHub Dark token 對齊
+
+### 待驗證（手動）
+- 進 `/quiz` → 選題型 → 點開始 Quiz
+- 選擇題：點選項 → 提交 → 看到對錯 + 解釋 + 正確答案揭露 → 下一題 or 結束
+- 程式撰寫題：在 CodeMirror 寫 code → 提交 → 看到「答錯了」（因 coding 未接 Judge0）+ 解釋 → 下一題
+
+---
+
 ## [2026-05-05] — Phase 3-1e：練習 tab 嵌入 Pre-Coding Reflection 觸發點（Phase 3-1 完成 🎉）
 
 ### 新增（Backend）

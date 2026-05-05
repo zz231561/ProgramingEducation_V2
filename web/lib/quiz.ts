@@ -52,3 +52,37 @@ export async function generateQuestion(
     body: JSON.stringify(payload),
   });
 }
+
+// === 3-2a 作答提交 ===
+
+/** 學生作答 payload — 形狀依 question.type 決定。 */
+export type SubmitAnswer =
+  | { selected_index: number }      // multiple_choice
+  | { code: string }                // coding
+  | { answers: string[] };          // fill_blank
+
+export interface SubmitQuestionPayload {
+  question_id: string;
+  answer: SubmitAnswer;
+  time_spent_seconds?: number | null;
+  /** 0-5；3-2b 提示系統未實作前一律 0 */
+  hint_level_used?: number;
+}
+
+/** 提交後 server 回傳 — 含完整 content（含答案）+ feedback + explanation。 */
+export interface SubmitResponse {
+  is_correct: boolean;
+  feedback: string;
+  /** 完整題目內容（已含 answer_index / answers / 等揭露欄位）。 */
+  correct_content: Record<string, unknown>;
+  explanation: string;
+}
+
+export async function submitAnswer(
+  payload: SubmitQuestionPayload,
+): Promise<SubmitResponse> {
+  return api<SubmitResponse>("/quiz/submit", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}

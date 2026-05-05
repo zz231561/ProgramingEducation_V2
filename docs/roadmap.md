@@ -256,7 +256,13 @@
   - 2 個新後端測試，全套 385 tests 全綠
 
 ### 3-2 Quiz 完整版
-- [ ] 3-2a Quiz 頁面：選擇題 + 程式撰寫題 UI
+- [x] 3-2a Quiz 頁面：選擇題 + 程式撰寫題 UI
+  - `lib/quiz.ts` 加 `submitAnswer` + types
+  - 4 個新元件：quiz-runner（主流程 5 狀態）/ mc-question / coding-question（復用 CodeEditor）/ result-view（對錯 + 解釋 + 揭露答案）
+  - 重寫 `/quiz` 頁面從 2-5c demo → 正式版
+  - 設計分工：Quiz = 純測驗、Learn 練習 tab = 學習含反思
+  - Coding 題目前 is_correct=False（Judge0 整合屬 Phase 4，UI 已說明）
+  - 後端無動 / 385 tests 全綠 / TS+ESLint+build 全綠
 - [ ] 3-2b 計時器 + 提示系統（hint_level 0-5）
 - [ ] 3-2c 作答結果頁 + EDF 回饋顯示
 

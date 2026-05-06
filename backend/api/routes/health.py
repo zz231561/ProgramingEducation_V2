@@ -4,7 +4,7 @@ from fastapi import APIRouter
 from sqlalchemy import text
 
 from core.database import async_session
-from core.redis import redis_client
+from core.redis import get_redis
 
 router = APIRouter(tags=["health"])
 
@@ -37,8 +37,6 @@ async def _check_db() -> bool:
 async def _check_redis() -> bool:
     """嘗試 PING 確認 Redis 連線。"""
     try:
-        if redis_client is None:
-            return False
-        return await redis_client.ping()
+        return await get_redis().ping()
     except Exception:
         return False

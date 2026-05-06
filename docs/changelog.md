@@ -1,5 +1,26 @@
 # 變更日誌
 
+## [2026-05-06] — Phase 4-3a 進行中：Health endpoint Redis import binding 修復
+
+### 修補（4-3a 整合驗證階段抓到的 bug）
+- **`backend/api/routes/health.py` Redis 連線檢查 false-negative**：`from core.redis import redis_client` 在 import 當下抓到的是 `None`（因 `init_redis()` 是啟動時才 set global），之後 lifespan 設好的 client 不會反映到 health module 的 reference → `/health` 永遠回 `redis: disconnected` 即使實際 Redis 正常
+- **修法**：改用既有 `get_redis()` 函式（每次呼叫都 lookup 當前 module global），並移除已成多餘的 None 檢查（`get_redis()` 內部會 raise，由外層 `except Exception` 接住）
+- 修補後 `/health` 回 `{"status":"ok","services":{"database":"connected","redis":"connected"}}`
+
+### 整合驗證階段成果（自動驗證）
+- Backend pytest **442 passed** in 1.97s（零 regression）
+- Frontend `tsc --noEmit` 無錯
+- Frontend `next build` 成功 13 routes
+- Alembic migration 在 head（`e1f2a3b4c5d6`）
+- Postgres + Redis container healthy（dev compose Up 7 days）
+
+### 設計關鍵
+- **Python `from X import Y` 的 binding 陷阱**：對 module 層級 mutable global 應該 `import X` 然後用 `X.Y`，或透過 getter function 包裝；只有不變的常數或型別才能直接 `from X import Y`
+- **此 bug 之前 442 tests 沒抓到**：`test_health.py` 用 fixture mock 掉 `redis_client`，沒實測「lifespan 啟動 → ping」整條鏈路（記入 tech-debt 評估是否補 e2e health test）
+- **不影響其他端點**：`get_redis()` 走 module global lookup，之前所有 cache / rate limit 端點都正常；只有 health.py 自己誤報
+
+---
+
 ## [2026-05-05] — Phase 4-2c：NextAuth callback URL + CORS 設定（Phase 4-2 完成）
 
 ### 修補（部署阻擋風險）

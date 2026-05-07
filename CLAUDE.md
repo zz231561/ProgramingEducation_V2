@@ -45,7 +45,7 @@
 - ✅ 6-1b 開發 fetcher script + 產出 59 列 CSV（2026-05-07）
 - ✅ 6-1b+ fetcher 擴充為 EXPECTED 1-62 + 重產 62 列 CSV（2026-05-07）
 - ✅ 6-1c 加 video 1-3 concept seed migration（2026-05-07，DB 59→62，filter 在 generator.py，445 tests 全綠）
-- ⬜ 6-1d PATCH script + 執行寫入 DB
+- ✅ 6-1d PATCH script + 執行寫入 DB（2026-05-07：62/62 metadata 寫入，dev DB 已就緒）
 - ⬜ 6-1e（NotebookLM 核心）yt-dlp 抓字幕 → LlamaIndex IngestionPipeline → RAG 入庫
 - ⬜ 6-1f 同步 tech-debt 條目
 - ⬜ 6-2 ~ 6-4：grounded LLM 生成 unit content / 練習題庫 / 教授抽查

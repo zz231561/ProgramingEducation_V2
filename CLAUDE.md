@@ -40,10 +40,19 @@
 - ✅ 4-2 配置層（環境變數分層 / Zeabur 串接 / NextAuth + CORS）
 - ⚠ 原 4-3 上線驗證已重整至 **Phase 7 上線實測**（需實際部署才能驗證）
 
-**🎯 下一階段：Phase 5 ⇄ Phase 6 兩者可平行 / 先後皆可（依教授資料準備進度），完成後才進 Phase 7**
-- ⬜ Phase 5 教師端（5-1 班級管理 / 5-2 行為資料 / 5-3 分析演算法 / 5-4 視覺化 / 5-5 作業指派）— 本機可開發
-- ⬜ Phase 6 教學內容建構（6-1 影片 metadata / 6-2 Unit content 批次生成 / 6-3 練習題庫 / 6-4 內容品管）— 不需部署，但 6-1 依賴教授交付資料
-- ⬜ Phase 7 上線實測（7-1 Golden path / 7-2 監控告警 / 7-3 效能 baseline）— 須先準備 Zeabur 帳號 + VPS，且建議 Phase 6 至少 6-1 + 6-2b 完成（避免部署後 Learn 頁仍空殼）
+**🎯 進行中：Phase 6 教學內容建構（NotebookLM grounded 模式）**
+- ✅ 6-1a 教授交付 playlist URL（2026-05-07：62 部影片完整對齊 video_order 1-62）
+- ✅ 6-1b 開發 fetcher script + 產出 59 列 CSV（2026-05-07）
+- 🔄 6-1b+ fetcher 擴充為 EXPECTED 1-62 + 重產 62 列 CSV（下一任務）
+- ⬜ 6-1c 加 video 1-3 concept seed migration（`category="課程介紹"` 不參與 PREREQUISITE）
+- ⬜ 6-1d PATCH script + 執行寫入 DB
+- ⬜ 6-1e（NotebookLM 核心）yt-dlp 抓字幕 → LlamaIndex IngestionPipeline → RAG 入庫
+- ⬜ 6-1f 同步 tech-debt 條目
+- ⬜ 6-2 ~ 6-4：grounded LLM 生成 unit content / 練習題庫 / 教授抽查
+
+**Phase 5 ⇄ Phase 6 平行**：Phase 5 教師端可隨時插入並行（5-1 班級管理 / 5-2 行為資料 / 5-3 分析演算法 / 5-4 視覺化 / 5-5 作業指派）
+
+**Phase 7 上線實測**：須 Phase 6 至少 6-1 + 6-2b 完成（避免部署後 Learn 頁仍空殼）+ Zeabur + VPS 就緒
 
 **OSS 守則**：見守則 #7 + `references.md` §1。
 

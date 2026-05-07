@@ -31,14 +31,16 @@
 - ✅ ~~`concepts` seed 的 `category` / `difficulty_level` / `name_zh` 為暫定值~~ — 2026-05-05 完全替換為 59 影片 concept
 
 ### 內容層（教學課綱）— 新一批待補
-- [ ] **YT video metadata 未補**（59 個影片 concept 全部 `video_youtube_id` / `video_duration_seconds` 為 NULL）→ **正式追蹤於 roadmap Phase 6-1**
+- 🔄 **YT video metadata 未補**（已從 59 → 62 個影片 concept；2026-05-07 教授交付 playlist URL，fetcher script 已產 59 列 CSV，待擴充至 62 列）→ **正式追蹤於 roadmap Phase 6-1**
   - **影響**：3-1d 學習單元頁的概念說明 tab 無法 embed YT player；只能顯示影片標題與「待補」placeholder
-  - **如何處理**：教授整理 59 個影片的 YT URL + 時長 → AI 寫 PATCH script 一次匯入（不需新 migration）
-  - **建議格式**：CSV 或 JSON，欄位 `video_order, youtube_id, duration_seconds`
-- [ ] **跨章節 PREREQUISITE 邊未標**（目前只有線性 04→05→...→62 共 58 條）
+  - **進度**：6-1a/b 已完成；6-1b+/c/d/e/f 進行中
+  - **如何處理**：fetcher 已寫好（`backend/scripts/fetch_playlist_metadata.py`）；接下來擴充 EXPECTED 1-62、加 video 1-3 migration、PATCH script 寫入 DB、字幕 RAG ingest
+  - **格式**：CSV，欄位 `video_order, youtube_id, duration_seconds, title_zh`，已產出於 `data/teaching_content/videos.csv`
+- [ ] **跨章節 PREREQUISITE 邊未標**（目前只有線性 04→05→...→62 共 58 條）→ **延後到 Phase 6 教學內容建構完成後執行（2026-05-07 決議）**
   - **影響**：拓撲排序生成路徑時，學生 confidence 高跳過某 unit 後不會牽連解鎖實際依賴的後續 unit
   - **範例**：47 遞迴函式真正依賴 36 函式 + 29 for 迴圈；52 指標與陣列依賴 48 陣列 + 51 指標；目前圖譜只有 N→N+1 線性鏈
-  - **如何處理**：教授標關鍵跨章依賴（< 30 條）→ AI 加 patch migration
+  - **如何處理**：Phase 6 完成後，教授標關鍵跨章依賴（< 30 條，可參考 6-1e RAG 中的字幕內容輔助判斷）→ AI 加 patch migration
+  - **新增範圍**：video_order 1-3（課程簡介、環境安裝、語言簡介）標記 `category="課程介紹"` 不參與 PREREQUISITE 鏈（2026-05-07 確認）；重構時保持此設計
 - [ ] **學習單元 content 為空骨架**（`{summary: "", examples: [], exercise_question_ids: []}`）→ **正式追蹤於 roadmap Phase 6-2 / 6-3 / 6-4**
   - **影響**：3-1d 學習單元頁的「範例程式」「摘要」tab 無實質內容
   - **如何處理**：兩種策略可選 —

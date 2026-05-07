@@ -375,40 +375,52 @@
 
 ---
 
-## Phase 6：教學內容建構（不需部署，但部分依賴教授交付資料）
-> 完成標準：59 個學習單元的 4 個 tab（概念說明 / 範例 / 練習 / 摘要）全部有實質內容，學生可獨立讀懂並完成練習；`learning_units.content` 不再是空骨架。
+## Phase 6：教學內容建構（NotebookLM grounded 模式 — 內容必須來自實際影片）
+> 完成標準：62 個學習單元的 4 個 tab（概念說明 / 範例 / 練習 / 摘要）全部有實質內容、且 LLM 生成內容**完全 grounded 在教授實際影片字幕上**（不容許 LLM 自由發揮、不容許脫離影片教法）；`learning_units.content` 不再是空骨架。
 > 對應頁面：Learn (Page 2) — 解除 3-1d 留下的 placeholder。
-> **前置條件**：Phase 1-3 完成（concepts 表 + learning_units schema + ExercisesTab 已就緒；3-1c+ 已 seed 59 影片 concept 框架）。
-> **與 Phase 5 關係**：兩者可**平行或先後**，依教授資料準備進度而定——若教授有空整理影片資料，建議優先做 Phase 6；若教授尚未準備（最常見），可先推進 Phase 5 教師端，等資料到位再回頭做 Phase 6。
-> **資料流**：教授提供原始 metadata → AI 寫 PATCH script 匯入 → LLM 批次生成 unit content → 教授抽查 → 修正 prompt 重跑（如需）。
-> **OSS**：LLM 批次生成沿用 Phase 2-4c 既有 `services/quiz/generate.py` 與 OpenAI `json_object` mode，**禁止為此 Phase 引入新框架**。
+> **前置條件**：Phase 1-3 完成（concepts 表 + learning_units schema + ExercisesTab + RAG infra 已就緒）。
+> **與 Phase 5 關係**：兩者可**平行或先後**，依教授資料準備進度而定。
+> **核心架構（NotebookLM 模式）**：YT 字幕 → LlamaIndex IngestionPipeline 入庫 → 生成時 retrieve 該 video 字幕 chunks 注入 prompt → LLM 生成必須引用 timestamp citation、不引入字幕未出現的概念 → 教授抽查時可比對「LLM 生成 vs 影片實際 timestamp 處內容」。
+> **資料流**：YT playlist URL → fetcher 抓 metadata + 字幕 → PATCH 寫入 concepts metadata + RAG ingest 字幕 → LLM grounded 生成 unit content → 教授抽查 → 修正 prompt 重跑（如需）。
+> **OSS**：RAG 沿用 Phase 2-1 LlamaIndex；LLM 生成沿用 Phase 2-4c `services/quiz/generate.py` 與 OpenAI `json_object` mode；字幕抓取沿用 yt-dlp。**禁止為此 Phase 引入新框架**。
+> **Concept 範圍**：62 個影片 concept（video_order 1-62）。其中 1-3（課程簡介、環境安裝、語言簡介）為「選看」類，**不參與 PREREQUISITE 鏈**（透過 `category="課程介紹"` 標記讓 learning_path generator 過濾；知識圖譜頁仍顯示但 styling 區分）。
 
-### 6-1 影片 metadata 整合
-- [ ] 6-1a 教授整理 59 影片 metadata（YT URL / duration / 標題正名）— 由教授交付 CSV 或 JSON
-- [ ] 6-1b 開發 PATCH script：解析 metadata → UPDATE `concepts.video_youtube_id` / `video_duration_seconds`（含 dry-run + 缺漏檢查）
-- [ ] 6-1c 執行 PATCH + DB 驗證（59 筆全部有非 NULL metadata；同步移除 `tech-debt.md` 對應條目）
+### 6-1 影片資料整合（metadata + 字幕 RAG ingest）
+- [x] 6-1a 教授交付 playlist URL（已完成 2026-05-07：`PLJDZAE4d-ihqvGtBMhgMv8Zp6Tv6D1l-M`，62 部影片完整對齊 DB 的 video_order 1-62）
+- [x] 6-1b 開發 fetcher script `backend/scripts/fetch_playlist_metadata.py` 抓 metadata（已完成 2026-05-07，產出 `data/teaching_content/videos.csv` 59 列；**待擴充為 62 列**：EXPECTED 範圍從 4-62 改為 1-62 並重跑）
+- [ ] 6-1b+ 擴充 fetcher：EXPECTED 範圍 1-62 + 重跑產出 62 列 CSV
+- [ ] 6-1c 加入 video_order 1-3 concept seed migration（`category="課程介紹"`，**不**加 PREREQUISITE 邊）+ learning_path generator 過濾此 category
+- [ ] 6-1d 開發 PATCH script：CSV → UPDATE `concepts.video_youtube_id` / `video_duration_seconds`（含 dry-run + 缺漏檢查）+ 執行 + DB 驗證（62 筆全有非 NULL metadata）
+- [ ] 6-1e（NotebookLM 核心）字幕抓取 + RAG ingest：`yt-dlp --write-auto-subs --sub-lang zh-Hant` 抓 62 部字幕 → 解析為 (timestamp, text) chunks → LlamaIndex IngestionPipeline 寫入 vector store；metadata 標 `video_order` + `youtube_id` + `start_time` 供日後 retrieve filter
+- [ ] 6-1f 同步移除 `tech-debt.md` YT metadata 條目；新增「知識圖譜重構」條目（Phase 6 完成後執行）
 
-### 6-2 Unit content 批次生成（LLM-assisted）
-- [ ] 6-2a 設計 unit content prompt template：概念說明 / 範例 / 摘要 三類分別模板，注入 concept 名稱 + 影片標題 + 教學主題分類 + 難度
-- [ ] 6-2b LLM 批次生成 59 unit content JSON → 寫入 `learning_units.content`（含失敗 retry + 結果落地 staging table 供 review）
-- [ ] 6-2c 概念說明 tab：YT player IFrame embed（依賴 6-1c metadata；player 元件邏輯可先寫，等資料到位通電）
-- [ ] 6-2d 範例 tab：渲染 LLM 生成的程式碼範例 + 「在 Workspace 開啟」按鈕（復用 Phase 2-5d sessionStorage 機制）
-- [ ] 6-2e 摘要 tab：渲染 LLM 生成的 Markdown 摘要（含 key takeaways bullet）
+### 6-2 Unit content 批次生成（grounded on YT 字幕）
+- [ ] 6-2a 設計 grounded prompt template（核心：強制 grounding）：
+  - 三類模板：概念說明 / 範例 / 摘要
+  - 系統 preamble 規則：`必須基於 retrieved transcript chunks 生成；禁止引入字幕未出現的概念；每段內容附 [timestamp] citation 註明出處；若 transcript 不足以生成某類內容，回傳 {"needs_more_source": true} 而非 hallucinate`
+  - 注入：concept 名稱 + 影片標題 + retrieved transcript chunks（含 timestamp）+ 教學主題分類 + 難度
+- [ ] 6-2b LLM 批次生成 59 unit（4-62）content JSON → 寫入 `learning_units.content`：
+  - 對每 unit 用 `video_order` metadata filter retrieve 該 video 的字幕 chunks
+  - 失敗 retry（max 3 次）+ `needs_more_source=true` 落到 staging 供教授補資料
+  - 結果落地 staging table 供 6-4 review，通過後 promote 到 `learning_units.content`
+- [ ] 6-2c 概念說明 tab：YT player IFrame embed（依賴 6-1d metadata；timestamp citation 點擊跳到對應影片時間點）
+- [ ] 6-2d 範例 tab：渲染 LLM 生成的程式碼範例 + 「在 Workspace 開啟」按鈕（復用 Phase 2-5d sessionStorage）+ citation 標示
+- [ ] 6-2e 摘要 tab：渲染 LLM 生成的 Markdown 摘要 + key takeaways bullet + citation 標示
 
-### 6-3 練習題庫補充
-- [ ] 6-3a 用 Phase 2-4 智慧出題管線批次模式為每 unit 生成至少 2 題（validated=True 才入庫）
+### 6-3 練習題庫補充（grounded）
+- [ ] 6-3a 用 Phase 2-4 智慧出題管線批次模式為每 unit（4-62 共 59 個）生成至少 2 題；**generate prompt 加 grounding 規則**：題目情境必須與該 video 字幕中出現的範例 / 變數命名一致；validated=True 才入庫
 - [ ] 6-3b ExercisesTab 改造：從「按需現生」→「優先讀題庫，題庫不足才現生」（降低 LLM 等待 + 一致性）
 
 ### 6-4 內容品管
-- [ ] 6-4a 教授抽查 5-10 個 unit 全部 4 tab 品質（語意正確 / 不脫離 C++ 教學情境 / 程式碼可編譯）
-- [ ] 6-4b 依抽查反饋調整 6-2a prompt template 並針對問題 unit 局部重跑（如需）
+- [ ] 6-4a 教授抽查 5-10 個 unit 全部 4 tab 品質：核心檢查「LLM 生成內容是否真的反映該 video timestamp 處的教法」（可直接點 citation 跳到影片時間點對照）；不脫離 C++ 教學情境；程式碼可編譯
+- [ ] 6-4b 依抽查反饋調整 6-2a prompt template 並針對問題 unit 局部重跑；對品質太差的 unit 評估升級到 Whisper 重 transcribe（B 方案）作為 source
 
 ---
 
 ## Phase 7：上線實測（須實際部署到 Zeabur / VPS）
 > 完成標準：Golden path 跑通、監控告警接通、效能 baseline 記錄。
 > 對應驗收：可對外開放給真實學生使用。
-> **前置條件**：Phase 4 配置層完成；Phase 6 教學內容建構至少 6-1 + 6-2b 完成（否則 Learn 頁面 unit 仍是空殼，部署後學生看到空白頁無意義）；Zeabur 帳號 + VPS（Judge0 self-host）就緒。
+> **前置條件**：Phase 4 配置層完成；Phase 6 教學內容建構至少 6-1 + 6-2b 完成（含字幕 RAG ingest + grounded LLM 生成 unit content；否則 Learn 頁面 unit 仍是空殼，部署後學生看到空白頁無意義）；Zeabur 帳號 + VPS（Judge0 self-host）就緒。
 > ⚠ 本 Phase 整段任務的共通特性是「程式碼已就緒，只能在實際部署環境驗證」。上次卡關於 API 串接（前後端 proxy / NextAuth callback URL / CORS / Judge0 endpoint），重啟前需先排查 `web/app/api/*` proxy 設定、`backend/app/core/config.py` 環境變數、Zeabur dashboard service 連線狀態。
 
 ### 7-1 Golden path 整合驗證（原 4-3a → 6-1）
@@ -442,3 +454,6 @@
 - 介面借鑑：6 份來源僅貢獻結構模式，視覺基本元素統一為 GitHub Dark（design-plan.md §0.3 七條硬規則）
 - **OSS 重用**：開發前必查 `docs/references.md` §1 決策矩陣；禁止 AGPL/GPL 套件；禁止移植已有對應套件的演算法（如 BKT 必用 pyBKT）
 - **執行順序**：功能優先（Phase 2 → 3）→ 部署準備程式碼（Phase 4）→ **Phase 5 教師端 ⇄ Phase 6 教學內容建構（兩者可平行 / 先後皆可，依教授資料準備進度決定）** → 上線實測（Phase 7）；所有需要實際部署才能驗證的工作集中在 Phase 7，避免邊開發邊維運耗能
+- **Phase 6 採 NotebookLM grounded 模式**（2026-05-07 確認）：所有 LLM 生成的 unit content / 練習題必須 grounded 在教授實際 YT 影片字幕上，禁止 LLM 自由發揮；source 採 YT 自動字幕（A 方案，零成本），品質不夠的 unit 在 6-4 抽查時評估升級到 Whisper 重 transcribe（B 方案）
+- **Concept 範圍 62 個**（2026-05-07 確認）：video_order 1-62 全部 seed 為 concept；其中 1-3（課程簡介、環境安裝、語言簡介）標記 `category="課程介紹"` 不參與 PREREQUISITE 鏈，learning_path generator 過濾此 category；知識圖譜頁仍顯示但 styling 區分
+- **知識圖譜重構為 Phase 6 後續工作**（2026-05-07 確認）：目前線性 04→05→...→62 的 PREREQUISITE 鏈為 MVP；Phase 6 教學內容建構完成後，回頭依教授標的跨章依賴重構為多對多圖（記入 tech-debt 追蹤）

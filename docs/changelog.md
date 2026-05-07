@@ -1,5 +1,32 @@
 # 變更日誌
 
+## [2026-05-07] — Phase 6 升級為 NotebookLM grounded 模式 + 6-1a/b 完成
+
+### Changed（roadmap Phase 6 大幅細化）
+- **採 NotebookLM grounded 模式**（核心架構決策）：所有 LLM 生成的 unit content / 練習題必須 grounded 在教授實際 YT 影片字幕上，禁止 LLM 自由發揮。Source = YT 自動字幕（A 方案，零成本，`yt-dlp --write-auto-subs`），品質不夠的 unit 在 6-4 抽查階段評估升級到 Whisper 重 transcribe（B 方案）
+- **Concept 範圍 59 → 62**：video_order 1-3（課程簡介、環境安裝、語言簡介）加回為 concept；標記 `category="課程介紹"` **不參與 PREREQUISITE 鏈**（learning_path generator 過濾此 category，知識圖譜頁仍顯示但 styling 區分）
+- **Phase 6-1 拆細**（原 6-1a/b/c → 6-1a~6-1f 共 6 子任務）：
+  - 6-1a 教授交付 playlist URL ✅（2026-05-07 完成，`PLJDZAE4d-ihqvGtBMhgMv8Zp6Tv6D1l-M`，62 部影片完整對齊）
+  - 6-1b fetcher script 已寫 + 產 59 列 CSV ✅（`backend/scripts/fetch_playlist_metadata.py`；title_zh 與 DB name_zh 59/59 完全一致）
+  - 6-1b+ 待擴充 fetcher EXPECTED 1-62 + 重產 62 列 CSV
+  - 6-1c 待加 video 1-3 concept seed migration
+  - 6-1d 待開發 PATCH script + 執行寫入 DB
+  - 6-1e 待開發字幕 RAG ingest（NotebookLM 核心）
+  - 6-1f 待同步 tech-debt
+- **Phase 6-2/6-3 升級為 grounded 版本**：prompt template 強制引用 transcript chunks + timestamp citation；禁止引入字幕未出現的概念；不足以生成時回 `needs_more_source=true` 而非 hallucinate
+
+### Added
+- `backend/scripts/fetch_playlist_metadata.py`（156 行，yt-dlp wrapper，含對齊驗證 + 缺漏報告）
+- `data/teaching_content/videos.csv`（59 列；待擴充 62 列）
+- `已確認決策` 加 3 條：NotebookLM 模式、62 個 concept 範圍、知識圖譜重構為後續工作
+- `tech-debt.md` 新增「video 1-3 不參與 PREREQUISITE」設計註記
+- 系統工具：`brew install yt-dlp`（2026.03.17）
+
+### Why
+原 Phase 6-2 計畫只注入「concept 名稱 + 影片標題」給 LLM，會生成「對 C++ 通用課程合理但未必對齊本課程教法」的內容（hallucination 風險）。使用者明確要求採 NotebookLM 模式（grounded on user-provided sources），確保 unit content 真實反映教授實際教法。同時將過去因「DB 04-62 而忽略 1-3」的限制解除，補齊 62 個影片完整對應。
+
+---
+
 ## [2026-05-07] — Roadmap 新增 Phase 6 教學內容建構，原上線實測順延 Phase 7
 
 ### Added

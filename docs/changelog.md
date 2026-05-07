@@ -1,5 +1,20 @@
 # 變更日誌
 
+## [2026-05-07] — Roadmap 重整 follow-up：修正其他 doc 殘留舊 Phase 標號
+
+### Fixed
+- **`docs/design-plan.md` §4.5**：`1-7c 上線驗證` → `Phase 6 上線實測（原 1-7c → 4-3a → 6-1b Golden path）`，保留歷史演進 cross-reference
+- **`docs/modules.md` Module 8 / 9**：Phase 4 → **Phase 5**（教師 Dashboard / 學習行為分析屬教師端，非部署）
+- **`docs/db-schema.md` chat_messages 擴充欄位註記**：Phase 4-2c → **Phase 5-2c**（dialogue_act 屬行為資料收集，原本就在 5-2c，4-2c 為誤標）
+- **`docs/roadmap.md` Phase 1 結尾註記**：「部署原 1-7 已移至 Phase 4」補完為「Phase 4（容器化 / 配置層）+ Phase 6（上線實測）」反映當前兩段切分
+
+### Verified clean（未動）
+- `docs/changelog.md` 歷史 entry（line 1670 / 1897 / 1898 / 2221）：屬當時決策的歷史記錄，保留原貌不改
+- `docs/dev-setup.md` Phase 4-1b 引用：4-1b 仍在 Phase 4，無誤
+- `docs/references.md` Phase 4 / 5-1 / 5-2 / 5-3 引用：全部與重整後結構一致
+
+---
+
 ## [2026-05-07] — Roadmap 重整：上線實測類任務集中至 Phase 6
 
 ### Changed

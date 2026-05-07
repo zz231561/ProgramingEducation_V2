@@ -202,7 +202,7 @@ coding_events
 ├── created_at ★ index (user_id, created_at) 複合索引供時序查詢
 ```
 
-> `chat_messages` 表擴充欄位（Phase 4-2c）：
+> `chat_messages` 表擴充欄位（Phase 5-2c）：
 > - `dialogue_act (enum: asking_hint/clarification/debugging/off_topic/acknowledgment, nullable)`
 > - 用於分類學生與 AI Tutor 的互動類型
 

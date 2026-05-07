@@ -286,7 +286,7 @@ body { font-feature-settings: "cv01", "ss03"; }
 | 1-6e | Toolbar Linear 風格化 | §2.5 | 小 |
 | 1-6f | EDF Pipeline mini timeline（在 Chat 訊息上方） | §2.1 | 中 |
 
-> 完成 1-6 後再進 1-7c 上線驗證，避免上線後再大幅改 UI。
+> 完成 1-6 後再進 **Phase 6 上線實測**（原 1-7c → 4-3a → 6-1b Golden path），避免上線後再大幅改 UI。
 
 ---
 

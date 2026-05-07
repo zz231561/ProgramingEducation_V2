@@ -55,7 +55,7 @@
 - [x] 1-6e Toolbar Linear 風格化（高度 48px + 5 頁籤 + 檔名儲存狀態）（design-plan §2.5）
 - [x] 1-6f EDF Pipeline mini timeline（在每則 AI 訊息上方顯示教學決策過程）（design-plan §2.1）
 
-> 部署原 1-7 已移至 **Phase 4**（功能優先策略）
+> 部署原 1-7 已移至 **Phase 4**（容器化 / 配置層，本機可完成）+ **Phase 6**（上線實測，須實際部署）— 功能優先策略
 
 ## Phase 2：智慧功能
 > 完成標準：RAG 檢索可用、知識圖譜可視覺化、弱項可自動出題

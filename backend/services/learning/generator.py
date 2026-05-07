@@ -27,9 +27,15 @@ from services.learning.topology import topological_sort_with_priority
 
 DEFAULT_SKIP_MASTERED_THRESHOLD = 0.8
 
+# Phase 6-1c：標記為這些 category 的 concept 不進學習路徑
+# （video_order 1-3 課程簡介 / 環境安裝 / 語言簡介；roadmap.md Phase 6-1c）
+EXCLUDED_FROM_PATH_CATEGORIES: tuple[str, ...] = ("課程介紹",)
+
 
 async def _fetch_concepts(db: AsyncSession, category: str | None) -> list[Concept]:
-    stmt = select(Concept)
+    stmt = select(Concept).where(
+        Concept.category.notin_(EXCLUDED_FROM_PATH_CATEGORIES)
+    )
     if category is not None:
         stmt = stmt.where(Concept.category == category)
     return list((await db.execute(stmt)).scalars().all())

@@ -222,3 +222,41 @@ async def test_edge_to_mastered_concept_does_not_break_topology():
     units = await _read_units_in_order(path.id)
     assert [u.concept_id for u in units] == [ids["b"]]
     assert units[0].status == LearningUnitStatus.AVAILABLE.value
+
+
+# === Phase 6-1c：課程介紹 category 排除 ===
+
+
+@pytest.mark.asyncio
+async def test_intro_category_concepts_excluded_from_path():
+    """category='課程介紹'（如 video 1-3）即使在 DB 也不進路徑。"""
+    user_id = await _seed_user()
+    ids = await _seed_concepts([
+        {"tag": "intro1", "category": "課程介紹"},
+        {"tag": "intro2", "category": "課程介紹"},
+        {"tag": "real1", "category": "基礎"},
+    ])
+
+    async with TestSessionFactory() as db:
+        path = await generate_learning_path(db, user_id, title="X")
+
+    units = await _read_units_in_order(path.id)
+    unit_concept_ids = {u.concept_id for u in units}
+    assert unit_concept_ids == {ids["real1"]}
+    assert ids["intro1"] not in unit_concept_ids
+    assert ids["intro2"] not in unit_concept_ids
+
+
+@pytest.mark.asyncio
+async def test_all_intro_category_raises_422():
+    """全部 concept 都是課程介紹 → filter 後空集合 → 422。"""
+    user_id = await _seed_user()
+    await _seed_concepts([
+        {"tag": "intro1", "category": "課程介紹"},
+        {"tag": "intro2", "category": "課程介紹"},
+    ])
+
+    async with TestSessionFactory() as db:
+        with pytest.raises(AppError) as exc:
+            await generate_learning_path(db, user_id, title="X")
+    assert exc.value.error == "LEARNING_PATH_EMPTY"

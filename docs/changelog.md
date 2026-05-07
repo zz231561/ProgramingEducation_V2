@@ -1,5 +1,28 @@
 # 變更日誌
 
+## [2026-05-07] — Roadmap 新增 Phase 6 教學內容建構，原上線實測順延 Phase 7
+
+### Added
+- **`docs/roadmap.md` 新增 Phase 6：教學內容建構**（4 節 12 子任務，本機可完成 / 部分依賴教授交付資料）
+  - **6-1 影片 metadata 整合**：6-1a 教授交付 metadata / 6-1b PATCH script / 6-1c 執行+驗證
+  - **6-2 Unit content 批次生成**：6-2a prompt template / 6-2b LLM 批次寫入 / 6-2c 概念說明 YT player / 6-2d 範例 tab / 6-2e 摘要 tab
+  - **6-3 練習題庫補充**：6-3a Phase 2-4 batch 模式生成 / 6-3b ExercisesTab 改為優先讀題庫
+  - **6-4 內容品管**：6-4a 教授抽查 / 6-4b 修正 prompt 重跑
+
+### Changed
+- **原 Phase 6 上線實測 → Phase 7**：6-1/6-2/6-3 整段順延為 7-1/7-2/7-3，所有子任務同步重編號（cross-ref 註解保留歷史軌跡：原 4-3a → 6-1 → 7-1）
+- **Phase 5 ⇄ Phase 6 平行關係**：執行策略 / 已確認決策最後一條同步調整為「兩者可平行 / 先後皆可，依教授資料準備進度而定」
+- **Phase 7 前置條件加強**：除原 Zeabur + VPS 就緒外，新增「Phase 6 至少 6-1 + 6-2b 完成」（避免部署後 Learn 頁面仍空殼）
+
+### Synced
+- `CLAUDE.md` 當前狀態：呈現 Phase 5 ⇄ Phase 6 平行 + Phase 7 收尾的三段結構
+- `docs/tech-debt.md` 兩條教學內容相關項目加 cross-ref 至 Phase 6-1 / 6-2~6-4（原內容保留作為背景說明）
+
+### Why
+使用者反映「整合教材」未進 roadmap 追蹤；目前只有 tech-debt + 內聯註釋，容易被忘。同時使用者明確指出「教師端 / 教學內容看實際狀況」決定先後，故將 Phase 5 與 Phase 6 設計為可平行關係，避免硬性綁定誰先誰後。
+
+---
+
 ## [2026-05-07] — Roadmap 重整 follow-up：修正其他 doc 殘留舊 Phase 標號
 
 ### Fixed

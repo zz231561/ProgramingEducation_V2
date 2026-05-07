@@ -1,7 +1,7 @@
 # Roadmap
 
-> **執行策略**：功能優先（Phase 2 → 3）→ 部署準備程式碼（Phase 4）→ 教師端（Phase 5）→ 上線實測（Phase 6）。
-> **核心原則**：所有「需要實際 Zeabur / VPS 部署才能驗證」的工作（Golden path / 監控告警驗證 / 效能 baseline）一律集中在最後的 Phase 6，避免邊開發邊維運耗能。本機可完成的程式碼準備（容器化 / 配置層 / 教師端 / 行為分析演算法）全部排在 Phase 6 之前。
+> **執行策略**：功能優先（Phase 2 → 3）→ 部署準備程式碼（Phase 4）→ **Phase 5 教師端 / Phase 6 教學內容建構（兩者可平行或先後，依教授資料準備進度而定）** → 上線實測（Phase 7）。
+> **核心原則**：所有「需要實際 Zeabur / VPS 部署才能驗證」的工作（Golden path / 監控告警驗證 / 效能 baseline）一律集中在最後的 Phase 7，避免邊開發邊維運耗能。本機可完成的程式碼準備（容器化 / 配置層 / 教師端 / 行為分析演算法 / 教學內容生成）全部排在 Phase 7 之前。
 > **OSS 重用**：開發前必查 `docs/references.md` §1 決策矩陣（CLAUDE.md 守則 #7）。
 
 ## Phase 1：基礎建設（MVP）✅
@@ -55,7 +55,7 @@
 - [x] 1-6e Toolbar Linear 風格化（高度 48px + 5 頁籤 + 檔名儲存狀態）（design-plan §2.5）
 - [x] 1-6f EDF Pipeline mini timeline（在每則 AI 訊息上方顯示教學決策過程）（design-plan §2.1）
 
-> 部署原 1-7 已移至 **Phase 4**（容器化 / 配置層，本機可完成）+ **Phase 6**（上線實測，須實際部署）— 功能優先策略
+> 部署原 1-7 已移至 **Phase 4**（容器化 / 配置層，本機可完成）+ **Phase 7**（上線實測，須實際部署）— 功能優先策略
 
 ## Phase 2：智慧功能
 > 完成標準：RAG 檢索可用、知識圖譜可視覺化、弱項可自動出題
@@ -297,7 +297,7 @@
 
 ## Phase 4：部署準備（容器化 + 配置層，本機可完成）✅
 > 完成標準：學生端 Phase 1~3 全數完成後，一次性處理 Docker / Zeabur / Judge0 自架 / NextAuth callback / CORS / API proxy 串接的**程式碼與配置檔**。
-> 「需要實際部署到 Zeabur / VPS 才能驗證」的工作（Golden path / 監控告警 / 效能 baseline）已移至 **Phase 6 上線實測**。
+> 「需要實際部署到 Zeabur / VPS 才能驗證」的工作（Golden path / 監控告警 / 效能 baseline）已移至 **Phase 7 上線實測**。
 > **前置條件**：Phase 1-3 全部完成。
 
 ### 4-1 容器化
@@ -334,7 +334,7 @@
   - `deployment.md §D` 新章節：callback URL 產生規則 + 三環境 trust_host 一覽 + CORS 設計理由 + 疑難排解
   - 3 個新 cors 容錯測試，全套 442 tests 全綠
 
-> ⚠ 原 4-3 上線驗證（Golden path / 監控 / 效能 baseline）已搬移至 **Phase 6**，因三者皆需實際部署到 Zeabur / VPS 才能驗證效果。
+> ⚠ 原 4-3 上線驗證（Golden path / 監控 / 效能 baseline）已搬移至 **Phase 7**（中間夾入 Phase 6 教學內容建構），因三者皆需實際部署到 Zeabur / VPS 才能驗證效果。
 
 ---
 
@@ -342,7 +342,7 @@
 > 完成標準：教師可管理班級、查看學生行為分析圖表、指派作業
 > 對應頁面：Teacher Dashboard（教師專屬，學生不可見）
 > **前置條件**：Phase 4 容器化 + 配置層完成。
-> **資料策略**：5-1 / 5-2 / 5-5 純檔案，本機 dev 環境即可完整開發 + 測試；5-3 / 5-4 行為分析演算法與視覺化的程式碼可先用合成資料 / 種子資料寫 + 單元測試，等 Phase 6 部署後累積真實學生行為資料再以實測資料調校參數（不阻塞編寫）。
+> **資料策略**：5-1 / 5-2 / 5-5 純檔案，本機 dev 環境即可完整開發 + 測試；5-3 / 5-4 行為分析演算法與視覺化的程式碼可先用合成資料 / 種子資料寫 + 單元測試，等 Phase 7 部署後累積真實學生行為資料再以實測資料調校參數（不阻塞編寫）。
 
 ### 5-1 班級管理
 - [ ] 5-1a classes + class_members 表 migration
@@ -375,29 +375,59 @@
 
 ---
 
-## Phase 6：上線實測（須實際部署到 Zeabur / VPS）
+## Phase 6：教學內容建構（不需部署，但部分依賴教授交付資料）
+> 完成標準：59 個學習單元的 4 個 tab（概念說明 / 範例 / 練習 / 摘要）全部有實質內容，學生可獨立讀懂並完成練習；`learning_units.content` 不再是空骨架。
+> 對應頁面：Learn (Page 2) — 解除 3-1d 留下的 placeholder。
+> **前置條件**：Phase 1-3 完成（concepts 表 + learning_units schema + ExercisesTab 已就緒；3-1c+ 已 seed 59 影片 concept 框架）。
+> **與 Phase 5 關係**：兩者可**平行或先後**，依教授資料準備進度而定——若教授有空整理影片資料，建議優先做 Phase 6；若教授尚未準備（最常見），可先推進 Phase 5 教師端，等資料到位再回頭做 Phase 6。
+> **資料流**：教授提供原始 metadata → AI 寫 PATCH script 匯入 → LLM 批次生成 unit content → 教授抽查 → 修正 prompt 重跑（如需）。
+> **OSS**：LLM 批次生成沿用 Phase 2-4c 既有 `services/quiz/generate.py` 與 OpenAI `json_object` mode，**禁止為此 Phase 引入新框架**。
+
+### 6-1 影片 metadata 整合
+- [ ] 6-1a 教授整理 59 影片 metadata（YT URL / duration / 標題正名）— 由教授交付 CSV 或 JSON
+- [ ] 6-1b 開發 PATCH script：解析 metadata → UPDATE `concepts.video_youtube_id` / `video_duration_seconds`（含 dry-run + 缺漏檢查）
+- [ ] 6-1c 執行 PATCH + DB 驗證（59 筆全部有非 NULL metadata；同步移除 `tech-debt.md` 對應條目）
+
+### 6-2 Unit content 批次生成（LLM-assisted）
+- [ ] 6-2a 設計 unit content prompt template：概念說明 / 範例 / 摘要 三類分別模板，注入 concept 名稱 + 影片標題 + 教學主題分類 + 難度
+- [ ] 6-2b LLM 批次生成 59 unit content JSON → 寫入 `learning_units.content`（含失敗 retry + 結果落地 staging table 供 review）
+- [ ] 6-2c 概念說明 tab：YT player IFrame embed（依賴 6-1c metadata；player 元件邏輯可先寫，等資料到位通電）
+- [ ] 6-2d 範例 tab：渲染 LLM 生成的程式碼範例 + 「在 Workspace 開啟」按鈕（復用 Phase 2-5d sessionStorage 機制）
+- [ ] 6-2e 摘要 tab：渲染 LLM 生成的 Markdown 摘要（含 key takeaways bullet）
+
+### 6-3 練習題庫補充
+- [ ] 6-3a 用 Phase 2-4 智慧出題管線批次模式為每 unit 生成至少 2 題（validated=True 才入庫）
+- [ ] 6-3b ExercisesTab 改造：從「按需現生」→「優先讀題庫，題庫不足才現生」（降低 LLM 等待 + 一致性）
+
+### 6-4 內容品管
+- [ ] 6-4a 教授抽查 5-10 個 unit 全部 4 tab 品質（語意正確 / 不脫離 C++ 教學情境 / 程式碼可編譯）
+- [ ] 6-4b 依抽查反饋調整 6-2a prompt template 並針對問題 unit 局部重跑（如需）
+
+---
+
+## Phase 7：上線實測（須實際部署到 Zeabur / VPS）
 > 完成標準：Golden path 跑通、監控告警接通、效能 baseline 記錄。
 > 對應驗收：可對外開放給真實學生使用。
-> **前置條件**：Phase 4 配置層完成；Zeabur 帳號 + VPS（Judge0 self-host）就緒；教授補完 59 影片 metadata（YT id / duration）等教學內容資料（否則 Learn 頁面 unit 仍是空殼）。
+> **前置條件**：Phase 4 配置層完成；Phase 6 教學內容建構至少 6-1 + 6-2b 完成（否則 Learn 頁面 unit 仍是空殼，部署後學生看到空白頁無意義）；Zeabur 帳號 + VPS（Judge0 self-host）就緒。
 > ⚠ 本 Phase 整段任務的共通特性是「程式碼已就緒，只能在實際部署環境驗證」。上次卡關於 API 串接（前後端 proxy / NextAuth callback URL / CORS / Judge0 endpoint），重啟前需先排查 `web/app/api/*` proxy 設定、`backend/app/core/config.py` 環境變數、Zeabur dashboard service 連線狀態。
 
-### 6-1 Golden path 整合驗證（原 4-3a）
-- [ ] 6-1a 部署到 Zeabur（web + backend + pgvector + redis）+ Judge0 self-host VPS
-- [ ] 6-1b Golden path 跑通：登入 → 寫碼 → 執行 → AI 對話 → RAG 檢索 → 出題作答
-- [ ] 6-1c 教師端帳號 / 班級 / 行為資料端到端驗證（Phase 5 程式碼以真實流量驗收）
+### 7-1 Golden path 整合驗證（原 4-3a → 6-1）
+- [ ] 7-1a 部署到 Zeabur（web + backend + pgvector + redis）+ Judge0 self-host VPS
+- [ ] 7-1b Golden path 跑通：登入 → 寫碼 → 執行 → AI 對話 → RAG 檢索 → 出題作答
+- [ ] 7-1c 教師端帳號 / 班級 / 行為資料端到端驗證（Phase 5 程式碼以真實流量驗收）
 
-### 6-2 監控與告警（原 4-3b）
+### 7-2 監控與告警（原 4-3b → 6-2）
 > Sentry SDK / 結構化日誌 / 健康檢查端點的**程式碼**可在本機預先寫好，但接通告警鏈路、Log aggregation 看到流量、Sentry 收到 issue 都需實際部署。
-- [ ] 6-2a Sentry SDK 整合（前後端 init + DSN 環境變數 + 異常捕捉）— 程式碼可本機完成
-- [ ] 6-2b 結構化日誌（structlog / loguru + request_id middleware）— 程式碼可本機完成
-- [ ] 6-2c 健康檢查端點分離（/health/live + /health/ready）— 程式碼可本機完成
-- [ ] 6-2d 部署後告警鏈路驗證（Sentry 收 issue / 日誌聚合可查 / 健康檢查告警觸發）— **須實際部署**
+- [ ] 7-2a Sentry SDK 整合（前後端 init + DSN 環境變數 + 異常捕捉）— 程式碼可本機完成
+- [ ] 7-2b 結構化日誌（structlog / loguru + request_id middleware）— 程式碼可本機完成
+- [ ] 7-2c 健康檢查端點分離（/health/live + /health/ready）— 程式碼可本機完成
+- [ ] 7-2d 部署後告警鏈路驗證（Sentry 收 issue / 日誌聚合可查 / 健康檢查告警觸發）— **須實際部署**
 
-### 6-3 效能 baseline（原 4-3c）
-- [ ] 6-3a 首次互動時間（TTFB / LCP）量測
-- [ ] 6-3b LLM p95 延遲量測（EDF interact / Quiz generate / Comprehension grade）
-- [ ] 6-3c Judge0 成功率與佇列等待時間量測
-- [ ] 6-3d 將上述指標記入 `docs/performance-baseline.md` 作為後續優化基準
+### 7-3 效能 baseline（原 4-3c → 6-3）
+- [ ] 7-3a 首次互動時間（TTFB / LCP）量測
+- [ ] 7-3b LLM p95 延遲量測（EDF interact / Quiz generate / Comprehension grade）
+- [ ] 7-3c Judge0 成功率與佇列等待時間量測
+- [ ] 7-3d 將上述指標記入 `docs/performance-baseline.md` 作為後續優化基準
 
 ---
 
@@ -411,4 +441,4 @@
 - 即時通訊：Phase 1 用 REST + SSE (chat streaming)，未來視需求加 WebSocket
 - 介面借鑑：6 份來源僅貢獻結構模式，視覺基本元素統一為 GitHub Dark（design-plan.md §0.3 七條硬規則）
 - **OSS 重用**：開發前必查 `docs/references.md` §1 決策矩陣；禁止 AGPL/GPL 套件；禁止移植已有對應套件的演算法（如 BKT 必用 pyBKT）
-- **執行順序**：功能優先（Phase 2 → 3）→ 部署準備程式碼（Phase 4）→ 教師端（Phase 5）→ 上線實測（Phase 6）；所有需要實際部署才能驗證的工作集中在 Phase 6，避免邊開發邊維運耗能
+- **執行順序**：功能優先（Phase 2 → 3）→ 部署準備程式碼（Phase 4）→ **Phase 5 教師端 ⇄ Phase 6 教學內容建構（兩者可平行 / 先後皆可，依教授資料準備進度決定）** → 上線實測（Phase 7）；所有需要實際部署才能驗證的工作集中在 Phase 7，避免邊開發邊維運耗能

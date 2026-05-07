@@ -31,7 +31,7 @@
 - ✅ ~~`concepts` seed 的 `category` / `difficulty_level` / `name_zh` 為暫定值~~ — 2026-05-05 完全替換為 59 影片 concept
 
 ### 內容層（教學課綱）— 新一批待補
-- [ ] **YT video metadata 未補**（59 個影片 concept 全部 `video_youtube_id` / `video_duration_seconds` 為 NULL）
+- [ ] **YT video metadata 未補**（59 個影片 concept 全部 `video_youtube_id` / `video_duration_seconds` 為 NULL）→ **正式追蹤於 roadmap Phase 6-1**
   - **影響**：3-1d 學習單元頁的概念說明 tab 無法 embed YT player；只能顯示影片標題與「待補」placeholder
   - **如何處理**：教授整理 59 個影片的 YT URL + 時長 → AI 寫 PATCH script 一次匯入（不需新 migration）
   - **建議格式**：CSV 或 JSON，欄位 `video_order, youtube_id, duration_seconds`
@@ -39,12 +39,12 @@
   - **影響**：拓撲排序生成路徑時，學生 confidence 高跳過某 unit 後不會牽連解鎖實際依賴的後續 unit
   - **範例**：47 遞迴函式真正依賴 36 函式 + 29 for 迴圈；52 指標與陣列依賴 48 陣列 + 51 指標；目前圖譜只有 N→N+1 線性鏈
   - **如何處理**：教授標關鍵跨章依賴（< 30 條）→ AI 加 patch migration
-- [ ] **學習單元 content 為空骨架**（`{summary: "", examples: [], exercise_question_ids: []}`）
+- [ ] **學習單元 content 為空骨架**（`{summary: "", examples: [], exercise_question_ids: []}`）→ **正式追蹤於 roadmap Phase 6-2 / 6-3 / 6-4**
   - **影響**：3-1d 學習單元頁的「範例程式」「摘要」tab 無實質內容
   - **如何處理**：兩種策略可選 —
-    - (a) LLM 依 concept name + difficulty 自動生成 summary + examples（成本低）
-    - (b) 教授/助教手動填寫（品質高，工時大）
-  - **建議**：先 (a) MVP，看品質再決定是否人工校對
+    - (a) LLM 依 concept name + difficulty 自動生成 summary + examples（成本低）— Phase 6-2 採此策略
+    - (b) 教授/助教手動填寫（品質高，工時大）— Phase 6-4 抽查階段視需要補充
+  - **決策**：先 (a) MVP，Phase 6-4 教授抽查後決定是否人工校對
 
 ### Learn 頁面視覺化升級
 - [ ] **3-1c 卡片版 ≠ ui-wireframes.md 期望的「節點+箭頭」graph 版**

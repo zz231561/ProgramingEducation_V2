@@ -28,7 +28,9 @@ from pathlib import Path
 
 # 標題格式：「C++：XX-(中文)」，XX = video_order
 TITLE_PATTERN = re.compile(r"^C\+\+：(\d+)-(.+)$")
-EXPECTED_VIDEO_ORDERS = set(range(4, 63))  # DB seed 4..62 共 59 部
+# Phase 6 採 62 個 concept：1-3（課程簡介、環境安裝、語言簡介）+ 4-62（教學影片）
+# video_order 1-3 標記 category="課程介紹" 不參與 PREREQUISITE 鏈（roadmap 6-1c）
+EXPECTED_VIDEO_ORDERS = set(range(1, 63))  # 1..62 共 62 部
 DEFAULT_OUTPUT = Path("data/teaching_content/videos.csv")
 
 
@@ -104,13 +106,15 @@ def report(aligned: list[dict], skipped: list[dict]) -> bool:
     missing = sorted(EXPECTED_VIDEO_ORDERS - actual_set)
     duplicates = sorted({v for v in actual if actual.count(v) > 1})
 
-    perfect = not missing and not duplicates and len(aligned) == 59
+    expected_count = len(EXPECTED_VIDEO_ORDERS)
+    perfect = not missing and not duplicates and len(aligned) == expected_count
     if missing:
         print(f"  ❌ MISSING video_order: {missing}")
     if duplicates:
         print(f"  ❌ DUPLICATE video_order: {duplicates}")
     if perfect:
-        print("  ✅ All 59 expected video_orders (4-62) present, no duplicates")
+        lo, hi = min(EXPECTED_VIDEO_ORDERS), max(EXPECTED_VIDEO_ORDERS)
+        print(f"  ✅ All {expected_count} expected video_orders ({lo}-{hi}) present, no duplicates")
     return perfect
 
 

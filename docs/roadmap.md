@@ -388,7 +388,7 @@
 ### 6-1 影片資料整合（metadata + 字幕 RAG ingest）
 - [x] 6-1a 教授交付 playlist URL（已完成 2026-05-07：`PLJDZAE4d-ihqvGtBMhgMv8Zp6Tv6D1l-M`，62 部影片完整對齊 DB 的 video_order 1-62）
 - [x] 6-1b 開發 fetcher script `backend/scripts/fetch_playlist_metadata.py` 抓 metadata（已完成 2026-05-07，產出 `data/teaching_content/videos.csv` 59 列；**待擴充為 62 列**：EXPECTED 範圍從 4-62 改為 1-62 並重跑）
-- [ ] 6-1b+ 擴充 fetcher：EXPECTED 範圍 1-62 + 重跑產出 62 列 CSV
+- [x] 6-1b+ 擴充 fetcher：EXPECTED 範圍 1-62 + 重跑產出 62 列 CSV（2026-05-07：62/62 對齊，video 1-3 標題 = `甚麼是程式語言` / `C++程式語言簡介` / `如何下戴和安裝DevC++`）
 - [ ] 6-1c 加入 video_order 1-3 concept seed migration（`category="課程介紹"`，**不**加 PREREQUISITE 邊）+ learning_path generator 過濾此 category
 - [ ] 6-1d 開發 PATCH script：CSV → UPDATE `concepts.video_youtube_id` / `video_duration_seconds`（含 dry-run + 缺漏檢查）+ 執行 + DB 驗證（62 筆全有非 NULL metadata）
 - [ ] 6-1e（NotebookLM 核心）字幕抓取 + RAG ingest：`yt-dlp --write-auto-subs --sub-lang zh-Hant` 抓 62 部字幕 → 解析為 (timestamp, text) chunks → LlamaIndex IngestionPipeline 寫入 vector store；metadata 標 `video_order` + `youtube_id` + `start_time` 供日後 retrieve filter

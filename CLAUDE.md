@@ -43,7 +43,7 @@
 **🎯 進行中：Phase 6 教學內容建構（NotebookLM grounded 模式）**
 - ✅ 6-1a 教授交付 playlist URL（2026-05-07：62 部影片完整對齊 video_order 1-62）
 - ✅ 6-1b 開發 fetcher script + 產出 59 列 CSV（2026-05-07）
-- 🔄 6-1b+ fetcher 擴充為 EXPECTED 1-62 + 重產 62 列 CSV（下一任務）
+- ✅ 6-1b+ fetcher 擴充為 EXPECTED 1-62 + 重產 62 列 CSV（2026-05-07）
 - ⬜ 6-1c 加 video 1-3 concept seed migration（`category="課程介紹"` 不參與 PREREQUISITE）
 - ⬜ 6-1d PATCH script + 執行寫入 DB
 - ⬜ 6-1e（NotebookLM 核心）yt-dlp 抓字幕 → LlamaIndex IngestionPipeline → RAG 入庫

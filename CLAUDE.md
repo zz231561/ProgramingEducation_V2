@@ -35,10 +35,14 @@
 - 3-1 結構化學習路徑（7 sub-tasks）/ 3-2 Quiz 完整版（3 sub-tasks）/ 3-3 Dashboard（3 sub-tasks）
 - 學生端完整閉環：登入 → Learn → Quiz → Dashboard；後端 439 tests 全綠
 
-**🎯 進行中：Phase 4 — 部署上線（下一任務：4-3a Golden path 整合驗證）**
+**Phase 4 完成 ✅**（容器化 + 配置層，本機可完成範圍）
 - ✅ 4-1 容器化（Dockerfile build / pgvector / Judge0 自架）
 - ✅ 4-2 配置層（環境變數分層 / Zeabur 串接 / NextAuth + CORS）
-- ⬜ 4-3 上線驗證（4-3a Golden path / 4-3b 監控 / 4-3c 效能 baseline）
+- ⚠ 原 4-3 上線驗證已重整至 **Phase 6 上線實測**（需實際部署才能驗證）
+
+**🎯 下一階段：可走 Phase 5（教師端，本機可開發）或 Phase 6（上線實測，需實際部署）**
+- ⬜ Phase 5 教師端（5-1 班級管理 / 5-2 行為資料 / 5-3 分析演算法 / 5-4 視覺化 / 5-5 作業指派）
+- ⬜ Phase 6 上線實測（6-1 Golden path / 6-2 監控告警 / 6-3 效能 baseline）— 須先準備 Zeabur 帳號 + VPS + 教學內容資料
 
 **OSS 守則**：見守則 #7 + `references.md` §1。
 

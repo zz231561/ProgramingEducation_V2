@@ -1,7 +1,7 @@
 # Roadmap
 
-> **執行策略**：功能優先（Phase 2 → 3）→ 部署（Phase 4）→ 教師端（Phase 5）。
-> 因 API 串接 + Zeabur 部署反覆卡關，將部署延後至學生端功能全數完成後一次處理，避免邊開發邊維運耗能。
+> **執行策略**：功能優先（Phase 2 → 3）→ 部署準備程式碼（Phase 4）→ 教師端（Phase 5）→ 上線實測（Phase 6）。
+> **核心原則**：所有「需要實際 Zeabur / VPS 部署才能驗證」的工作（Golden path / 監控告警驗證 / 效能 baseline）一律集中在最後的 Phase 6，避免邊開發邊維運耗能。本機可完成的程式碼準備（容器化 / 配置層 / 教師端 / 行為分析演算法）全部排在 Phase 6 之前。
 > **OSS 重用**：開發前必查 `docs/references.md` §1 決策矩陣（CLAUDE.md 守則 #7）。
 
 ## Phase 1：基礎建設（MVP）✅
@@ -295,9 +295,9 @@
   - Frontend：`mastery-breakdown.tsx` (130) — 全展開 8 個 category + concept progress bars
   - 8 個新後端測試，全套 439 tests 全綠
 
-## Phase 4：部署上線（學生端完成後）
-> 完成標準：學生端 Phase 1~3 全數完成後，一次性處理 Docker / Zeabur / Judge0 自架 / NextAuth callback / CORS / API proxy 串接。
-> ⚠ 上次卡關於 API 串接（前後端 proxy / NextAuth callback URL / CORS / Judge0 endpoint），重啟前需先排查 `web/app/api/*` proxy 設定、`backend/app/core/config.py` 環境變數、Zeabur dashboard service 連線狀態。
+## Phase 4：部署準備（容器化 + 配置層，本機可完成）✅
+> 完成標準：學生端 Phase 1~3 全數完成後，一次性處理 Docker / Zeabur / Judge0 自架 / NextAuth callback / CORS / API proxy 串接的**程式碼與配置檔**。
+> 「需要實際部署到 Zeabur / VPS 才能驗證」的工作（Golden path / 監控告警 / 效能 baseline）已移至 **Phase 6 上線實測**。
 > **前置條件**：Phase 1-3 全部完成。
 
 ### 4-1 容器化
@@ -334,17 +334,15 @@
   - `deployment.md §D` 新章節：callback URL 產生規則 + 三環境 trust_host 一覽 + CORS 設計理由 + 疑難排解
   - 3 個新 cors 容錯測試，全套 442 tests 全綠
 
-### 4-3 上線驗證
-- [ ] 4-3a Golden path：登入 → 寫碼 → 執行 → AI 對話 → RAG 檢索 → 出題作答
-- [ ] 4-3b 監控：Sentry / 日誌聚合 / 健康檢查
-- [ ] 4-3c 效能 baseline（首次互動時間、LLM p95 延遲、Judge0 成功率）
+> ⚠ 原 4-3 上線驗證（Golden path / 監控 / 效能 baseline）已搬移至 **Phase 6**，因三者皆需實際部署到 Zeabur / VPS 才能驗證效果。
 
 ---
 
-## Phase 5：教師端（部署後）
+## Phase 5：教師端（不需實際部署即可開發）
 > 完成標準：教師可管理班級、查看學生行為分析圖表、指派作業
 > 對應頁面：Teacher Dashboard（教師專屬，學生不可見）
-> **前置條件**：Phase 4 部署完成（教師分析需要實際學生資料）。
+> **前置條件**：Phase 4 容器化 + 配置層完成。
+> **資料策略**：5-1 / 5-2 / 5-5 純檔案，本機 dev 環境即可完整開發 + 測試；5-3 / 5-4 行為分析演算法與視覺化的程式碼可先用合成資料 / 種子資料寫 + 單元測試，等 Phase 6 部署後累積真實學生行為資料再以實測資料調校參數（不阻塞編寫）。
 
 ### 5-1 班級管理
 - [ ] 5-1a classes + class_members 表 migration
@@ -375,6 +373,34 @@
 - [ ] 5-5a 作業指派功能（選題 + 指定學生/班級）
 - [ ] 5-5b 學生進度查看（精熟度熱力圖 + 常見錯誤統計）
 
+---
+
+## Phase 6：上線實測（須實際部署到 Zeabur / VPS）
+> 完成標準：Golden path 跑通、監控告警接通、效能 baseline 記錄。
+> 對應驗收：可對外開放給真實學生使用。
+> **前置條件**：Phase 4 配置層完成；Zeabur 帳號 + VPS（Judge0 self-host）就緒；教授補完 59 影片 metadata（YT id / duration）等教學內容資料（否則 Learn 頁面 unit 仍是空殼）。
+> ⚠ 本 Phase 整段任務的共通特性是「程式碼已就緒，只能在實際部署環境驗證」。上次卡關於 API 串接（前後端 proxy / NextAuth callback URL / CORS / Judge0 endpoint），重啟前需先排查 `web/app/api/*` proxy 設定、`backend/app/core/config.py` 環境變數、Zeabur dashboard service 連線狀態。
+
+### 6-1 Golden path 整合驗證（原 4-3a）
+- [ ] 6-1a 部署到 Zeabur（web + backend + pgvector + redis）+ Judge0 self-host VPS
+- [ ] 6-1b Golden path 跑通：登入 → 寫碼 → 執行 → AI 對話 → RAG 檢索 → 出題作答
+- [ ] 6-1c 教師端帳號 / 班級 / 行為資料端到端驗證（Phase 5 程式碼以真實流量驗收）
+
+### 6-2 監控與告警（原 4-3b）
+> Sentry SDK / 結構化日誌 / 健康檢查端點的**程式碼**可在本機預先寫好，但接通告警鏈路、Log aggregation 看到流量、Sentry 收到 issue 都需實際部署。
+- [ ] 6-2a Sentry SDK 整合（前後端 init + DSN 環境變數 + 異常捕捉）— 程式碼可本機完成
+- [ ] 6-2b 結構化日誌（structlog / loguru + request_id middleware）— 程式碼可本機完成
+- [ ] 6-2c 健康檢查端點分離（/health/live + /health/ready）— 程式碼可本機完成
+- [ ] 6-2d 部署後告警鏈路驗證（Sentry 收 issue / 日誌聚合可查 / 健康檢查告警觸發）— **須實際部署**
+
+### 6-3 效能 baseline（原 4-3c）
+- [ ] 6-3a 首次互動時間（TTFB / LCP）量測
+- [ ] 6-3b LLM p95 延遲量測（EDF interact / Quiz generate / Comprehension grade）
+- [ ] 6-3c Judge0 成功率與佇列等待時間量測
+- [ ] 6-3d 將上述指標記入 `docs/performance-baseline.md` 作為後續優化基準
+
+---
+
 ## 已確認決策
 
 - Terminal：Batch 模式，不需即時互動式 terminal
@@ -385,4 +411,4 @@
 - 即時通訊：Phase 1 用 REST + SSE (chat streaming)，未來視需求加 WebSocket
 - 介面借鑑：6 份來源僅貢獻結構模式，視覺基本元素統一為 GitHub Dark（design-plan.md §0.3 七條硬規則）
 - **OSS 重用**：開發前必查 `docs/references.md` §1 決策矩陣；禁止 AGPL/GPL 套件；禁止移植已有對應套件的演算法（如 BKT 必用 pyBKT）
-- **執行順序**：功能優先（Phase 2 → 3）→ 部署（Phase 4）→ 教師端（Phase 5）；避免邊開發邊維運耗能
+- **執行順序**：功能優先（Phase 2 → 3）→ 部署準備程式碼（Phase 4）→ 教師端（Phase 5）→ 上線實測（Phase 6）；所有需要實際部署才能驗證的工作集中在 Phase 6，避免邊開發邊維運耗能

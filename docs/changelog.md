@@ -1,5 +1,36 @@
 # 變更日誌
 
+## [2026-05-08] — Phase 6-2a 完成：grounded prompt template + Pydantic 模型 + 13 mock-LLM 測試
+
+### Added
+- **`backend/services/learning/content_generator.py`** (235 行)：3 個 section 生成 function
+  - `generate_concept_explanation` / `generate_code_examples` / `generate_summary`：各自獨立呼叫 LLM，回傳對應 Pydantic 模型
+  - `generate_unit_content`：orchestrator，依序呼叫 3 個 section
+  - `_call_llm_json` 共用 helper：OpenAI `json_object` mode + temperature 0.3 + Pydantic validate + 503/502 分層錯誤
+- **Pydantic 輸出模型** 6 個：`Citation` / `ConceptExplanation` / `CodeExample` / `CodeExamples` / `Summary` / `UnitContent`，皆內建 `needs_more_source` + `reason` 欄位作為 graceful degradation
+- **`tests/test_content_generator.py`** (~250 行)：13 個 mock-LLM 單元測試
+  - 成功路徑 ×3（3 種 section 各自正確解析）
+  - needs_more_source 路徑 ×2（transcript 不足時 LLM 回 true，content 留空）
+  - 失敗路徑 ×3（503 LLM_UNAVAILABLE / 502 invalid JSON / 502 schema 違反）
+  - Grounding 機制 ×3（context_block 真的注入 chunks / 空 chunks 自動引導 / chunks 確實傳到 LLM）
+  - Orchestrator ×1（generate_unit_content 確實呼叫 3 次）
+  - Pydantic 驗證 ×1（Citation excerpt 字數上限）
+
+### Design 亮點
+- **Grounding 雙重把關**：prompt 5 條絕對規則 + Pydantic 嚴格 schema；LLM 回 hallucinate 直接被 502 攔下
+- **needs_more_source 機制**：每個 section 獨立判斷（concept ok 但 examples 沒料 → 只 examples needs_more）；不全有全無
+- **citation 嵌入 markdown**：LLM 在 markdown 中內嵌 `[mm:ss]`，前端顯示時可解析為跳轉連結
+- **caller 解耦**：generate function 只接 pre-fetched chunks，不自己呼叫 retrieve；6-2b 才負責 video_order metadata filter
+
+### Sync
+- `docs/roadmap.md` Phase 6-2a 標 [x] 並寫入完成細節
+- `CLAUDE.md` 進度更新
+
+### Why
+依 Phase 6 NotebookLM 模式設計（2026-05-07 確認），LLM 生成 unit content 必須 grounded 在 Whisper transcript 上、禁止 hallucinate。本次完成的是 prompt 設計 + 模型 + 測試的「設計與驗證」階段；6-2b 將實際呼叫此 service 為 62 個 unit 批次生成 content。
+
+---
+
 ## [2026-05-08] — Phase 6-1e 完成：Whisper 全 62 部 transcript + 二次審核 + 861 chunks 入 RAG（NotebookLM 核心就緒）
 
 ### Why A 方案改 B1

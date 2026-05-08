@@ -401,10 +401,13 @@
 - [x] 6-1f 同步 tech-debt.md（2026-05-08：YT metadata 條目移除；知識圖譜重構條目原已 cross-ref）
 
 ### 6-2 Unit content 批次生成（grounded on YT 字幕）
-- [ ] 6-2a 設計 grounded prompt template（核心：強制 grounding）：
-  - 三類模板：概念說明 / 範例 / 摘要
-  - 系統 preamble 規則：`必須基於 retrieved transcript chunks 生成；禁止引入字幕未出現的概念；每段內容附 [timestamp] citation 註明出處；若 transcript 不足以生成某類內容，回傳 {"needs_more_source": true} 而非 hallucinate`
-  - 注入：concept 名稱 + 影片標題 + retrieved transcript chunks（含 timestamp）+ 教學主題分類 + 難度
+- [x] 6-2a 設計 grounded prompt template（2026-05-08 完成）：
+  - `backend/services/learning/content_generator.py` (235 行)：3 個 generate function（concept_explanation / code_examples / summary）+ Pydantic 模型（Citation / ConceptExplanation / CodeExample / CodeExamples / Summary / UnitContent）+ orchestrator
+  - PREAMBLE 5 條絕對規則：禁引入字幕未提及概念 / 必附 [mm:ss] citation / 不足時 needs_more_source=true / 繁中台灣 / 不臆測教授觀點
+  - 三類 task prompt 各自規定 JSON schema 與字數上限（markdown 200-500 / explanation < 200 / key_points 3-7 / excerpt < 120）
+  - `_build_context_block` 注入 concept 元資料 + transcript chunks（含 [chunk N] 標籤）；空 chunks 自動引導 needs_more_source
+  - `_call_llm_json` 共用 helper：`json_object` mode + temperature 0.3 + Pydantic validate + 503/502 分層錯誤
+  - `tests/test_content_generator.py` 13 個 mock-LLM 測試（成功路徑 ×3 / needs_more_source ×2 / 失敗 ×3 / grounding 機制 ×3 / orchestrator ×1 / Pydantic 驗證 ×1），全套 458 tests 全綠
 - [ ] 6-2b LLM 批次生成 59 unit（4-62）content JSON → 寫入 `learning_units.content`：
   - 對每 unit 用 `video_order` metadata filter retrieve 該 video 的字幕 chunks
   - 失敗 retry（max 3 次）+ `needs_more_source=true` 落到 staging 供教授補資料

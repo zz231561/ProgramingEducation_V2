@@ -1,0 +1,477 @@
+# Roadmap Archive — 完整完成細節（凍結快照）
+
+> **本檔用途**：保存每個已完成 sub-task 的實作細節（檔案路徑 / 設計取捨 / 測試數 / 完成日期 / tech-debt 註解）。`docs/roadmap.md` 主檔已精簡為一行摘要，需要回顧某 sub-task 完整 context 時才讀本檔。
+> **不主動更新**：每完成一個 sub-task，細節寫到 `docs/changelog.md`（時間序）；本檔僅在「需要 phase 結構查詢」時手動同步，避免雙重維護。
+> **與 changelog.md 區別**：changelog 按時間（事件流水帳），本檔按 phase 結構（同 phase sub-task 集中）。
+
+---
+
+> **執行策略**：功能優先（Phase 2 → 3）→ 部署準備程式碼（Phase 4）→ **Phase 5 教師端 / Phase 6 教學內容建構（兩者可平行或先後，依教授資料準備進度而定）** → 上線實測（Phase 7）。
+> **核心原則**：所有「需要實際 Zeabur / VPS 部署才能驗證」的工作（Golden path / 監控告警驗證 / 效能 baseline）一律集中在最後的 Phase 7，避免邊開發邊維運耗能。本機可完成的程式碼準備（容器化 / 配置層 / 教師端 / 行為分析演算法 / 教學內容生成）全部排在 Phase 7 之前。
+> **OSS 重用**：開發前必查 `docs/references.md` §1 決策矩陣（CLAUDE.md 守則 #7）。
+
+## Phase 1：基礎建設（MVP）✅
+> 完成標準：學生可登入、寫 C++ 程式碼、執行、與 AI 對話學習
+> 對應頁面：Workspace (Page 1)
+
+### 1-1 專案骨架
+- [x] 1-1a 建立 Next.js 15 專案（App Router + TypeScript + Tailwind）
+- [x] 1-1g 前端 UI 基礎建設（shadcn/ui + 全域 Layout + Header Nav + 響應式骨架）
+- [x] 1-1b 建立 FastAPI 專案（專案結構 + Pydantic Settings + CORS）
+- [x] 1-1c PostgreSQL + Redis 連線（SQLAlchemy async + redis-py）
+- [x] 1-1d Alembic 初始化 + 第一次 migration（users 表）
+- [x] 1-1e 前後端通訊串接（Next.js API proxy → FastAPI）
+- [x] 1-1f Health check 端點 + 前端連線狀態顯示
+
+### 1-2 Auth 模組
+- [x] 1-2a NextAuth.js 設定（Google OAuth provider）
+- [x] 1-2b 後端 JWT 驗證 middleware（解析 NextAuth token）
+- [x] 1-2c 使用者首次登入自動建立 DB 記錄
+- [x] 1-2d 前端登入/登出頁面 + 未登入重導
+- [x] 1-2e Role-based 權限 middleware（student/teacher/admin）
+
+### 1-3 程式碼編輯與執行
+- [x] 1-3a CodeMirror 6 整合（C++ 語法高亮 + One Dark 主題）
+- [x] 1-3b Workspace 頁面基礎佈局（Editor + Output + Toolbar）
+- [x] 1-3c Judge0 API client（submit + polling 取結果）
+- [x] 1-3d 前端 Run 按鈕串接 + Output Panel 顯示結果
+- [x] 1-3f react-resizable-panels 拖曳調整
+
+### 1-4 EDF 教學管線
+> 參考：OATutor (BKT→hint→feedback)、Mr. Ranedeer (prompt 設計)、BloomBERT (Bloom 分類)
+- [x] 1-4a Evidence 層：LLM 結構化輸出（錯誤分類 + ConceptTag + Bloom）
+- [x] 1-4b Decision 層：Bloom × Hint Ladder 策略矩陣
+- [x] 1-4c Feedback 層：分層 prompt 組裝 + 輸出驗證
+- [x] 1-4d Chat API 端點（interact + history）
+- [x] 1-4e 安全防護：輸入三層防護 + 輸出完整程式碼阻擋
+
+### 1-5 AI 對話介面
+- [x] 1-5a Chat Panel 元件（訊息氣泡 + 輸入框 + 串流顯示）
+- [x] 1-5b 對話歷史持久化（DB 存取 + session 管理）
+- [x] 1-5c Run 結果自動注入 Chat context
+- [x] 1-5d Chat Panel 收合/展開 toggle
+
+### 1-6 介面精修（統一視覺協議）
+> 完成標準：6 份設計系統借鑑（Cursor/Warp/Linear/Claude/Vercel/Raycast）僅貢獻結構模式，所有視覺基本元素統一為 GitHub Dark；通過 §5 違和感 7 條檢核。
+> 詳細設計規格與借鑑映射：`docs/design-plan.md`、`docs/design-references/*.md`
+- [x] 1-6a Surface / Shadow / Border / Radius token 增補（design-plan §3.1-3.5）→ 同步 `frontend.md`
+- [x] 1-6b Inter OpenType `cv01, ss03` 全站套用 + 三權重檢核（design-plan §3.4）
+- [x] 1-6c Output Panel Run Block 化（每次 Run 為獨立可摺疊 block + status badge + Run→Chat 按鈕）（design-plan §2.3）
+- [x] 1-6d Chat 訊息氣泡 ring 區分 user/AI + Bloom 等級 badge（design-plan §2.4）
+- [x] 1-6e Toolbar Linear 風格化（高度 48px + 5 頁籤 + 檔名儲存狀態）（design-plan §2.5）
+- [x] 1-6f EDF Pipeline mini timeline（在每則 AI 訊息上方顯示教學決策過程）（design-plan §2.1）
+
+> 部署原 1-7 已移至 **Phase 4**（容器化 / 配置層，本機可完成）+ **Phase 7**（上線實測，須實際部署）— 功能優先策略
+
+## Phase 2：智慧功能
+> 完成標準：RAG 檢索可用、知識圖譜可視覺化、弱項可自動出題
+> 對應頁面：Knowledge (Page 4)、Quiz 基礎版、Workspace 擴充（Pre-Coding Reflection 側邊欄）
+
+### 2-1 RAG 知識檢索
+> **OSS**：✅ Tier 1 LlamaIndex `PGVectorStore` + `IngestionPipeline`（禁止自寫 chunking/embedding）
+> 參考：DeepTutor hybrid retrieval 模式（Tier 3）
+- [x] 2-1a pgvector 擴充啟用 + documents 表 migration（chunks/向量表交給 LlamaIndex 2-1b 自動建立）
+- [x] 2-1b LlamaIndex 索引管線（用 `IngestionPipeline`，不自刻）
+  - 完成：`backend/services/rag/{pipeline,ingest}.py` + `scripts/verify_rag_ingest.py`；向量表 `data_codedge_rag` 自動建立（vector(1536)）
+  - 驗證通過：範例教材 → chunk 寫入向量表（2026-05-04，使用者已確認）
+- [x] 2-1c 檢索 service（用 LlamaIndex query engine + 可選 BM25 reranking）
+  - 完成：`backend/services/rag/retrieve.py`（`retrieve_chunks` + `RetrievedChunk`） + `scripts/verify_rag_retrieve.py`
+  - 暫不實作 BM25（roadmap 標註可選；2-1d 後視需要補）；驗證通過 2026-05-04
+- [x] 2-1d RAG 結果注入 EDF Feedback 層 prompt
+  - 完成：`backend/services/edf/rag_integration.py`（44 行 helper）+ `feedback.py` 注入 `rag_block`；觸發條件沿用 Decision 層 `strategy.use_rag`
+  - 失敗安全：`fetch_rag_chunks_safe` 吞所有異常回傳 `[]`，RAG 失敗不阻擋教學回應
+  - 驗證通過：22 個 feedback/rag 測試 + 18 個 evidence/decision 測試全綠（2026-05-04）
+
+### 2-2 知識圖譜
+> **OSS**：✅ Tier 1 Cytoscape.js + `cytoscape-fcose` layout（禁止自刻力導向圖）
+- [x] 2-2a concepts + concept_edges 表 migration + 初始 20 ConceptTag seed
+  - 完成：alembic migration `c3d4e5f6a7b8`；`concepts` 含 unique(tag) + check(difficulty 1-5) + index(category)；`concept_edges` 含 4-value ENUM `concept_edge_type` + CASCADE FK + unique(source/target/type) + check(無自環)
+  - 20 筆 seed 分 6 個 category（基礎語法 6 / 記憶體 4 / 物件導向 3 / STL 2 / 演算法 2 / 進階 3）
+  - ⚠ category / difficulty / name_zh 為暫定值，記於 `docs/tech-debt.md`，2-2c 後校準
+- [x] 2-2b 圖譜查詢 service（全圖 / 單節點 + 鄰居）
+  - 完成：`models/concept.py` ORM + `services/graph/queries.py`（`get_full_graph` + `get_concept_neighborhood`） + `api/routes/concepts.py`（`GET /concepts/graph` + `GET /concepts/{tag}` 含方向標記）
+  - 9 個新測試 + 既有 96 全綠 = 105 passed（2026-05-04）
+- [x] 2-2c Knowledge 頁面：Cytoscape.js 圖譜渲染
+  - 完成：`web/components/knowledge/{knowledge-graph,*-style,*-types}.tsx` + 替換 `(app)/knowledge/page.tsx`
+  - fcose 自動佈局；節點顏色依 category、大小依 difficulty；點選擴增至 header（panel 留給 2-2d）
+  - 連帶修兩個阻塞 bug：Auth.js v5 HKDF info 字串對齊 + Postgres ENUM `values_callable`
+- [x] 2-2d Concept Detail Panel（點擊節點顯示詳情）
+  - 完成：`web/components/knowledge/concept-detail-panel.tsx`，串 `GET /concepts/{tag}`，渲染基本資訊 + 先修 + 進階 sections
+  - 互動：點鄰居切換 concept、點 X 關閉、點圖上其他節點切換
+- [x] 2-2e Knowledge Graph 視覺精修（Obsidian Graph View 風格 + edges seed）
+  - Part 1 ✅：migration `d4e5f6a7b8c9` 種 23 條邊（20 prerequisite + 3 related）— 邊內容為暫定，記於 `tech-debt.md`
+  - Part 2 ✅：ellipse 節點 + 22-38px 尺寸 + label 外下方 + hover 點亮鄰居/淡化其他（opacity 0.18）
+  - 連帶修：`models/concept.py` `EdgeType` 加 `values_callable`（同 User/Chat enum bug 第三處）
+
+### 2-3 精熟度追蹤
+> **OSS**：✅ Tier 1 **`pip install pyBKT`**（scikit-learn 風格 API，**禁止 port OATutor JS 版**）
+- [x] 2-3a student_mastery 表 migration
+  - 完成：alembic migration `e5f6a7b8c9d0` + `models/mastery.py` ORM
+  - schema：confidence (0-1) / exposure / success / error counts / bloom_level (1-6 nullable smallint) / last_practiced_at；UNIQUE(user_id, concept_id) + 3 check constraints + 2 indexes
+- [x] 2-3b 精熟度更新邏輯（pyBKT Model + EDF Evidence 結果 → confidence 調整）
+  - 完成：`services/mastery/{updater,__init__}.py` + `tests/test_mastery_updater.py`（10 測試）
+  - 串入 `services/chat.py` interact() 流程，每次 EDF Evidence 後更新 mastery；失敗安全（同 RAG 處理）
+  - **pyBKT 使用策略**：套件已裝（OSS 守則 ✅）；cold-start 階段用標準 BKT Bayes 公式線上更新；Phase 5 真實資料後跑 `pyBKT.Model.fit()` 學 per-concept 參數，餵入此 service 即可
+- [x] 2-3c 圖譜節點顏色依精熟度著色（綠/黃/紅/灰）
+  - 後端：`GET /concepts/mastery` + `services/mastery/queries.py` `get_user_mastery_summary`
+  - 前端：fetch 上提至 page 層，KnowledgeGraph 改 presentational；節點 underlay 圓環依 confidence 分群（≥0.8 mastered / 0.4-0.8 learning / <0.4 struggling / 無 row 不畫）；Detail Panel 加「我的精熟度」區塊
+  - 6 個新測試（3 backend + 3 frontend type/style 同步驗證 via TS）— 共 118 passed
+
+### 2-4 智慧出題
+> **OSS**：LlamaIndex 教材檢索注入 prompt（Tier 1）
+> 參考：OATutor adaptive selection 思路（Tier 3，不引程式碼）
+- [x] 2-4a questions + student_answers 表 migration
+  - 完成：alembic `f6a7b8c9d0e1` + `models/quiz.py`（Question + StudentAnswer + QuestionType / QuestionSource）
+  - enum 改 String + CHECK（避開 PG ENUM enum.value/.name 同款坑）；concept_tags 用 JSON 而非 PG `text[]`（SQLite 測試相容）
+  - Comprehension 擴充欄位（2-6）留給後續 migration
+- [x] 2-4b Select 階段：弱項概念選取 + 知識圖譜關聯
+  - 完成：`services/quiz/select.py` `select_weak_concepts(db, user_id, top_k=5)`
+  - 弱項定義：`confidence < 0.4 AND exposure_count >= 1`；中心度加權 score = (1-conf) × (1 + 0.2 × out_degree)
+  - Cold-start 回 []；7 個單元測試（邊界條件 + 排序 + 中心度 + top_k）
+- [x] 2-4c Generate 階段：LLM 出題 + RAG 教材注入
+  - 完成：`services/quiz/generate.py` `generate_question(db, concept, type, difficulty, bloom)` + 三種 type Pydantic content 模型
+  - OpenAI `json_object` mode + RAG `retrieve_chunks` 注入；分層錯誤（LLM_ERROR / LLM_PARSE_ERROR / LLM_VALIDATION_ERROR）
+  - 寫入 `questions.validated=False`，等 2-4d 過審；8 個單元測試（mock LLM + RAG）
+- [x] 2-4d Validate 階段：LLM 自我檢查答案
+  - 完成：`services/quiz/validate.py` `validate_question(db, question) -> ValidationReport`
+  - 三面向審查（answer_correct / concept_fits / bloom_appropriate）皆 True 才 flip `validated=True`；任一 False 回 `ValidationReport(passed=False, issues=[...])` 讓 caller 決定 retry / 丟棄
+  - 8 個單元測試（pass / 各面向 fail / 多 fail / LLM error / parse error / schema error）
+- [x] 2-4e Quiz API 端點（generate + submit + history）
+  - 完成：`services/quiz/{grade,orchestrator}.py` + `api/routes/quiz.py`
+  - 端點：`POST /quiz/generate`（auto-select + retry validation）/ `POST /quiz/submit`（grade + mastery 更新）/ `GET /quiz/history`（分頁）
+  - 答案 mask：generate 不回 answer_index/answers；submit 後才完整回 content
+  - Grading：MC 比 selected_index、Fill 用 trim+casefold；Coding MVP 不自動判分（待 Judge0 整合）
+  - 15 個新測試（8 grade + 7 route HTTP integration）
+
+### 2-5 Pre-Coding Reflection（解題前反思）
+> 參考：CodeAid (不給直接答案)、PRIMM、Polya 解題四步驟、Self-explanation effect (Chi et al.)
+- [x] 2-5a reflections 表 migration + Reflection API 端點（create + update + get）
+  - 完成：`alembic/versions/a7b8c9d0e1f2_create_reflections_table.py` + `models/reflection.py` + `services/reflection/crud.py` + `api/routes/reflection.py`
+  - schema：`source_type` (quiz/learning_unit) + `source_id` polymorphic UUID + UNIQUE(user, source_type, source_id) + `quality_score` 0–1 CHECK
+  - 端點：`POST /reflection`（201）/ `GET /reflection/{id}` / `PATCH /reflection/{id}`，對齊 api-spec.md
+  - 權限：他人反思一律 404（避免列舉攻擊）；UNIQUE 衝突回 409
+  - 18 個新測試（9 service + 9 HTTP integration）
+- [x] 2-5b 反思品質評估 service（LLM 快速評分 + 追問生成）
+  - 完成：`services/reflection/evaluate.py` `evaluate_reflection(reflection, question) -> ReflectionEvaluation`
+  - 三面向評分（understanding / plan_quality / concept_recall）平均成 quality_score；`QUALITY_THRESHOLD=0.6` 才回追問
+  - 整合到 `create_reflection` / `update_reflection`：寫入後自動評分；no-op PATCH 不呼叫 LLM
+  - 容錯：無 API key / LLM 異常 / parse error / schema 違反 / 分數超範圍 → fallback `quality_score=None` 不擋寫入
+  - 16 個新測試（9 evaluate unit + 5 service integration + 2 HTTP integration）
+- [x] 2-5c 程式撰寫題開題時觸發反思表單 UI（必填 → 品質評估 → 追問或放行）
+  - 完成：`lib/reflection.ts`（API helper）+ `components/reflection/{reflection-form,reflection-followup,reflection-flow,reflection-flow-parts}.tsx`
+  - Modal 狀態機：form → submitting → (approved | followup) → resubmit → ...；MAX_FOLLOWUP_ROUNDS=2 後提供「已盡力直接看題」放行
+  - LLM 失敗（quality_score=null）視為通過，不擋學生
+  - Quiz 占位頁改造為 demo 觸發點：`POST /quiz/generate type=coding` → ReflectionFlow → 放行後顯示題目
+  - 元件全部受控 prop-driven，預留給 2-5d 側邊欄、3-1e 練習 tab 復用
+  - ESLint / TypeScript / next build 全綠
+- [x] 2-5d 反思計畫側邊欄（Workspace 內持續顯示 + 可編輯）
+  - 完成：`lib/active-reflection.ts`（sessionStorage helper + 同/跨 tab event）+ `lib/reflection.ts` 補 `getReflection`
+  - 元件：`components/reflection/reflection-sidebar.{tsx,view.tsx,edit.tsx}` + `use-active-reflection.ts` hook
+  - Workspace 整合：Toolbar 加 ListChecks toggle（active reflection 時顯示綠色 dot）；左側 resizable Panel（28%/20%/40%）；進入頁面有 active reflection 自動展開
+  - Quiz demo ReflectionSummary 加「前往 Workspace 作答」`<Link>`，點擊寫 sessionStorage
+  - 編輯模式呼叫 PATCH /reflection/{id} → 觸發後端重新評分；404 自動清過期 ID 退回空狀態
+  - ESLint / TypeScript / next build 全綠
+- [x] 2-5e 反思內容注入 EDF Evidence 層（AI Tutor 可引用學生計畫）
+  - 完成：`services/edf/reflection_context.py`（兩種視圖：Evidence 簡短 / Feedback 詳細）
+  - Evidence：`analyze_evidence(reflection_summary)` 注入 user prompt 結尾
+  - Feedback：`build_system_prompt(reflection_block)` 注入順序 context → reflection → rag（測試強制保證）
+  - chat service：`_load_reflection_safely` best-effort + 權限隔離（user_id 不符視為不存在）
+  - chat API：`InteractRequest.reflection_id` 透傳；前端 use-chat 自動讀 sessionStorage 帶入
+  - 18 個新測試（11 reflection_context + 3 feedback prompt + 4 chat integration）
+  - 全套 208 tests 全綠；ESLint / TypeScript / next build 全綠
+
+### 2-6 Post-Solution Comprehension Check（解題後理解驗證）
+> 參考：EPL (Fowler et al.)、Variation Theory (Marton)
+- [x] 2-6a student_answers 表擴充 comprehension 欄位 + Comprehension API
+  - Migration `b8c9d0e1f2a3`：4 個 nullable 欄位（type/prompt/answer/passed）+ CHECK enum
+  - ORM：`ComprehensionType` enum（epl/predict_output/variation）+ `StudentAnswer` 加欄位
+  - Service `services/comprehension/`：get + upsert（擁有權檢查 → 404）
+  - API：`GET /comprehension/{id}`、`PUT /comprehension/{id}` partial upsert
+  - 10 個新測試，全套 218 tests 全綠
+- [x] 2-6b EPL 驗證：LLM 生成「用自己的話解釋」題 + 評估學生回答
+  - `services/comprehension/epl.py` + `epl_prompts.py`：generate / grade 兩條 LLM 流程，3 面向評分（conceptual / specificity / causality）avg ≥ 0.6 為 passed
+  - `services/comprehension/orchestrator.py`：start_epl（重置語意）/ submit_epl（強制順序：必須先 generate）
+  - API：`POST /comprehension/{id}/epl/generate`、`POST /comprehension/{id}/epl/grade`
+  - 失敗策略：generate → 503；grade → 200 + passed=None（不擋學生）
+  - 25 個新測試（16 unit + 9 HTTP），全套 243 tests 全綠
+- [x] 2-6c 預測輸出驗證：自動生成新測資 + 比對學生預測
+  - `services/comprehension/predict_output.py` + `predict_output_prompts.py`：LLM 生 (input, expected) + 兩階段 grade（normalize 嚴格 → LLM 語意 fallback → mismatch fallback）
+  - orchestrator 加 `start_predict_for_answer`（拒非 coding → 422，JSON 編碼存 prompt 不洩漏 expected）+ `submit_predict_for_answer`
+  - API：`POST /comprehension/{id}/predict_output/generate`、`POST /comprehension/{id}/predict_output/grade`，response 含 match_method ∈ {exact, semantic, mismatch}
+  - expected 對「學生實際程式」推理（含 bug 行為），不是題目正解 — 對齊「能否預測自己程式行為」教學目標
+  - 27 個新測試（16 unit + 11 HTTP），全套 270 tests 全綠
+- [x] 2-6d 變體挑戰：LLM 生成變體題 + 禁用 AI 的作答環境
+  - `services/comprehension/variation.py` + `variation_prompts.py`：LLM 生變體（同概念、不同情境/數值/方向）+ binary grade
+  - `_call_llm_json` 共用 helper dedupe LLM boilerplate；StrictBool 拒絕 `"yes"` 等隱式轉型
+  - 拆獨立 route 檔 `api/routes/comprehension_variation.py` 避免主 route 超 250 行
+  - 「禁用 AI」屬前端責任（後端流程不串接 chat / EDF / hint，docstring 註明）
+  - 保守 fallback：grade LLM 失敗 → `passed=False`（避免錯給通過拉高 mastery 信心度）
+  - 23 個新測試（13 unit + 10 HTTP），全套 293 tests 全綠
+- [x] 2-6e 動態觸發頻率（依學生 EPL 通過率調整）+ 驗證結果影響精熟度
+  - `services/comprehension/mastery_hook.py`：comprehension passed → Evidence(NONE/LOGIC) → `update_mastery` BKT 上下調；passed=None 跳過；異常 swallow
+  - `services/comprehension/trigger.py`：純規則 `_decide(pass_rate, is_coding)` — cold start → EPL；≥0.8 不觸發；[0.6,0.8)→VARIATION；[0.3,0.6)→PREDICT_OUTPUT；<0.3→EPL；非 coding 自動 fallback EPL
+  - 三條 grade workflow（EPL/Predict/Variation）皆在 commit 前串接 mastery hook
+  - API：`GET /comprehension/trigger-suggestion/{student_answer_id}`（獨立 route 檔）
+  - 27 個新測試（16 unit + 6 HTTP + 4 mastery integration），全套 320 tests 全綠
+  - **Phase 2-6 完成 🎉** — 後端教學引擎 + comprehension 驗證閉環就緒
+
+## Phase 3：學習體驗
+> 完成標準：學生可從頭到尾跟隨學習路徑，完成測驗，查看進度
+> 對應頁面：Learn (Page 2)、Quiz (Page 3)、Dashboard (Page 5)
+
+### 3-1 結構化學習路徑
+> **OSS**：拓撲排序 + 弱項補強（**不採用 EduAdapt-AI 的 RL 方案**，過度工程）
+- [x] 3-1a learning_paths + learning_units 表 migration
+  - Migration `c9d0e1f2a3b4`：兩表 + status CHECK enum + UNIQUE(path_id, order_index) + order_index ≥ 0 CHECK
+  - ORM `models/learning.py`：`LearningPath` + `LearningUnit` + `LearningUnitStatus(str, Enum)` (locked/available/in_progress/completed)
+  - FK 策略：path.user_id CASCADE / unit.path_id CASCADE / unit.concept_id RESTRICT
+  - 12 個新測試，全套 332 tests 全綠
+- [x] 3-1b 路徑生成 service（拓撲排序 + 弱項補強，純 Python 實作）
+  - `services/learning/topology.py`：priority Kahn's algorithm（純函式，O((N+E) log N)）
+  - `services/learning/generator.py`：fetch concepts/edges/mastery → 篩除已熟練 → 拓撲 → 寫入；第一個 unit `available` 其餘 `locked`
+  - 弱項優先：confidence 低排前；cold start (未練=0) 自動最前；priority 同 → 插入順序穩定
+  - Cycle 容錯：殘留節點附加尾端不擲錯
+  - `DEFAULT_SKIP_MASTERED_THRESHOLD = 0.8`；`content` 預留空骨架 `{summary, examples, exercise_question_ids}`
+  - 21 個新測試（12 unit + 9 DB 整合），全套 353 tests 全綠
+- [x] 3-1c Learn 頁面：路徑視覺化 + 進度條
+  - Backend：4 endpoints (POST/GET list/GET detail/DELETE) + queries service（避免 N+1 + join concepts）
+  - Frontend：page 三模式（list/detail/loading）+ path-card 進度條 + unit-status-icon 4 狀態 + generate-path-dialog
+  - 13 個新後端測試，全套 366 tests 全綠；TypeScript/ESLint/next build 全綠
+- [x] 3-1c+ Concept Graph 重建：59 影片 concept + 線性 PREREQUISITE 鏈
+  - Schema migration `d0e1f2a3b4c5`：concepts 加 3 video 欄位
+  - Seed migration `e1f2a3b4c5d6`：清空舊 20 EDF concept → seed 59 影片（編號 04-62）+ 58 條線性邊
+  - tag 命名 `cpp-NN-keyword`；8 主題分類；difficulty 1-5 漸進
+  - PG 驗證 59 + 58；YT video_id 等教授補後 PATCH
+- [x] 3-1c++ Learn UX 簡化：onboarding 自動 seed + 移除手動生成 UI
+  - 反思：concept graph 固定後，每位學生「生成」結果相同 → 手動 UI 無意義
+  - Backend：`ensure_default_path_exists` + `GET /learning/paths/default` lazy seed
+  - Frontend 大幅精簡：刪 path-card / generate-path-dialog；page 改為自動 fetch + 直顯 detail
+  - 4 個新後端測試，全套 383 tests 全綠
+- [x] 3-1d 學習單元內容頁（概念說明 / 範例 / 練習 / 摘要 tab）
+  - Backend：`PATCH /learning/units/{id}` + `services/learning/units.py` (status transition 查表驗證 + 解鎖邏輯)
+  - 合法 transition: available→in_progress / in_progress→completed (解鎖下一) / in_progress→available (revisit)
+  - 非法一律 422 (locked/completed 不可手動設)
+  - Frontend：unit-content.tsx 4 tab + 上下單元導航 + ActionButton 依 status 變化；path-detail unit 變可點
+  - 13 個新後端測試，全套 379 tests 全綠
+  - YT player / 範例 / 摘要為 placeholder，等教授補影片資料或 LLM 生成（見 tech-debt.md）
+- [x] 3-1e 練習 tab 嵌入 Pre-Coding Reflection 觸發點（復用 Phase 2-5 元件）
+  - Backend：`generate_for_student` 加 optional `concept_tag`；`_resolve_concept_by_tag` helper（404）
+  - Frontend：`lib/quiz.ts` + `components/learn/exercises-tab.tsx`（三狀態 idle/question/done）
+  - 復用 `ReflectionFlow`（Phase 2-5）；反思 approve 後顯示摘要 + 「在 Workspace 作答」導引（透過 setActiveReflectionId 串接 Phase 2-5d 的 EDF Pipeline）
+  - 完整作答 UI（編輯器 + Judge0 提交 + 判分）屬 Phase 3-2 範圍
+  - 2 個新後端測試，全套 385 tests 全綠
+
+### 3-2 Quiz 完整版
+- [x] 3-2a Quiz 頁面：選擇題 + 程式撰寫題 UI
+  - `lib/quiz.ts` 加 `submitAnswer` + types
+  - 4 個新元件：quiz-runner（主流程 5 狀態）/ mc-question / coding-question（復用 CodeEditor）/ result-view（對錯 + 解釋 + 揭露答案）
+  - 重寫 `/quiz` 頁面從 2-5c demo → 正式版
+  - 設計分工：Quiz = 純測驗、Learn 練習 tab = 學習含反思
+  - Coding 題目前 is_correct=False（Judge0 整合屬 Phase 4，UI 已說明）
+  - 後端無動 / 385 tests 全綠 / TS+ESLint+build 全綠
+- [x] 3-2b 計時器 + 提示系統（hint_level 0-5）
+  - Backend：`services/quiz/hint.py` LLM 依 5 級 ladder 生成 + fallback；`POST /quiz/hint` endpoint
+  - Frontend：`timer.tsx`（mm:ss 每秒更新）+ `hint-panel.tsx`（強制遞增按鈕）+ runner 整合
+  - hint_level_used 透過既有 /quiz/submit 持久化；hint 本身不寫 DB
+  - 13 個新後端測試（6 unit + 7 HTTP），全套 398 tests 全綠
+- [x] 3-2c 作答結果頁 + EDF 回饋顯示
+  - Backend：`services/quiz/feedback.py` (250) + `api/routes/quiz_feedback.py` (77，獨立檔)；SubmitResponse 加 answer_id
+  - Frontend：`feedback-section.tsx` (172) async load + 3 卡片（建議/精熟度/推薦單元）；result-view 嵌入
+  - mastery 未練概念視為 0；推薦 units 限同 user 路徑 + 未完成 + concept 匹配
+  - LLM suggestion 4 種 fallback 不擋學生
+  - 14 個新後端測試（6 unit + 4 service integration + 4 HTTP），全套 412 tests 全綠
+
+### 3-3 Dashboard
+- [x] 3-3a Dashboard 頁面：統計卡片 + 今日建議
+  - Backend：`services/dashboard/queries.py` (231) + `api/routes/dashboard.py` (91)；`GET /dashboard/stats`
+  - 4 統計卡：路徑進度 / 本週 Quiz / 精熟度概覽 / 反思次數
+  - today_suggestion 規則版（in_progress > available > all_completed > no_path）
+  - Frontend：`lib/dashboard.ts` + `stats-cards.tsx` (145, 響應式 4 卡網格) + `today-suggestion.tsx` (38)
+  - 重寫 dashboard page（loading/error/ready 三狀態）
+  - 10 個新後端測試，全套 422 tests 全綠
+- [x] 3-3b 最近活動時間線
+  - Backend：`services/dashboard/timeline.py` (142) + `GET /dashboard/timeline?limit=N`
+  - 3 種事件 (quiz / reflection / unit_completed)，每類各取 limit 筆 → merge → 取 limit
+  - Frontend：`activity-timeline.tsx` (150) — async load + 4 狀態 + 4 種 icon + 相對時間格式
+  - 9 個新後端測試，全套 431 tests 全綠
+- [x] 3-3c 精熟度總覽圖表
+  - Backend：`services/dashboard/mastery.py` (111) + `GET /dashboard/mastery-overview`
+  - 一次 outerjoin 取所有 (concept, mastery)；application 層分群 + 排序
+  - Category 依 earliest video_order ASC；concept 內依 video_order ASC
+  - Frontend：`mastery-breakdown.tsx` (130) — 全展開 8 個 category + concept progress bars
+  - 8 個新後端測試，全套 439 tests 全綠
+
+## Phase 4：部署準備（容器化 + 配置層，本機可完成）✅
+> 完成標準：學生端 Phase 1~3 全數完成後，一次性處理 Docker / Zeabur / Judge0 自架 / NextAuth callback / CORS / API proxy 串接的**程式碼與配置檔**。
+> 「需要實際部署到 Zeabur / VPS 才能驗證」的工作（Golden path / 監控告警 / 效能 baseline）已移至 **Phase 7 上線實測**。
+> **前置條件**：Phase 1-3 全部完成。
+
+### 4-1 容器化
+- [x] 4-1a Dockerfile（前端 + 後端）— 配置檔已存在，需重新驗證 build
+  - pyproject.toml 補完 LlamaIndex 三套件 + psycopg2-binary
+  - requirements.lock 重產（38 → 272 行，含全部 transitive deps）
+  - `docker build` backend ✅（667 MB）/ web ✅（285 MB）
+  - 確認 pyBKT 未實際 import（純 BKT 公式 updater）→ 不加依賴
+- [x] 4-1b `pgvector/pgvector:pg16` 容器配置（Phase 2-1 完成後驗證）
+  - dev compose 已用 pgvector image；vector extension v0.8.2 + documents + data_codedge_rag 完整就緒
+  - 修 zeabur.json：postgres 從 marketplace `postgresql`（不含 pgvector）→ `PREBUILT + source.image: pgvector/pgvector:pg16`
+  - 新增 `docker-compose.prod.yml`（84 行）self-host 替代方案
+  - 擴充 `deployment.md`（80 → 174 行）為兩種部署選項 + pgvector 風險警告
+  - tech-debt：Zeabur PREBUILT IMAGE schema 待 4-2 實測
+- [x] 4-1c Judge0 自架 docker-compose（取代 RapidAPI 50 次/天限制）
+  - `docker-compose.judge0.yml`（87 行）— Judge0 1.13.1 4 服務（server / workers / PG13 / Redis6）含 healthcheck 鏈 + privileged
+  - `judge0.conf.example` — 配置範本（資源限制 + 安全 disable + 預設值）
+  - `deployment.md` 加 §C 自架完整流程 + Zeabur privileged 限制警告
+  - tech-debt：self-host VPS 部署時實測 workers 啟動 + backend 接通
+
+### 4-2 Zeabur 部署
+- [x] 4-2a 環境變數分層配置（dev/prod，敏感資訊用 Zeabur Secrets）
+  - 刪除過時 root `.env.example`；新增 `.env.prod.example`（72 行）self-host 完整範本
+  - `.gitignore` 加 judge0.conf 規則（保留 .example）
+  - `deployment.md` 加「環境變數分層」章節：3 套配置一覽 + 變數敏感性分類 + Zeabur Secret 標記指引
+- [x] 4-2b Zeabur service 串接（internal DNS / Postgres / Redis / Judge0）— `zeabur.json` 已存在，需驗證
+  - 修正 zeabur.json：backend 加 `BACKEND_HOST` expose（web 引用必要）；redis 從 marketplace 改 image-based 統一風格
+  - 重寫 deployment.md §A（80 → 138 行）：service 串接架構圖 + 變數插值規則說明 + zeabur template deploy 一鍵部署 + Project Variables 設定表 + 部署 checklist + 疑難排解
+  - **未實際 Zeabur 部署驗證**（記入 tech-debt；4-3 整合驗證時實測）
+- [x] 4-2c NextAuth callback URL + CORS 設定（前後端網域）
+  - zeabur.json web 加 `AUTH_TRUST_HOST=true`（NextAuth v5 在反代後必要）
+  - backend `cors_origins` 加 `.rstrip("/")` 防呆（trailing slash 字串比對 origin 不符）
+  - `web/.env.example` 補 AUTH_TRUST_HOST 註釋
+  - `deployment.md §D` 新章節：callback URL 產生規則 + 三環境 trust_host 一覽 + CORS 設計理由 + 疑難排解
+  - 3 個新 cors 容錯測試，全套 442 tests 全綠
+
+> ⚠ 原 4-3 上線驗證（Golden path / 監控 / 效能 baseline）已搬移至 **Phase 7**（中間夾入 Phase 6 教學內容建構），因三者皆需實際部署到 Zeabur / VPS 才能驗證效果。
+
+---
+
+## Phase 5：教師端（不需實際部署即可開發）
+> 完成標準：教師可管理班級、查看學生行為分析圖表、指派作業
+> 對應頁面：Teacher Dashboard（教師專屬，學生不可見）
+> **前置條件**：Phase 4 容器化 + 配置層完成。
+> **資料策略**：5-1 / 5-2 / 5-5 純檔案，本機 dev 環境即可完整開發 + 測試；5-3 / 5-4 行為分析演算法與視覺化的程式碼可先用合成資料 / 種子資料寫 + 單元測試，等 Phase 7 部署後累積真實學生行為資料再以實測資料調校參數（不阻塞編寫）。
+
+### 5-1 班級管理
+- [ ] 5-1a classes + class_members 表 migration
+- [ ] 5-1b 班級 CRUD API（建立/邀請碼/加入/移除）
+- [ ] 5-1c 教師 Dashboard 頁面骨架 + 班級管理 UI
+
+### 5-2 行為資料收集（Module 9）
+> **OSS**：✅ Tier 2 直接採用 ProgSnap2 EventType schema + StudyChat dialogue act 分類 schema（references.md §1）
+- [ ] 5-2a coding_events 表 migration（**採用 ProgSnap2 五欄主鍵 + EventType 列舉**）
+- [ ] 5-2b 後端 event logging service（從 Judge0 + EDF 現有流程擷取資料）
+- [ ] 5-2c chat_messages 擴充 dialogue_act 欄位（**採用 StudyChat schema**：asking_hint/clarification_request/debugging/off_topic/acknowledgment/verification）
+- [ ] 5-2d 行為指標聚合 service（編譯頻率/成功率/修復時間/hint 分布等）
+
+### 5-3 行為分析演算法（Module 9）
+> **OSS**：✅ Tier 1 pyBKT（精熟度追蹤）+ `prefixspan`（sequential pattern mining，**取代 AGPL 的 PM4Py**）
+- [ ] 5-3a 行為-成效相關性分析（行為指標 vs 精熟度提升）
+- [ ] 5-3b 學生行為模式群聚（主動型/被動型/掙扎型分群，scikit-learn KMeans）
+- [ ] 5-3c 行為流程分析（**用 prefixspan**，禁止用 PM4Py）
+- [ ] 5-3d 行為分析 API 端點（班級/個人行為統計 + 圖表資料）
+
+### 5-4 行為分析視覺化（Module 9）
+> 參考：OpenLAP 三層架構（Data Collection → Indicator Engine → Analytics Framework）
+- [ ] 5-4a 行為-成效散佈圖 + 錯誤類型熱力圖
+- [ ] 5-4b 學習行為時序圖 + Hint 階梯使用分布
+- [ ] 5-4c 班級行為群聚分析圖 + 精熟度趨勢線
+
+### 5-5 作業指派
+- [ ] 5-5a 作業指派功能（選題 + 指定學生/班級）
+- [ ] 5-5b 學生進度查看（精熟度熱力圖 + 常見錯誤統計）
+
+---
+
+## Phase 6：教學內容建構（NotebookLM grounded 模式 — 內容必須來自實際影片）
+> 完成標準：62 個學習單元的 4 個 tab（概念說明 / 範例 / 練習 / 摘要）全部有實質內容、且 LLM 生成內容**完全 grounded 在教授實際影片字幕上**（不容許 LLM 自由發揮、不容許脫離影片教法）；`learning_units.content` 不再是空骨架。
+> 對應頁面：Learn (Page 2) — 解除 3-1d 留下的 placeholder。
+> **前置條件**：Phase 1-3 完成（concepts 表 + learning_units schema + ExercisesTab + RAG infra 已就緒）。
+> **與 Phase 5 關係**：兩者可**平行或先後**，依教授資料準備進度而定。
+> **核心架構（NotebookLM 模式）**：YT 字幕 → LlamaIndex IngestionPipeline 入庫 → 生成時 retrieve 該 video 字幕 chunks 注入 prompt → LLM 生成必須引用 timestamp citation、不引入字幕未出現的概念 → 教授抽查時可比對「LLM 生成 vs 影片實際 timestamp 處內容」。
+> **資料流**：YT playlist URL → fetcher 抓 metadata + 字幕 → PATCH 寫入 concepts metadata + RAG ingest 字幕 → LLM grounded 生成 unit content → 教授抽查 → 修正 prompt 重跑（如需）。
+> **OSS**：RAG 沿用 Phase 2-1 LlamaIndex；LLM 生成沿用 Phase 2-4c `services/quiz/generate.py` 與 OpenAI `json_object` mode；字幕抓取沿用 yt-dlp。**禁止為此 Phase 引入新框架**。
+> **Concept 範圍**：62 個影片 concept（video_order 1-62）。其中 1-3（課程簡介、環境安裝、語言簡介）為「選看」類，**不參與 PREREQUISITE 鏈**（透過 `category="課程介紹"` 標記讓 learning_path generator 過濾；知識圖譜頁仍顯示但 styling 區分）。
+
+### 6-1 影片資料整合（metadata + 字幕 RAG ingest）
+- [x] 6-1a 教授交付 playlist URL（已完成 2026-05-07：`PLJDZAE4d-ihqvGtBMhgMv8Zp6Tv6D1l-M`，62 部影片完整對齊 DB 的 video_order 1-62）
+- [x] 6-1b 開發 fetcher script `backend/scripts/fetch_playlist_metadata.py` 抓 metadata（已完成 2026-05-07，產出 `data/teaching_content/videos.csv` 59 列；**待擴充為 62 列**：EXPECTED 範圍從 4-62 改為 1-62 並重跑）
+- [x] 6-1b+ 擴充 fetcher：EXPECTED 範圍 1-62 + 重跑產出 62 列 CSV（2026-05-07：62/62 對齊，video 1-3 標題 = `甚麼是程式語言` / `C++程式語言簡介` / `如何下戴和安裝DevC++`）
+- [x] 6-1c 加入 video_order 1-3 concept seed migration（`category="課程介紹"`，**不**加 PREREQUISITE 邊）+ learning_path generator 過濾此 category（2026-05-07：alembic `f2a3b4c5d6e7` 新增 3 筆，DB 從 59 → 62；`EXCLUDED_FROM_PATH_CATEGORIES = ("課程介紹",)` 在 generator.py 過濾；2 個新測試 `test_intro_category_concepts_excluded_from_path` + `test_all_intro_category_raises_422`，全套 445 tests 全綠）
+- [x] 6-1d 開發 PATCH script：CSV → UPDATE `concepts.video_youtube_id` / `video_duration_seconds`（含 dry-run + 缺漏檢查）+ 執行 + DB 驗證（62 筆全有非 NULL metadata）（2026-05-07：`backend/scripts/patch_video_metadata.py` 200 行；dry-run 預設 / `--apply` 寫入 / `--force` 覆寫；DB 驗證 62/62 has_yt + has_dur，0 null；445 tests 全綠）
+- [x] 6-1e（NotebookLM 核心）字幕抓取 + RAG ingest（2026-05-08 完成）— **A 方案 YT 自動字幕失敗**（教授頻道全 62 部皆無 auto-CC）→ **改 B1 OpenAI Whisper API**：
+  - **transcribe_videos.py**：yt-dlp 抓 audio + Whisper API（whisper-1 + verbose_json + 語言 zh + prompt 注入 title_zh）→ 62 部 transcripts JSON（segment-level timestamps），實際成本 $2.621
+  - **apply_corrections.py**：corrections.json 兩層替換（global + per_video）→ transcripts_corrected/（保留 raw 不動，可重複迭代）
+  - **flag_transcripts.py**：GPT-4o-mini 自動掃可疑段落（type=term/semantic/repetition + confidence）→ issues_proposal.json，成本 ~$0.07
+  - **ingest_transcripts_rag.py**：corrected transcripts → 60 秒時間視窗分組 → 每窗組裝 1 個 LlamaIndex Document（text 含 `[mm:ss]` timestamp markers）→ pipeline.arun → **861 chunks 寫入 data_codedge_rag**（metadata 標 video_order/youtube_id/title_zh/start_time_seconds/end_time_seconds/source_type）
+  - **二次審核採納 12 條 global_replacements**（黃國昊×31 / Double×17 / Cout×8 / 黃國華×8 / ioString×3 / Void×2 / iostring×1 / WCHART×1 / objective oriented×1 / preventive: IOStream + objective-oriented）；per_video 修正全部留給 6-4 教授抽查
+  - **Spot retrieve 驗證**：4/4 query 命中 expected video（遞迴→v47 / 指標→v51 / 物件導向→v59 / 階乘→top-3 含 v47）
+- [x] 6-1f 同步 tech-debt.md（2026-05-08：YT metadata 條目移除；知識圖譜重構條目原已 cross-ref）
+
+### 6-2 Unit content 批次生成（grounded on YT 字幕）
+- [x] 6-2a 設計 grounded prompt template（2026-05-08 完成）：
+  - `backend/services/learning/content_generator.py` (235 行)：3 個 generate function（concept_explanation / code_examples / summary）+ Pydantic 模型（Citation / ConceptExplanation / CodeExample / CodeExamples / Summary / UnitContent）+ orchestrator
+  - PREAMBLE 5 條絕對規則：禁引入字幕未提及概念 / 必附 [mm:ss] citation / 不足時 needs_more_source=true / 繁中台灣 / 不臆測教授觀點
+  - 三類 task prompt 各自規定 JSON schema 與字數上限（markdown 200-500 / explanation < 200 / key_points 3-7 / excerpt < 120）
+  - `_build_context_block` 注入 concept 元資料 + transcript chunks（含 [chunk N] 標籤）；空 chunks 自動引導 needs_more_source
+  - `_call_llm_json` 共用 helper：`json_object` mode + temperature 0.3 + Pydantic validate + 503/502 分層錯誤
+  - `tests/test_content_generator.py` 13 個 mock-LLM 測試（成功路徑 ×3 / needs_more_source ×2 / 失敗 ×3 / grounding 機制 ×3 / orchestrator ×1 / Pydantic 驗證 ×1），全套 458 tests 全綠
+- [x] 6-2b LLM 批次生成 infra（2026-05-08，程式碼完成；實際 59 unit 批次跑延至 6-4 教授抽查時合併執行避免重複付費）：
+  - `services/rag/retrieve.py` 新 `get_chunks_by_video_order(video_order)`：直接 SQL 走 metadata filter + 依 `start_time_seconds` 排序，避免語意 top-k 跨 video 污染
+  - alembic `g3b4c5d6e7f8` + `models/unit_content_staging.py`：staging 表（concept_id UNIQUE / status pending/approved/rejected / needs_more_source / notes / attempt_count）
+  - `services/learning/batch_generator.py` (251 行)：retry max 3 (LLM_UNAVAILABLE / LLM_PARSE_ERROR) + needs_more_source 聚合 + vendor-neutral SELECT-then-INSERT/UPDATE upsert + skip_existing 跳過 approved + `EXCLUDED_FROM_PATH_CATEGORIES` 過濾課程介紹
+  - `services/learning/unit_content_promote.py` (58 行)：`promote_concept(db, concept_id) -> int` 強制 status='approved' 才把 staging.content 推到所有 learning_units
+  - `scripts/generate_unit_content.py`：CLI `--only N` / `--force` / `--dry-run`；dry-run 驗證 59 concept 過濾正確
+  - 18 個新 mock-LLM + 真 DB tests，全套 458 → 476 tests 全綠
+- [ ] 6-2c 概念說明 tab：YT player IFrame embed（依賴 6-1d metadata；timestamp citation 點擊跳到對應影片時間點）
+- [ ] 6-2d 範例 tab：渲染 LLM 生成的程式碼範例 + 「在 Workspace 開啟」按鈕（復用 Phase 2-5d sessionStorage）+ citation 標示
+- [ ] 6-2e 摘要 tab：渲染 LLM 生成的 Markdown 摘要 + key takeaways bullet + citation 標示
+
+### 6-3 練習題庫補充（grounded）
+- [ ] 6-3a 用 Phase 2-4 智慧出題管線批次模式為每 unit（4-62 共 59 個）生成至少 2 題；**generate prompt 加 grounding 規則**：題目情境必須與該 video 字幕中出現的範例 / 變數命名一致；validated=True 才入庫
+- [ ] 6-3b ExercisesTab 改造：從「按需現生」→「優先讀題庫，題庫不足才現生」（降低 LLM 等待 + 一致性）
+
+### 6-4 內容品管
+- [ ] 6-4a 教授抽查 5-10 個 unit 全部 4 tab 品質：核心檢查「LLM 生成內容是否真的反映該 video timestamp 處的教法」（可直接點 citation 跳到影片時間點對照）；不脫離 C++ 教學情境；程式碼可編譯
+- [ ] 6-4b 依抽查反饋調整 6-2a prompt template 並針對問題 unit 局部重跑；對品質太差的 unit 評估升級到 Whisper 重 transcribe（B 方案）作為 source
+
+---
+
+## Phase 7：上線實測（須實際部署到 Zeabur / VPS）
+> 完成標準：Golden path 跑通、監控告警接通、效能 baseline 記錄。
+> 對應驗收：可對外開放給真實學生使用。
+> **前置條件**：Phase 4 配置層完成；Phase 6 教學內容建構至少 6-1 + 6-2b 完成（含字幕 RAG ingest + grounded LLM 生成 unit content；否則 Learn 頁面 unit 仍是空殼，部署後學生看到空白頁無意義）；Zeabur 帳號 + VPS（Judge0 self-host）就緒。
+> ⚠ 本 Phase 整段任務的共通特性是「程式碼已就緒，只能在實際部署環境驗證」。上次卡關於 API 串接（前後端 proxy / NextAuth callback URL / CORS / Judge0 endpoint），重啟前需先排查 `web/app/api/*` proxy 設定、`backend/app/core/config.py` 環境變數、Zeabur dashboard service 連線狀態。
+
+### 7-1 Golden path 整合驗證（原 4-3a → 6-1）
+- [ ] 7-1a 部署到 Zeabur（web + backend + pgvector + redis）+ Judge0 self-host VPS
+- [ ] 7-1b Golden path 跑通：登入 → 寫碼 → 執行 → AI 對話 → RAG 檢索 → 出題作答
+- [ ] 7-1c 教師端帳號 / 班級 / 行為資料端到端驗證（Phase 5 程式碼以真實流量驗收）
+
+### 7-2 監控與告警（原 4-3b → 6-2）
+> Sentry SDK / 結構化日誌 / 健康檢查端點的**程式碼**可在本機預先寫好，但接通告警鏈路、Log aggregation 看到流量、Sentry 收到 issue 都需實際部署。
+- [ ] 7-2a Sentry SDK 整合（前後端 init + DSN 環境變數 + 異常捕捉）— 程式碼可本機完成
+- [ ] 7-2b 結構化日誌（structlog / loguru + request_id middleware）— 程式碼可本機完成
+- [ ] 7-2c 健康檢查端點分離（/health/live + /health/ready）— 程式碼可本機完成
+- [ ] 7-2d 部署後告警鏈路驗證（Sentry 收 issue / 日誌聚合可查 / 健康檢查告警觸發）— **須實際部署**
+
+### 7-3 效能 baseline（原 4-3c → 6-3）
+- [ ] 7-3a 首次互動時間（TTFB / LCP）量測
+- [ ] 7-3b LLM p95 延遲量測（EDF interact / Quiz generate / Comprehension grade）
+- [ ] 7-3c Judge0 成功率與佇列等待時間量測
+- [ ] 7-3d 將上述指標記入 `docs/performance-baseline.md` 作為後續優化基準
+
+---
+
+## 已確認決策
+
+- Terminal：Batch 模式，不需即時互動式 terminal
+- 介面語言：繁體中文為主，暫不做多語系
+- UI：GitHub Dark + VS Code 風格，純 Dark Mode
+- Judge0：開發期 RapidAPI (免費 50 次/天) → 上線後自架
+- 部署：Zeabur (Tencent Tokyo VPS) | 使用者規模：初期 < 100 人
+- 即時通訊：Phase 1 用 REST + SSE (chat streaming)，未來視需求加 WebSocket
+- 介面借鑑：6 份來源僅貢獻結構模式，視覺基本元素統一為 GitHub Dark（design-plan.md §0.3 七條硬規則）
+- **OSS 重用**：開發前必查 `docs/references.md` §1 決策矩陣；禁止 AGPL/GPL 套件；禁止移植已有對應套件的演算法（如 BKT 必用 pyBKT）
+- **執行順序**：功能優先（Phase 2 → 3）→ 部署準備程式碼（Phase 4）→ **Phase 5 教師端 ⇄ Phase 6 教學內容建構（兩者可平行 / 先後皆可，依教授資料準備進度決定）** → 上線實測（Phase 7）；所有需要實際部署才能驗證的工作集中在 Phase 7，避免邊開發邊維運耗能
+- **Phase 6 採 NotebookLM grounded 模式**（2026-05-07 確認）：所有 LLM 生成的 unit content / 練習題必須 grounded 在教授實際 YT 影片字幕上，禁止 LLM 自由發揮；source 採 YT 自動字幕（A 方案，零成本），品質不夠的 unit 在 6-4 抽查時評估升級到 Whisper 重 transcribe（B 方案）
+- **Concept 範圍 62 個**（2026-05-07 確認）：video_order 1-62 全部 seed 為 concept；其中 1-3（課程簡介、環境安裝、語言簡介）標記 `category="課程介紹"` 不參與 PREREQUISITE 鏈，learning_path generator 過濾此 category；知識圖譜頁仍顯示但 styling 區分
+- **知識圖譜重構為 Phase 6 後續工作**（2026-05-07 確認）：目前線性 04→05→...→62 的 PREREQUISITE 鏈為 MVP；Phase 6 教學內容建構完成後，回頭依教授標的跨章依賴重構為多對多圖（記入 tech-debt 追蹤）

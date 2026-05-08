@@ -391,8 +391,14 @@
 - [x] 6-1b+ 擴充 fetcher：EXPECTED 範圍 1-62 + 重跑產出 62 列 CSV（2026-05-07：62/62 對齊，video 1-3 標題 = `甚麼是程式語言` / `C++程式語言簡介` / `如何下戴和安裝DevC++`）
 - [x] 6-1c 加入 video_order 1-3 concept seed migration（`category="課程介紹"`，**不**加 PREREQUISITE 邊）+ learning_path generator 過濾此 category（2026-05-07：alembic `f2a3b4c5d6e7` 新增 3 筆，DB 從 59 → 62；`EXCLUDED_FROM_PATH_CATEGORIES = ("課程介紹",)` 在 generator.py 過濾；2 個新測試 `test_intro_category_concepts_excluded_from_path` + `test_all_intro_category_raises_422`，全套 445 tests 全綠）
 - [x] 6-1d 開發 PATCH script：CSV → UPDATE `concepts.video_youtube_id` / `video_duration_seconds`（含 dry-run + 缺漏檢查）+ 執行 + DB 驗證（62 筆全有非 NULL metadata）（2026-05-07：`backend/scripts/patch_video_metadata.py` 200 行；dry-run 預設 / `--apply` 寫入 / `--force` 覆寫；DB 驗證 62/62 has_yt + has_dur，0 null；445 tests 全綠）
-- [ ] 6-1e（NotebookLM 核心）字幕抓取 + RAG ingest：`yt-dlp --write-auto-subs --sub-lang zh-Hant` 抓 62 部字幕 → 解析為 (timestamp, text) chunks → LlamaIndex IngestionPipeline 寫入 vector store；metadata 標 `video_order` + `youtube_id` + `start_time` 供日後 retrieve filter
-- [ ] 6-1f 同步移除 `tech-debt.md` YT metadata 條目；新增「知識圖譜重構」條目（Phase 6 完成後執行）
+- [x] 6-1e（NotebookLM 核心）字幕抓取 + RAG ingest（2026-05-08 完成）— **A 方案 YT 自動字幕失敗**（教授頻道全 62 部皆無 auto-CC）→ **改 B1 OpenAI Whisper API**：
+  - **transcribe_videos.py**：yt-dlp 抓 audio + Whisper API（whisper-1 + verbose_json + 語言 zh + prompt 注入 title_zh）→ 62 部 transcripts JSON（segment-level timestamps），實際成本 $2.621
+  - **apply_corrections.py**：corrections.json 兩層替換（global + per_video）→ transcripts_corrected/（保留 raw 不動，可重複迭代）
+  - **flag_transcripts.py**：GPT-4o-mini 自動掃可疑段落（type=term/semantic/repetition + confidence）→ issues_proposal.json，成本 ~$0.07
+  - **ingest_transcripts_rag.py**：corrected transcripts → 60 秒時間視窗分組 → 每窗組裝 1 個 LlamaIndex Document（text 含 `[mm:ss]` timestamp markers）→ pipeline.arun → **861 chunks 寫入 data_codedge_rag**（metadata 標 video_order/youtube_id/title_zh/start_time_seconds/end_time_seconds/source_type）
+  - **二次審核採納 12 條 global_replacements**（黃國昊×31 / Double×17 / Cout×8 / 黃國華×8 / ioString×3 / Void×2 / iostring×1 / WCHART×1 / objective oriented×1 / preventive: IOStream + objective-oriented）；per_video 修正全部留給 6-4 教授抽查
+  - **Spot retrieve 驗證**：4/4 query 命中 expected video（遞迴→v47 / 指標→v51 / 物件導向→v59 / 階乘→top-3 含 v47）
+- [x] 6-1f 同步 tech-debt.md（2026-05-08：YT metadata 條目移除；知識圖譜重構條目原已 cross-ref）
 
 ### 6-2 Unit content 批次生成（grounded on YT 字幕）
 - [ ] 6-2a 設計 grounded prompt template（核心：強制 grounding）：

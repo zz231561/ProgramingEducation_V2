@@ -1,5 +1,41 @@
 # 變更日誌
 
+## [2026-05-08] — Phase 6-1e 完成：Whisper 全 62 部 transcript + 二次審核 + 861 chunks 入 RAG（NotebookLM 核心就緒）
+
+### Why A 方案改 B1
+原計畫 A（yt-dlp 抓 zh-Hant 自動字幕）**徹底失敗**——6/6 樣本影片皆 "no automatic captions, no subtitles"（教授頻道未開或 YT 未生成）。改採 B1（OpenAI Whisper API），實測品質高（教授名「黃國豪」抓對；C++/devc++/Cout 等術語多數正確），唯一系統性錯辨「黃國昊」（同音字 hào），由二次審核 corrections.json 全域替換解決。
+
+### Added — 4 個 script + 配置 + 資料
+- **`backend/scripts/transcribe_videos.py`** (~190 lines)：yt-dlp 抓 audio + OpenAI `whisper-1` API；idempotent（skip 已存 transcripts）+ 成本上限保護（COST_CAP_USD=5）+ prompt 注入 title_zh 提升技術術語準度
+- **`backend/scripts/apply_corrections.py`** (~120 lines)：corrections.json 兩層替換（global + per_video segment-id）→ transcripts_corrected/；保留 raw 不動
+- **`backend/scripts/flag_transcripts.py`** (~140 lines)：GPT-4o-mini 自動掃可疑段落（type=term/semantic/repetition + confidence 0-1）→ issues_proposal.json；不誤報優於不漏報
+- **`backend/scripts/ingest_transcripts_rag.py`** (~180 lines)：60 秒時間視窗分組 → LlamaIndex Document（text 含 `[mm:ss]` timestamp markers）→ pipeline.arun → 寫入 data_codedge_rag；--reset 旗標可砍重來
+- **`data/teaching_content/corrections.json`**：12 條 global_replacements + per_video（目前空，留給 6-4 教授抽查補）
+- **`data/teaching_content/transcripts/`**：62 個 raw Whisper JSON（3.4 MB）
+- **`data/teaching_content/transcripts_corrected/`**：62 個套用 corrections 後的 JSON
+- **`data/teaching_content/issues_proposal.json`**：209 個 LLM-flagged issues 的完整審核清單（68 KB）
+
+### Results
+- **Whisper batch**：62/62 全成功；總時長 7.2 hr → 成本 $2.621 USD
+- **Flag scan**：209 issues（term ×152 / semantic ×48 / repetition ×9）；高 confidence ≥0.9 共 41 個
+- **採納修正**：12 條 global（黃國昊×31, Double×17, Cout×8, 黃國華×8, ioString×3, Void×2, iostring×1, WCHART×1, objective oriented×1 + 預防性 IOStream / objective-oriented）；per_video 0 條（保留給 6-4 教授抽查）
+- **RAG 入庫**：62 documents 行 + **861 chunks** 寫入 data_codedge_rag；每 chunk metadata 含 video_order / youtube_id / title_zh / start_time_seconds / end_time_seconds / source_type
+- **Spot retrieve 驗證**：4/4 query 命中 expected video（遞迴→v47 / 指標→v51 / 物件導向→v59 / 階乘→top-3 含 v47）
+- 總成本 6-1e: ~$2.69（Whisper $2.621 + Flag $0.07 + Embeddings $0.002）
+
+### 設計亮點
+- **不破壞原始**：raw transcripts 永不修改；錯誤定位 + 重跑 apply 都很方便；可重複迭代 corrections
+- **Timestamp markers 嵌入 chunk text**：LLM 在 6-2 生成時可直接抽出 `[mm:ss]` 做 citation，不用查 metadata（雖然 metadata 也保留 start/end_time_seconds）
+- **二次審核機制**：global 解決系統性錯誤（一條 fix 多影片）；per_video 留給 6-4 抽查階段針對性修
+- **Reset & re-ingest 高效**：發現「黃國華」漏網後，加 1 條 global → re-apply → --reset + re-ingest 全程 < 2 min
+
+### Sync
+- `docs/roadmap.md` Phase 6-1e/f 標 [x] 並寫入完成細節
+- `CLAUDE.md` 進度更新：6-1 整節完成
+- `.gitignore` 新增 `data/teaching_content/audio_cache/` 排除（transient）
+
+---
+
 ## [2026-05-07] — Phase 6 升級為 NotebookLM grounded 模式 + 6-1a/b 完成
 
 ### Changed（roadmap Phase 6 大幅細化）

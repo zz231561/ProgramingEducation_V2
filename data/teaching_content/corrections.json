@@ -1,0 +1,28 @@
+{
+  "_doc": "Phase 6-1e 二次審核：Whisper transcript 修正配置。global_replacements 對所有 segment.text + full_text 套用 str.replace（case-sensitive）。per_video 針對單一影片的特定 segment 修正。每次編輯後跑 apply_corrections 重產 transcripts_corrected/。",
+  "global_replacements": {
+    "黃國昊": "黃國豪",
+    "黃國華": "黃國豪",
+    "Cout": "cout",
+    "Cin": "cin",
+    "Endl": "endl",
+    "Double": "double",
+    "Void": "void",
+    "ioString": "iostream",
+    "iostring": "iostream",
+    "IOStream": "iostream",
+    "WCHART": "wchar_t",
+    "objective oriented": "object-oriented",
+    "objective-oriented": "object-oriented"
+  },
+  "per_video": {},
+  "_notes": {
+    "黃國昊": "Whisper 同音字誤辨；豪/昊 同音 hào",
+    "黃國華": "Whisper 同音字誤辨；豪/華 同音 huá / hào（v51 出現 2 次）",
+    "Cout/Cin/Endl": "C++ 標準 stream 名稱與 manipulator 應全小寫；Whisper 偶會句首大寫化",
+    "Double/Void": "C++ 內建型別 keyword 必須小寫；Whisper 偶會句首大寫化",
+    "ioString/iostring/IOStream": "C++ 標頭檔 <iostream> 的中文教學影片中常被 Whisper 音譯為錯誤拼法",
+    "WCHART": "C++ wide-char 型別 wchar_t 的錯誤拼寫",
+    "objective oriented": "Whisper 把 'object-oriented' 誤辨為 'objective oriented'（OO 觀念名詞）"
+  }
+}

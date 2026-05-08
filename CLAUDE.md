@@ -46,8 +46,8 @@
 - ✅ 6-1b+ fetcher 擴充為 EXPECTED 1-62 + 重產 62 列 CSV（2026-05-07）
 - ✅ 6-1c 加 video 1-3 concept seed migration（2026-05-07，DB 59→62，filter 在 generator.py，445 tests 全綠）
 - ✅ 6-1d PATCH script + 執行寫入 DB（2026-05-07：62/62 metadata 寫入，dev DB 已就緒）
-- ⬜ 6-1e（NotebookLM 核心）yt-dlp 抓字幕 → LlamaIndex IngestionPipeline → RAG 入庫
-- ⬜ 6-1f 同步 tech-debt 條目
+- ✅ 6-1e（NotebookLM 核心）改 B1 Whisper API（A 方案 YT 字幕失敗）→ 62 transcripts → 12 global corrections → 861 chunks 入 RAG（2026-05-08，spot retrieve 4/4 命中）
+- ✅ 6-1f tech-debt 同步
 - ⬜ 6-2 ~ 6-4：grounded LLM 生成 unit content / 練習題庫 / 教授抽查
 
 **Phase 5 ⇄ Phase 6 平行**：Phase 5 教師端可隨時插入並行（5-1 班級管理 / 5-2 行為資料 / 5-3 分析演算法 / 5-4 視覺化 / 5-5 作業指派）

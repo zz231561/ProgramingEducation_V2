@@ -1,0 +1,2049 @@
+{
+  "results": [
+    {
+      "video_order": 1,
+      "title_zh": "甚麼是程式語言",
+      "issues": [
+        {
+          "segment_id": 161,
+          "snippet": "objective oriented的一種觀念",
+          "type": "term",
+          "suggested_fix": "object-oriented的一種觀念",
+          "confidence": 0.9,
+          "reasoning": "「objective oriented」應為「object-oriented」的錯誤音譯"
+        }
+      ]
+    },
+    {
+      "video_order": 2,
+      "title_zh": "C++程式語言簡介",
+      "issues": [
+        {
+          "segment_id": 9,
+          "snippet": "也就是要一個高可吸性的程式語言",
+          "type": "term",
+          "suggested_fix": "也就是要一個高可攜性的程式語言",
+          "confidence": 0.85,
+          "reasoning": "「可吸性」應為「可攜性」的錯誤翻譯"
+        },
+        {
+          "segment_id": 40,
+          "snippet": "也就是說 C++ 應該是一個比 C 更厲害的一種程式語言",
+          "type": "semantic",
+          "suggested_fix": "也就是說 C++ 應該是一個比 C 更強大的程式語言",
+          "confidence": 0.8,
+          "reasoning": "「更厲害」用詞不當，應用「更強大」"
+        },
+        {
+          "segment_id": 171,
+          "snippet": "所以是用 GNU C Compiler 把它做縮寫叫 GCC",
+          "type": "term",
+          "suggested_fix": "所以是用 GNU C Compiler 把它縮寫為 GCC",
+          "confidence": 0.75,
+          "reasoning": "「做縮寫」用詞不當，應為「縮寫為」"
+        }
+      ]
+    },
+    {
+      "video_order": 3,
+      "title_zh": "如何下戴和安裝DevC++",
+      "issues": [
+        {
+          "segment_id": 18,
+          "snippet": "接下來會出現安裝同一書",
+          "type": "term",
+          "suggested_fix": "接下來會出現安裝同意書",
+          "confidence": 0.9,
+          "reasoning": "同意書是正確術語，原文錯誤"
+        }
+      ]
+    },
+    {
+      "video_order": 4,
+      "title_zh": "撰寫第一個C++程式",
+      "issues": [
+        {
+          "segment_id": 35,
+          "snippet": "我們會匯入ioString這個標頭檔",
+          "type": "term",
+          "suggested_fix": "我們會匯入iostream這個標頭檔",
+          "confidence": 0.9,
+          "reasoning": "ioString 是錯誤的標頭檔名稱，應為 iostream"
+        },
+        {
+          "segment_id": 176,
+          "snippet": "這個小於小於",
+          "type": "term",
+          "suggested_fix": "這個是小於小於",
+          "confidence": 0.8,
+          "reasoning": "應該是「這個是小於小於」而非「這個小於小於」"
+        },
+        {
+          "segment_id": 236,
+          "snippet": "這裡有個變異並執行",
+          "type": "term",
+          "suggested_fix": "這裡有個編譯並執行",
+          "confidence": 0.85,
+          "reasoning": "變異是錯誤的翻譯，應為編譯"
+        }
+      ]
+    },
+    {
+      "video_order": 5,
+      "title_zh": "C++程式的組成及語法規則",
+      "issues": [
+        {
+          "segment_id": 6,
+          "snippet": "這個 iostream 我們叫做涵括檔",
+          "type": "term",
+          "suggested_fix": "這個 iostream 我們叫做標頭檔",
+          "confidence": 0.8,
+          "reasoning": "涵括檔應為標頭檔，術語錯誤"
+        },
+        {
+          "segment_id": 12,
+          "snippet": "我們會用井號 include 來做開始",
+          "type": "term",
+          "suggested_fix": "我們會用井號 #include 來做開始",
+          "confidence": 0.75,
+          "reasoning": "缺少井號的正確格式"
+        },
+        {
+          "segment_id": 80,
+          "snippet": "這個稱之為 man 函式的本體",
+          "type": "term",
+          "suggested_fix": "這個稱之為 main 函式的本體",
+          "confidence": 0.9,
+          "reasoning": "man 應為 main，術語錯誤"
+        }
+      ]
+    },
+    {
+      "video_order": 6,
+      "title_zh": "C++的輸出與輸入",
+      "issues": [
+        {
+          "segment_id": 30,
+          "snippet": "也就是STD-ENDL-ENDOF9的縮寫",
+          "type": "term",
+          "suggested_fix": "也就是STD-ENDL的縮寫",
+          "confidence": 0.9,
+          "reasoning": "ENDOF9是錯誤的術語，應為ENDL"
+        },
+        {
+          "segment_id": 50,
+          "snippet": "我們只要用SEALT跟END9就可以了",
+          "type": "term",
+          "suggested_fix": "我們只要用COUT跟ENDL就可以了",
+          "confidence": 0.85,
+          "reasoning": "SEALT和END9是錯誤的術語，應為COUT和ENDL"
+        },
+        {
+          "segment_id": 114,
+          "snippet": "然後接下來是吸引讓他輸入姓名存到NAME裡面",
+          "type": "semantic",
+          "suggested_fix": "然後接下來是讓他輸入姓名存到NAME裡面",
+          "confidence": 0.8,
+          "reasoning": "句子中「吸引」用詞不當，造成理解困難"
+        }
+      ]
+    },
+    {
+      "video_order": 7,
+      "title_zh": "良好的程式撰寫習慣",
+      "issues": [
+        {
+          "segment_id": 18,
+          "snippet": "首先它有一個include的ioString",
+          "type": "term",
+          "suggested_fix": "首先它有一個 include 的 iostream",
+          "confidence": 0.85,
+          "reasoning": "ioString 應為 iostream，標準庫名稱錯誤"
+        },
+        {
+          "segment_id": 85,
+          "snippet": "我們要實際來操作devc++",
+          "type": "term",
+          "suggested_fix": "我們要實際來操作 Dev-C++",
+          "confidence": 0.8,
+          "reasoning": "devc++ 應為 Dev-C++，名稱格式錯誤"
+        },
+        {
+          "segment_id": 93,
+          "snippet": "它會出現王曉明年輕的20歲",
+          "type": "semantic",
+          "suggested_fix": "它會出現「王曉明，您今年20歲」",
+          "confidence": 0.75,
+          "reasoning": "句子邏輯不清，應該有標點符號"
+        }
+      ]
+    },
+    {
+      "video_order": 8,
+      "title_zh": "C++的變數",
+      "issues": [
+        {
+          "segment_id": 64,
+          "snippet": "include iostring",
+          "type": "term",
+          "suggested_fix": "#include <iostream>",
+          "confidence": 0.9,
+          "reasoning": "標準庫名稱錯誤，應為 iostream"
+        },
+        {
+          "segment_id": 66,
+          "snippet": "std namespace",
+          "type": "term",
+          "suggested_fix": "std::namespace",
+          "confidence": 0.8,
+          "reasoning": "運算子錯誤，應為 std::"
+        },
+        {
+          "segment_id": 148,
+          "snippet": "用C++的關鍵字",
+          "type": "term",
+          "suggested_fix": "用 C++ 的關鍵字",
+          "confidence": 0.75,
+          "reasoning": "C++ 應該有空格，避免誤解"
+        }
+      ]
+    },
+    {
+      "video_order": 9,
+      "title_zh": "C++的資料型態與sizeof()",
+      "issues": [
+        {
+          "segment_id": 23,
+          "snippet": "比如說short long on-side",
+          "type": "term",
+          "suggested_fix": "比如說short long unsigned",
+          "confidence": 0.85,
+          "reasoning": "on-side 應為 unsigned 的誤音譯"
+        },
+        {
+          "segment_id": 93,
+          "snippet": "character是1個byte",
+          "type": "term",
+          "suggested_fix": "char是1個byte",
+          "confidence": 0.8,
+          "reasoning": "character 應為 char 的正確術語"
+        },
+        {
+          "segment_id": 94,
+          "snippet": "y的character type是2個byte",
+          "type": "term",
+          "suggested_fix": "wide character type是2個byte",
+          "confidence": 0.75,
+          "reasoning": "y的character type 應為 wide character type"
+        }
+      ]
+    },
+    {
+      "video_order": 10,
+      "title_zh": "字面常數",
+      "issues": [
+        {
+          "segment_id": 5,
+          "snippet": "那麼C++把常數的型態歸納為三種",
+          "type": "semantic",
+          "suggested_fix": "那麼C++把常數的型態歸納為三種。",
+          "confidence": 0.85,
+          "reasoning": "缺少句尾標點，造成語意不完整。"
+        },
+        {
+          "segment_id": 6,
+          "snippet": "第一種叫做字面的常數叫literal",
+          "type": "semantic",
+          "suggested_fix": "第一種叫做字面的常數，叫literal。",
+          "confidence": 0.8,
+          "reasoning": "句子結構不清晰，應分開。"
+        },
+        {
+          "segment_id": 8,
+          "snippet": "第三種叫做聚集的常數macroconstant",
+          "type": "semantic",
+          "suggested_fix": "第三種叫做聚集的常數，macroconstant。",
+          "confidence": 0.8,
+          "reasoning": "缺少標點，造成語意不清。"
+        },
+        {
+          "segment_id": 29,
+          "snippet": "像WCHART這種資料型態",
+          "type": "term",
+          "suggested_fix": "像wchar_t這種資料型態",
+          "confidence": 0.9,
+          "reasoning": "WCHART應為wchar_t，為C++標準型別。"
+        },
+        {
+          "segment_id": 56,
+          "snippet": "叫onsign integer的常數",
+          "type": "term",
+          "suggested_fix": "叫unsigned integer的常數",
+          "confidence": 0.9,
+          "reasoning": "onsign應為unsigned，為正確術語。"
+        },
+        {
+          "segment_id": 70,
+          "snippet": "我們就在這個整數的後面加個L",
+          "type": "term",
+          "suggested_fix": "我們就在這個整數的後面加個l",
+          "confidence": 0.85,
+          "reasoning": "L應為小寫l，符合C++標準。"
+        },
+        {
+          "segment_id": 75,
+          "snippet": "那我們就直接在整數的後面加上UL",
+          "type": "term",
+          "suggested_fix": "那我們就直接在整數的後面加上ul",
+          "confidence": 0.85,
+          "reasoning": "UL應為小寫ul，符合C++標準。"
+        },
+        {
+          "segment_id": 97,
+          "snippet": "那另外一種叫做浮點數的常數",
+          "type": "semantic",
+          "suggested_fix": "那另外一種叫做浮點數的常數。",
+          "confidence": 0.8,
+          "reasoning": "缺少句尾標點，造成語意不完整。"
+        },
+        {
+          "segment_id": 106,
+          "snippet": "是float或者是long",
+          "type": "semantic",
+          "suggested_fix": "是float或者是long double。",
+          "confidence": 0.8,
+          "reasoning": "缺少完整型別，造成語意不清。"
+        },
+        {
+          "segment_id": 138,
+          "snippet": "我們用倒斜線單影號",
+          "type": "term",
+          "suggested_fix": "我們用倒斜線單引號",
+          "confidence": 0.85,
+          "reasoning": "單影號應為單引號，符合術語。"
+        },
+        {
+          "segment_id": 140,
+          "snippet": "我們可以用倒斜線雙影號",
+          "type": "term",
+          "suggested_fix": "我們可以用倒斜線雙引號",
+          "confidence": 0.85,
+          "reasoning": "雙影號應為雙引號，符合術語。"
+        }
+      ]
+    },
+    {
+      "video_order": 11,
+      "title_zh": "唯讀變數",
+      "issues": [
+        {
+          "segment_id": 13,
+          "snippet": "cost",
+          "type": "term",
+          "suggested_fix": "const",
+          "confidence": 0.9,
+          "reasoning": "cost 是 const 的錯誤拼寫"
+        },
+        {
+          "segment_id": 85,
+          "snippet": "球的體積是4.0xπxr²",
+          "type": "repetition",
+          "suggested_fix": "球的體積是4.0xπxr²",
+          "confidence": 0.8,
+          "reasoning": "重複出現相同句子"
+        },
+        {
+          "segment_id": 101,
+          "snippet": "半徑為1.5的球的面積",
+          "type": "repetition",
+          "suggested_fix": "半徑為1.5的球的面積",
+          "confidence": 0.8,
+          "reasoning": "重複出現相同句子"
+        }
+      ]
+    },
+    {
+      "video_order": 12,
+      "title_zh": "巨集常數",
+      "issues": [
+        {
+          "segment_id": 17,
+          "snippet": "而且在盤拍的執行編譯之前",
+          "type": "term",
+          "suggested_fix": "而且在編譯的執行之前",
+          "confidence": 0.85,
+          "reasoning": "「盤拍」應為「編譯」，明顯錯誤"
+        },
+        {
+          "segment_id": 29,
+          "snippet": "一個是 define 拍",
+          "type": "term",
+          "suggested_fix": "一個是 define PI",
+          "confidence": 0.85,
+          "reasoning": "「拍」應為「PI」，明顯錯誤"
+        },
+        {
+          "segment_id": 51,
+          "snippet": "然後這邊用到的拍",
+          "type": "term",
+          "suggested_fix": "然後這邊用到的 PI",
+          "confidence": 0.85,
+          "reasoning": "「拍」應為「PI」，明顯錯誤"
+        },
+        {
+          "segment_id": 75,
+          "snippet": "空一個 PI 拍 再空一個 3.1415926",
+          "type": "term",
+          "suggested_fix": "空一個 PI 再空一個 3.1415926",
+          "confidence": 0.85,
+          "reasoning": "「拍」應為「PI」，明顯錯誤"
+        },
+        {
+          "segment_id": 136,
+          "snippet": "會把這個 PI 這兩個字",
+          "type": "term",
+          "suggested_fix": "會把這個 PI 這兩個字",
+          "confidence": 0.85,
+          "reasoning": "「拍」應為「PI」，明顯錯誤"
+        }
+      ]
+    },
+    {
+      "video_order": 13,
+      "title_zh": "以enum定義列舉型別",
+      "issues": [
+        {
+          "segment_id": 45,
+          "snippet": "enum空一個colors",
+          "type": "term",
+          "suggested_fix": "enum colors",
+          "confidence": 0.85,
+          "reasoning": "enum後面應該直接接型別名稱，不需空格"
+        },
+        {
+          "segment_id": 85,
+          "snippet": "我們在這邊宣告了enumcolors",
+          "type": "term",
+          "suggested_fix": "我們在這邊宣告了enum colors",
+          "confidence": 0.85,
+          "reasoning": "enum後面應該直接接型別名稱，不需空格"
+        }
+      ]
+    },
+    {
+      "video_order": 14,
+      "title_zh": "利用typedef為型別定義別名",
+      "issues": [
+        {
+          "segment_id": 116,
+          "snippet": "type define onside character byte",
+          "type": "term",
+          "suggested_fix": "typedef onscene character byte",
+          "confidence": 0.9,
+          "reasoning": "使用了錯誤的術語，應為typedef"
+        },
+        {
+          "segment_id": 128,
+          "snippet": "這個byte就是被定義為onside character",
+          "type": "term",
+          "suggested_fix": "這個byte就是被定義為onscene character",
+          "confidence": 0.85,
+          "reasoning": "使用了錯誤的術語，應為onscene"
+        }
+      ]
+    },
+    {
+      "video_order": 15,
+      "title_zh": "C++的四則運算",
+      "issues": [
+        {
+          "segment_id": 54,
+          "snippet": "跟伏點數兩種",
+          "type": "term",
+          "suggested_fix": "跟浮點數兩種",
+          "confidence": 0.9,
+          "reasoning": "「伏點數」應為「浮點數」的錯誤音譯"
+        },
+        {
+          "segment_id": 60,
+          "snippet": "Double或者是Float",
+          "type": "term",
+          "suggested_fix": "Double或者是float",
+          "confidence": 0.8,
+          "reasoning": "C++ 中的 float 應小寫"
+        },
+        {
+          "segment_id": 73,
+          "snippet": "至少有一個數是Double或Float",
+          "type": "term",
+          "suggested_fix": "至少有一個數是double或float",
+          "confidence": 0.8,
+          "reasoning": "C++ 中的 double 和 float 應小寫"
+        },
+        {
+          "segment_id": 159,
+          "snippet": "真正的答案",
+          "type": "semantic",
+          "suggested_fix": "真正的結果",
+          "confidence": 0.75,
+          "reasoning": "應該用「結果」而非「答案」更符合上下文"
+        }
+      ]
+    },
+    {
+      "video_order": 16,
+      "title_zh": "C++的餘數運算子",
+      "issues": [
+        {
+          "segment_id": 58,
+          "snippet": "然後我們把他存到a",
+          "type": "term",
+          "suggested_fix": "然後我們把它存到a",
+          "confidence": 0.85,
+          "reasoning": "使用「他」不正確，應用「它」指代變數。"
+        },
+        {
+          "segment_id": 68,
+          "snippet": "傷",
+          "type": "term",
+          "suggested_fix": "商",
+          "confidence": 0.9,
+          "reasoning": "「傷」應為「商」，是整數除法的正確術語。"
+        },
+        {
+          "segment_id": 70,
+          "snippet": "求出傷",
+          "type": "term",
+          "suggested_fix": "求出商",
+          "confidence": 0.9,
+          "reasoning": "「傷」應為「商」，是整數除法的正確術語。"
+        },
+        {
+          "segment_id": 72,
+          "snippet": "整數的除法",
+          "type": "term",
+          "suggested_fix": "整數的商",
+          "confidence": 0.85,
+          "reasoning": "「整數的除法」應用「整數的商」更為準確。"
+        },
+        {
+          "segment_id": 75,
+          "snippet": "得到的就是一個傷",
+          "type": "term",
+          "suggested_fix": "得到的就是一個商",
+          "confidence": 0.9,
+          "reasoning": "「傷」應為「商」，是整數除法的正確術語。"
+        },
+        {
+          "segment_id": 78,
+          "snippet": "應該用百分比",
+          "type": "term",
+          "suggested_fix": "應該用餘數運算子",
+          "confidence": 0.85,
+          "reasoning": "應明確提到「餘數運算子」而非「百分比」。"
+        }
+      ]
+    },
+    {
+      "video_order": 17,
+      "title_zh": "C++的遞增遞減運算子",
+      "issues": [
+        {
+          "segment_id": 68,
+          "snippet": "-i跟i-也是一樣",
+          "type": "term",
+          "suggested_fix": "-i跟i--也是一樣",
+          "confidence": 0.9,
+          "reasoning": "運算子名稱錯誤，應為i--而非i-"
+        }
+      ]
+    },
+    {
+      "video_order": 18,
+      "title_zh": "C++的比較運算子",
+      "issues": [
+        {
+          "segment_id": 70,
+          "snippet": "那它會先把運算室算出來以後",
+          "type": "term",
+          "suggested_fix": "那它會先把運算式算出來以後",
+          "confidence": 0.85,
+          "reasoning": "運算室應為運算式，術語錯誤"
+        },
+        {
+          "segment_id": 125,
+          "snippet": "也就是說,剛剛會用101表示",
+          "type": "term",
+          "suggested_fix": "也就是說,剛剛會用1表示",
+          "confidence": 0.8,
+          "reasoning": "101應為1，術語錯誤"
+        },
+        {
+          "segment_id": 130,
+          "snippet": "no boolean alpha",
+          "type": "term",
+          "suggested_fix": "not boolean alpha",
+          "confidence": 0.75,
+          "reasoning": "no應為not，術語錯誤"
+        }
+      ]
+    },
+    {
+      "video_order": 19,
+      "title_zh": "C++的邏輯運算子",
+      "issues": [
+        {
+          "segment_id": 20,
+          "snippet": "NOT是用經談號",
+          "type": "term",
+          "suggested_fix": "NOT是用驚嘆號",
+          "confidence": 0.9,
+          "reasoning": "經談號是錯誤的術語，應為驚嘆號"
+        },
+        {
+          "segment_id": 76,
+          "snippet": "第一個運算員如果是Force",
+          "type": "term",
+          "suggested_fix": "第一個運算元如果是false",
+          "confidence": 0.8,
+          "reasoning": "運算員應為運算元，且Force應為false"
+        },
+        {
+          "segment_id": 84,
+          "snippet": "它就會直接回傳Force",
+          "type": "term",
+          "suggested_fix": "它就會直接回傳false",
+          "confidence": 0.8,
+          "reasoning": "Force應為false，這是錯誤的術語"
+        }
+      ]
+    },
+    {
+      "video_order": 20,
+      "title_zh": "C++的位元運算子",
+      "issues": [
+        {
+          "segment_id": 12,
+          "snippet": "那常見的位元運算子就有六個",
+          "type": "semantic",
+          "suggested_fix": "那常見的位元運算子就有六種",
+          "confidence": 0.8,
+          "reasoning": "「六個」不符合運算子的數量描述"
+        },
+        {
+          "segment_id": 41,
+          "snippet": "它是一個直線的符號",
+          "type": "term",
+          "suggested_fix": "它是 Bitwise OR 的符號",
+          "confidence": 0.85,
+          "reasoning": "應該是 Bitwise OR 而非「直線的符號」"
+        },
+        {
+          "segment_id": 57,
+          "snippet": "最後一個是 Bitwise X All",
+          "type": "term",
+          "suggested_fix": "最後一個是 Bitwise XOR",
+          "confidence": 0.9,
+          "reasoning": "應該是 Bitwise XOR 而非「X All」"
+        },
+        {
+          "segment_id": 186,
+          "snippet": "所以 6 AND 3 bitwise AND 3",
+          "type": "term",
+          "suggested_fix": "所以 6 AND 3 bitwise AND 的結果是 2",
+          "confidence": 0.75,
+          "reasoning": "語句不完整，缺少結果"
+        }
+      ]
+    },
+    {
+      "video_order": 21,
+      "title_zh": "C++的指定運算子",
+      "issues": [
+        {
+          "segment_id": 156,
+          "snippet": "指定運算值",
+          "type": "term",
+          "suggested_fix": "指定運算子",
+          "confidence": 0.85,
+          "reasoning": "運算子應為正確術語，非運算值"
+        }
+      ]
+    },
+    {
+      "video_order": 22,
+      "title_zh": "C++的複合運算子",
+      "issues": [
+        {
+          "segment_id": 125,
+          "snippet": "減等於Y",
+          "type": "term",
+          "suggested_fix": "X減等於Y",
+          "confidence": 0.85,
+          "reasoning": "缺少主詞，應明確指出是X減等於Y"
+        }
+      ]
+    },
+    {
+      "video_order": 23,
+      "title_zh": "C++運算子的優先順序",
+      "issues": [
+        {
+          "segment_id": 7,
+          "snippet": "就是只有一個運算言的運算子",
+          "type": "term",
+          "suggested_fix": "就是只有一個運算元的運算子",
+          "confidence": 0.85,
+          "reasoning": "運算言應為運算元，術語錯誤"
+        },
+        {
+          "segment_id": 39,
+          "snippet": "再來是資料型別的轉換",
+          "type": "term",
+          "suggested_fix": "再來是資料類型的轉換",
+          "confidence": 0.8,
+          "reasoning": "資料型別應為資料類型，術語錯誤"
+        },
+        {
+          "segment_id": 50,
+          "snippet": "而且他是AND優先",
+          "type": "term",
+          "suggested_fix": "而且它是AND優先",
+          "confidence": 0.75,
+          "reasoning": "他應為它，語法錯誤"
+        },
+        {
+          "segment_id": 96,
+          "snippet": "這bitwise AND",
+          "type": "term",
+          "suggested_fix": "這是bitwise AND",
+          "confidence": 0.7,
+          "reasoning": "缺少「是」字，語法錯誤"
+        },
+        {
+          "segment_id": 97,
+          "snippet": "這bitwise OR",
+          "type": "term",
+          "suggested_fix": "這是bitwise OR",
+          "confidence": 0.7,
+          "reasoning": "缺少「是」字，語法錯誤"
+        }
+      ]
+    },
+    {
+      "video_order": 24,
+      "title_zh": "C++運算式的運算規則",
+      "issues": [
+        {
+          "segment_id": 30,
+          "snippet": "onsign character short",
+          "type": "term",
+          "suggested_fix": "unsigned char short",
+          "confidence": 0.85,
+          "reasoning": "音譯錯誤，應為 unsigned char 和 short"
+        },
+        {
+          "segment_id": 83,
+          "snippet": "這兩個相加",
+          "type": "repetition",
+          "suggested_fix": "這兩個相乘",
+          "confidence": 0.8,
+          "reasoning": "重複出現，前面已提到相加"
+        },
+        {
+          "segment_id": 84,
+          "snippet": "這兩個相乘",
+          "type": "repetition",
+          "suggested_fix": "這兩個相減",
+          "confidence": 0.8,
+          "reasoning": "重複出現，前面已提到相乘"
+        },
+        {
+          "segment_id": 85,
+          "snippet": "然後最後再串在一起",
+          "type": "repetition",
+          "suggested_fix": "然後最後再進行計算",
+          "confidence": 0.8,
+          "reasoning": "重複出現，前面已提到串在一起"
+        }
+      ]
+    },
+    {
+      "video_order": 25,
+      "title_zh": "C++的流程控制：if-else",
+      "issues": [
+        {
+          "segment_id": 22,
+          "snippet": "那這個就是像for、like、like",
+          "type": "term",
+          "suggested_fix": "那這個就是像for、while、do while",
+          "confidence": 0.8,
+          "reasoning": "使用了錯誤的程式語言術語"
+        },
+        {
+          "segment_id": 61,
+          "snippet": "我們就會see out",
+          "type": "term",
+          "suggested_fix": "我們就會cout",
+          "confidence": 0.9,
+          "reasoning": "使用了錯誤的C++標準庫名稱"
+        },
+        {
+          "segment_id": 122,
+          "snippet": "所以我們就else",
+          "type": "semantic",
+          "suggested_fix": "所以我們就用else",
+          "confidence": 0.85,
+          "reasoning": "缺少動詞，句子不完整"
+        },
+        {
+          "segment_id": 246,
+          "snippet": "那Else",
+          "type": "term",
+          "suggested_fix": "那else",
+          "confidence": 0.9,
+          "reasoning": "運算子大小寫錯誤"
+        },
+        {
+          "segment_id": 259,
+          "snippet": "就把不及格的科目加1",
+          "type": "semantic",
+          "suggested_fix": "就把不及格的科目數加1",
+          "confidence": 0.8,
+          "reasoning": "句子不清楚，容易引起誤解"
+        },
+        {
+          "segment_id": 268,
+          "snippet": "數學不及格",
+          "type": "repetition",
+          "suggested_fix": "數學不及格",
+          "confidence": 0.9,
+          "reasoning": "重複出現的句子"
+        }
+      ]
+    },
+    {
+      "video_order": 26,
+      "title_zh": "C++的流程控制：巢狀if-else",
+      "issues": [
+        {
+          "segment_id": 89,
+          "snippet": "這是i等於0的狀況",
+          "type": "term",
+          "suggested_fix": "這是i等於0的情況",
+          "confidence": 0.8,
+          "reasoning": "「狀況」不適合用於程式術語，應用「情況」"
+        },
+        {
+          "segment_id": 188,
+          "snippet": "成績是一等",
+          "type": "term",
+          "suggested_fix": "成績是一級",
+          "confidence": 0.75,
+          "reasoning": "「一等」應為「一級」的正確用法"
+        },
+        {
+          "segment_id": 202,
+          "snippet": "就是平等",
+          "type": "term",
+          "suggested_fix": "就是及格",
+          "confidence": 0.85,
+          "reasoning": "「平等」應為「及格」的正確用法"
+        },
+        {
+          "segment_id": 546,
+          "snippet": "所以它是一個兩層的",
+          "type": "semantic",
+          "suggested_fix": "所以這是一個兩層的",
+          "confidence": 0.8,
+          "reasoning": "主詞不明確，應明確指代"
+        }
+      ]
+    },
+    {
+      "video_order": 27,
+      "title_zh": "C++的條件運算子",
+      "issues": [
+        {
+          "segment_id": 61,
+          "snippet": "如果這邊Chinese score大於等於60是成立的",
+          "type": "term",
+          "suggested_fix": "如果這邊Chinese score大於等於60成立",
+          "confidence": 0.8,
+          "reasoning": "Chinese score 應為變數名稱，應不翻譯"
+        }
+      ]
+    },
+    {
+      "video_order": 28,
+      "title_zh": "C++的switch多條件分支",
+      "issues": [
+        {
+          "segment_id": 201,
+          "snippet": "他會說10的英文是time",
+          "type": "term",
+          "suggested_fix": "他會說10的英文是ten",
+          "confidence": 0.9,
+          "reasoning": "time 是錯誤的英文翻譯，應為 ten"
+        }
+      ]
+    },
+    {
+      "video_order": 29,
+      "title_zh": "C++的for迴圈",
+      "issues": [
+        {
+          "segment_id": 106,
+          "snippet": "因為這個條件運算師就不成立",
+          "type": "term",
+          "suggested_fix": "因為這個條件運算式就不成立",
+          "confidence": 0.9,
+          "reasoning": "「運算師」應為「運算式」的錯誤音譯"
+        },
+        {
+          "segment_id": 376,
+          "snippet": "復活圈的一個應用的",
+          "type": "term",
+          "suggested_fix": "迴圈的一個應用的",
+          "confidence": 0.8,
+          "reasoning": "「復活圈」應為「迴圈」的錯誤音譯"
+        }
+      ]
+    },
+    {
+      "video_order": 30,
+      "title_zh": "C++的while迴圈",
+      "issues": [
+        {
+          "segment_id": 28,
+          "snippet": "小括號裡面有一個條件運算室",
+          "type": "term",
+          "suggested_fix": "小括號裡面有一個條件運算式",
+          "confidence": 0.9,
+          "reasoning": "運算室應為運算式，屬於術語錯誤"
+        },
+        {
+          "segment_id": 38,
+          "snippet": "條件運算室 看看條件成不成立",
+          "type": "term",
+          "suggested_fix": "條件運算式 看看條件成不成立",
+          "confidence": 0.9,
+          "reasoning": "運算室應為運算式，屬於術語錯誤"
+        },
+        {
+          "segment_id": 40,
+          "snippet": "但是如果這個條件運算室一旦不成立",
+          "type": "term",
+          "suggested_fix": "但是如果這個條件運算式一旦不成立",
+          "confidence": 0.9,
+          "reasoning": "運算室應為運算式，屬於術語錯誤"
+        },
+        {
+          "segment_id": 90,
+          "snippet": "那這邊有一個 while 迴圈",
+          "type": "term",
+          "suggested_fix": "那這邊有一個 while 迴圈",
+          "confidence": 0.8,
+          "reasoning": "應為「while 迴圈」，而非「快迴圈」"
+        },
+        {
+          "segment_id": 146,
+          "snippet": "用快迴圈是非常好用的",
+          "type": "term",
+          "suggested_fix": "用 while 迴圈是非常好用的",
+          "confidence": 0.8,
+          "reasoning": "應為「while 迴圈」，而非「快迴圈」"
+        }
+      ]
+    },
+    {
+      "video_order": 31,
+      "title_zh": "C++的do-while迴圈",
+      "issues": [
+        {
+          "segment_id": 182,
+          "snippet": "d如果不等於0",
+          "type": "repetition",
+          "suggested_fix": "d如果不等於0",
+          "confidence": 0.8,
+          "reasoning": "相同句子重複出現超過三次"
+        }
+      ]
+    },
+    {
+      "video_order": 32,
+      "title_zh": "C++的巢狀迴圈",
+      "issues": [
+        {
+          "segment_id": 215,
+          "snippet": "應該是用 fire 迴圈或 do fire 迴圈是比較恰當的",
+          "type": "term",
+          "suggested_fix": "應該是用 for 迴圈或 do while 迴圈是比較恰當的",
+          "confidence": 0.9,
+          "reasoning": "fire 迴圈應為 for 迴圈的誤譯"
+        },
+        {
+          "segment_id": 222,
+          "snippet": "這個例子比較像是 fire 迴圈",
+          "type": "term",
+          "suggested_fix": "這個例子比較像是 for 迴圈",
+          "confidence": 0.85,
+          "reasoning": "fire 迴圈應為 for 迴圈的誤譯"
+        },
+        {
+          "segment_id": 224,
+          "snippet": "外圈是 fire",
+          "type": "term",
+          "suggested_fix": "外圈是 for",
+          "confidence": 0.85,
+          "reasoning": "fire 迴圈應為 for 迴圈的誤譯"
+        },
+        {
+          "segment_id": 225,
+          "snippet": "或者是 do fire",
+          "type": "term",
+          "suggested_fix": "或者是 do while",
+          "confidence": 0.85,
+          "reasoning": "fire 迴圈應為 while 迴圈的誤譯"
+        }
+      ]
+    },
+    {
+      "video_order": 33,
+      "title_zh": "C++的無窮迴圈",
+      "issues": [
+        {
+          "segment_id": 7,
+          "snippet": "讓這個迴圈可以結束",
+          "type": "semantic",
+          "suggested_fix": "讓這個迴圈有機會結束",
+          "confidence": 0.8,
+          "reasoning": "缺主詞，語意不完整"
+        },
+        {
+          "segment_id": 11,
+          "snippet": "比如說我們用 fire 括號 true",
+          "type": "term",
+          "suggested_fix": "比如說我們用 while 括號 true",
+          "confidence": 0.9,
+          "reasoning": "fire 應為 while，錯誤的程式術語"
+        }
+      ]
+    },
+    {
+      "video_order": 34,
+      "title_zh": "C++的break與continue",
+      "issues": [
+        {
+          "segment_id": 3,
+          "snippet": "break跟continue是迴圈裡面很重要的兩個關鍵字",
+          "type": "term",
+          "suggested_fix": "break和continue是迴圈裡面很重要的兩個關鍵字",
+          "confidence": 0.8,
+          "reasoning": "使用了錯誤的連接詞，應為「和」"
+        },
+        {
+          "segment_id": 4,
+          "snippet": "那break呢",
+          "type": "semantic",
+          "suggested_fix": "那break是什麼呢？",
+          "confidence": 0.75,
+          "reasoning": "缺少主詞，讓句子不完整"
+        },
+        {
+          "segment_id": 27,
+          "snippet": "但是如果你選的是no他就沒有break,那i的值就會加1",
+          "type": "semantic",
+          "suggested_fix": "但是如果你選的是no，他就不會break，那i的值就會加1",
+          "confidence": 0.8,
+          "reasoning": "邏輯不清，應該明確表達否定"
+        }
+      ]
+    },
+    {
+      "video_order": 35,
+      "title_zh": "C++的強制性流程控制goto",
+      "issues": [
+        {
+          "segment_id": 63,
+          "snippet": "就 goto er",
+          "type": "term",
+          "suggested_fix": "就 goto err",
+          "confidence": 0.9,
+          "reasoning": "er 是錯誤的 label 名稱，應為 err"
+        }
+      ]
+    },
+    {
+      "video_order": 36,
+      "title_zh": "C++的函式",
+      "issues": [
+        {
+          "segment_id": 128,
+          "snippet": "是寫Void",
+          "type": "term",
+          "suggested_fix": "是寫void",
+          "confidence": 0.85,
+          "reasoning": "C++ 中型別名稱應小寫"
+        },
+        {
+          "segment_id": 348,
+          "snippet": "就cout n的9",
+          "type": "term",
+          "suggested_fix": "就cout << '\\n';",
+          "confidence": 0.8,
+          "reasoning": "應使用正確的輸出語法"
+        }
+      ]
+    },
+    {
+      "video_order": 37,
+      "title_zh": "C++帶有參數的函式",
+      "issues": [
+        {
+          "segment_id": 15,
+          "snippet": "那麼參數是有形別的",
+          "type": "term",
+          "suggested_fix": "那麼參數是有型別的",
+          "confidence": 0.9,
+          "reasoning": "「形別」應為「型別」的錯誤"
+        },
+        {
+          "segment_id": 80,
+          "snippet": "那 c 的資料型態是 character",
+          "type": "term",
+          "suggested_fix": "那 c 的資料型別是 char",
+          "confidence": 0.85,
+          "reasoning": "C++ 中應用「char」而非「character」"
+        },
+        {
+          "segment_id": 81,
+          "snippet": "那 n 的資料型態是 integer",
+          "type": "term",
+          "suggested_fix": "那 n 的資料型別是 int",
+          "confidence": 0.85,
+          "reasoning": "C++ 中應用「int」而非「integer」"
+        },
+        {
+          "segment_id": 222,
+          "snippet": "不一定是星星",
+          "type": "repetition",
+          "suggested_fix": "不需要重複",
+          "confidence": 0.8,
+          "reasoning": "該句重複出現兩次"
+        }
+      ]
+    },
+    {
+      "video_order": 38,
+      "title_zh": "C++函式的回傳值",
+      "issues": [
+        {
+          "segment_id": 7,
+          "snippet": "也就是將函式的宣告性別宣告為 VOID",
+          "type": "term",
+          "suggested_fix": "也就是將函式的宣告型別宣告為 VOID",
+          "confidence": 0.85,
+          "reasoning": "「性別」應為「型別」，屬於術語錯誤"
+        },
+        {
+          "segment_id": 70,
+          "snippet": "一個是 Double 的 Circle Length",
+          "type": "term",
+          "suggested_fix": "一個是 double 的 Circle Length",
+          "confidence": 0.85,
+          "reasoning": "C++ 型別應小寫，Double 應為 double"
+        },
+        {
+          "segment_id": 71,
+          "snippet": "因為要回傳 Double 所以要宣告 Double",
+          "type": "term",
+          "suggested_fix": "因為要回傳 double 所以要宣告 double",
+          "confidence": 0.85,
+          "reasoning": "C++ 型別應小寫，Double 應為 double"
+        },
+        {
+          "segment_id": 74,
+          "snippet": "它也是一個 Double",
+          "type": "term",
+          "suggested_fix": "它也是一個 double",
+          "confidence": 0.85,
+          "reasoning": "C++ 型別應小寫，Double 應為 double"
+        },
+        {
+          "segment_id": 87,
+          "snippet": "圓的面積也是一個可以有小數點的數",
+          "type": "semantic",
+          "suggested_fix": "圓的面積也是一個可以有小數點的數值",
+          "confidence": 0.8,
+          "reasoning": "「數」應為「數值」，語意不清"
+        },
+        {
+          "segment_id": 88,
+          "snippet": "那一樣會用到π",
+          "type": "term",
+          "suggested_fix": "那一樣會用到 π",
+          "confidence": 0.8,
+          "reasoning": "「π」前後應有空格，符合數學符號格式"
+        },
+        {
+          "segment_id": 90,
+          "snippet": "然後我們計算它的面積是πr 平方",
+          "type": "term",
+          "suggested_fix": "然後我們計算它的面積是 πr 平方",
+          "confidence": 0.8,
+          "reasoning": "「π」前後應有空格，符合數學符號格式"
+        },
+        {
+          "segment_id": 92,
+          "snippet": "所以我們 return π 乘以 r 乘以 r",
+          "type": "term",
+          "suggested_fix": "所以我們 return π 乘以 r 乘以 r",
+          "confidence": 0.8,
+          "reasoning": "「π」前後應有空格，符合數學符號格式"
+        },
+        {
+          "segment_id": 100,
+          "snippet": "然後呢輸入放到 r 的這個數",
+          "type": "semantic",
+          "suggested_fix": "然後呢，輸入的數放到 r",
+          "confidence": 0.75,
+          "reasoning": "語句不通，應調整語序"
+        },
+        {
+          "segment_id": 111,
+          "snippet": "這裡面會丟給另外一個 r",
+          "type": "semantic",
+          "suggested_fix": "這裡面會丟給另一個 r",
+          "confidence": 0.75,
+          "reasoning": "「另外一個」應為「另一個」，語意不清"
+        },
+        {
+          "segment_id": 113,
+          "snippet": "這個 r 是這裡面的 r",
+          "type": "semantic",
+          "suggested_fix": "這個 r 是函式內部的 r",
+          "confidence": 0.75,
+          "reasoning": "語意不清，應明確指出"
+        },
+        {
+          "segment_id": 121,
+          "snippet": "那如果 r 是沒有大於零",
+          "type": "semantic",
+          "suggested_fix": "那如果 r 沒有大於零",
+          "confidence": 0.75,
+          "reasoning": "語句不通，應調整語序"
+        },
+        {
+          "segment_id": 125,
+          "snippet": "然後它會判斷 r 是不是正的",
+          "type": "semantic",
+          "suggested_fix": "然後它會判斷 r 是否為正數",
+          "confidence": 0.75,
+          "reasoning": "語意不清，應明確指出"
+        }
+      ]
+    },
+    {
+      "video_order": 39,
+      "title_zh": "C++的局部變數",
+      "issues": [
+        {
+          "segment_id": 45,
+          "snippet": "那局部變數呢也稱為自動變數叫 auto 變數",
+          "type": "term",
+          "suggested_fix": "那局部變數呢也稱為自動變數叫自動變數",
+          "confidence": 0.8,
+          "reasoning": "auto 變數應該翻譯為自動變數"
+        }
+      ]
+    },
+    {
+      "video_order": 40,
+      "title_zh": "C++的全域變數",
+      "issues": [
+        {
+          "segment_id": 42,
+          "snippet": "這三大類一個是局部變數一個是靜態的局部變數另外一個是叫全域變數",
+          "type": "semantic",
+          "suggested_fix": "這三大類分別是局部變數、靜態局部變數和全域變數",
+          "confidence": 0.8,
+          "reasoning": "句子結構不清晰，缺乏連貫性"
+        }
+      ]
+    },
+    {
+      "video_order": 41,
+      "title_zh": "C++的外部變數",
+      "issues": [
+        {
+          "segment_id": 78,
+          "snippet": "那要用到的函子就放在後面",
+          "type": "term",
+          "suggested_fix": "那要用到的函式就放在後面",
+          "confidence": 0.9,
+          "reasoning": "函子應為函式的錯誤翻譯"
+        }
+      ]
+    },
+    {
+      "video_order": 42,
+      "title_zh": "C++的行內函式",
+      "issues": [
+        {
+          "segment_id": 72,
+          "snippet": "我們寫一個inline的一個函式",
+          "type": "term",
+          "suggested_fix": "我們寫一個 inline 的函式",
+          "confidence": 0.85,
+          "reasoning": "inline 應該有空格，且 inline 是關鍵字"
+        },
+        {
+          "segment_id": 138,
+          "snippet": "叫做f to c",
+          "type": "term",
+          "suggested_fix": "叫做 f_to_c",
+          "confidence": 0.85,
+          "reasoning": "函式名稱應使用底線分隔，避免誤解"
+        },
+        {
+          "segment_id": 150,
+          "snippet": "然後輸入之後它會去呼叫這個inline的function",
+          "type": "term",
+          "suggested_fix": "然後輸入之後它會去呼叫這個 inline 的函式",
+          "confidence": 0.85,
+          "reasoning": "function 應翻譯為函式，且 inline 應有空格"
+        }
+      ]
+    },
+    {
+      "video_order": 43,
+      "title_zh": "C++的巨集函式",
+      "issues": [
+        {
+          "segment_id": 5,
+          "snippet": "巨集就是MACL",
+          "type": "term",
+          "suggested_fix": "巨集就是MACRO",
+          "confidence": 0.9,
+          "reasoning": "MACL 是錯誤的音譯，應為 MACRO。"
+        }
+      ]
+    },
+    {
+      "video_order": 44,
+      "title_zh": "C++標準函式庫之數學函式",
+      "issues": [
+        {
+          "segment_id": 27,
+          "snippet": "或者我們稱為long",
+          "type": "term",
+          "suggested_fix": "或者我們稱為log",
+          "confidence": 0.85,
+          "reasoning": "long是錯誤的術語，應為log"
+        },
+        {
+          "segment_id": 34,
+          "snippet": "Oxide Oxide Octangent",
+          "type": "term",
+          "suggested_fix": "Sine Cosine Tangent",
+          "confidence": 0.85,
+          "reasoning": "Oxide是錯誤的術語，應為Sine"
+        },
+        {
+          "segment_id": 90,
+          "snippet": "我們來看一下最前面這裡需要用到一個cmesh",
+          "type": "term",
+          "suggested_fix": "我們來看一下最前面這裡需要用到一個cmath",
+          "confidence": 0.85,
+          "reasoning": "cmesh是錯誤的術語，應為cmath"
+        }
+      ]
+    },
+    {
+      "video_order": 45,
+      "title_zh": "C++標準函式庫之時間函式",
+      "issues": [
+        {
+          "segment_id": 8,
+          "snippet": "比如說我們要使用C硬跟C軟",
+          "type": "term",
+          "suggested_fix": "比如說我們要使用C++跟C",
+          "confidence": 0.9,
+          "reasoning": "C硬和C軟是錯誤的音譯，應為C++和C。"
+        },
+        {
+          "segment_id": 12,
+          "snippet": "要涵括這個Ctime 這個標頭檔",
+          "type": "term",
+          "suggested_fix": "要涵括這個ctime這個標頭檔",
+          "confidence": 0.85,
+          "reasoning": "Ctime應為ctime，大小寫錯誤。"
+        },
+        {
+          "segment_id": 31,
+          "snippet": "就是CLKTCK",
+          "type": "term",
+          "suggested_fix": "就是CLOCKS_PER_SEC",
+          "confidence": 0.8,
+          "reasoning": "CLKTCK應為CLOCKS_PER_SEC，標準庫常數錯誤。"
+        }
+      ]
+    },
+    {
+      "video_order": 46,
+      "title_zh": "C++的函式多載",
+      "issues": [
+        {
+          "segment_id": 106,
+          "snippet": "所以如果只有傳回子的型別不一樣",
+          "type": "semantic",
+          "suggested_fix": "所以如果只有傳回值的型別不一樣",
+          "confidence": 0.85,
+          "reasoning": "缺主詞，造成語意不清"
+        },
+        {
+          "segment_id": 194,
+          "snippet": "但是它是三個參數 AA BB C C",
+          "type": "semantic",
+          "suggested_fix": "但是它是三個參數 AA、BB、C",
+          "confidence": 0.8,
+          "reasoning": "語句結構不正確，造成理解困難"
+        }
+      ]
+    },
+    {
+      "video_order": 47,
+      "title_zh": "C++的遞迴函式",
+      "issues": [
+        {
+          "segment_id": 213,
+          "snippet": "這時候你就必須按ctrl-c",
+          "type": "term",
+          "suggested_fix": "這時候你就必須按Ctrl+C",
+          "confidence": 0.8,
+          "reasoning": "Ctrl+C 應該使用大寫字母"
+        },
+        {
+          "segment_id": 126,
+          "snippet": "應該說是詆毀",
+          "type": "term",
+          "suggested_fix": "應該說是遞迴",
+          "confidence": 0.75,
+          "reasoning": "詆毀應為遞迴的誤用"
+        }
+      ]
+    },
+    {
+      "video_order": 48,
+      "title_zh": "C++的陣列",
+      "issues": [
+        {
+          "segment_id": 51,
+          "snippet": "包含constant的變數",
+          "type": "term",
+          "suggested_fix": "包含常數的變數",
+          "confidence": 0.8,
+          "reasoning": "constant 應翻譯為常數"
+        }
+      ]
+    },
+    {
+      "video_order": 49,
+      "title_zh": "C++的字元陣列",
+      "issues": [
+        {
+          "segment_id": 46,
+          "snippet": "有一個叫做C-String",
+          "type": "term",
+          "suggested_fix": "有一個叫做C字符串",
+          "confidence": 0.8,
+          "reasoning": "C-String 應翻譯為 C 字符串"
+        },
+        {
+          "segment_id": 50,
+          "snippet": "這個叫StringLength會回傳",
+          "type": "term",
+          "suggested_fix": "這個叫做strlen會回傳",
+          "confidence": 0.9,
+          "reasoning": "StringLength 應為 strlen"
+        },
+        {
+          "segment_id": 52,
+          "snippet": "這叫StringCopy可以複製兩個字元陣列",
+          "type": "term",
+          "suggested_fix": "這叫做strcpy可以複製兩個字元陣列",
+          "confidence": 0.9,
+          "reasoning": "StringCopy 應為 strcpy"
+        },
+        {
+          "segment_id": 54,
+          "snippet": "這個是StringCompare可以比較兩個字串是不是相同",
+          "type": "term",
+          "suggested_fix": "這個是strcmp可以比較兩個字串是不是相同",
+          "confidence": 0.9,
+          "reasoning": "StringCompare 應為 strcmp"
+        },
+        {
+          "segment_id": 56,
+          "snippet": "這是StringNcompare比較前面的N個字元",
+          "type": "term",
+          "suggested_fix": "這是strncmp比較前面的N個字元",
+          "confidence": 0.9,
+          "reasoning": "StringNcompare 應為 strncmp"
+        },
+        {
+          "segment_id": 172,
+          "snippet": "首先我們必須要include the C string",
+          "type": "term",
+          "suggested_fix": "首先我們必須要include <cstring>",
+          "confidence": 0.85,
+          "reasoning": "C string 應為 <cstring> 標頭檔"
+        }
+      ]
+    },
+    {
+      "video_order": 50,
+      "title_zh": "C++的多維陣列",
+      "issues": [
+        {
+          "segment_id": 101,
+          "snippet": "Score",
+          "type": "term",
+          "suggested_fix": "Score",
+          "confidence": 0.8,
+          "reasoning": "Score 應該是 C++ 的標準術語，不應音譯。"
+        },
+        {
+          "segment_id": 104,
+          "snippet": "Full回圈",
+          "type": "term",
+          "suggested_fix": "for 迴圈",
+          "confidence": 0.75,
+          "reasoning": "應使用正確的 C++ 程式術語，Full 回圈不正確。"
+        }
+      ]
+    },
+    {
+      "video_order": 51,
+      "title_zh": "C++的指標與參照",
+      "issues": [
+        {
+          "segment_id": 32,
+          "snippet": "比如說我們說 ptr 是一個 point",
+          "type": "term",
+          "suggested_fix": "比如說我們說 ptr 是一個指標",
+          "confidence": 0.9,
+          "reasoning": "point 應為指標的中文翻譯"
+        },
+        {
+          "segment_id": 75,
+          "snippet": "然後我們再設另外一個 i 的指標 i point",
+          "type": "term",
+          "suggested_fix": "然後我們再設另外一個 i 的指標 ptr",
+          "confidence": 0.85,
+          "reasoning": "i point 應為指標的正確名稱"
+        }
+      ]
+    },
+    {
+      "video_order": 52,
+      "title_zh": "C++的指標與陣列",
+      "issues": [
+        {
+          "segment_id": 62,
+          "snippet": "我們用 int number\n中國號 10\n來宣告一個整數的陣列",
+          "type": "term",
+          "suggested_fix": "我們用 int number[10] 來宣告一個整數的陣列",
+          "confidence": 0.8,
+          "reasoning": "「中國號」應為「中括號」，語意不清"
+        },
+        {
+          "segment_id": 66,
+          "snippet": "指標變數 int 新號 IPTR",
+          "type": "term",
+          "suggested_fix": "指標變數 int* IPTR",
+          "confidence": 0.9,
+          "reasoning": "「新號」應為「星號」，型別錯誤"
+        },
+        {
+          "segment_id": 106,
+          "snippet": "中國號 0",
+          "type": "term",
+          "suggested_fix": "中括號 0",
+          "confidence": 0.85,
+          "reasoning": "「中國號」應為「中括號」，語意不清"
+        },
+        {
+          "segment_id": 118,
+          "snippet": "倒著顯示出來",
+          "type": "semantic",
+          "suggested_fix": "倒著顯示出來的內容",
+          "confidence": 0.75,
+          "reasoning": "缺主詞，語意不完整"
+        }
+      ]
+    },
+    {
+      "video_order": 53,
+      "title_zh": "C++的指標陣列",
+      "issues": [
+        {
+          "segment_id": 78,
+          "snippet": "請利用指標陣列宣告一個還有五個人",
+          "type": "semantic",
+          "suggested_fix": "請利用指標陣列宣告一個有五個人的",
+          "confidence": 0.85,
+          "reasoning": "缺少「有」字，句子不完整"
+        },
+        {
+          "segment_id": 80,
+          "snippet": "的自圓",
+          "type": "term",
+          "suggested_fix": "的自串",
+          "confidence": 0.8,
+          "reasoning": "「自圓」應為「自串」的錯誤音譯"
+        },
+        {
+          "segment_id": 96,
+          "snippet": "就是CHAR自圓的指標陣列NAME",
+          "type": "term",
+          "suggested_fix": "就是CHAR自串的指標陣列NAME",
+          "confidence": 0.8,
+          "reasoning": "「自圓」應為「自串」的錯誤音譯"
+        },
+        {
+          "segment_id": 104,
+          "snippet": "自圓的指標陣列",
+          "type": "term",
+          "suggested_fix": "自串的指標陣列",
+          "confidence": 0.8,
+          "reasoning": "「自圓」應為「自串」的錯誤音譯"
+        }
+      ]
+    },
+    {
+      "video_order": 54,
+      "title_zh": "C++的動態記憶體配置",
+      "issues": [
+        {
+          "segment_id": 67,
+          "snippet": "那我們就delete剛剛那個IP就可以了",
+          "type": "term",
+          "suggested_fix": "那我們就delete剛剛那個IP就可以了",
+          "confidence": 0.8,
+          "reasoning": "缺少空格，應為 'delete IP'"
+        },
+        {
+          "segment_id": 105,
+          "snippet": "只要delete中括號表示它是一個陣列",
+          "type": "term",
+          "suggested_fix": "只要delete[]中括號表示它是一個陣列",
+          "confidence": 0.75,
+          "reasoning": "delete 陣列時需使用 delete[]"
+        },
+        {
+          "segment_id": 119,
+          "snippet": "那我們要把它釋放的時候就用free",
+          "type": "term",
+          "suggested_fix": "那我們要把它釋放的時候就用free()",
+          "confidence": 0.7,
+          "reasoning": "free() 是函數，應加括號"
+        }
+      ]
+    },
+    {
+      "video_order": 55,
+      "title_zh": "C++參考型別變數與別名",
+      "issues": [
+        {
+          "segment_id": 17,
+          "snippet": "然後我們另外宣告了一個 AND j",
+          "type": "term",
+          "suggested_fix": "然後我們另外宣告了一個 int j",
+          "confidence": 0.9,
+          "reasoning": "AND 應為 C++ 的型別 int 的錯誤音譯"
+        },
+        {
+          "segment_id": 29,
+          "snippet": "寫 INT AND j 這樣是不合法的",
+          "type": "term",
+          "suggested_fix": "寫 int & j 這樣是不合法的",
+          "confidence": 0.85,
+          "reasoning": "AND 應為 C++ 的參考型別符號 & 的錯誤音譯"
+        },
+        {
+          "segment_id": 38,
+          "snippet": "INT i 跟 j i 跟 j 都是整數",
+          "type": "term",
+          "suggested_fix": "int i 跟 j i 跟 j 都是整數",
+          "confidence": 0.8,
+          "reasoning": "INT 應為 C++ 的型別 int 的錯誤音譯"
+        },
+        {
+          "segment_id": 56,
+          "snippet": "那這個例子是請宣告三個整數的變數",
+          "type": "semantic",
+          "suggested_fix": "那這個例子是請宣告三個整數變數",
+          "confidence": 0.75,
+          "reasoning": "語句不通，應去掉「的」"
+        }
+      ]
+    },
+    {
+      "video_order": 56,
+      "title_zh": "C++的傳址呼叫",
+      "issues": [
+        {
+          "segment_id": 5,
+          "snippet": "第一種叫做傳址的呼叫,call by value",
+          "type": "term",
+          "suggested_fix": "第一種叫做傳值的呼叫,call by value",
+          "confidence": 0.85,
+          "reasoning": "傳址呼叫應為傳值呼叫，術語錯誤"
+        },
+        {
+          "segment_id": 6,
+          "snippet": "第二種叫做傳址的呼叫,call by address",
+          "type": "term",
+          "suggested_fix": "第二種叫做傳址的呼叫,call by pointer",
+          "confidence": 0.85,
+          "reasoning": "傳址呼叫應為傳指呼叫，術語錯誤"
+        },
+        {
+          "segment_id": 7,
+          "snippet": "第三種叫傳參考的呼叫,call by reference",
+          "type": "term",
+          "suggested_fix": "第三種叫做傳參考的呼叫,call by reference",
+          "confidence": 0.85,
+          "reasoning": "缺少「做」字，語句不完整"
+        }
+      ]
+    },
+    {
+      "video_order": 57,
+      "title_zh": "C++的傳參考呼叫",
+      "issues": [
+        {
+          "segment_id": 6,
+          "snippet": "第二種叫做傳子呼叫 英文叫 call by address",
+          "type": "term",
+          "suggested_fix": "第二種叫做傳指標 英文叫 call by address",
+          "confidence": 0.9,
+          "reasoning": "傳子呼叫應為傳指標，call by address 是錯誤的術語。"
+        },
+        {
+          "segment_id": 33,
+          "snippet": "叫做 exchange 交換",
+          "type": "term",
+          "suggested_fix": "叫做 exchange 交換",
+          "confidence": 0.8,
+          "reasoning": "應該是 'exchange'，而不是音譯的 '交換'。"
+        }
+      ]
+    },
+    {
+      "video_order": 58,
+      "title_zh": "C++main函式的參數",
+      "issues": [
+        {
+          "segment_id": 27,
+          "snippet": "C std library",
+          "type": "term",
+          "suggested_fix": "C standard library",
+          "confidence": 0.85,
+          "reasoning": "標準庫名稱錯誤，應為 C standard library"
+        },
+        {
+          "segment_id": 58,
+          "snippet": "用到 include c stdlib",
+          "type": "term",
+          "suggested_fix": "用到 include <cstdlib>",
+          "confidence": 0.85,
+          "reasoning": "標準庫名稱錯誤，應為 <cstdlib>"
+        },
+        {
+          "segment_id": 116,
+          "snippet": "include c standard library",
+          "type": "term",
+          "suggested_fix": "include <cstdlib>",
+          "confidence": 0.85,
+          "reasoning": "標準庫名稱錯誤，應為 <cstdlib>"
+        }
+      ]
+    },
+    {
+      "video_order": 59,
+      "title_zh": "C++的物件導向與類別",
+      "issues": [
+        {
+          "segment_id": 5,
+          "snippet": "就是user defined data type",
+          "type": "term",
+          "suggested_fix": "就是使用者自訂的資料型別",
+          "confidence": 0.85,
+          "reasoning": "應使用正確的中文術語"
+        },
+        {
+          "segment_id": 11,
+          "snippet": "可以來進行處理",
+          "type": "semantic",
+          "suggested_fix": "可以進行處理",
+          "confidence": 0.8,
+          "reasoning": "語句不通順，主詞缺失"
+        },
+        {
+          "segment_id": 19,
+          "snippet": "可以用class或者是用structure",
+          "type": "term",
+          "suggested_fix": "可以用class或者是用struct",
+          "confidence": 0.75,
+          "reasoning": "structure應使用其對應的C++術語struct"
+        },
+        {
+          "segment_id": 40,
+          "snippet": "就是宣告一個變數",
+          "type": "semantic",
+          "suggested_fix": "就是宣告一個物件",
+          "confidence": 0.8,
+          "reasoning": "變數與物件概念混淆"
+        },
+        {
+          "segment_id": 45,
+          "snippet": "這是一個陣列",
+          "type": "semantic",
+          "suggested_fix": "這是一個物件陣列",
+          "confidence": 0.75,
+          "reasoning": "陣列的定義不夠清楚"
+        },
+        {
+          "segment_id": 47,
+          "snippet": "汽車的一個指標",
+          "type": "semantic",
+          "suggested_fix": "汽車的指標",
+          "confidence": 0.75,
+          "reasoning": "語句不夠精簡"
+        },
+        {
+          "segment_id": 51,
+          "snippet": "但是我們先不要管裡面的東西是什麼",
+          "type": "semantic",
+          "suggested_fix": "但我們先不考慮裡面的內容",
+          "confidence": 0.8,
+          "reasoning": "語句不夠正式"
+        },
+        {
+          "segment_id": 85,
+          "snippet": "叫繼承或者是多面向",
+          "type": "term",
+          "suggested_fix": "叫繼承或多型",
+          "confidence": 0.75,
+          "reasoning": "多面向應為多型"
+        },
+        {
+          "segment_id": 118,
+          "snippet": "這是從C那邊過來的",
+          "type": "semantic",
+          "suggested_fix": "這是從C語言過來的",
+          "confidence": 0.8,
+          "reasoning": "語句不夠清楚"
+        },
+        {
+          "segment_id": 123,
+          "snippet": "所以各位要特別注意",
+          "type": "semantic",
+          "suggested_fix": "所以各位要特別留意",
+          "confidence": 0.75,
+          "reasoning": "語句不夠正式"
+        },
+        {
+          "segment_id": 146,
+          "snippet": "就家族可以看得到",
+          "type": "semantic",
+          "suggested_fix": "就像家族可以看得到",
+          "confidence": 0.8,
+          "reasoning": "語句不夠完整"
+        },
+        {
+          "segment_id": 188,
+          "snippet": "就要加上這個",
+          "type": "semantic",
+          "suggested_fix": "就要加上這個關鍵字",
+          "confidence": 0.75,
+          "reasoning": "語句不夠清楚"
+        },
+        {
+          "segment_id": 206,
+          "snippet": "來建立物件",
+          "type": "semantic",
+          "suggested_fix": "來宣告物件",
+          "confidence": 0.8,
+          "reasoning": "語句不夠精確"
+        },
+        {
+          "segment_id": 222,
+          "snippet": "這個59.cpp這個例子是",
+          "type": "semantic",
+          "suggested_fix": "這個59.cpp的例子是",
+          "confidence": 0.75,
+          "reasoning": "語句不夠流暢"
+        },
+        {
+          "segment_id": 244,
+          "snippet": "當然就是用Student的這個類別",
+          "type": "semantic",
+          "suggested_fix": "當然就是用Student這個類別",
+          "confidence": 0.75,
+          "reasoning": "語句不夠精簡"
+        },
+        {
+          "segment_id": 268,
+          "snippet": "它預設是不公開",
+          "type": "semantic",
+          "suggested_fix": "它預設為不公開",
+          "confidence": 0.75,
+          "reasoning": "語句不夠正式"
+        },
+        {
+          "segment_id": 276,
+          "snippet": "然後總分也是整數",
+          "type": "semantic",
+          "suggested_fix": "總分也是整數",
+          "confidence": 0.75,
+          "reasoning": "語句不夠精簡"
+        },
+        {
+          "segment_id": 284,
+          "snippet": "就是真正的學生",
+          "type": "semantic",
+          "suggested_fix": "就是學生",
+          "confidence": 0.75,
+          "reasoning": "語句不夠精簡"
+        },
+        {
+          "segment_id": 292,
+          "snippet": "然後產生",
+          "type": "semantic",
+          "suggested_fix": "然後產生輸入",
+          "confidence": 0.75,
+          "reasoning": "語句不夠完整"
+        },
+        {
+          "segment_id": 304,
+          "snippet": "也就是它的資料成員",
+          "type": "semantic",
+          "suggested_fix": "也就是它的成員",
+          "confidence": 0.75,
+          "reasoning": "語句不夠精簡"
+        },
+        {
+          "segment_id": 324,
+          "snippet": "然後下面這個Full回圈",
+          "type": "semantic",
+          "suggested_fix": "接下來這個Full回圈",
+          "confidence": 0.75,
+          "reasoning": "語句不夠流暢"
+        },
+        {
+          "segment_id": 388,
+          "snippet": "謝謝各位的觀看",
+          "type": "semantic",
+          "suggested_fix": "謝謝各位的收看",
+          "confidence": 0.75,
+          "reasoning": "用詞不夠正式"
+        }
+      ]
+    },
+    {
+      "video_order": 60,
+      "title_zh": "C++類別的成員函式",
+      "issues": [
+        {
+          "segment_id": 12,
+          "snippet": "另外一種是類別的自動管理的函式",
+          "type": "semantic",
+          "suggested_fix": "另外一種是類別的自動管理函式",
+          "confidence": 0.8,
+          "reasoning": "缺少主詞，句子不完整"
+        },
+        {
+          "segment_id": 49,
+          "snippet": "Void car 裡面的 INIT",
+          "type": "term",
+          "suggested_fix": "void car 裡面的 INIT",
+          "confidence": 0.9,
+          "reasoning": "C++關鍵字 'void' 錯誤音譯"
+        },
+        {
+          "segment_id": 105,
+          "snippet": "因為CLASS宣告他的資料成員預設是私有的",
+          "type": "term",
+          "suggested_fix": "因為 class 宣告他的資料成員預設是私有的",
+          "confidence": 0.85,
+          "reasoning": "C++關鍵字 'class' 錯誤音譯"
+        },
+        {
+          "segment_id": 394,
+          "snippet": "五個學生的陣列",
+          "type": "repetition",
+          "suggested_fix": "五個學生的陣列",
+          "confidence": 0.8,
+          "reasoning": "重複出現相同句子"
+        }
+      ]
+    },
+    {
+      "video_order": 61,
+      "title_zh": "C++類別的常數資料成員",
+      "issues": [
+        {
+          "segment_id": 40,
+          "snippet": "Department 我們故意把它設成 constant 的資料成員",
+          "type": "term",
+          "suggested_fix": "Department 我們故意把它設成常數的資料成員",
+          "confidence": 0.85,
+          "reasoning": "constant 應翻譯為常數"
+        },
+        {
+          "segment_id": 66,
+          "snippet": "它是一個不會變的一個 Department",
+          "type": "term",
+          "suggested_fix": "它是一個不會變的一個常數資料成員",
+          "confidence": 0.8,
+          "reasoning": "Department 應翻譯為常數資料成員"
+        },
+        {
+          "segment_id": 70,
+          "snippet": "Department 等於產科學程",
+          "type": "term",
+          "suggested_fix": "資料成員等於產科學程",
+          "confidence": 0.75,
+          "reasoning": "Department 應翻譯為資料成員"
+        }
+      ]
+    },
+    {
+      "video_order": 62,
+      "title_zh": "C++類別的靜態資料成員",
+      "issues": [
+        {
+          "segment_id": 81,
+          "snippet": "department是一個constant",
+          "type": "term",
+          "suggested_fix": "department是一個常數",
+          "confidence": 0.8,
+          "reasoning": "constant 應翻譯為常數"
+        },
+        {
+          "segment_id": 83,
+          "snippet": "我們把他改成static",
+          "type": "term",
+          "suggested_fix": "我們把他改成靜態",
+          "confidence": 0.75,
+          "reasoning": "static 應翻譯為靜態"
+        }
+      ]
+    }
+  ],
+  "total_issues": 209
+}

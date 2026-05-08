@@ -49,7 +49,8 @@
 - ✅ 6-1e（NotebookLM 核心）改 B1 Whisper API（A 方案 YT 字幕失敗）→ 62 transcripts → 12 global corrections → 861 chunks 入 RAG（2026-05-08，spot retrieve 4/4 命中）
 - ✅ 6-1f tech-debt 同步
 - ✅ 6-2a Grounded prompt template + Pydantic 模型 + 13 mock-LLM 測試（2026-05-08：458 tests 全綠）
-- ⬜ 6-2b ~ 6-4：批次生成 / 練習題庫 / 教授抽查
+- ✅ 6-2b 批次生成 infra：retrieve metadata filter + staging 表 + retry + promote helper + 18 個 mock+DB 測試（2026-05-08：476 tests 全綠；實機 LLM 全跑延至 6-4 抽查時合併執行）
+- ⬜ 6-2c ~ 6-4：YT player 嵌入 / 範例 tab / 摘要 tab / 練習題庫 / 教授抽查
 
 **Phase 5 ⇄ Phase 6 平行**：Phase 5 教師端可隨時插入並行（5-1 班級管理 / 5-2 行為資料 / 5-3 分析演算法 / 5-4 視覺化 / 5-5 作業指派）
 

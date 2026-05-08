@@ -408,10 +408,13 @@
   - `_build_context_block` 注入 concept 元資料 + transcript chunks（含 [chunk N] 標籤）；空 chunks 自動引導 needs_more_source
   - `_call_llm_json` 共用 helper：`json_object` mode + temperature 0.3 + Pydantic validate + 503/502 分層錯誤
   - `tests/test_content_generator.py` 13 個 mock-LLM 測試（成功路徑 ×3 / needs_more_source ×2 / 失敗 ×3 / grounding 機制 ×3 / orchestrator ×1 / Pydantic 驗證 ×1），全套 458 tests 全綠
-- [ ] 6-2b LLM 批次生成 59 unit（4-62）content JSON → 寫入 `learning_units.content`：
-  - 對每 unit 用 `video_order` metadata filter retrieve 該 video 的字幕 chunks
-  - 失敗 retry（max 3 次）+ `needs_more_source=true` 落到 staging 供教授補資料
-  - 結果落地 staging table 供 6-4 review，通過後 promote 到 `learning_units.content`
+- [x] 6-2b LLM 批次生成 infra（2026-05-08，程式碼完成；實際 59 unit 批次跑延至 6-4 教授抽查時合併執行避免重複付費）：
+  - `services/rag/retrieve.py` 新 `get_chunks_by_video_order(video_order)`：直接 SQL 走 metadata filter + 依 `start_time_seconds` 排序，避免語意 top-k 跨 video 污染
+  - alembic `g3b4c5d6e7f8` + `models/unit_content_staging.py`：staging 表（concept_id UNIQUE / status pending/approved/rejected / needs_more_source / notes / attempt_count）
+  - `services/learning/batch_generator.py` (251 行)：retry max 3 (LLM_UNAVAILABLE / LLM_PARSE_ERROR) + needs_more_source 聚合 + vendor-neutral SELECT-then-INSERT/UPDATE upsert + skip_existing 跳過 approved + `EXCLUDED_FROM_PATH_CATEGORIES` 過濾課程介紹
+  - `services/learning/unit_content_promote.py` (58 行)：`promote_concept(db, concept_id) -> int` 強制 status='approved' 才把 staging.content 推到所有 learning_units
+  - `scripts/generate_unit_content.py`：CLI `--only N` / `--force` / `--dry-run`；dry-run 驗證 59 concept 過濾正確
+  - 18 個新 mock-LLM + 真 DB tests，全套 458 → 476 tests 全綠
 - [ ] 6-2c 概念說明 tab：YT player IFrame embed（依賴 6-1d metadata；timestamp citation 點擊跳到對應影片時間點）
 - [ ] 6-2d 範例 tab：渲染 LLM 生成的程式碼範例 + 「在 Workspace 開啟」按鈕（復用 Phase 2-5d sessionStorage）+ citation 標示
 - [ ] 6-2e 摘要 tab：渲染 LLM 生成的 Markdown 摘要 + key takeaways bullet + citation 標示

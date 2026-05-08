@@ -1,5 +1,51 @@
 # 變更日誌
 
+## [2026-05-08] — Phase 6-2b 程式碼完成：grounded 批次生成 + staging table + retry + promote helper（待使用者實機驗證）
+
+### Added
+- **`backend/services/rag/retrieve.py`** 擴充：新 `get_chunks_by_video_order(video_order)` 直接 SQL 查 `data_codedge_rag.metadata_->>'video_order'`，依 `start_time_seconds` 排序回傳該 video 完整字幕 chunks（非語意 top-k，避免跨 video 污染與順序錯亂）
+- **`backend/services/learning/batch_generator.py`** (251 行)：批次生成核心
+  - `generate_for_concept(db, concept) -> GenerationResult`：retrieve → generate_unit_content → UPSERT staging
+  - `_generate_with_retry`：transient 錯誤（LLM_UNAVAILABLE / LLM_PARSE_ERROR）退避重試 max 3 次；非 transient 直接拋
+  - `_aggregate_needs_more_source` / `_flatten_notes`：3 section 任一 flag → row 標 True；reasons 串接成 `notes` 給 6-4 抽查介面用
+  - `list_target_concepts`：自動過濾 `EXCLUDED_FROM_PATH_CATEGORIES=("課程介紹",)` + 缺 `video_order` 的 concept
+  - `generate_all(db, only=None, skip_existing=True)`：批次入口；預設跳過已 approved 的 concept 避免覆蓋審查通過內容
+  - SELECT-then-INSERT/UPDATE 取代 PG dialect on_conflict（保持 SQLite 測試相容）
+- **`backend/services/learning/unit_content_promote.py`** (58 行)：6-4 抽查通過後 `promote_concept(db, concept_id) -> int` 把 staging.content 寫入該 concept 對應的所有 `learning_units.content`；強制 status='approved' 才執行
+- **`backend/alembic/versions/g3b4c5d6e7f8_create_unit_content_staging.py`**：staging 表 migration
+  - schema：concept_id UNIQUE / content JSON / status CHECK ('pending', 'approved', 'rejected') / needs_more_source / notes / attempt_count / model_used / generated_at / reviewed_at
+  - 雙索引：status / needs_more_source（給 6-4 抽查介面 filter）
+- **`backend/models/unit_content_staging.py`**：對應 ORM + `StagingStatus` enum
+- **`backend/scripts/generate_unit_content.py`** (90 行) CLI：`--only N` / `--force` / `--dry-run`；摘要列印 success / skipped / needs_more_source / failed
+- **`backend/tests/test_batch_generator.py`** (~330 行)：18 個新測試
+  - pure helpers ×3（aggregate / flatten_notes 兩種情境）
+  - retry 機制 ×3（second-attempt 成功 / 連 max retries / 非 retryable 立即拋）
+  - generate_for_concept ×4（成功寫 staging / 失敗不寫 / 缺 video_order 422 / partial needs_more 聚合）
+  - UPSERT ×1（重生時 reset reviewed_at + status）
+  - list_target_concepts / generate_all ×4（過濾 / only filter / skip approved / force regenerate）
+  - promote_concept ×3（成功 / pending 422 / 缺 row 404）
+- 全套 backend 從 458 → **476 tests 全綠**
+
+### Design 亮點
+- **per-concept 不 per-unit**：1 concept N user units 共用 grounded content；staging 用 `concept_id UNIQUE`，promote 時一次更新所有相關 units
+- **needs_more_source vs retry 互斥**：retry 處理「LLM 失敗」（網路 / parse），needs_more_source 處理「資料不足」（字幕短 / 偏題）
+- **vendor-neutral upsert**：避開 PG dialect `on_conflict_do_update`，用 SELECT-then-INSERT/UPDATE 維持 SQLite 測試相容；UNIQUE(concept_id) 仍由 schema 強制
+- **promote 與 generate 拆檔**：6-4 觸發的後段流程獨立，不與 batch generation 耦合；保持單一檔案 ≤ 250 行硬限
+
+### Sync
+- migration `g3b4c5d6e7f8` 已 apply 至 dev DB
+- `data_codedge_rag` retrieve 對齊 6-1e ingest 時寫入的 `video_order` / `start_time_seconds` metadata
+- dry-run 驗證：59 concept(s) would be processed（v04-v62），課程介紹 v01-v03 自動排除
+
+### 待使用者驗證
+- ⏳ 實際批次跑 1 部影片（建議 `--only 47` 遞迴）驗證 LLM 生成品質 + staging 寫入
+- ⏳ 全 59 部批次跑（成本估 $5-10 USD）後檢查 needs_more_source 比例
+
+### Why
+6-2a 完成 prompt + 模型驗證後，6-2b 把它接到實際 RAG infrastructure：對每 concept 用 video_order metadata filter retrieve 該影片字幕 → call generate_unit_content → 落到 staging 供 6-4 教授抽查。staging 表設計為 1 concept 1 row（不依賴用戶），審查通過後 promote 一次更新所有用戶的對應 unit。
+
+---
+
 ## [2026-05-08] — Phase 6-2a 完成：grounded prompt template + Pydantic 模型 + 13 mock-LLM 測試
 
 ### Added

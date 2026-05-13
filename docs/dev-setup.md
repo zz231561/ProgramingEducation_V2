@@ -5,7 +5,9 @@
 
 ---
 
-## 1. 每次 session 啟動流程（已裝完工具的情況）
+## 1. 每次 session 啟動流程（macOS / 已裝完工具）
+
+> Windows (PowerShell) 環境見 §1B。
 
 ### 🟢 最小啟動（DB + Redis，2-1b 開發只需這段）
 
@@ -71,6 +73,61 @@ docker ps                  # 看容器跑得如何
 colima status              # 看 Colima VM 狀態
 docker info | head -5      # 看 docker daemon 是否 ready
 ```
+
+---
+
+## 1B. Windows (PowerShell) 啟動流程
+
+> Windows 用 Docker Desktop 取代 Colima。專案路徑為 `C:\Users\hao\Desktop\Projects\ProgramingEducation_V2`（注意 `Projects` 為複數，與 macOS 的 `Project` 不同）。
+
+### 🟢 最小啟動（DB + Redis）
+
+先確認 Docker Desktop 已啟動，再開 PowerShell：
+
+```powershell
+cd C:\Users\hao\Desktop\Projects\ProgramingEducation_V2
+docker-compose -f docker-compose.dev.yml up -d
+docker exec codedge-postgres-dev pg_isready -U postgres -d programing_education
+docker exec codedge-postgres-dev psql -U postgres -d programing_education -c "\dx vector"
+cd backend; .\.venv\Scripts\alembic.exe current
+```
+
+**預期最後一行**：`b2c3d4e5f6a7 (head)` → 環境 OK。
+
+### 🟡 完整開發（後端 + 前端，分開三個 terminal）
+
+```powershell
+# Terminal 1：DB + Redis（同上「最小啟動」）
+
+# Terminal 2：後端 FastAPI（port 8000）
+cd C:\Users\hao\Desktop\Projects\ProgramingEducation_V2\backend
+.\.venv\Scripts\Activate.ps1
+uvicorn main:app --reload --port 8000
+
+# Terminal 3：前端 Next.js（port 3000）
+cd C:\Users\hao\Desktop\Projects\ProgramingEducation_V2\web
+npm run dev
+```
+
+開瀏覽器：http://localhost:3000
+
+### 🔴 收工關閉
+
+```powershell
+cd C:\Users\hao\Desktop\Projects\ProgramingEducation_V2
+docker-compose -f docker-compose.dev.yml down   # 容器停（資料保留）
+# Docker Desktop 可從 system tray 手動 Quit 釋放資源
+```
+
+### Windows 與 macOS 對照速查
+
+| 項目 | macOS | Windows |
+|------|-------|---------|
+| 專案根目錄 | `/Users/hao/Desktop/Project/ProgramingEducation_V2` | `C:\Users\hao\Desktop\Projects\ProgramingEducation_V2` |
+| Docker daemon | `colima start` / `colima stop` | Docker Desktop（GUI 啟動） |
+| venv 啟動 | `source .venv/bin/activate` | `.\.venv\Scripts\Activate.ps1` |
+| venv 執行檔 | `.venv/bin/uvicorn` | `.venv\Scripts\uvicorn.exe`（啟動 venv 後可省略） |
+| Shell 語法 | bash | PowerShell（`$null` / `$env:VAR` / 反引號續行） |
 
 ---
 

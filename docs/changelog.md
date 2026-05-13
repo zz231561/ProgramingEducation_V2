@@ -1,5 +1,17 @@
 # 變更日誌
 
+## [2026-05-13] — docs: dev-setup.md 新增 Windows (PowerShell) 啟動章節
+
+### Added
+- **`docs/dev-setup.md` §1B**：Windows 對應啟動流程
+  - 最小啟動（DB + Redis）/ 完整開發（後端 + 前端三 terminal）/ 收工關閉 三段 PowerShell 指令
+  - Windows 與 macOS 對照表（路徑、Docker daemon、venv 啟動、shell 語法）
+  - 標註 Windows 路徑為 `C:\Users\hao\Desktop\Projects\...`（複數 Projects），與 macOS `Project`（單數）不同
+- **`docs/dev-setup.md` §1**：標題加註 `(macOS / 已裝完工具)` + 開頭指引「Windows 環境見 §1B」
+
+### Why
+原 §1 僅 macOS / Colima 流程；Windows 環境 session 啟動時無對應指引。
+
 ## [2026-05-08] — Phase 6-2b 程式碼完成：grounded 批次生成 + staging table + retry + promote helper（待使用者實機驗證）
 
 ### Added

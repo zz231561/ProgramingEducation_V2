@@ -1,5 +1,13 @@
 # 變更日誌
 
+## [2026-05-13] — chore(web): middleware → proxy 遷移（Next.js 16 deprecation）
+
+### Changed
+- **`web/middleware.ts` → `web/proxy.ts`**：Next.js 16 將 `middleware` 檔案規範改名為 `proxy`，原檔仍可運作但會發 deprecation warning。export 從 `auth as middleware` 改為 `auth as proxy`，`config.matcher` 規格不變。
+
+### Why
+`npm run dev` 出現 deprecation 警告 `The "middleware" file convention is deprecated. Please use "proxy" instead.`。Next.js 官方理由：避免與 Express middleware 概念混淆，且明確標示其位於 Edge Runtime 上的 proxy 性質。
+
 ## [2026-05-13] — docs: dev-setup.md 新增 Windows (PowerShell) 啟動章節
 
 ### Added

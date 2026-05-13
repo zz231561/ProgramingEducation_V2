@@ -1,9 +1,9 @@
 /**
- * NextAuth v5 middleware — 未登入使用者重導至 /login。
+ * NextAuth v5 proxy（Next.js 16 將 middleware 改名為 proxy）— 未登入使用者重導至 /login。
  * /login 和 /api 路徑不做驗證。
  */
 
-export { auth as middleware } from "@/auth";
+export { auth as proxy } from "@/auth";
 
 export const config = {
   matcher: [

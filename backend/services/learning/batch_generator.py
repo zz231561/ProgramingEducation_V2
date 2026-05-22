@@ -5,7 +5,7 @@
 設計取捨：
 - per-concept 不 per-unit：1 concept N user units 共用 grounded content。
 - needs_more_source 聚合：3 section 任一 flag → row 標 True。
-- 過濾 EXCLUDED_FROM_PATH_CATEGORIES：課程介紹影片不生成。
+- 涵蓋全部 62 部（含 video_order 1-3 課程介紹）；只要有 video_order 就生成。
 - promote 與 generate 分離：6-4 抽查通過後才 promote（unit_content_promote.py）。
 """
 
@@ -24,7 +24,6 @@ from core.errors import AppError
 from models.concept import Concept
 from models.unit_content_staging import StagingStatus, UnitContentStaging
 from services.learning.content_generator import UnitContent, generate_unit_content
-from services.learning.generator import EXCLUDED_FROM_PATH_CATEGORIES
 from services.rag.retrieve import RetrievedChunk, get_chunks_by_video_order
 
 MAX_RETRIES = 3
@@ -200,11 +199,10 @@ async def generate_for_concept(
 async def list_target_concepts(
     db: AsyncSession, only: int | None = None
 ) -> list[Concept]:
-    """取出本 phase 應生成的 concepts（排除課程介紹 + 有 video_order）。"""
+    """取出本 phase 應生成的 concepts（凡有 video_order 皆生成；含 1-3 課程介紹）。"""
     stmt = (
         select(Concept)
         .where(Concept.video_order.is_not(None))
-        .where(Concept.category.notin_(EXCLUDED_FROM_PATH_CATEGORIES))
         .order_by(Concept.video_order)
     )
     if only is not None:

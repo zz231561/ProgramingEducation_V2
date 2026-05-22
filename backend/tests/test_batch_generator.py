@@ -358,7 +358,11 @@ async def test_upsert_overwrites_existing_resets_review():
 
 
 @pytest.mark.asyncio
-async def test_list_target_concepts_filters_intro_and_no_video_order():
+async def test_list_target_concepts_includes_intro_filters_no_video_order():
+    """2026-05-22 反轉：課程介紹也應生成（已加 PREREQUISITE 邊 1→2→3→4 入路徑）。
+
+    過濾條件只剩「video_order 必須有值」。
+    """
     await _seed_concept(tag="cpp-04", video_order=4, category="基礎語法")
     await _seed_concept(tag="cpp-01-intro", video_order=1, category="課程介紹")
     await _seed_concept(tag="cpp-no-video", video_order=None, category="基礎語法")
@@ -368,7 +372,7 @@ async def test_list_target_concepts_filters_intro_and_no_video_order():
 
     tags = [c.tag for c in targets]
     assert "cpp-04" in tags
-    assert "cpp-01-intro" not in tags
+    assert "cpp-01-intro" in tags
     assert "cpp-no-video" not in tags
 
 

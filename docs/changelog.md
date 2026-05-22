@@ -1,5 +1,32 @@
 # 變更日誌
 
+## [2026-05-22] — 設計反轉：video_order 1-3（課程介紹）加回學習路徑
+
+### Changed
+- **新 alembic migration `h4c5d6e7f8a9_seed_intro_video_prerequisites.py`**：補 3 條 PREREQUISITE 邊
+  - `cpp-01-language-intro` → `cpp-02-cpp-overview`
+  - `cpp-02-cpp-overview` → `cpp-03-devcpp-install`
+  - `cpp-03-devcpp-install` → `cpp-04-first-program`
+  - 完整鏈：1→2→3→4→...→62（共 61 條 prerequisite 邊）
+- **`backend/services/learning/generator.py`**：移除 `EXCLUDED_FROM_PATH_CATEGORIES` 常數與 `notin_` 過濾條件；`_fetch_concepts` 改為純 `select(Concept)` + optional category filter
+- **`backend/services/learning/batch_generator.py`**：移除 EXCLUDED 過濾；`list_target_concepts` 改為只過濾 `video_order IS NULL`；docstring 更新「涵蓋全部 62 部（含 1-3）」
+- **保留 `category="課程介紹"` 不變**：未來知識圖譜頁可用此 category 做 styling 區分（不再做路徑過濾用途）
+- **`docs/roadmap.md`**：6-1c 條目 + 「已確認決策」段 1-3 處理方式 + Phase 6 開頭「Concept 範圍」說明 — 三處同步修訂
+
+### Tests
+- **`backend/tests/test_learning_generator.py`**：
+  - `test_intro_category_concepts_excluded_from_path` → `test_intro_category_concepts_included_in_path`（assert 三筆 concept 全部進路徑）
+  - `test_all_intro_category_raises_422` → `test_path_with_only_intro_category_still_succeeds`（assert 不再拋 422，能正常生成）
+- **`backend/tests/test_batch_generator.py:test_list_target_concepts_filters_intro_and_no_video_order`** → `test_list_target_concepts_includes_intro_filters_no_video_order`（assert 課程介紹也會被批次生成）
+- alembic upgrade head 套用成功；後端 476 tests 全綠
+
+### Why
+原 6-1c 把 1-3 列為「選看」類不進路徑；2026-05-22 使用者決定 1-3 教學內容（語言介紹 / C++ 概述 / DevC++ 安裝環境）對線性學習路徑而言是必要前置，應強制要學。加 PREREQUISITE 邊比「移除 filter 讓 1-3 與 4 並列 in_degree=0」更穩定，保證路徑順序固定為 1,2,3,4,...,62。
+
+### Migration
+本機 dev 環境：`cd backend && alembic upgrade head`
+部署環境（Phase 7）：deployment 流程自動跑 `alembic upgrade head`，無額外動作
+
 ## [2026-05-22] — Phase 6-2c 程式碼完成：概念說明 tab 嵌入 YT IFrame player + grounded markdown + citation 跳轉（待使用者 UI 驗證）
 
 ### Added

@@ -79,12 +79,12 @@
 > **核心架構（NotebookLM 模式）**：YT 字幕 → LlamaIndex IngestionPipeline 入庫 → 生成時 retrieve 該 video 字幕 chunks 注入 prompt → LLM 生成必須引用 timestamp citation、不引入字幕未出現的概念 → 教授抽查時可比對「LLM 生成 vs 影片實際 timestamp 處內容」。
 > **資料流**：YT playlist URL → fetcher 抓 metadata + 字幕 → PATCH 寫入 concepts metadata + RAG ingest 字幕 → LLM grounded 生成 unit content → 教授抽查 → 修正 prompt 重跑（如需）。
 > **OSS**：RAG 沿用 Phase 2-1 LlamaIndex；LLM 生成沿用 Phase 2-4c `services/quiz/generate.py` 與 OpenAI `json_object` mode；字幕抓取沿用 yt-dlp。**禁止為此 Phase 引入新框架**。
-> **Concept 範圍**：62 個影片 concept（video_order 1-62）。其中 1-3（課程簡介、環境安裝、語言簡介）為「選看」類，**不參與 PREREQUISITE 鏈**（透過 `category="課程介紹"` 標記讓 learning_path generator 過濾；知識圖譜頁仍顯示但 styling 區分）。
+> **Concept 範圍**（2026-05-22 修訂）：62 個影片 concept（video_order 1-62）全部進學習路徑；PREREQUISITE 鏈 1→2→3→…→62 完整串連。1-3 仍保留 `category="課程介紹"` 供未來知識圖譜 styling 區分使用。
 
 ### 6-1 影片資料整合（metadata + 字幕 RAG ingest）✅
 - [x] 6-1a 教授交付 playlist URL（62 部影片完整對齊 video_order 1-62）
 - [x] 6-1b/b+ fetcher script + 62 列 CSV
-- [x] 6-1c video 1-3 concept seed migration（category="課程介紹" 自動排除）
+- [x] 6-1c video 1-3 concept seed migration（2026-05-22 修訂：加 PREREQUISITE 邊 1→2→3→4 並進路徑；保留 category="課程介紹" 標記供未來圖譜 styling 區分）
 - [x] 6-1d PATCH script 寫入 62 筆 metadata 至 DB
 - [x] 6-1e（NotebookLM 核心）Whisper 全 62 部 transcript + 12 global corrections + 861 chunks 入 RAG（spot retrieve 4/4 命中）
 - [x] 6-1f tech-debt 同步
@@ -143,5 +143,5 @@
 - **OSS 重用**：開發前必查 `docs/references.md` §1 決策矩陣；禁止 AGPL/GPL 套件；禁止移植已有對應套件的演算法（如 BKT 必用 pyBKT）
 - **執行順序**：功能優先（Phase 2 → 3）→ 部署準備（Phase 4）→ **Phase 5 教師端 ⇄ Phase 6 教學內容建構（可平行）** → 上線實測（Phase 7）；所有需要實際部署才能驗證的工作集中在 Phase 7
 - **Phase 6 採 NotebookLM grounded 模式**（2026-05-07 確認）：所有 LLM 生成的 unit content / 練習題必須 grounded 在教授實際 YT 影片字幕上，禁止 LLM 自由發揮；source 採 Whisper API（B1 方案，6-1e 已完成 62 部 transcribe），品質不夠的 unit 在 6-4 抽查時局部重跑
-- **Concept 範圍 62 個**（2026-05-07 確認）：video_order 1-62 全部 seed 為 concept；其中 1-3 標記 `category="課程介紹"` 不參與 PREREQUISITE 鏈
+- **Concept 範圍 62 個**（2026-05-07 確認 / 2026-05-22 修訂）：video_order 1-62 全部 seed 為 concept 且**全部進學習路徑**（PREREQUISITE 鏈 1→2→3→…→62）；1-3 仍保留 `category="課程介紹"` 供未來知識圖譜 styling 區分使用
 - **知識圖譜重構為 Phase 6 後續工作**（2026-05-07 確認）：目前線性 04→05→...→62 的 PREREQUISITE 鏈為 MVP；Phase 6 完成後依教授標的跨章依賴重構為多對多圖（記入 tech-debt 追蹤）

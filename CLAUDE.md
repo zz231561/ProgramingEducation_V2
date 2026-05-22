@@ -28,7 +28,7 @@
 
 - **Phase 1-4 ✅** 全數完成（學生端閉環 + 容器化 + Zeabur 配置）
 - **🎯 Phase 6 進行中**（NotebookLM grounded 教學內容建構）
-  - 6-1 影片資料整合 ✅（Whisper 62 部 transcript + 861 chunks 入 RAG）
+  - 6-1 影片資料整合 ✅（Whisper 62 部 transcript + 861 chunks 入 RAG；2026-05-22 1-3 加 PREREQUISITE 邊回主路徑）
   - 6-2a/b ✅（grounded prompt + Pydantic + 批次生成 infra + staging 表 + 18 mock+DB tests）
   - **下一步**：6-2c YT player IFrame embed → 6-2d 範例 tab → 6-2e 摘要 tab → 6-3 練習題庫 → 6-4 抽查
   - 後端 476 tests 全綠；實機 LLM 全跑延至 6-4 合併執行

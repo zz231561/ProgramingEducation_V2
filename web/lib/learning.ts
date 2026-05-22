@@ -28,6 +28,22 @@ export interface ConceptExplanation {
   citations: Citation[];
 }
 
+/**
+ * 6-2a `code_examples` section — 1-3 個程式範例，每個附 optional citation。
+ */
+export interface CodeExample {
+  title: string;
+  code: string;
+  explanation: string;
+  citation: Citation | null;
+}
+
+export interface CodeExamples {
+  needs_more_source: boolean;
+  reason: string;
+  examples: CodeExample[];
+}
+
 export interface UnitContent {
   // 舊形狀（3-1d）— 6-2b promote 後將被新 grounded 形狀取代
   summary?: string;
@@ -35,6 +51,7 @@ export interface UnitContent {
   exercise_question_ids?: string[];
   // 6-2a/b 新 grounded 形狀（promote 後 staging → learning_units.content）
   concept_explanation?: ConceptExplanation;
+  code_examples?: CodeExamples;
 }
 
 export interface Unit {

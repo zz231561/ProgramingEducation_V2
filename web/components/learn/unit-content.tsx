@@ -5,7 +5,7 @@
  *
  * 4 tab 內容：
  * - 概念說明：YT IFrame player + grounded markdown + citation 跳轉（6-2c，元件移至 concept-tab.tsx）
- * - 範例程式：unit.content.examples（暫無資料時 placeholder）
+ * - 範例程式：grounded code examples + 「在 Workspace 開啟」（6-2d，元件移至 examples-tab.tsx）
  * - 練習題：3-1e 整合 placeholder
  * - 摘要：unit.content.summary（暫無資料時 placeholder）
  *
@@ -21,6 +21,7 @@ import { ArrowLeft } from "lucide-react";
 import { Unit } from "@/lib/learning";
 
 import { ConceptTab } from "./concept-tab";
+import { ExamplesTab } from "./examples-tab";
 import { ExercisesTab } from "./exercises-tab";
 import { ActionButton, NavButton } from "./unit-action-bar";
 import { UnitStatusIcon, statusLabel } from "./unit-status-icon";
@@ -147,25 +148,6 @@ function TabButton({
     >
       {children}
     </button>
-  );
-}
-
-function ExamplesTab({ unit }: { unit: Unit }) {
-  const examples = unit.content.examples ?? [];
-  if (examples.length === 0) {
-    return <EmptyTab text="範例程式碼將在後續加入（教學素材匯入後填入）" />;
-  }
-  return (
-    <div className="space-y-3">
-      {examples.map((code, idx) => (
-        <pre
-          key={idx}
-          className="overflow-x-auto rounded-md border border-border-default bg-bg-inset p-3 font-mono text-sm text-text-primary"
-        >
-          {code}
-        </pre>
-      ))}
-    </div>
   );
 }
 

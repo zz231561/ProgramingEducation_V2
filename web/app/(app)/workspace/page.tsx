@@ -16,6 +16,7 @@ import {
   ACTIVE_REFLECTION_EVENT,
   getActiveReflectionId,
 } from "@/lib/active-reflection";
+import { consumePendingWorkspaceCode } from "@/lib/pending-workspace-code";
 
 /** 後端 /code/execute 回傳格式 */
 interface ExecuteResponse {
@@ -36,6 +37,13 @@ export default function WorkspacePage() {
   const [hasActiveReflection, setHasActiveReflection] = useState(false);
   const codeRef = useRef("");
   const workspace = useWorkspace();
+
+  // 6-2d：從範例 tab 點「在 Workspace 開啟」帶來的程式碼（一次性消費）。
+  // useState 初始化只執行一次，避免重 render 時重複 consume。
+  const [initialCode] = useState<string | undefined>(() => {
+    const pending = consumePendingWorkspaceCode();
+    return pending ?? undefined;
+  });
 
   const toggleOutput = useCallback(() => setOutputCollapsed((v) => !v), []);
   const toggleReflection = useCallback(() => setReflectionOpen((v) => !v), []);
@@ -119,14 +127,14 @@ export default function WorkspacePage() {
       {outputCollapsed ? (
         <>
           <div className="min-h-0 flex-1">
-            <CodeEditor onChange={handleCodeChange} />
+            <CodeEditor initialValue={initialCode} onChange={handleCodeChange} />
           </div>
           <OutputPanel collapsed onToggleCollapse={toggleOutput} />
         </>
       ) : (
         <PanelGroup orientation="vertical" className="min-h-0 flex-1">
           <Panel defaultSize={70} minSize={30}>
-            <CodeEditor onChange={handleCodeChange} />
+            <CodeEditor initialValue={initialCode} onChange={handleCodeChange} />
           </Panel>
           <PanelResizeHandle className="relative flex h-1 items-center justify-center transition-colors before:absolute before:inset-x-0 before:h-px before:bg-border-default hover:before:bg-accent-blue data-[resize-handle-active]:before:bg-accent-blue" />
           <Panel defaultSize={30} minSize={15}>

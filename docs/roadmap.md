@@ -93,7 +93,7 @@
 - [x] 6-2a Grounded prompt template + Pydantic 模型 + 13 mock-LLM 測試
 - [x] 6-2b 批次生成 infra：retrieve metadata filter + staging 表 + retry + promote helper + 18 個 mock+DB 測試
 - [x] 6-2c 概念說明 tab：YT player IFrame embed（依賴 6-1d metadata；timestamp citation 點擊跳到對應影片時間點）
-- [ ] 6-2d 範例 tab：渲染 LLM 生成的程式碼範例 + 「在 Workspace 開啟」按鈕（復用 Phase 2-5d sessionStorage）+ citation 標示
+- [x] 6-2d 範例 tab：渲染 LLM 生成的程式碼範例 + 「在 Workspace 開啟」按鈕（復用 Phase 2-5d sessionStorage）+ citation 標示
 - [ ] 6-2e 摘要 tab：渲染 LLM 生成的 Markdown 摘要 + key takeaways bullet + citation 標示
 
 ### 6-3 練習題庫補充（grounded）

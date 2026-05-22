@@ -1,5 +1,37 @@
 # 變更日誌
 
+## [2026-05-22] — Phase 6-2d 程式碼完成：範例 tab 渲染 grounded code + 「在 Workspace 開啟」轉場（待使用者 UI 驗證）
+
+### Added
+- **`web/components/learn/examples-tab.tsx`** (147 行)：grounded code examples 渲染元件
+  - 四段狀態：`needs_more_source=true` → reason notice；有 grounded examples → 卡片列表；舊形狀 `examples: string[]` → legacy fallback；都沒有 → empty placeholder
+  - `ExampleCard`：title + code block（mono / bg-inset）+ explanation + optional citation 標籤 + 「在 Workspace 開啟」按鈕
+  - citation 採靜態時間戳 + 節錄文字（不嵌 YT player，避免每 tab 各跑一個 IFrame）；要跳影片時間請回概念 tab 點 citation
+- **`web/lib/pending-workspace-code.ts`** (53 行)：sessionStorage helper for 跨頁攜帶程式碼
+  - `setPendingWorkspaceCode(code)` / `consumePendingWorkspaceCode()`（讀完即清，避免下次重整誤覆蓋）
+  - 復用 `active-reflection.ts` pattern（CustomEvent 同 tab 通知 + SSR safe try/catch）
+
+### Changed
+- **`web/lib/learning.ts`**：新增 `CodeExample` / `CodeExamples` 介面（與後端 `content_generator.py:CodeExample/CodeExamples` 對齊）；`UnitContent` 加 optional `code_examples?: CodeExamples`
+- **`web/components/learn/unit-content.tsx`**：移除 inline `ExamplesTab`（17 行），改 import `ExamplesTab` from `./examples-tab`；檔案 188→173 行（更接近 ≤ 150 健康水位）
+- **`web/app/(app)/workspace/page.tsx`**：mount 時用 `useState` lazy initializer 消費 `consumePendingWorkspaceCode()`，作為 `<CodeEditor initialValue={...}>` 一次性 prop；後續 re-render 不重複 consume
+
+### Tests
+- 後端無新增測試（API 與 schema 未動）；後端 476 tests 全綠
+- 前端 TypeScript check 通過 (`npx tsc --noEmit` exit 0)
+- 前端無 component test 基建（沿用 Phase 1-6 既定策略：UI 由使用者驗證）
+
+### Why
+6-2d 為 NotebookLM grounded 模式的「程式範例 tab」前端呈現：完成此 task 後使用者進入單元頁範例 tab 即可看到 LLM 從字幕生成的 1-3 個 C++ 程式範例 + 一鍵「在 Workspace 開啟」即時上手實驗。citation 與概念 tab 結構一致，讓學生能回溯字幕出處。配合 6-2c 概念 tab + 後續 6-2e 摘要 tab，三段 grounded 內容呈現基線完成。
+
+### How to verify (使用者待測)
+1. 前端 dev 環境（`npm run dev`）登入 → 進 Learn 頁 → 點開任一單元 → 切到「範例程式」tab
+2. 若該單元 `learning_units.content.code_examples` 已有 promoted 資料：
+   - 應顯示卡片列表，每張卡片含標題 + 程式碼 + 說明 + 出處（時間戳+節錄）+ 「在 Workspace 開啟」按鈕
+3. 點任一範例的「在 Workspace 開啟」→ 路由跳 `/workspace` → 編輯器應載入該範例程式碼（取代 default Hello World）
+4. 在 Workspace 內手動 navigate 回去再進來，編輯器應**不會**再次被該範例覆蓋（一次性消費）
+5. 若該單元尚未 promoted（多數 unit 目前如此）：應顯示 empty placeholder 或舊形狀 fallback
+
 ## [2026-05-22] — Quiz cold-start fallback robust 補強（V2 cpp-XX schema 兼容）
 
 ### Changed

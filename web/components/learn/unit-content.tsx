@@ -7,7 +7,7 @@
  * - 概念說明：YT IFrame player + grounded markdown + citation 跳轉（6-2c，元件移至 concept-tab.tsx）
  * - 範例程式：grounded code examples + 「在 Workspace 開啟」（6-2d，元件移至 examples-tab.tsx）
  * - 練習題：3-1e 整合 placeholder
- * - 摘要：unit.content.summary（暫無資料時 placeholder）
+ * - 摘要：grounded key_points + citations（6-2e，元件移至 summary-tab.tsx）
  *
  * 設計原則：
  * - 元件純 prop-driven（status / 導航 / 完成 callback）
@@ -23,6 +23,7 @@ import { Unit } from "@/lib/learning";
 import { ConceptTab } from "./concept-tab";
 import { ExamplesTab } from "./examples-tab";
 import { ExercisesTab } from "./exercises-tab";
+import { SummaryTab } from "./summary-tab";
 import { ActionButton, NavButton } from "./unit-action-bar";
 import { UnitStatusIcon, statusLabel } from "./unit-status-icon";
 
@@ -148,26 +149,6 @@ function TabButton({
     >
       {children}
     </button>
-  );
-}
-
-function SummaryTab({ unit }: { unit: Unit }) {
-  const summary = unit.content.summary ?? "";
-  if (!summary) {
-    return <EmptyTab text="本單元摘要將在後續加入（可由 LLM 自動生成或教授手動填寫）" />;
-  }
-  return (
-    <div className="rounded-md border border-border-default bg-surface-1 p-4 text-sm leading-relaxed text-text-secondary">
-      {summary}
-    </div>
-  );
-}
-
-function EmptyTab({ text }: { text: string }) {
-  return (
-    <div className="rounded-md border border-border-default bg-surface-1 px-6 py-12 text-center text-sm text-text-secondary">
-      {text}
-    </div>
   );
 }
 

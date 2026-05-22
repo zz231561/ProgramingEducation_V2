@@ -44,9 +44,21 @@ export interface CodeExamples {
   examples: CodeExample[];
 }
 
+/**
+ * 6-2a `summary` section — 3-7 個 key_points + citations，可能 needs_more_source。
+ * Note：舊 lazy-seed content.summary 是 string；promote 後變成此 object。
+ *       SummaryTab 透過 typeof 判斷哪一種形狀。
+ */
+export interface SummaryContent {
+  needs_more_source: boolean;
+  reason: string;
+  key_points: string[];
+  citations: Citation[];
+}
+
 export interface UnitContent {
-  // 舊形狀（3-1d）— 6-2b promote 後將被新 grounded 形狀取代
-  summary?: string;
+  // 舊形狀（3-1d）— 6-2b promote 後 summary 會被新 grounded object 形狀取代
+  summary?: string | SummaryContent;
   examples?: string[];
   exercise_question_ids?: string[];
   // 6-2a/b 新 grounded 形狀（promote 後 staging → learning_units.content）

@@ -1,5 +1,31 @@
 # 變更日誌
 
+## [2026-05-22] — Phase 6-2e 程式碼完成：摘要 tab 渲染 grounded key_points + citation 標籤（fallback 已驗證 / grounded 狀態延至 6-4 驗收）
+
+### Verified (2026-05-22 透過 `npx tsc --noEmit` + `npx eslint`)
+- TypeScript / ESLint 全綠；既有 lazy-seed empty 形狀仍顯示「重點摘要尚未匯入」placeholder（與 6-2c/d 行為一致）
+- grounded 主路徑（`needs_more_source` notice / key_points bullet + citations）：**因 DB 尚無任何 promoted `summary` object 形狀**，延至 Phase 6-4a-deferred-ui 合併驗收
+
+### Added
+- **`web/components/learn/summary-tab.tsx`** (約 115 行)：grounded summary 渲染元件
+  - 四段狀態：grounded 且 `needs_more_source=true` → reason notice；grounded 且 `key_points` 非空 → bullet list + citation 列表；舊 `summary: string` → legacy fallback；都沒有 → empty placeholder
+  - citation 採靜態時間戳 + 節錄文字（不嵌 YT player，提示使用者回概念 tab 點 citation）
+
+### Changed
+- **`web/lib/learning.ts`**：新增 `SummaryContent` 介面（與後端 `content_generator.py:Summary` 對齊：`needs_more_source` / `reason` / `key_points` / `citations`）；`UnitContent.summary` 由 `string` 擴為 `string | SummaryContent`，相容舊 lazy seed 與 promote 後形狀
+- **`web/components/learn/unit-content.tsx`**：移除 inline `SummaryTab` + `EmptyTab`（共 19 行），改 import `SummaryTab` from `./summary-tab`；保持 ≤ 150 行健康水位
+- **`docs/roadmap.md`**：勾選 6-2e；6-4a-deferred-ui 子項「**6-2e grounded path**」補完內容說明（驗收 needs_more_source notice + key_points bullet 渲染）
+
+### Tests
+- 後端無新增測試（API 與 schema 未動）；後端 476 tests 全綠
+- 前端 TypeScript check 通過 (`npx tsc --noEmit` exit 0) + ESLint 通過
+
+### Health metrics
+- `summary-tab.tsx` 約 115 行（< 150 ⚠ 門檻）；`unit-content.tsx` 154 行（仍超 ≤150 警戒線少許，與 6-2d 完成時同水位，本任務未惡化）
+- `learning.ts` 新增 7 行 interface + 1 行 union 擴充，未跨 ⚠ 門檻
+
+---
+
 ## [2026-05-22] — Phase 6-2d 程式碼完成：範例 tab 渲染 grounded code + 「在 Workspace 開啟」轉場（fallback 已驗證 / 卡片狀態延至 6-4 驗收）
 
 ### Verified (2026-05-22)

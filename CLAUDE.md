@@ -32,7 +32,8 @@
   - 6-2a/b ✅（grounded prompt + Pydantic + 批次生成 infra + staging 表 + 18 mock+DB tests）
   - 6-2c ✅程式碼完成 + fallback 已驗（grounded markdown / citation seek 主路徑待 6-4a-deferred-ui 補驗）
   - 6-2d ✅程式碼完成 + fallback 已驗（grounded card + Workspace handoff 主路徑待 6-4a-deferred-ui 補驗）
-  - **下一步**：6-2e 摘要 tab → 6-3 練習題庫 → **6-4a-deferred-ui 必跑**（不可跳過；tech-debt.md / roadmap.md 6-4a 子項已標）
+  - 6-2e ✅程式碼完成 + fallback 已驗（grounded `summary.key_points` bullet + citation 標籤渲染主路徑待 6-4a-deferred-ui 補驗）
+  - **下一步**：6-3 練習題庫 → **6-4a-deferred-ui 必跑**（不可跳過；tech-debt.md / roadmap.md 6-4a 子項已標）
   - 後端 476 tests 全綠；實機 LLM 全跑延至 6-4 合併執行
 - **Phase 5 ⇄ Phase 6 平行**：教師端可隨時插入並行
 - **Phase 7 上線實測**：須 Phase 6 至少 6-1 + 6-2 完成 + Zeabur + VPS 就緒

@@ -1,6 +1,10 @@
 # 變更日誌
 
-## [2026-05-22] — Phase 6-2d 程式碼完成：範例 tab 渲染 grounded code + 「在 Workspace 開啟」轉場（待使用者 UI 驗證）
+## [2026-05-22] — Phase 6-2d 程式碼完成：範例 tab 渲染 grounded code + 「在 Workspace 開啟」轉場（fallback 已驗證 / 卡片狀態延至 6-4 驗收）
+
+### Verified (2026-05-22)
+- 使用者於 Unit 1「什麼是程式語言」範例 tab 看到「程式範例尚未匯入」placeholder — fallback 分支運作正確
+- 卡片列表（grounded code_examples）+ 「在 Workspace 開啟」轉場 + 一次性消費 sessionStorage：**因 DB 尚無任何 promoted `code_examples` JSON 而無法本次驗收**；延至 Phase 6-4 教授抽查 + 實機 LLM 批次跑完後合併驗收
 
 ### Added
 - **`web/components/learn/examples-tab.tsx`** (147 行)：grounded code examples 渲染元件

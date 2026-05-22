@@ -6,6 +6,11 @@
 - 使用者於 Unit 1「什麼是程式語言」範例 tab 看到「程式範例尚未匯入」placeholder — fallback 分支運作正確
 - 卡片列表（grounded code_examples）+ 「在 Workspace 開啟」轉場 + 一次性消費 sessionStorage：**因 DB 尚無任何 promoted `code_examples` JSON 而無法本次驗收**；延至 Phase 6-4 教授抽查 + 實機 LLM 批次跑完後合併驗收
 
+### Deferred verification anchored at 3 places (避免被遺忘)
+- `docs/roadmap.md` — 6-4a 下新增 `6-4a-deferred-ui` 子 checkbox，明列 6-2c / 6-2d 待補驗的 grounded 主路徑（含 sessionStorage 一次性消費關鍵驗收步驟）
+- `docs/tech-debt.md` — 新增「延遲驗收（Phase 6-2 → 6-4 必跑）」段，含失敗排查指引（`pending-workspace-code.ts` removeItem / `workspace/page.tsx` useState lazy initializer）
+- `CLAUDE.md` 當前狀態 — 6-2c / 6-2d 標記改為「✅程式碼完成 + fallback 已驗」，下一步段強調「6-4a-deferred-ui 必跑」
+
 ### Added
 - **`web/components/learn/examples-tab.tsx`** (147 行)：grounded code examples 渲染元件
   - 四段狀態：`needs_more_source=true` → reason notice；有 grounded examples → 卡片列表；舊形狀 `examples: string[]` → legacy fallback；都沒有 → empty placeholder

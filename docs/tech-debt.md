@@ -4,6 +4,16 @@
 
 ## ⚠ 待處理
 
+### 延遲驗收（Phase 6-2 → 6-4 必跑）
+- [ ] **6-2 grounded UI 狀態尚未真機驗收** → **6-4a-deferred-ui 必驗（roadmap 已標）**
+  - **背景**：6-2c / 6-2d 完成時 DB 內無任何 promoted `concept_explanation` / `code_examples`，使用者只能驗 fallback / placeholder 狀態。grounded 主路徑必須等 6-2b 實機批次（延至 6-4 合併執行）跑完才驗得到
+  - **必驗項目**（任一 promoted unit 即可作 sample）：
+    - 6-2c：grounded markdown render + 點 citation 真的呼叫 `player.seekTo`
+    - 6-2d：卡片列表（title/code/explanation/citation）+ 「在 Workspace 開啟」→ CodeEditor `initialValue` 載入 + 一次性消費（重整不再覆蓋）
+    - 6-2e：摘要 + key takeaways + citation（待 6-2e 完成後追加）
+  - **如何處理**：批次跑完拿到至少 1 個 promoted unit 後，依 changelog 2026-05-22 6-2d 條目「How to verify」步驟 1-4 逐項操作；其中第 3-4 步是 sessionStorage 一次性消費的關鍵驗收，**不可漏跑**
+  - **若驗收失敗**：第一優先檢查 `web/lib/pending-workspace-code.ts` 的 `consumePendingWorkspaceCode()` 是否真的有 `removeItem`；其次檢查 `web/app/(app)/workspace/page.tsx` 是否用 `useState` lazy initializer（而非直接呼叫，會導致 re-render 多次 consume）
+
 ### 部署相關（待實測）
 - [ ] **Zeabur PREBUILT + source.type=IMAGE schema 未實測**
   - 4-1b 將 `zeabur.json` 的 postgres 從 marketplace `postgresql`（不含 pgvector）改為 `template: PREBUILT` + `source: {type: "IMAGE", image: "pgvector/pgvector:pg16"}`

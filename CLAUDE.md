@@ -30,9 +30,9 @@
 - **🎯 Phase 6 進行中**（NotebookLM grounded 教學內容建構）
   - 6-1 影片資料整合 ✅（Whisper 62 部 transcript + 861 chunks 入 RAG；2026-05-22 1-3 加 PREREQUISITE 邊回主路徑）
   - 6-2a/b ✅（grounded prompt + Pydantic + 批次生成 infra + staging 表 + 18 mock+DB tests）
-  - 6-2c ✅（YT IFrame player + grounded markdown + citation seek；2026-05-22 使用者 UI 驗證通過）
-  - 6-2d ✅程式碼完成（grounded code examples card + 「在 Workspace 開啟」sessionStorage handoff；待使用者 UI 驗證）
-  - **下一步**：6-2e 摘要 tab → 6-3 練習題庫 → 6-4 抽查
+  - 6-2c ✅程式碼完成 + fallback 已驗（grounded markdown / citation seek 主路徑待 6-4a-deferred-ui 補驗）
+  - 6-2d ✅程式碼完成 + fallback 已驗（grounded card + Workspace handoff 主路徑待 6-4a-deferred-ui 補驗）
+  - **下一步**：6-2e 摘要 tab → 6-3 練習題庫 → **6-4a-deferred-ui 必跑**（不可跳過；tech-debt.md / roadmap.md 6-4a 子項已標）
   - 後端 476 tests 全綠；實機 LLM 全跑延至 6-4 合併執行
 - **Phase 5 ⇄ Phase 6 平行**：教師端可隨時插入並行
 - **Phase 7 上線實測**：須 Phase 6 至少 6-1 + 6-2 完成 + Zeabur + VPS 就緒

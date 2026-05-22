@@ -102,6 +102,10 @@
 
 ### 6-4 內容品管
 - [ ] 6-4a 教授抽查 5-10 個 unit 全部 4 tab 品質：核心檢查「LLM 生成內容是否真的反映該 video timestamp 處的教法」（可直接點 citation 跳到影片時間點對照）；不脫離 C++ 教學情境；程式碼可編譯；**6-2b 的 59 部實機批次跑在此階段合併執行**
+- [ ] **6-4a-deferred-ui 必驗（grounded 資料就緒後立即跑，不可跳過）**：批次跑完取得至少 1 個 promoted unit 後，重新驗收以下「6-2 系列因無資料而延後驗收」的 UI 狀態
+  - **6-2c grounded path**：概念說明 tab 的 grounded markdown 渲染 + 內嵌 citation 點擊跳轉是否真的 `player.seekTo`（之前只驗了 pending fallback path）
+  - **6-2d grounded path（含卡片 + Workspace 轉場）**：範例 tab 卡片列表（title / code / explanation / citation 標籤）+ 「在 Workspace 開啟」按鈕 → Workspace `<CodeEditor initialValue>` 是否載入範例程式碼 + 重整 / 再 navigate 後不重複覆蓋（一次性消費）
+  - **6-2e grounded path**：摘要 tab 渲染（待 6-2e 完成後填入此項）
 - [ ] 6-4b 依抽查反饋調整 6-2a prompt template 並針對問題 unit 局部重跑；對品質太差的 unit 評估升級到 Whisper 重 transcribe（B 方案）作為 source
 
 ---

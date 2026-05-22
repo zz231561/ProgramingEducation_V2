@@ -1,5 +1,17 @@
 # 變更日誌
 
+## [2026-05-22] — Phase 6-2c 使用者驗證通過（YT 播放 + citation 跳轉 + grounded markdown 渲染正常）
+
+### Verified
+- 使用者於本機 dev 環境登入 → 進 Learn 頁 → 點開已 PATCH `video_youtube_id` 的單元，確認：
+  - YT IFrame player 載入並可播放
+  - grounded markdown 內容正確渲染（react-markdown + remark-gfm）
+  - citation 列表點擊可呼叫 `player.seekTo` 跳到對應 timestamp
+- 6-2c 正式 close；`docs/roadmap.md` 該行勾選 `[x]`；`CLAUDE.md` 當前狀態更新「下一步：6-2d 範例 tab」
+
+### Next
+- 6-2d 範例 tab：渲染 LLM 生成的程式碼範例 + 「在 Workspace 開啟」按鈕（復用 Phase 2-5d sessionStorage）+ citation 標示
+
 ## [2026-05-22] — 設計反轉：video_order 1-3（課程介紹）加回學習路徑
 
 ### Changed

@@ -11,7 +11,13 @@ from api.deps import get_current_db_user, get_db
 from core.errors import AppError
 from models.quiz import Question, QuestionType, StudentAnswer
 from models.user import User
-from services.quiz import generate_for_student, generate_hint, list_history, submit_answer
+from services.quiz import (
+    generate_for_student,
+    generate_hint,
+    list_history,
+    pick_random_validated_question,
+    submit_answer,
+)
 from sqlalchemy import select as sa_select  # noqa: F401  used by hint endpoint
 
 router = APIRouter(prefix="/quiz", tags=["quiz"])
@@ -101,6 +107,26 @@ class HistoryResponse(BaseModel):
 
 
 # === Endpoints ===
+
+
+@router.get("/from-bank", response_model=QuestionForStudentOut)
+async def from_bank(
+    concept_tag: str = Query(..., min_length=1, max_length=50),
+    db: AsyncSession = Depends(get_db),
+    _user: User = Depends(get_current_db_user),
+) -> QuestionForStudentOut:
+    """Phase 6-3b：從題庫隨機抽 validated grounded 題目（不呼叫 LLM）。
+
+    命中 → 直接回題目；無題 → 404 QUESTION_BANK_EMPTY，前端 fallback 至 /quiz/generate。
+    """
+    question = await pick_random_validated_question(db, concept_tag=concept_tag)
+    if question is None:
+        raise AppError(
+            404,
+            "QUESTION_BANK_EMPTY",
+            f"題庫尚無針對 {concept_tag} 的 validated 題目",
+        )
+    return QuestionForStudentOut.from_question(question)
 
 
 @router.post("/generate", response_model=QuestionForStudentOut)

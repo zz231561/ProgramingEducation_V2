@@ -101,7 +101,7 @@
   - [x] 6-3a-1 `generate_question(video_order=...)` grounded mode：grounded RAG 走 `get_chunks_by_video_order` + system prompt 加 grounding 規則 + 4 mock tests（480 全綠）；`video_order=None` 走原 semantic path（backward compat）
   - [x] 6-3a-2 批次 script + service：`services/quiz/batch_generator.py`（per-concept 跑 N 題 × generate+validate × MAX_VALIDATE_RETRIES=2）+ CLI `scripts/generate_unit_questions.py`（--only / --force / --dry-run）+ 8 mock+DB tests（488 全綠）；預設題型 mix multiple_choice + coding；validate fail 自動 retry，generate fail 直接 abort 與 orchestrator 一致
   - [ ] 6-3a-3 實機 LLM 全跑（延至 6-4 合併執行；預估 62 concept × 2 題 × 2 LLM call ≈ 250-500k token / $5-15 USD）
-- [ ] 6-3b ExercisesTab 改造：從「按需現生」→「優先讀題庫，題庫不足才現生」（降低 LLM 等待 + 一致性）
+- [x] 6-3b ExercisesTab 改造：從「按需現生」→「優先讀題庫，題庫不足才現生」(GET /quiz/from-bank + ApiRequestError 404 QUESTION_BANK_EMPTY fallback；6 bank service tests + 5 route integration tests；前端 Loading 文案分「查找題庫題目 (< 1 秒)」/「AI 正在生成 (5-15 秒)」兩階段)
 
 ### 6-4 內容品管
 - [ ] 6-4a 教授抽查 5-10 個 unit 全部 4 tab 品質：核心檢查「LLM 生成內容是否真的反映該 video timestamp 處的教法」（可直接點 citation 跳到影片時間點對照）；不脫離 C++ 教學情境；程式碼可編譯；**6-2b 的 59 部實機批次跑在此階段合併執行**

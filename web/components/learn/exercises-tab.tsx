@@ -1,33 +1,28 @@
 "use client";
 
 /**
- * 練習題 tab — 3-1e 觸發點。
- *
- * 三狀態：
- * - idle：「開始練習」按鈕
- * - question：顯示題目 + 「開始反思」按鈕
- * - done：反思完成 ✓
- *
- * 範圍：本 tab 負責「取題 → 反思觸發」。完整作答 UI（含程式碼編輯 / 提交判分）屬 Phase 3-2。
- * 點「在 Workspace 作答」可導向 /workspace（reflection_id 已寫入 sessionStorage 由
- * use-active-reflection hook 帶入）。
+ * 練習題 tab — 6-3b 題庫優先：先 /quiz/from-bank（< 1s）→ 404 QUESTION_BANK_EMPTY
+ * 時 fallback /quiz/generate（LLM 5-15s）。Loading 文案分兩階段提示使用者為何等待。
+ * 本 tab 負責「取題 → 反思觸發」；完整作答 UI 屬 Phase 3-2。
  */
 
 import { useCallback, useState } from "react";
-import { Loader2, Play, Sparkles } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import Link from "next/link";
 
 import { ReflectionFlow } from "@/components/reflection/reflection-flow";
 import { ApiRequestError } from "@/lib/api";
-import { Question, generateQuestion } from "@/lib/quiz";
+import { Question, generateQuestion, getQuestionFromBank } from "@/lib/quiz";
 import { Reflection } from "@/lib/reflection";
+
+import { IdleView, LoadingView } from "./exercises-tab-views";
 
 interface Props {
   conceptTag: string;
   conceptNameZh: string;
 }
 
-type Phase = "idle" | "loading" | "question" | "reflecting" | "done";
+type Phase = "idle" | "loading-bank" | "loading-generate" | "question" | "reflecting" | "done";
 
 export function ExercisesTab({ conceptTag, conceptNameZh }: Props) {
   const [phase, setPhase] = useState<Phase>("idle");
@@ -37,14 +32,33 @@ export function ExercisesTab({ conceptTag, conceptNameZh }: Props) {
 
   const startExercise = useCallback(async () => {
     setError(null);
-    setPhase("loading");
+    setPhase("loading-bank");
     try {
-      const q = await generateQuestion({
+      const fromBank = await getQuestionFromBank(conceptTag);
+      setQuestion(fromBank);
+      setPhase("question");
+      return;
+    } catch (e) {
+      const bankEmpty =
+        e instanceof ApiRequestError &&
+        e.status === 404 &&
+        e.body.error === "QUESTION_BANK_EMPTY";
+      if (!bankEmpty) {
+        setPhase("idle");
+        setError(humanizeError(e));
+        return;
+      }
+      // 題庫空 → fallback 走 /quiz/generate
+    }
+
+    setPhase("loading-generate");
+    try {
+      const generated = await generateQuestion({
         type: "coding",
         bloom_level: 3,
         concept_tag: conceptTag,
       });
-      setQuestion(q);
+      setQuestion(generated);
       setPhase("question");
     } catch (e) {
       setPhase("idle");
@@ -73,7 +87,8 @@ export function ExercisesTab({ conceptTag, conceptNameZh }: Props) {
       {phase === "idle" && (
         <IdleView conceptNameZh={conceptNameZh} onStart={startExercise} error={error} />
       )}
-      {phase === "loading" && <LoadingView />}
+      {phase === "loading-bank" && <LoadingView source="bank" />}
+      {phase === "loading-generate" && <LoadingView source="generate" />}
       {(phase === "question" || phase === "reflecting" || phase === "done") && question && (
         <QuestionPanel
           question={question}
@@ -90,51 +105,6 @@ export function ExercisesTab({ conceptTag, conceptNameZh }: Props) {
         onApprove={handleApproveReflection}
         onClose={closeReflectionModal}
       />
-    </div>
-  );
-}
-
-function IdleView({
-  conceptNameZh,
-  onStart,
-  error,
-}: {
-  conceptNameZh: string;
-  onStart: () => void;
-  error: string | null;
-}) {
-  return (
-    <div className="rounded-md border border-border-default bg-surface-1 px-6 py-8 text-center">
-      <Sparkles className="mx-auto size-8 text-text-muted/60" />
-      <p className="mt-3 text-sm text-text-primary">
-        針對「{conceptNameZh}」練習一題
-      </p>
-      <p className="mt-1 text-xs text-text-secondary">
-        系統會生成程式撰寫題；你會先讀題、寫下解題思路（反思），再進入作答
-      </p>
-      <button
-        type="button"
-        onClick={onStart}
-        className="mt-5 inline-flex h-9 items-center gap-2 rounded-md bg-btn-primary-bg px-4 text-sm font-medium text-white hover:bg-btn-primary-hover"
-      >
-        <Play className="size-4" />
-        開始練習
-      </button>
-      {error && (
-        <div className="mt-4 rounded-md border-l-2 border-accent-red bg-surface-2 px-3 py-2 text-left text-xs text-accent-red">
-          {error}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function LoadingView() {
-  return (
-    <div className="flex flex-col items-center gap-3 py-12 text-text-secondary">
-      <Loader2 className="size-6 animate-spin" />
-      <p className="text-sm">AI 正在生成題目（含自我審查 retry）...</p>
-      <p className="text-xs text-text-muted">通常 5–15 秒</p>
     </div>
   );
 }

@@ -1,5 +1,60 @@
 # 變更日誌
 
+## [2026-05-22] — Phase 6-3b ExercisesTab 題庫優先（GET /quiz/from-bank + 前端分流 fallback）
+
+### Verified (2026-05-22 透過 `pytest -q` + `npx tsc --noEmit` + `npx eslint`)
+- 後端 499 passed in 9.27s（原 488 + 新 11：bank 6 + route 5）
+- 前端 TypeScript / ESLint 全綠
+- Fallback path 直接驗證（DB 無 validated 題 → 預期跳 generate 流程）；命中題庫 path 延至 6-3a-3 / 6-4 實機跑出 grounded validated 題後驗
+
+### Added
+- **`backend/services/quiz/bank.py`** (45 行)：`pick_random_validated_question(db, concept_tag, exclude_question_ids?)`
+  - 篩 `validated=True` + Python 端 filter `concept_tags` 含 tag（避開 JSON contains 跨方言差異）
+  - 隨機抽用 `random.choice`（候選 n 不大）；無題回 `None`
+  - `exclude_question_ids` 預留給未來「不重複曝光已答題」加強，本次前端未啟用
+- **`GET /quiz/from-bank?concept_tag=...`** endpoint（api/routes/quiz.py）
+  - 命中 → 200 + `QuestionForStudentOut`（復用 `from_question` mask 答案）
+  - 無題 → 404 `QUESTION_BANK_EMPTY`，前端可 fallback
+  - `concept_tag` 必填（FastAPI Query 預設驗證 → 422）
+- **`web/lib/quiz.ts`**：`getQuestionFromBank(conceptTag)` helper
+- **`web/components/learn/exercises-tab-views.tsx`** (58 行)：`IdleView` + `LoadingView`（純展示元件，由 exercises-tab.tsx 拆出避免主檔超 250 行門檻）
+- **`backend/tests/test_quiz_bank.py`** (約 130 行)：6 個 service 單元測試
+  - 命中題、無題、validated=False 不被抽中、不同 tag 不串題、exclude_question_ids 過濾、多次抽都符合條件
+- **`backend/tests/test_quiz_route.py`** 加 5 個 endpoint integration 測試（test_from_bank_*）
+
+### Changed
+- **`web/components/learn/exercises-tab.tsx`**：
+  - `Phase` type 加 `loading-bank` / `loading-generate`（取代原單一 `loading`）
+  - `startExercise()`：先 `getQuestionFromBank` → catch `ApiRequestError(404, QUESTION_BANK_EMPTY)` → fallback `generateQuestion`；其他錯誤一律 humanize
+  - `LoadingView` 改 prop-driven 文案：bank 顯示「查找題庫題目（< 1 秒）」/ generate 顯示「AI 正在生成題目（5-15 秒）」
+  - 拆出 IdleView / LoadingView 至 exercises-tab-views.tsx（主檔 261 → 227 行，回到 < 250 健康水位）
+- **`backend/services/quiz/__init__.py`**：export `pick_random_validated_question`
+- **`backend/api/routes/quiz.py`**：212 → 237 行（< 250），新增 from-bank endpoint + 對應 import
+
+### Implementation note
+- **為什麼 endpoint 用 GET 而非 POST**：抽題是冪等讀取操作（每次隨機抽 1 題；非建立資源），語意上 GET 更合適；URL 中 `concept_tag=` 也便於除錯 / 觀察。
+- **為什麼 random.choice 在 Python 端而非 SQL `ORDER BY RANDOM()`**：JSON contains（`concept_tags @> [tag]`）跨 SQLite/Postgres 寫法差異大；既然候選量 n ≤ 數十，先撈出再 Python random 是可攜的低成本選擇。未來流量大或 dedup 需要更複雜邏輯時可升級。
+
+### Tech debt
+- 已答題排除尚未啟用：service 已支援 `exclude_question_ids`，但前端 ExercisesTab 未維護「使用者已答題清單」；學生重複進同 unit 練習可能抽到同題（中短期可接受，列為 tech-debt）
+
+### Tests
+- 後端 499 tests 全綠（pytest -q 9.27s）
+- 前端 typecheck + lint 全綠
+
+### Health metrics
+- `bank.py` 45 行（健康）
+- `quiz.py` (routes) 237 行（< 250 ⚠ 門檻）
+- `exercises-tab.tsx` 227 行（< 250；超 150 ⚠ 但與既有 261 同水位）
+- `exercises-tab-views.tsx` 58 行（< 150）
+- `test_quiz_bank.py` 約 130 行（測試檔）
+
+### Deferred（已錨定）
+- 命中題庫 path 真實驗收：延至 6-3a-3 / 6-4 實機跑出 grounded validated 題後 → roadmap 6-4a-deferred-ui 紀錄 / tech-debt 延遲驗收區
+- Dedup 「不重複出已答題」：service `exclude_question_ids` 已預留 → 前端維護已答題清單後再啟用
+
+---
+
 ## [2026-05-22] — Phase 6-3a-2 批次練習題生成 service + CLI（程式碼 + mock+DB 測試完成；實機跑延 6-4）
 
 ### Verified (2026-05-22 透過 `pytest -q`)

@@ -11,6 +11,11 @@
     - 6-2c：grounded markdown render + 點 citation 真的呼叫 `player.seekTo`
     - 6-2d：卡片列表（title/code/explanation/citation）+ 「在 Workspace 開啟」→ CodeEditor `initialValue` 載入 + 一次性消費（重整不再覆蓋）
     - 6-2e：摘要 tab 三狀態切換 — (a) `summary.needs_more_source=true` notice；(b) `summary.key_points` bullet + `summary.citations` 標籤；(c) 舊 `summary: string` legacy fallback（同 lazy seed 空字串時不應觸發）
+    - 6-3b：ExercisesTab 命中題庫 path（前端 Loading 顯示「查找題庫題目」< 1 秒、不打 LLM、直接顯示題目）— 當前只能驗 fallback 「AI 正在生成」path
+- [ ] **練習題重複曝光**（6-3b 已標）→ Phase 6 後段 / Phase 7 前
+  - **背景**：`/quiz/from-bank` service 已支援 `exclude_question_ids` 但前端 ExercisesTab 未維護已答題清單，學生重複進同 unit 練習可能抽到同題
+  - **如何處理**：前端在 `useEffect` 用 `getQuizHistory` 取出該 concept 已答 question_ids → 傳給 from-bank（需 endpoint 也支援 query param 或新 POST 形式）；或後端直接 join student_answers 在 service 內過濾
+  - **影響**：學生短時間重練命中率低時感受不明顯（grounded 題庫每 concept 2-3 題不大），但長期會被學生抱怨；6-4 教授抽查時若反映此問題優先處理
   - **如何處理**：批次跑完拿到至少 1 個 promoted unit 後，依 changelog 2026-05-22 6-2d 條目「How to verify」步驟 1-4 逐項操作；其中第 3-4 步是 sessionStorage 一次性消費的關鍵驗收，**不可漏跑**
   - **若驗收失敗**：第一優先檢查 `web/lib/pending-workspace-code.ts` 的 `consumePendingWorkspaceCode()` 是否真的有 `removeItem`；其次檢查 `web/app/(app)/workspace/page.tsx` 是否用 `useState` lazy initializer（而非直接呼叫，會導致 re-render 多次 consume）
 

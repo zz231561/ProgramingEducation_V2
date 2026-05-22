@@ -53,6 +53,17 @@ export async function generateQuestion(
   });
 }
 
+/**
+ * Phase 6-3b：從題庫隨機抽 validated grounded 題目（不呼叫 LLM）。
+ *
+ * 命中 → 直接回題目（< 1 秒）；無題 → 拋 ApiRequestError(404, "QUESTION_BANK_EMPTY")
+ * caller 可 catch 後 fallback 至 generateQuestion。
+ */
+export async function getQuestionFromBank(conceptTag: string): Promise<Question> {
+  const qs = new URLSearchParams({ concept_tag: conceptTag }).toString();
+  return api<Question>(`/quiz/from-bank?${qs}`);
+}
+
 // === 3-2a 作答提交 ===
 
 /** 學生作答 payload — 形狀依 question.type 決定。 */

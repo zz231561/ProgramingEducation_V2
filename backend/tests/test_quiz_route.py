@@ -17,7 +17,7 @@ from httpx import AsyncClient
 from sqlalchemy import select
 
 from models.concept import Concept
-from models.quiz import Question, StudentAnswer
+from models.quiz import Question, QuestionSource, StudentAnswer
 from tests.helpers import TestSessionFactory, encrypt_test_token
 
 STUDENT_PAYLOAD = {
@@ -320,3 +320,84 @@ async def test_history_returns_user_answers(client: AsyncClient):
     assert body["total"] == 1
     assert len(body["items"]) == 1
     assert body["items"][0]["is_correct"] is True
+
+
+# === Phase 6-3b /quiz/from-bank ===
+
+
+async def _seed_validated_bank_question(concept_tag: str) -> Question:
+    async with TestSessionFactory() as db:
+        q = Question(
+            type="multiple_choice",
+            concept_tags=[concept_tag],
+            bloom_level=3,
+            difficulty=2,
+            content={
+                "stem": "題庫題：下列何者正確？",
+                "options": ["A", "B", "C", "D"],
+                "answer_index": 1,
+            },
+            explanation="B is correct.",
+            source=QuestionSource.GENERATED.value,
+            validated=True,
+        )
+        db.add(q)
+        await db.commit()
+        await db.refresh(q)
+        return q
+
+
+async def test_from_bank_requires_auth(client: AsyncClient):
+    resp = await client.get("/quiz/from-bank?concept_tag=syntax-basic")
+    assert resp.status_code == 401
+
+
+async def test_from_bank_returns_masked_question_when_available(client: AsyncClient):
+    """命中題庫 → 200 + 題目（答案已 mask）；不呼叫任何 LLM。"""
+    await _seed_validated_bank_question("syntax-basic")
+    token = encrypt_test_token(STUDENT_PAYLOAD)
+
+    resp = await client.get(
+        "/quiz/from-bank?concept_tag=syntax-basic",
+        cookies={"authjs.session-token": token},
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["type"] == "multiple_choice"
+    assert "options" in body["content"]
+    assert "answer_index" not in body["content"]  # 答案 mask
+    assert "syntax-basic" in body["concept_tags"]
+
+
+async def test_from_bank_empty_returns_404(client: AsyncClient):
+    """題庫無題 → 404 QUESTION_BANK_EMPTY，前端可 fallback /quiz/generate。"""
+    token = encrypt_test_token(STUDENT_PAYLOAD)
+    resp = await client.get(
+        "/quiz/from-bank?concept_tag=syntax-basic",
+        cookies={"authjs.session-token": token},
+    )
+    assert resp.status_code == 404
+    assert resp.json()["error"] == "QUESTION_BANK_EMPTY"
+
+
+async def test_from_bank_concept_tag_required(client: AsyncClient):
+    """concept_tag missing → 422（FastAPI Query 預設驗證）。"""
+    token = encrypt_test_token(STUDENT_PAYLOAD)
+    resp = await client.get(
+        "/quiz/from-bank",
+        cookies={"authjs.session-token": token},
+    )
+    assert resp.status_code == 422
+
+
+async def test_from_bank_only_returns_matching_tag(client: AsyncClient):
+    """有其他 tag 的 validated 題不應命中查詢 tag。"""
+    await _seed_validated_bank_question("control-flow")
+    token = encrypt_test_token(STUDENT_PAYLOAD)
+
+    resp = await client.get(
+        "/quiz/from-bank?concept_tag=syntax-basic",
+        cookies={"authjs.session-token": token},
+    )
+    assert resp.status_code == 404
+    assert resp.json()["error"] == "QUESTION_BANK_EMPTY"

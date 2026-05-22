@@ -34,8 +34,9 @@
   - 6-2d ✅程式碼完成 + fallback 已驗（grounded card + Workspace handoff 主路徑待 6-4a-deferred-ui 補驗）
   - 6-2e ✅程式碼完成 + fallback 已驗（grounded `summary.key_points` bullet + citation 標籤渲染主路徑待 6-4a-deferred-ui 補驗）
   - 6-3a-1 ✅`generate_question(video_order=...)` grounded mode（含 grounding prompt 規則 + 4 mock tests；學生現生題 backward compat 保留）
-  - **下一步**：6-3a-2 批次 script `generate_unit_questions.py` → 6-3b ExercisesTab 改造 → **6-4a / 6-4a-deferred-ui 必跑**（不可跳過；tech-debt.md / roadmap.md 6-4a 子項已標）
-  - 後端 480 tests 全綠；實機 LLM 全跑延至 6-4 合併執行
+  - 6-3a-2 ✅批次 service `services/quiz/batch_generator.py` + CLI `scripts/generate_unit_questions.py`（per-concept N 題 × generate+validate + skip_existing；8 mock+DB tests）
+  - **下一步**：6-3b ExercisesTab 改造（題庫優先） → **6-4a 教授抽查 + 6-3a-3 實機跑 + 6-4a-deferred-ui 必跑**
+  - 後端 488 tests 全綠；實機 LLM 全跑延至 6-4 合併執行（預估 $5-15 USD）
 - **Phase 5 ⇄ Phase 6 平行**：教師端可隨時插入並行
 - **Phase 7 上線實測**：須 Phase 6 至少 6-1 + 6-2 完成 + Zeabur + VPS 就緒
 

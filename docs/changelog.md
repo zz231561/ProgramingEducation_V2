@@ -1,5 +1,51 @@
 # 變更日誌
 
+## [2026-05-22] — Phase 6-3a-2 批次練習題生成 service + CLI（程式碼 + mock+DB 測試完成；實機跑延 6-4）
+
+### Verified (2026-05-22 透過 `pytest -q`)
+- `tests/test_quiz_batch_generator.py` 8 passed
+- 全套 488 passed in 9.21s（原 480 + 新 8，無 regression）
+
+### Added
+- **`backend/services/quiz/batch_generator.py`** (217 行)：批次層
+  - `generate_questions_for_concept(concept, question_types, bloom_level)` — per-concept 跑 N 題、每題 generate（grounded mode：`video_order=concept.video_order`）+ validate（retry max 2）
+  - `generate_all(only, skip_existing, question_types, bloom_level)` — 入口；`skip_existing=True` 時跳過已有 ≥ N validated 題的 concept（用 `_count_validated_questions` 掃 `concept_tags` JSON array）
+  - `list_target_concepts(only)` — `Concept.video_order IS NOT NULL` + 可選 video_order filter（與 6-2b 同策略，含 1-3 課程介紹）
+  - dataclasses `QuestionAttempt`、`ConceptBatchResult`（含 `validated_count` property）
+  - 預設 `DEFAULT_QUESTION_TYPES = (MULTIPLE_CHOICE, CODING)`、`DEFAULT_BLOOM_LEVEL = APPLY=3`
+- **`backend/scripts/generate_unit_questions.py`** (124 行)：CLI
+  - `--only N` 單一 video_order；`--force` 跳 skip_existing；`--dry-run` 只列 concept
+  - 輸出 per-concept progress（marker：✅完整 / ⚠ partial / ❌全失敗 / ⏭️ skipped）+ summary（concepts / full success / partial / all-failed / skipped / total validated questions inserted）+ failed details
+- **`backend/tests/test_quiz_batch_generator.py`** (約 270 行)：8 個 mock+DB 測試
+  - per-concept 2 題全 validated → 入庫
+  - validate concept_fits=False 兩次 retry 失敗 → 該題 rollback、不阻擋下一題
+  - generate LLM_PARSE_ERROR → 該題直接 abort（不 retry）、不阻擋下一題
+  - NO_VIDEO_ORDER concept → 422 防呆
+  - `generate_all` `skip_existing=True` 跳過已有足量 validated 題的 concept
+  - `--force`（skip_existing=False）強制重生
+  - `list_target_concepts` only 過濾 + 排除無 video_order
+  - `ConceptBatchResult.validated_count` property
+
+### Fixed / Implementation note
+- **ORM attr expire 問題**：rollback / commit 後 SQLAlchemy 預設 `expire_on_commit=True` 會把 ORM 物件 attr 標 expired，下次 access 觸發 async lazy reload；在 retry loop 內每次 IO 後加 `await db.refresh(concept)` 確保下一輪訪問 `concept.video_order / .tag / .difficulty_level` 時不會拋 `MissingGreenlet`。
+
+### Changed
+- **`docs/roadmap.md`** 6-3a-2 勾選 + 補執行成本估計（62 × 2 × 2 LLM call ≈ 250-500k token / $5-15 USD）
+
+### Tests
+- 後端 488 tests 全綠（pytest -q 9.21s）
+
+### Health metrics
+- `batch_generator.py` 217 行（< 250 ⚠ 門檻）
+- `generate_unit_questions.py` 124 行（< 150 ⚠ 門檻）
+- `test_quiz_batch_generator.py` 約 270 行（測試檔無門檻；逐塊獨立）
+
+### Deferred（已錨定）
+- 6-3a-3 實機 LLM 全跑：延至 6-4a 與 6-2b 批次跑合併執行
+- 重複避免目前用「已 validated 題數 ≥ requested」判斷；題目雖然 grounded 但語意可能近似，未做相似度 dedupe（如有重複可手動 invalidate）
+
+---
+
 ## [2026-05-22] — Phase 6-3a-1 grounded mode 接入 `generate_question`（程式碼 + mock 測試完成；批次 script 與實機跑延 6-3a-2 / 6-4）
 
 ### Verified (2026-05-22 透過 `pytest -q`)

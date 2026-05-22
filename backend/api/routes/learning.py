@@ -62,6 +62,9 @@ class UnitOut(BaseModel):
     concept_tag: str
     concept_name_zh: str
     concept_difficulty: int
+    # 6-2c 概念說明 tab：前端嵌入 YT IFrame player + citation 跳轉需要這兩欄
+    video_youtube_id: str | None
+    video_duration_seconds: int | None
     order_index: int
     status: str
     completed_at: str | None
@@ -114,6 +117,8 @@ def _build_path_detail(path, units) -> "PathDetailOut":
                 concept_tag=u.concept_tag,
                 concept_name_zh=u.concept_name_zh,
                 concept_difficulty=u.concept_difficulty,
+                video_youtube_id=u.video_youtube_id,
+                video_duration_seconds=u.video_duration_seconds,
                 order_index=u.unit.order_index,
                 status=u.unit.status,
                 completed_at=u.unit.completed_at.isoformat() if u.unit.completed_at else None,

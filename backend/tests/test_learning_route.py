@@ -56,6 +56,8 @@ async def _seed_concepts(specs: list[dict]) -> dict[str, uuid.UUID]:
                 description="",
                 difficulty_level=s.get("difficulty", 1),
                 category=s.get("category", "基礎"),
+                video_youtube_id=s.get("video_youtube_id"),
+                video_duration_seconds=s.get("video_duration_seconds"),
             )
             db.add(c)
             await db.flush()
@@ -181,7 +183,12 @@ async def test_list_paths_with_progress_summary(client: AsyncClient):
 async def test_get_path_returns_units_in_order(client: AsyncClient):
     user_id = await _ensure_user(OWNER_PAYLOAD, client)
     ids = await _seed_concepts([
-        {"tag": "first", "difficulty": 1},
+        {
+            "tag": "first",
+            "difficulty": 1,
+            "video_youtube_id": "abc123XYZab",
+            "video_duration_seconds": 600,
+        },
         {"tag": "second", "difficulty": 2},
     ])
     await _seed_edges([(ids["first"], ids["second"])])
@@ -203,6 +210,11 @@ async def test_get_path_returns_units_in_order(client: AsyncClient):
     assert [u["concept_tag"] for u in body["units"]] == ["first", "second"]
     assert body["units"][0]["concept_difficulty"] == 1
     assert body["units"][0]["order_index"] == 0
+    # 6-2c：video metadata 直通到 UnitOut
+    assert body["units"][0]["video_youtube_id"] == "abc123XYZab"
+    assert body["units"][0]["video_duration_seconds"] == 600
+    assert body["units"][1]["video_youtube_id"] is None
+    assert body["units"][1]["video_duration_seconds"] is None
 
 
 async def test_get_path_other_user_returns_404(client: AsyncClient):

@@ -39,12 +39,18 @@ class PathProgress:
 
 @dataclass(frozen=True)
 class UnitWithConcept:
-    """單元 + 對應 concept 資訊（detail 用，避免前端再 join）。"""
+    """單元 + 對應 concept 資訊（detail 用，避免前端再 join）。
+
+    6-2c 起加入 video_youtube_id / video_duration_seconds — 概念說明 tab
+    需要在前端嵌入 YT IFrame player 與計算 timestamp citation 跳轉位置。
+    """
 
     unit: LearningUnit
     concept_tag: str
     concept_name_zh: str
     concept_difficulty: int
+    video_youtube_id: str | None
+    video_duration_seconds: int | None
 
 
 async def _get_owned_path(
@@ -134,6 +140,8 @@ async def get_path_with_units(
             concept_tag=concept.tag,
             concept_name_zh=concept.name_zh,
             concept_difficulty=concept.difficulty_level,
+            video_youtube_id=concept.video_youtube_id,
+            video_duration_seconds=concept.video_duration_seconds,
         )
         for unit, concept in rows
     ]

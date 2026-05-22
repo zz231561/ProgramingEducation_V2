@@ -4,7 +4,7 @@
  * 學習單元內容頁（roadmap 3-1d）— 4 tab + 上下單元導航 + 完成按鈕。
  *
  * 4 tab 內容：
- * - 概念說明：concept name/difficulty/category + YT player（video_id 未補時 placeholder）
+ * - 概念說明：YT IFrame player + grounded markdown + citation 跳轉（6-2c，元件移至 concept-tab.tsx）
  * - 範例程式：unit.content.examples（暫無資料時 placeholder）
  * - 練習題：3-1e 整合 placeholder
  * - 摘要：unit.content.summary（暫無資料時 placeholder）
@@ -16,11 +16,13 @@
  */
 
 import { useState } from "react";
-import { ArrowLeft, ChevronLeft, ChevronRight, MonitorPlay, Play } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 
 import { Unit } from "@/lib/learning";
 
+import { ConceptTab } from "./concept-tab";
 import { ExercisesTab } from "./exercises-tab";
+import { ActionButton, NavButton } from "./unit-action-bar";
 import { UnitStatusIcon, statusLabel } from "./unit-status-icon";
 
 type Tab = "concept" | "examples" | "exercises" | "summary";
@@ -148,37 +150,6 @@ function TabButton({
   );
 }
 
-function ConceptTab({ unit }: { unit: Unit }) {
-  // P1 階段 video_youtube_id 多為 NULL（後端 schema 已支援，等教授補資料）
-  // unit.content 不含 video metadata；本 tab 顯示 placeholder + concept 描述
-  return (
-    <div className="space-y-4">
-      <VideoPlayerPlaceholder />
-      <div className="rounded-md border border-border-default bg-surface-1 p-4">
-        <h3 className="text-sm font-medium text-text-primary">概念簡介</h3>
-        <p className="mt-2 text-sm leading-relaxed text-text-secondary">
-          這個單元對應 C++ 課程的「{unit.concept_name_zh}」。
-          詳細教學內容由教授提供的 YouTube 影片提供（待 video_id 匯入後此處顯示播放器）。
-        </p>
-      </div>
-    </div>
-  );
-}
-
-function VideoPlayerPlaceholder() {
-  return (
-    <div className="flex aspect-video w-full items-center justify-center rounded-md border border-border-default bg-bg-inset text-text-muted">
-      <div className="text-center">
-        <MonitorPlay className="mx-auto size-10" />
-        <p className="mt-2 text-sm">教學影片（YT player 待整合）</p>
-        <p className="mt-1 text-xs text-text-muted/70">
-          教授提供影片 ID 後即可播放
-        </p>
-      </div>
-    </div>
-  );
-}
-
 function ExamplesTab({ unit }: { unit: Unit }) {
   const examples = unit.content.examples ?? [];
   if (examples.length === 0) {
@@ -218,75 +189,3 @@ function EmptyTab({ text }: { text: string }) {
   );
 }
 
-function NavButton({
-  disabled,
-  onClick,
-  direction,
-}: {
-  disabled: boolean;
-  onClick: (() => void) | undefined;
-  direction: "prev" | "next";
-}) {
-  const isPrev = direction === "prev";
-  const Icon = isPrev ? ChevronLeft : ChevronRight;
-  const label = isPrev ? "上一單元" : "下一單元";
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      className="inline-flex h-8 items-center gap-1 rounded-md border border-btn-default-border bg-btn-default-bg px-3 text-sm text-text-primary hover:bg-surface-2 disabled:cursor-not-allowed disabled:opacity-40"
-    >
-      {isPrev && <Icon className="size-4" />}
-      {label}
-      {!isPrev && <Icon className="size-4" />}
-    </button>
-  );
-}
-
-function ActionButton({
-  unit,
-  onStart,
-  onComplete,
-  busy,
-}: {
-  unit: Unit;
-  onStart: () => void;
-  onComplete: () => void;
-  busy: boolean;
-}) {
-  if (unit.status === "available") {
-    return (
-      <button
-        type="button"
-        onClick={onStart}
-        disabled={busy}
-        className="inline-flex h-8 items-center gap-1.5 rounded-md bg-btn-primary-bg px-4 text-sm font-medium text-white hover:bg-btn-primary-hover disabled:opacity-50"
-      >
-        <Play className="size-4" />
-        開始學習
-      </button>
-    );
-  }
-  if (unit.status === "in_progress") {
-    return (
-      <button
-        type="button"
-        onClick={onComplete}
-        disabled={busy}
-        className="inline-flex h-8 items-center gap-1.5 rounded-md bg-btn-primary-bg px-4 text-sm font-medium text-white hover:bg-btn-primary-hover disabled:opacity-50"
-      >
-        完成單元
-      </button>
-    );
-  }
-  if (unit.status === "completed") {
-    return (
-      <span className="text-sm text-accent-green">已完成 ✓</span>
-    );
-  }
-  // locked
-  return (
-    <span className="text-sm text-text-muted">尚未解鎖</span>
-  );
-}

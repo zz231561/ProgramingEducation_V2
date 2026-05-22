@@ -1,5 +1,39 @@
 # 變更日誌
 
+## [2026-05-22] — Phase 6-2c 程式碼完成：概念說明 tab 嵌入 YT IFrame player + grounded markdown + citation 跳轉（待使用者 UI 驗證）
+
+### Added
+- **`web/components/learn/youtube-player.tsx`** (142 行)：YT IFrame Player API wrapper
+  - lazy load `https://www.youtube.com/iframe_api`（全域 script 只 inject 一次，多 player 共用）
+  - `forwardRef` + `useImperativeHandle` 暴露 `seekTo(seconds)`；player 尚未 ready 時暫存待 `onReady` 補跳
+  - `videoId` 變更時 `cueVideoById` 重置（換單元不重建 iframe）
+  - 元件卸載時 `destroy()` 防 leak
+- **`web/components/learn/concept-tab.tsx`** (229 行)：grounded 內容渲染元件
+  - 三段狀態：無 youtube_id → placeholder；有影片無 grounded → player + 簡介；完整 → player + Markdown + citation 列表
+  - `ReactMarkdown` + `remarkGfm` 渲染 LLM 生成的 `concept_explanation.markdown`；自訂 12 個 element class（無 `@tailwindcss/typography` 仍維持可讀性）
+  - `parseTimestampStart()` 解析 `mm:ss` / `mm:ss-mm:ss` / `hh:mm:ss` → 秒數；citation 列表按鈕點擊呼叫 `player.seekTo`
+- **`web/components/learn/unit-action-bar.tsx`** (85 行)：從 unit-content.tsx 拆出 NavButton + ActionButton（讓 unit-content.tsx 降至 191 行 < 250 行硬上限）
+
+### Changed
+- **後端 `backend/api/routes/learning.py:UnitOut`** 新增 `video_youtube_id: str | None` / `video_duration_seconds: int | None`，由 concept JOIN 帶出
+- **後端 `backend/services/learning/queries.py:UnitWithConcept`** dataclass 同步擴充兩欄
+- **前端 `web/lib/learning.ts`**：`Unit` 加 `video_youtube_id` / `video_duration_seconds`；`UnitContent` 加 optional `concept_explanation`（grounded 形狀，含 markdown + citations）；新增 `Citation` / `ConceptExplanation` 介面
+- **前端 `web/components/learn/unit-content.tsx`**：原 inline `ConceptTab` + `VideoPlayerPlaceholder` 移除，改 import `ConceptTab`；NavButton + ActionButton 改 import 自 unit-action-bar
+- **新增 npm 套件**：`react-markdown@^10.1.0` + `remark-gfm@^4.0.1`
+
+### Tests
+- **`backend/tests/test_learning_route.py:test_get_path_returns_units_in_order`** 補斷言 `video_youtube_id` / `video_duration_seconds` 直通 UnitOut；`_seed_concepts` helper 容許 spec 帶這兩欄
+- 後端 476 tests 全綠（無新增測試檔；既有 route 測試擴充即可覆蓋 6-2c 新欄位）
+
+### Why
+6-2c 為 NotebookLM grounded 模式的「概念說明 tab」前端呈現：完成此 task 後使用者進入單元頁即可看到實際 YT 影片 + LLM grounded markdown + citation timestamp 跳轉，達成「LLM 生成內容必須引用 transcript 出處 + 學生可立即比對影片真實時間點」的設計目標。6-2b 已完成批次生成 + promote helper，配合本任務後即可端到端跑通 grounded 內容生成 → 前端呈現。
+
+### How to verify (使用者待測)
+1. 前端 dev 環境（`npm run dev`）登入 → 進 Learn 頁 → 點任一已 PATCH `video_youtube_id` 的單元（video_order 4-62）
+2. 確認概念說明 tab 顯示 YT player 並可播放
+3. 若該 unit `content.concept_explanation` 有資料 → 應顯示 markdown + citation 列表；點 citation 按鈕應跳轉至對應時間點
+4. 若 unit 仍是空 content → 應顯示 player + 「概念簡介」fallback 文字
+
 ## [2026-05-13] — chore(web): middleware → proxy 遷移（Next.js 16 deprecation）
 
 ### Changed

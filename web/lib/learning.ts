@@ -9,10 +9,32 @@ import { api } from "./api";
 
 export type UnitStatus = "locked" | "available" | "in_progress" | "completed";
 
+/**
+ * 6-2a Grounded citation — LLM 標註的 transcript 出處（mm:ss / mm:ss-mm:ss）。
+ */
+export interface Citation {
+  timestamp: string;
+  text_excerpt: string;
+}
+
+/**
+ * 6-2a `concept_explanation` section — Markdown + citations，可能 needs_more_source。
+ * Note：6-2b 完成批次生成前，learning_units.content 仍可能是舊形狀（無此欄位），故 optional。
+ */
+export interface ConceptExplanation {
+  needs_more_source: boolean;
+  reason: string;
+  markdown: string;
+  citations: Citation[];
+}
+
 export interface UnitContent {
+  // 舊形狀（3-1d）— 6-2b promote 後將被新 grounded 形狀取代
   summary?: string;
   examples?: string[];
   exercise_question_ids?: string[];
+  // 6-2a/b 新 grounded 形狀（promote 後 staging → learning_units.content）
+  concept_explanation?: ConceptExplanation;
 }
 
 export interface Unit {
@@ -21,6 +43,9 @@ export interface Unit {
   concept_tag: string;
   concept_name_zh: string;
   concept_difficulty: number;
+  // 6-2c：嵌入 YT IFrame player 與 citation 跳轉所需
+  video_youtube_id: string | null;
+  video_duration_seconds: number | null;
   order_index: number;
   status: UnitStatus;
   completed_at: string | null;

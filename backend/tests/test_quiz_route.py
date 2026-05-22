@@ -161,6 +161,39 @@ async def test_generate_with_unknown_concept_tag_returns_404(client: AsyncClient
     assert resp.json()["error"] == "CONCEPT_NOT_FOUND"
 
 
+async def test_generate_cold_start_dynamic_fallback_when_no_legacy_tag(
+    client: AsyncClient,
+):
+    """V2 cpp-XX seed 不含 syntax-basic：cold-start 應動態取難度最低 concept 出題。"""
+    async with TestSessionFactory() as db:
+        db.add(Concept(
+            tag="cpp-25-if-else", name_zh="if-else", name_en="if-else",
+            description="", difficulty_level=2, category="控制流", video_order=22,
+        ))
+        db.add(Concept(
+            tag="cpp-04-first-program", name_zh="第一支程式", name_en="First Program",
+            description="", difficulty_level=1, category="入門", video_order=1,
+        ))
+        db.add(Concept(
+            tag="cpp-05-syntax", name_zh="基本語法", name_en="Basic Syntax",
+            description="", difficulty_level=1, category="入門", video_order=2,
+        ))
+        await db.commit()
+
+    token = encrypt_test_token(STUDENT_PAYLOAD)
+    with patched_quiz_llms(_VALID_MC_JSON):
+        resp = await client.post(
+            "/quiz/generate",
+            json={"type": "multiple_choice", "bloom_level": 3},
+            cookies={"authjs.session-token": token},
+        )
+
+    assert resp.status_code == 200
+    body = resp.json()
+    # 應挑 difficulty_level=1 且 video_order 最小（cpp-04-first-program）
+    assert "cpp-04-first-program" in body["concept_tags"]
+
+
 # === submit ===
 
 

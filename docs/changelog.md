@@ -1,5 +1,20 @@
 # 變更日誌
 
+## [2026-05-22] — Quiz cold-start fallback robust 補強（V2 cpp-XX schema 兼容）
+
+### Changed
+- **`backend/services/quiz/orchestrator.py:_pick_target_concept`** 改為兩段 fallback：
+  1. 先查 `COLD_START_FALLBACK_TAG`（V1 schema 兼容；測試環境直接 seed 此 tag 仍可用）
+  2. 若無，動態查 `difficulty_level` ASC + `video_order` ASC 取最低難度且最前序 concept
+  3. 兩段都失敗才回 503 `QUIZ_UNAVAILABLE`
+
+### Tests
+- **`backend/tests/test_quiz_route.py:test_generate_cold_start_dynamic_fallback_when_no_legacy_tag`** 新增：seed `cpp-04-first-program`（difficulty=1, video_order=1）+ `cpp-05-syntax`（difficulty=1, video_order=2）+ `cpp-25-if-else`（difficulty=2）；不含 `syntax-basic` legacy tag；驗證 cold-start 取到 `cpp-04-first-program`
+- 後端 476 tests 全綠
+
+### Why
+V1 cold-start 仰賴固定 tag `syntax-basic`，但 V2 cpp-XX 章節制 seed（62 部影片 concept）不含此 tag；無弱項 + 無 legacy tag 時 prod 會直接回 503。動態 fallback 讓部署初期（沒有任何 mastery 紀錄）的學生也能正常觸發出題。
+
 ## [2026-05-22] — Phase 6-2c 使用者驗證通過（YT 播放 + citation 跳轉 + grounded markdown 渲染正常）
 
 ### Verified

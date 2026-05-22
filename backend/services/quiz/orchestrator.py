@@ -29,13 +29,30 @@ MAX_VALIDATE_RETRIES = 2
 
 
 async def _pick_target_concept(db: AsyncSession, user_id: UUID) -> Concept:
-    """先取弱項；無弱項則 fallback 到入門 concept。"""
+    """先取弱項；無弱項則 fallback 到入門 concept。
+
+    Cold-start 兩段 fallback：
+    1. `COLD_START_FALLBACK_TAG`（V1 schema 兼容；測試環境直接 seed 此 tag）
+    2. 動態查 `difficulty_level` 最低 + `video_order` 最前的 concept
+       （V2 cpp-XX 章節制 seed 不含此固定 tag 時的 robust 後援）
+    """
     weak = await select_weak_concepts(db, user_id, top_k=1)
     if weak:
         return weak[0]
+
     fallback = (
         await db.execute(
             select(Concept).where(Concept.tag == COLD_START_FALLBACK_TAG)
+        )
+    ).scalar_one_or_none()
+    if fallback is not None:
+        return fallback
+
+    fallback = (
+        await db.execute(
+            select(Concept)
+            .order_by(Concept.difficulty_level.asc(), Concept.video_order.asc())
+            .limit(1)
         )
     ).scalar_one_or_none()
     if fallback is None:

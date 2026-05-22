@@ -1,5 +1,40 @@
 # 變更日誌
 
+## [2026-05-22] — Phase 6-3a-1 grounded mode 接入 `generate_question`（程式碼 + mock 測試完成；批次 script 與實機跑延 6-3a-2 / 6-4）
+
+### Verified (2026-05-22 透過 `pytest -q`)
+- `tests/test_quiz_generate.py` 12 passed（含 4 個新 grounding 測試）
+- 全套 480 passed in 9.23s（原 476 + 新 4，無 regression）
+
+### Added
+- **`backend/services/quiz/generate.py:_GROUNDING_RULES`** — 3 條 grounding rule（題目情境 / 嚴禁發明 / 字幕不足時降難度）
+- **`backend/services/quiz/generate.py:_fetch_grounded_chunks_for_video`** — 包 `get_chunks_by_video_order`，失敗 fallback 空 chunks（同 semantic path 容錯）
+- **`backend/tests/test_quiz_generate.py`** 新增 4 測試：
+  - `test_grounded_mode_uses_video_chunks_and_skips_semantic_retrieve` — `video_order` 提供時 `get_chunks_by_video_order` 被呼叫、`retrieve_chunks` 不被呼叫；TRANSCRIPT header + chunk 內文進 user prompt
+  - `test_grounded_mode_injects_grounding_rules_into_system_prompt` — system prompt 含「Grounding 規則」+「嚴禁發明字幕未提到的程式碼」
+  - `test_non_grounded_mode_preserves_legacy_path` — `video_order=None` 走 `retrieve_chunks`、prompt 不含 grounding 規則（backward compat）
+  - `test_grounded_retrieve_failure_does_not_block_generation` — `get_chunks_by_video_order` 拋例外仍能出題（fallback 空 chunks）
+
+### Changed
+- **`backend/services/quiz/generate.py:generate_question`** 簽名加 `video_order: int | None = None`；提供時 grounded mode（不需改 orchestrator / API；學生現生題路徑不變）
+- **`backend/services/quiz/generate.py:_build_system_prompt`** 加 `grounded: bool` 參數，true 時 append `_GROUNDING_RULES`
+- **`backend/services/quiz/generate.py:_build_user_prompt`** 加 `grounded: bool` 參數，true 時 user header 改為「以下 TRANSCRIPT 為教授實際 YouTube 影片字幕（依時間順序）」
+- **`backend/tests/test_quiz_generate.py:patched_llm`** 擴充：同時 patch `retrieve_chunks` + `get_chunks_by_video_order`；`yield` 回 3 個 mock 供新測試 assert 呼叫行為
+- **`docs/roadmap.md`** 6-3a 拆 3 子項：6-3a-1（程式碼，本次完成 ✅）/ 6-3a-2（批次 script，next）/ 6-3a-3（實機跑，延 6-4）
+
+### Tests
+- 後端 480 tests 全綠（pytest -q 9.23s）
+
+### Health metrics
+- `generate.py` 221 → 248 行（< 250 ⚠ 門檻；曾觸頂 268 行，主動壓縮 docstring + 縮短 grounding rules 字串後回到健康水位）
+- `test_quiz_generate.py` 250 → 359 行（測試檔，無 ⚠ 強制門檻；逐塊獨立可讀）
+
+### Deferred（已錨定）
+- 6-3a-2 批次 script + 6-3a-3 實機跑：roadmap 6-3 子項已標
+- 學生現生題 backward compat：本次未動 `orchestrator.generate_for_student`，學生路徑仍走 semantic RAG；待 6-3b 改造 ExercisesTab 時再決定是否切到題庫優先
+
+---
+
 ## [2026-05-22] — Phase 6-2e 程式碼完成：摘要 tab 渲染 grounded key_points + citation 標籤（fallback 已驗證 / grounded 狀態延至 6-4 驗收）
 
 ### Verified (2026-05-22 透過 `npx tsc --noEmit` + `npx eslint`)

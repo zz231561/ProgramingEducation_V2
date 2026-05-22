@@ -98,6 +98,9 @@
 
 ### 6-3 練習題庫補充（grounded）
 - [ ] 6-3a 用 Phase 2-4 智慧出題管線批次模式為每 unit（4-62 共 59 個）生成至少 2 題；**generate prompt 加 grounding 規則**：題目情境必須與該 video 字幕中出現的範例 / 變數命名一致；validated=True 才入庫
+  - [x] 6-3a-1 `generate_question(video_order=...)` grounded mode：grounded RAG 走 `get_chunks_by_video_order` + system prompt 加 grounding 規則 + 4 mock tests（480 全綠）；`video_order=None` 走原 semantic path（backward compat）
+  - [ ] 6-3a-2 批次 script `backend/scripts/generate_unit_questions.py`：對 video_order 4-62 各跑 ≥2 題、只入庫 validated=True；mock+DB 測試
+  - [ ] 6-3a-3 實機 LLM 全跑（延至 6-4 合併執行）
 - [ ] 6-3b ExercisesTab 改造：從「按需現生」→「優先讀題庫，題庫不足才現生」（降低 LLM 等待 + 一致性）
 
 ### 6-4 內容品管

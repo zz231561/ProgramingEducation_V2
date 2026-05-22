@@ -11,6 +11,7 @@
 
 import json
 from contextlib import contextmanager
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -20,6 +21,7 @@ from core.errors import AppError
 from models.concept import Concept
 from models.quiz import Question, QuestionSource, QuestionType
 from services.quiz import generate_question
+from services.rag.retrieve import RetrievedChunk
 from tests.helpers import TestSessionFactory
 
 
@@ -50,8 +52,20 @@ async def _seed_concept() -> Concept:
 
 
 @contextmanager
-def patched_llm(content: str | Exception, rag_error: Exception | None = None):
-    """同時 patch `_get_client` 與 `retrieve_chunks`（RAG 預設回 []）。"""
+def patched_llm(
+    content: str | Exception,
+    rag_error: Exception | None = None,
+    grounded_chunks: list[Any] | None = None,
+    grounded_error: Exception | None = None,
+):
+    """同時 patch `_get_client` 與兩條 RAG（semantic + grounded）。
+
+    Args:
+        content: LLM 回應內容（str）或拋例外
+        rag_error: semantic retrieve_chunks 抛例外（測 fallback）
+        grounded_chunks: 6-3a grounded mode 預設回傳（None 視為 []）
+        grounded_error: 6-3a grounded mode 拋例外（測 fallback）
+    """
     mock_client = AsyncMock()
     if isinstance(content, Exception):
         mock_client.chat.completions.create = AsyncMock(side_effect=content)
@@ -62,11 +76,17 @@ def patched_llm(content: str | Exception, rag_error: Exception | None = None):
     rag_mock = (
         AsyncMock(side_effect=rag_error) if rag_error else AsyncMock(return_value=[])
     )
+    grounded_mock = (
+        AsyncMock(side_effect=grounded_error)
+        if grounded_error
+        else AsyncMock(return_value=grounded_chunks or [])
+    )
     with (
         patch("services.quiz.generate._get_client", return_value=mock_client),
         patch("services.quiz.generate.retrieve_chunks", rag_mock),
+        patch("services.quiz.generate.get_chunks_by_video_order", grounded_mock),
     ):
-        yield
+        yield mock_client, rag_mock, grounded_mock
 
 
 # === 三種 type 各自能解析 ===
@@ -247,3 +267,92 @@ async def test_generated_question_persists_with_correct_metadata():
         assert q.bloom_level == 2
         assert q.source == "generated"
         assert q.validated is False
+
+
+# === Phase 6-3a grounded mode ===
+
+
+def _make_chunk(text: str) -> RetrievedChunk:
+    return RetrievedChunk(text=text, score=1.0, doc_id=None, metadata={})
+
+
+_VALID_MC_JSON = json.dumps({
+    "stem": "下列何者正確？",
+    "options": ["a", "b"],
+    "answer_index": 0,
+    "explanation": "解釋",
+})
+
+
+@pytest.mark.asyncio
+async def test_grounded_mode_uses_video_chunks_and_skips_semantic_retrieve():
+    """video_order 提供時：呼叫 get_chunks_by_video_order，跳過 retrieve_chunks。"""
+    concept = await _seed_concept()
+    chunks = [_make_chunk("[00:05] int x = 1; std::cout << x;")]
+    with patched_llm(_VALID_MC_JSON, grounded_chunks=chunks) as (
+        client_mock,
+        rag_mock,
+        grounded_mock,
+    ):
+        async with TestSessionFactory() as db:
+            await generate_question(
+                db, concept, QuestionType.MULTIPLE_CHOICE, 3, 3, video_order=5
+            )
+
+    grounded_mock.assert_awaited_once_with(5)
+    rag_mock.assert_not_called()
+    # user prompt 第二段（messages[1].content）必須含 grounded header + chunk 內文
+    user_msg = client_mock.chat.completions.create.await_args.kwargs["messages"][1]
+    assert "TRANSCRIPT" in user_msg["content"]
+    assert "std::cout << x" in user_msg["content"]
+
+
+@pytest.mark.asyncio
+async def test_grounded_mode_injects_grounding_rules_into_system_prompt():
+    """system prompt 含 grounding 規則關鍵字（題目情境 / 嚴禁發明）。"""
+    concept = await _seed_concept()
+    with patched_llm(_VALID_MC_JSON, grounded_chunks=[_make_chunk("dummy")]) as (
+        client_mock,
+        _rag,
+        _grounded,
+    ):
+        async with TestSessionFactory() as db:
+            await generate_question(
+                db, concept, QuestionType.MULTIPLE_CHOICE, 3, 3, video_order=5
+            )
+
+    system_msg = client_mock.chat.completions.create.await_args.kwargs["messages"][0]
+    assert "Grounding 規則" in system_msg["content"]
+    assert "嚴禁發明字幕未提到的程式碼" in system_msg["content"]
+
+
+@pytest.mark.asyncio
+async def test_non_grounded_mode_preserves_legacy_path():
+    """video_order=None：走原 retrieve_chunks，prompt 不含 grounding 規則。"""
+    concept = await _seed_concept()
+    with patched_llm(_VALID_MC_JSON) as (client_mock, rag_mock, grounded_mock):
+        async with TestSessionFactory() as db:
+            await generate_question(
+                db, concept, QuestionType.MULTIPLE_CHOICE, 3, 3
+            )
+
+    rag_mock.assert_awaited_once()
+    grounded_mock.assert_not_called()
+    system_msg = client_mock.chat.completions.create.await_args.kwargs["messages"][0]
+    assert "Grounding 規則" not in system_msg["content"]
+
+
+@pytest.mark.asyncio
+async def test_grounded_retrieve_failure_does_not_block_generation():
+    """get_chunks_by_video_order 拋例外 → fallback 空 chunks 仍能出題。"""
+    concept = await _seed_concept()
+    with patched_llm(
+        _VALID_MC_JSON, grounded_error=RuntimeError("vector db down")
+    ):
+        async with TestSessionFactory() as db:
+            q = await generate_question(
+                db, concept, QuestionType.MULTIPLE_CHOICE, 3, 3, video_order=5
+            )
+            await db.commit()
+            await db.refresh(q)
+    assert q.type == "multiple_choice"

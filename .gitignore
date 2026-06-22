@@ -33,3 +33,9 @@ build/
 
 # Phase 6-1e transient（Whisper audio cache 跑完自動刪；--keep-audio 才會保留）
 data/teaching_content/audio_cache/
+
+# Claude Code runtime
+.claude/scheduled_tasks.lock
+
+# 本機暫存截圖（非專案文件資產）
+ScreenShot/

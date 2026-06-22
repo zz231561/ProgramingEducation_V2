@@ -1,5 +1,19 @@
 # 變更日誌
 
+## [2026-06-23] — docs：新增 roadmap 6-6 知識圖譜優化（使用者反饋）
+
+### Added
+- `docs/roadmap.md` Phase 6 新增 **6-6 知識圖譜優化（視覺 + 核心機制）**：
+  - 背景：使用者反饋 `/knowledge` 頁面視覺不佳；現況 62 節點僅線性 PREREQUISITE 鏈（58 條邊），fcose layout 呈現接近一條長鏈，不直觀。呼應既有決議「知識圖譜重構為 Phase 6 後續工作」與 tech-debt「跨章節 PREREQUISITE 邊未標」項目，擴大範圍納入學術研究調研
+  - 6-6a：查 `docs/references.md` §5 學術資源尋找知識圖譜輔助學習的實證設計參考（Cytoscape.js 為 Tier 1 鎖定套件，僅調整用法不換套件）
+  - 6-6b：跨章關鍵依賴重構多對多 PREREQUISITE 圖
+  - 6-6c：依研究結論重新設計 stylesheet/layout，對照 frontend.md R1-R8 規則檢核
+  - 6-6d：真人測試驗收（學生是否真能讀懂學習進度，不只是好看）
+- `docs/tech-debt.md` 既有「跨章節 PREREQUISITE 邊未標」項目加註 cross-ref 至 roadmap 6-6
+- 本次僅新增 roadmap 追蹤項目，未動程式碼
+
+---
+
 ## [2026-06-23] — docs：新增 roadmap 6-5 Coddy 對話品質優化（使用者反饋）
 
 ### Added

@@ -51,7 +51,7 @@
   - **進度**：6-1a/b 已完成；6-1b+/c/d/e/f 進行中
   - **如何處理**：fetcher 已寫好（`backend/scripts/fetch_playlist_metadata.py`）；接下來擴充 EXPECTED 1-62、加 video 1-3 migration、PATCH script 寫入 DB、字幕 RAG ingest
   - **格式**：CSV，欄位 `video_order, youtube_id, duration_seconds, title_zh`，已產出於 `data/teaching_content/videos.csv`
-- [ ] **跨章節 PREREQUISITE 邊未標**（目前只有線性 04→05→...→62 共 58 條）→ **延後到 Phase 6 教學內容建構完成後執行（2026-05-07 決議）**
+- [ ] **跨章節 PREREQUISITE 邊未標**（目前只有線性 04→05→...→62 共 58 條）→ **延後到 Phase 6 教學內容建構完成後執行（2026-05-07 決議）；正式追蹤於 roadmap Phase 6-6（2026-06-23 擴大為視覺 + 核心機制優化）**
   - **影響**：拓撲排序生成路徑時，學生 confidence 高跳過某 unit 後不會牽連解鎖實際依賴的後續 unit
   - **範例**：47 遞迴函式真正依賴 36 函式 + 29 for 迴圈；52 指標與陣列依賴 48 陣列 + 51 指標；目前圖譜只有 N→N+1 線性鏈
   - **如何處理**：Phase 6 完成後，教授標關鍵跨章依賴（< 30 條，可參考 6-1e RAG 中的字幕內容輔助判斷）→ AI 加 patch migration

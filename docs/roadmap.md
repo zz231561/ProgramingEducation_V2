@@ -117,6 +117,13 @@
 - [ ] 6-5b Persona / 語氣優化：重新檢視 `services/edf/feedback.py` 的 persona/preamble 文字，改善反問語氣的自然度，降低「為了套用策略矩陣而硬問」的生硬感
 - [ ] 6-5c 真人測試驗收：抽幾輪實際對話比對改動前後語氣與 RAG 命中率差異
 
+### 6-6 知識圖譜優化（視覺 + 核心機制，2026-06-23 使用者反饋新增）
+> 背景：使用者反饋 `/knowledge` 頁面目前視覺不佳；現況 62 節點僅有線性 PREREQUISITE 鏈（04→05→...→62，58 條邊），fcose layout 畫出來接近一條長鏈，不直觀也不太能反映真實依賴關係。呼應既有決議「知識圖譜重構為 Phase 6 後續工作」（roadmap 已確認決策）與 tech-debt「跨章節 PREREQUISITE 邊未標」項目，本次擴大範圍納入視覺改版 + 核心機制研究。
+- [ ] 6-6a 研究調研：查 `docs/references.md` §5 學術資源（如 awesome-ai-llm4education）及最新論文，找知識圖譜輔助學習路徑規劃 / 視覺化呈現的實證設計，產出簡短決策記錄（是否調整 fcose 參數或 layout 演算法、是否需要「推薦下一步」等互動機制）；**Cytoscape.js 為 Tier 1 已鎖定套件，研究範圍限於用法調整，非更換套件**
+- [ ] 6-6b 核心機制：依教授標的跨章關鍵依賴（< 30 條，可參考 6-1e RAG 字幕內容輔助判斷）重構為多對多 PREREQUISITE 圖，取代現有純線性鏈（對應 tech-debt 既有項目）
+- [ ] 6-6c 視覺優化：依 6-6a 研究結論重新設計 `knowledge-graph-style.ts` stylesheet/layout 參數；對照 `.claude/rules/frontend.md` R1-R8 規則（僅 GitHub Dark token、禁裝飾性彩色、反 AI 感規則）逐條檢核
+- [ ] 6-6d 真人測試驗收：確認學生真的能從圖譯讀懂自己的學習進度與弱項，不只是視覺好看
+
 ---
 
 ## Phase 7：上線實測（須實際部署到 Zeabur / VPS）

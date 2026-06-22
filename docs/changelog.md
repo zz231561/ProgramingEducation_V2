@@ -1,5 +1,19 @@
 # 變更日誌
 
+## [2026-06-23] — chore：清理未追蹤垂圾檔 + 新增 dev-start.sh
+
+### Removed
+- `web/next`、`web/web@0.1.0`：誤建空檔（疑為指令打錯產生），已刪除
+- `.claude/scheduled_tasks.lock`：對應 PID 已不存在的過期 lock，已刪除
+
+### Added
+- `dev-start.sh`：本機一鍵啟動腳本（Colima → docker-compose → 等 Postgres → alembic current → uvicorn），路徑改用 `$(dirname "$0")` 可攜寫法
+
+### Changed
+- `.gitignore`：新增 `.claude/scheduled_tasks.lock`（runtime lock）與 `ScreenShot/`（本機暫存截圖，非專案文件資產）
+
+---
+
 ## [2026-05-22] — Phase 6-3b ExercisesTab 題庫優先（GET /quiz/from-bank + 前端分流 fallback）
 
 ### Verified (2026-05-22 透過 `pytest -q` + `npx tsc --noEmit` + `npx eslint`)

@@ -111,6 +111,12 @@
   - **6-2e grounded path**：摘要 tab 的 grounded 三狀態渲染 — (a) `summary.needs_more_source=true` notice + reason；(b) `summary.key_points` bullet list + `summary.citations` 時間戳/節錄標籤；(c) 同概念 tab 的 `parseTimestampStart` 跳轉行為**不**在摘要 tab 重做（UI 提示使用者回概念 tab 點 citation）— 驗收僅需確認三狀態正確切換、不需驗 seekTo
 - [ ] 6-4b 依抽查反饋調整 6-2a prompt template 並針對問題 unit 局部重跑；對品質太差的 unit 評估升級到 Whisper 重 transcribe（B 方案）作為 source
 
+### 6-5 Coddy（EDF Chat）對話品質優化（2026-06-23 使用者反饋新增）
+> 背景：使用者實測 Workspace AI 對話後反饋 Coddy 目前不太討學生喜歡——反問問題語氣生硬、不自然；且 RAG 是否檢索影片內容目前綁在 `hint_level >= 2` 門檻（見 `services/edf/decision.py` `use_rag` 判斷），而非「這個問題是否真的需要/提到影片內容」，導致該查影片時沒查、語氣也不夠自然。
+- [ ] 6-5a RAG 觸發條件改為「內容相關性」而非 hint_level 門檻：評估方案（如先 retrieve 再用相似度分數判斷是否要注入，取代現有 `clamped_hint >= 2 and bloom >= ANALYZE` 寫死規則）
+- [ ] 6-5b Persona / 語氣優化：重新檢視 `services/edf/feedback.py` 的 persona/preamble 文字，改善反問語氣的自然度，降低「為了套用策略矩陣而硬問」的生硬感
+- [ ] 6-5c 真人測試驗收：抽幾輪實際對話比對改動前後語氣與 RAG 命中率差異
+
 ---
 
 ## Phase 7：上線實測（須實際部署到 Zeabur / VPS）

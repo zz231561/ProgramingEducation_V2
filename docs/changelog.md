@@ -1,5 +1,17 @@
 # 變更日誌
 
+## [2026-06-23] — docs：新增 roadmap 6-5 Coddy 對話品質優化（使用者反饋）
+
+### Added
+- `docs/roadmap.md` Phase 6 新增 **6-5 Coddy（EDF Chat）對話品質優化**：
+  - 背景：使用者實測後反饋 Coddy 反問語氣生硬不自然；且 RAG 是否查影片內容目前綁在 `services/edf/decision.py` 的 `use_rag = clamped_hint >= 2 and bloom >= ANALYZE` 門檻，而非「問題是否真的需要影片內容」
+  - 6-5a：RAG 觸發條件改為內容相關性判斷（取代 hint_level 門檻寫死規則）
+  - 6-5b：`services/edf/feedback.py` persona/preamble 語氣優化
+  - 6-5c：真人測試驗收
+- 本次僅新增 roadmap 追蹤項目，未動程式碼（依專案規範：單一最小任務、不擅自實作）
+
+---
+
 ## [2026-06-23] — chore：清理未追蹤垂圾檔 + 新增 dev-start.sh
 
 ### Removed

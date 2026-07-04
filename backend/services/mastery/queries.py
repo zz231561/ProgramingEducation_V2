@@ -1,6 +1,7 @@
-"""精熟度查詢 — 給前端 Knowledge Graph 著色用。"""
+"""精熟度查詢 — 前端 Knowledge Graph 著色 + Coddy K-Graph state（K2b）。"""
 
 from dataclasses import dataclass
+from datetime import datetime
 from uuid import UUID
 
 from sqlalchemy import select
@@ -20,6 +21,7 @@ class MasterySummaryEntry:
     success_count: int
     error_count: int
     bloom_level: int | None
+    last_practiced_at: datetime | None = None
 
 
 async def get_user_mastery_summary(
@@ -37,6 +39,7 @@ async def get_user_mastery_summary(
             StudentMastery.success_count,
             StudentMastery.error_count,
             StudentMastery.bloom_level,
+            StudentMastery.last_practiced_at,
         )
         .join(StudentMastery, StudentMastery.concept_id == Concept.id)
         .where(StudentMastery.user_id == user_id)
@@ -50,6 +53,7 @@ async def get_user_mastery_summary(
             success_count=r.success_count,
             error_count=r.error_count,
             bloom_level=r.bloom_level,
+            last_practiced_at=r.last_practiced_at,
         )
         for r in rows
     ]

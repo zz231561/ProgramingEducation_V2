@@ -50,6 +50,8 @@ class Concept(Base):
     video_youtube_id: Mapped[str | None] = mapped_column(String(20), default=None)
     video_duration_seconds: Mapped[int | None] = mapped_column(Integer, default=None)
     video_order: Mapped[int | None] = mapped_column(Integer, default=None)
+    # K2a：EDF 20 粗 ConceptTag → 影片 concept 的橋接（NULL = 無對應，如課程介紹）
+    edf_parent_tag: Mapped[str | None] = mapped_column(String(50), default=None)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
@@ -70,6 +72,7 @@ class Concept(Base):
         ),
         Index("ix_concepts_category", "category"),
         Index("ix_concepts_video_order", "video_order"),
+        Index("ix_concepts_edf_parent_tag", "edf_parent_tag"),
     )
 
 

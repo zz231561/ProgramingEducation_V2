@@ -14,9 +14,9 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from models.concept import Concept
 from models.mastery import StudentMastery
 from services.edf.models import ErrorType, EvidenceResult
+from services.mastery.resolve import resolve_concept_ids_for_tag
 
 
 @dataclass(frozen=True)
@@ -63,13 +63,6 @@ def bkt_online_update(
     posterior = numerator / denominator if denominator > 0 else prior
     new_state = posterior + (1 - posterior) * params.learn
     return max(0.0, min(1.0, new_state))
-
-
-async def _get_concept_id_by_tag(db: AsyncSession, tag: str) -> UUID | None:
-    """以 tag 取 concept.id；找不到回傳 None（容錯：跳過該 tag 不擲錯）。"""
-    return (
-        await db.execute(select(Concept.id).where(Concept.tag == tag))
-    ).scalar_one_or_none()
 
 
 async def _upsert_mastery(
@@ -123,7 +116,8 @@ async def update_mastery(
     """依 EDF Evidence 結果更新所有相關 concept 的精熟度。
 
     correct 信號：`evidence.error_type == ErrorType.NONE`（程式碼無錯）。
-    對 evidence.concept_tags 中每個 tag，lazy-fetch/create mastery row 並套 BKT 更新。
+    tag 解析走 K2a 三層 fan-out（直接命中 → edf_parent_tag 已曝光組員 →
+    冷啟動入門 concept；詳見 `services/mastery/resolve.py`）。
     呼叫端負責 commit（本函式只 add/modify，不 commit）。
 
     Args:
@@ -132,17 +126,19 @@ async def update_mastery(
         evidence: EDF Evidence 層輸出
 
     Returns:
-        本次更新的 StudentMastery 列表（順序對應 evidence.concept_tags 中找得到 concept 的 tags）
+        本次更新的 StudentMastery 列表（無對應的 tag 直接跳過）
     """
     correct = evidence.error_type == ErrorType.NONE
     bloom = int(evidence.bloom_level)
 
     updated: list[StudentMastery] = []
+    seen: set[UUID] = set()
     for tag in evidence.concept_tags:
-        concept_id = await _get_concept_id_by_tag(db, tag)
-        if concept_id is None:
-            continue  # tag 不在 concepts 表（例如 LLM 產生的非標準 tag）— 跳過
-        mastery = await _upsert_mastery(db, user_id, concept_id, correct, bloom)
-        updated.append(mastery)
+        for concept_id in await resolve_concept_ids_for_tag(db, user_id, tag):
+            if concept_id in seen:
+                continue  # 多 tag 解析到同 concept 時只更新一次
+            seen.add(concept_id)
+            mastery = await _upsert_mastery(db, user_id, concept_id, correct, bloom)
+            updated.append(mastery)
 
     return updated

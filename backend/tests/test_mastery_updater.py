@@ -196,3 +196,131 @@ async def test_update_mastery_empty_concept_tags_returns_empty():
         )
         await db.commit()
     assert rows == []
+
+
+# === K2a：EDF parent tag 三層 fan-out ===
+
+
+async def _seed_video_concepts_with_parent(
+    entries: list[tuple[str, int, str]],
+) -> dict[str, uuid.UUID]:
+    """seed (tag, video_order, edf_parent_tag) 影片 concepts，回傳 tag→id。"""
+    async with TestSessionFactory() as db:
+        ids: dict[str, uuid.UUID] = {}
+        for tag, order, parent in entries:
+            c = Concept(
+                tag=tag, name_zh=tag, name_en=tag,
+                description="", difficulty_level=1, category="test",
+                video_order=order, edf_parent_tag=parent,
+            )
+            db.add(c)
+            await db.flush()
+            ids[tag] = c.id
+        await db.commit()
+        return ids
+
+
+_LOOP_GROUP = [
+    ("cpp-29-for", 29, "control-flow"),
+    ("cpp-30-while", 30, "control-flow"),
+    ("cpp-32-nested-loop", 32, "control-flow"),
+]
+
+
+@pytest.mark.asyncio
+async def test_fanout_cold_start_updates_entry_concept_only():
+    """組內全未曝光 → 只更新 video_order 最小的入門 concept。"""
+    ids = await _seed_video_concepts_with_parent(_LOOP_GROUP)
+    user_id = uuid.uuid4()
+
+    async with TestSessionFactory() as db:
+        rows = await update_mastery(
+            db, user_id,
+            _evidence(ErrorType.LOGIC, ["control-flow"], BloomLevel.APPLY),
+        )
+        await db.commit()
+
+    assert len(rows) == 1
+    assert rows[0].concept_id == ids["cpp-29-for"]
+
+
+@pytest.mark.asyncio
+async def test_fanout_updates_only_exposed_group_members():
+    """學生已曝光 while + nested-loop → 只更新這兩個，不動未曝光的 for。"""
+    ids = await _seed_video_concepts_with_parent(_LOOP_GROUP)
+    user_id = uuid.uuid4()
+
+    async with TestSessionFactory() as db:
+        for tag in ("cpp-30-while", "cpp-32-nested-loop"):
+            db.add(StudentMastery(
+                user_id=user_id, concept_id=ids[tag],
+                confidence=0.5, exposure_count=1,
+                success_count=1, error_count=0,
+            ))
+        await db.commit()
+
+    async with TestSessionFactory() as db:
+        rows = await update_mastery(
+            db, user_id,
+            _evidence(ErrorType.NONE, ["control-flow"], BloomLevel.APPLY),
+        )
+        await db.commit()
+
+    updated_ids = {r.concept_id for r in rows}
+    assert updated_ids == {ids["cpp-30-while"], ids["cpp-32-nested-loop"]}
+
+
+@pytest.mark.asyncio
+async def test_fanout_direct_tag_match_takes_priority():
+    """tag 直接命中 concept 時不走 parent group fan-out。"""
+    ids = await _seed_video_concepts_with_parent(
+        _LOOP_GROUP + [("control-flow", 99, None)]  # 同名獨立 concept
+    )
+    user_id = uuid.uuid4()
+
+    async with TestSessionFactory() as db:
+        rows = await update_mastery(
+            db, user_id,
+            _evidence(ErrorType.NONE, ["control-flow"], BloomLevel.APPLY),
+        )
+        await db.commit()
+
+    assert len(rows) == 1
+    assert rows[0].concept_id == ids["control-flow"]
+
+
+@pytest.mark.asyncio
+async def test_fanout_unmapped_tag_skipped():
+    """課綱未涵蓋的 tag（如 stl-containers）無直接命中也無 group → 跳過。"""
+    await _seed_video_concepts_with_parent(_LOOP_GROUP)
+    user_id = uuid.uuid4()
+
+    async with TestSessionFactory() as db:
+        rows = await update_mastery(
+            db, user_id,
+            _evidence(ErrorType.NONE, ["stl-containers"], BloomLevel.APPLY),
+        )
+        await db.commit()
+
+    assert rows == []
+
+
+@pytest.mark.asyncio
+async def test_fanout_dedups_across_tags():
+    """多個 tag 解析到同一 concept 時，該 concept 只更新一次。"""
+    ids = await _seed_video_concepts_with_parent([
+        ("cpp-29-for", 29, "control-flow"),
+    ])
+    user_id = uuid.uuid4()
+
+    async with TestSessionFactory() as db:
+        rows = await update_mastery(
+            db, user_id,
+            # 兩個 tag：直接命中 + group 冷啟動都指向 cpp-29-for
+            _evidence(ErrorType.NONE, ["cpp-29-for", "control-flow"], BloomLevel.APPLY),
+        )
+        await db.commit()
+
+    assert len(rows) == 1
+    assert rows[0].concept_id == ids["cpp-29-for"]
+    assert rows[0].exposure_count == 1

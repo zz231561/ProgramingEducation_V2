@@ -102,6 +102,8 @@ class MasteryEntryOut(BaseModel):
     success_count: int
     error_count: int
     bloom_level: int | None
+    # K2b：最近練習時間（ISO 字串；K4 Coddy prompt 的時序信號）
+    last_practiced_at: str | None = None
 
     @classmethod
     def from_summary(cls, e: MasterySummaryEntry) -> "MasteryEntryOut":
@@ -112,6 +114,9 @@ class MasteryEntryOut(BaseModel):
             success_count=e.success_count,
             error_count=e.error_count,
             bloom_level=e.bloom_level,
+            last_practiced_at=(
+                str(e.last_practiced_at) if e.last_practiced_at else None
+            ),
         )
 
 

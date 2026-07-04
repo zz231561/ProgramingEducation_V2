@@ -232,3 +232,36 @@ async def test_concept_detail_route_returns_directed_neighbors(client: AsyncClie
     assert directions == {"outgoing"}
     neighbor_tags = {n["concept"]["tag"] for n in body["neighbors"]}
     assert neighbor_tags == {"control-flow", "recursion"}
+
+
+async def test_mastery_route_includes_last_practiced_at(client: AsyncClient):
+    """K2b：mastery 回應含 last_practiced_at（有值 ISO 字串 / 無值 null）。"""
+    from datetime import datetime, timezone
+
+    ids = await _seed_graph()
+    token = encrypt_test_token(STUDENT_PAYLOAD)
+    resp = await client.get("/concepts/mastery", cookies={"authjs.session-token": token})
+    assert resp.status_code == 200
+
+    async with TestSessionFactory() as db:
+        user = (await db.execute(select(User))).scalars().first()
+        db.add_all([
+            StudentMastery(
+                user_id=user.id, concept_id=ids["syntax-basic"],
+                confidence=0.5, exposure_count=1, success_count=1, error_count=0,
+                last_practiced_at=datetime(2026, 7, 4, 12, 0, tzinfo=timezone.utc),
+            ),
+            StudentMastery(
+                user_id=user.id, concept_id=ids["control-flow"],
+                confidence=0.2, exposure_count=1, success_count=0, error_count=1,
+                last_practiced_at=None,
+            ),
+        ])
+        await db.commit()
+
+    resp = await client.get("/concepts/mastery", cookies={"authjs.session-token": token})
+    body = resp.json()
+    by_tag = {b["tag"]: b for b in body}
+    assert by_tag["syntax-basic"]["last_practiced_at"] is not None
+    assert "2026-07-04" in by_tag["syntax-basic"]["last_practiced_at"]
+    assert by_tag["control-flow"]["last_practiced_at"] is None

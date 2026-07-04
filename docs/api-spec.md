@@ -90,9 +90,11 @@ PATCH  /api/learn/units/{id}      -- 更新單元狀態
 ## Knowledge Graph
 
 ```
-GET    /api/knowledge/graph       -- 完整概念圖 (nodes + edges)
-GET    /api/knowledge/mastery     -- 學生精熟度
-GET    /api/knowledge/concepts/{tag}  -- 特定概念詳情 + mastery + prerequisites
+GET    /api/concepts/graph        -- 完整概念圖 (nodes + edges；PREREQUISITE 為多對多 DAG)
+GET    /api/concepts/mastery      -- 學生精熟度（K-Graph state）
+  resp: [{ tag, confidence, exposure_count, success_count,
+           error_count, bloom_level, last_practiced_at }]  -- K2b 加 last_practiced_at
+GET    /api/concepts/{tag}        -- 特定概念詳情 + depth-1 鄰居（含方向）
 ```
 
 ## Dashboard

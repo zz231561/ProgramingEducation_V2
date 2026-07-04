@@ -64,13 +64,13 @@
   - **影響**：與知識圖譜頁 (`/knowledge`) 風格不統一；無法直觀顯示 PREREQUISITE 依賴的分支（K1a 後已是多對多 DAG，分支資訊更豐富）
   - **如何處理**：K5 視覺改版時評估復用 knowledge 頁 Cytoscape 元件
 
-### EDF Mastery 連動暫時退場 → **正式追蹤於 roadmap K2a（2026-07-04）**
-- [ ] **EDF chat 評估的 ConceptTag 不再寫入 BKT mastery**
-  - **背景**：3-1c+ 把 concepts 表完全替換為 59 影片 concept；EDF 的 20 粗 tag 只留在 `services/edf/models.py` enum 給 LLM 提示用；`update_mastery` 找不到 concept 自動跳過
-  - **影響**：學生在 Workspace 與 AI Tutor 對話時的 mastery 不再上下調；只有 quiz 答題 + comprehension 驗證會驅動 BKT
-  - **如何處理**：兩種策略可選 —
-    - (a) 接受現狀（chat 評估本來噪音多，quiz/comprehension 是更可信信號）
-    - (b) 在 concepts 表加 `edf_parent_tag` 欄位，建立粗 tag → 多影片 concept 的 mapping，讓 EDF 評估平均更新到對應影片 concept
+### EDF Mastery 連動暫時退場
+- ✅ ~~EDF chat 評估的 ConceptTag 不再寫入 BKT mastery~~ — 2026-07-04 **K2a 完成**：採原選項 (b) 強化版——`concepts.edf_parent_tag` mapping（migration `j6e7f8a9b0c1`）+ 三層 fan-out（直接命中 → 已曝光組員 → 冷啟動入門 concept），Workspace 對話重新驅動 BKT 且不淹沒 quiz 精準信號
+
+### AST 程式碼分析信號（K2c 決策記錄，2026-07-04）
+- [ ] **真 AST（tree-sitter / libclang）暫不引入** — 現以 LLM Evidence 為程式碼分析信號
+  - **理由**：LLM 已輸出 concept_tags + error_type + bloom（等效 AST→概念對映產物）；自建 AST 特徵規則工程成本高且功能重複
+  - **重評時機**：Phase 5 行為資料可檢驗 LLM tagging 可靠度後；若誤標率高再走 references.md §1 決策矩陣評估 tree-sitter
 
 ### 程式碼層（2026-07-04 健壯性審查新增）
 - [ ] **OpenAI client lazy-singleton 邏輯重複於 9 個服務模組**（evidence / feedback / quiz×4 / reflection / comprehension×2 / learning）

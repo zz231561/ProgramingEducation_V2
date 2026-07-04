@@ -1,5 +1,21 @@
 # 變更日誌
 
+## [2026-07-04] — feat(K2)：動態知識狀態追蹤 — EDF 對話重新驅動 BKT
+
+### Added
+- **K2a** migration `j6e7f8a9b0c1`：`concepts.edf_parent_tag` 欄位 + index + mapping seed（EDF 20 粗 tag 中 10 個對映 59 個影片 concept；課程介紹 3 個 NULL；STL/template/concurrency 等課綱未涵蓋 tag 照舊跳過）
+- **K2a** `services/mastery/resolve.py`：三層 fan-out 解析（① tag 直接命中 → ② parent group 只更新該生已曝光組員 → ③ 全未曝光只更新組內 video_order 最小的入門 concept）——讓 Workspace 對話重新驅動 BKT，同時防止粗 tag 對話噪音淹沒 quiz / comprehension 精準信號；消除 tech-debt「EDF Mastery 連動暫時退場」
+- **K2b** `GET /concepts/mastery` 加 `last_practiced_at`（K4 Coddy prompt 的時序信號；缺口分析後改為擴充既有端點、不新建 k-state API）
+- **K2c 決策記錄**：暫不引入真 AST（tree-sitter/libclang）——LLM Evidence 已輸出等效信號；Phase 5 有行為資料後重評（記 tech-debt）
+- 測試 +6（5 fan-out + 1 endpoint 欄位）→ **後端 524 tests 全綠**
+
+### Changed
+- `services/mastery/updater.py`：`update_mastery` 改走 resolve 三層解析 + 跨 tag 去重（同 concept 每次 evidence 只更新一次）；移除被取代的 `_get_concept_id_by_tag`
+- 實機驗證：alembic upgrade 實跑 + mapping 分布查核（syntax-basic 20 / control-flow 11 / function-design 11 / ...共 59 對映）
+- `docs/roadmap.md`：K2/K3 依缺口分析細化（K2b 改擴充既有 API、K3a 改 stateless 查詢設計）並勾選 K2a/b/c；`docs/api-spec.md` Knowledge Graph 段修正為實際路徑 `/concepts/*` + 欄位更新；`docs/tech-debt.md` EDF Mastery 項 ✅ + 新增 AST 決策記錄
+
+---
+
 ## [2026-07-04] — feat(K1)：K-Graph 自適應學習引擎啟動 — 跨章多對多依賴 DAG
 
 ### Added

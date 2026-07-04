@@ -138,16 +138,17 @@
 - [x] K1c 實機驗證：alembic upgrade 實跑 + DB 驗證（90 邊 / 遞迴←25+37+38 / 0 孤兒節點 / 0 反向邊）
 - [ ] K1d UI 抽查：`/knowledge` 頁面確認多對多邊渲染正常、Learn 路徑生成不受影響（使用者手動）
 
-### K2 動態知識狀態追蹤（功能二）
-- [ ] K2a EDF ConceptTag → 影片 concept 對映：`concepts` 加 `edf_parent_tag` 欄位 + mapping seed，讓 Workspace 對話重新驅動 BKT（消 tech-debt「EDF Mastery 連動暫時退場」）
-- [ ] K2b K-Graph State API：`GET /concepts/k-state` 回傳該學生全圖 `{tag, confidence, exposure_count, last_practiced_at}`（K4 prompt 封裝 + K5 著色的數據源）
-- [ ] K2c 程式碼分析信號評估：現階段以 LLM Evidence（error_type / concept_tags / bloom）為信號；真 AST（tree-sitter / libclang）走 references.md §1 決策矩陣評估成本效益後決定（不預設引入）
+### K2 動態知識狀態追蹤（功能二；2026-07-04 缺口分析後細化）
+> 缺口分析：`GET /concepts/mastery` 已提供 per-concept 狀態（K2b 原規劃的 80%），缺 `last_practiced_at`；真正缺的是 EDF 20 粗 tag → 62 影片 concept 的橋接。
+- [x] K2a EDF ConceptTag → 影片 concept 對映（migration `j6e7f8a9b0c1` + `services/mastery/resolve.py`）：20 tag 中 10 個有課綱覆蓋（59 concepts 對映、課程介紹 3 個 NULL），其餘照舊跳過；**三層 fan-out**：① tag 直接命中照舊 → ② parent group 只更新已曝光組員 → ③ 全未曝光只更新組內入門 concept；5 fan-out tests + 實機驗證 mapping 分布
+- [x] K2b 擴充既有 `GET /concepts/mastery` 加 `last_practiced_at`（不新建 k-state 端點）；1 test
+- [x] K2c 程式碼分析信號決策（2026-07-04 記錄）：**現階段沿用 LLM Evidence，不引入真 AST**——LLM 已輸出 concept_tags + error_type + bloom（等效於 AST→概念對映的產物）；tree-sitter/libclang 需自建「AST 特徵 → concept」規則工程，成本高且與 LLM 重複；待 Phase 5 行為資料可檢驗 LLM tagging 可靠度後重評（記 tech-debt）
 
-### K3 根源弱點定位器（功能三）
-- [ ] K3a 觸發器：同 concept 連續 N 次失敗（quiz submit / comprehension fail）→ 標記待診斷
-- [ ] K3b 回溯演算法：沿 K1b closure 回溯，結合 K2 confidence 定位「最淺層的低 confidence 前置節點」→ 產出診斷假設鏈
-- [ ] K3c 診斷驗證：從題庫（6-3）抽前置節點題目做微測驗，確認/排除假設 → 寫回 mastery
-- [ ] K3d 診斷 API + 前端入口（quiz 結果頁「找出根本原因」）
+### K3 根源弱點定位器（功能三；2026-07-04 細化）
+- [ ] K3a 觸發器：**無新表、stateless 查詢**——診斷入口直接查該 concept 最近 N=3 筆 `student_answers`（含 comprehension 欄位）全錯即符合觸發條件
+- [ ] K3b 回溯演算法：沿 K1b closure（max_depth=3）回溯，結合 mastery confidence 定位「depth 最淺的低 confidence（<0.4）前置節點」→ 產出診斷假設鏈（依 depth 升序）
+- [ ] K3c 診斷驗證：從題庫（6-3）以 `pick_random_validated_question` 抽前置節點題目做微測驗，確認/排除假設 → 作答走既有 submit 流程寫回 mastery
+- [ ] K3d 診斷 API（`GET /concepts/{tag}/diagnosis`）+ 前端入口（quiz 結果頁「找出根本原因」）
 
 ### K4 Coddy 自適應提示 + 補救路徑（功能四；吸收原 6-5 全部）
 - [ ] K4a K-Graph State 注入 EDF Feedback prompt：低熟練 → 填空/逐行拆解鷹架、高熟練 → 只提示 edge case；一併優化 persona 反問語氣自然度（原 6-5b）

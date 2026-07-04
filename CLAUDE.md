@@ -41,7 +41,8 @@
   - 後端 513 tests 全綠；實機 LLM 全跑延至 6-4 合併執行
 - **🎯 Phase 6-K K-Graph 自適應學習引擎**（2026-07-04 功能規格書新增；原 6-5/6-6 整併入 K4 / K1+K5）
   - K1 ✅跨章多對多依賴 DAG（migration `i5d6e7f8a9b0` 90 條 curated 邊 + `get_prerequisite_closure` BFS 回溯 + 實機驗證；K1d UI 抽查待使用者）
-  - **下一步（K 系列）**：K2 動態知識狀態（edf_parent_tag 對映 + k-state API）→ K3 根源弱點定位 → K4 Coddy 自適應 → K5 視覺改版
+  - K2 ✅動態知識狀態（`edf_parent_tag` mapping + 三層 fan-out 讓對話重新驅動 BKT；`/concepts/mastery` 加 last_practiced_at；K2c 決策：暫不引入真 AST）
+  - **下一步（K 系列）**：K3 根源弱點定位（closure 回溯 + 題庫微測驗）→ K4 Coddy 自適應 → K5 視覺改版
 - **Phase 5 ⇄ Phase 6 平行**：教師端可隨時插入並行
 - **Phase 7 上線實測**：須 Phase 6 至少 6-1 + 6-2 完成 + Zeabur + VPS 就緒
 

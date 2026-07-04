@@ -10,13 +10,17 @@ globs: backend/**
 | 錯誤類型 | Status | 處理 |
 |----------|--------|------|
 | 未登入 | 401 | 重導登入頁 |
+| Token 過期（exp） | 401 | `TOKEN_EXPIRED`，前端統一重導登入頁 |
 | 權限不足 | 403 | 提示訊息 |
-| 輸入驗證失敗 | 422 | Pydantic 自動回傳欄位錯誤 |
+| 輸入驗證失敗 | 422 | `VALIDATION_ERROR` 標準格式（欄位錯誤在 detail.errors） |
 | Judge0 逾時 | 504 | 「編譯/執行逾時」+ 建議縮短程式 |
-| Judge0 不可用 | 503 | 「執行服務暫時不可用」+ retry-after |
+| Judge0 不可用 / 網路層例外 | 503 | httpx 連線失敗與 5xx 一律轉 503，禁止冒泡成 500 |
 | OpenAI 失敗 | 502 | 「AI 服務暫時不可用」+ 快取最近回應 |
-| Rate limit | 429 | 回傳剩餘冷卻時間 |
+| LLM 回傳不符 schema | 502 | `LLM_PARSE_ERROR`（JSON mode 不保證 schema，ValidationError 必須捕捉） |
+| Rate limit | 429 | 回傳剩餘冷卻時間（`core/rate_limit.py`，Redis 掛掉 fail-open） |
 | 內部錯誤 | 500 | 記錄 traceback，回傳通用錯誤 |
+
+**容錯 swallow 規則**：best-effort 邏輯（mastery / RAG / reflection 注入）失敗可吞例外不擋主流程，但**必須** `logger.warning` 留痕，禁止裸 `except: pass`。
 
 ## 安全規範
 

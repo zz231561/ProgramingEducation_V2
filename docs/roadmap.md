@@ -76,8 +76,8 @@
 
 ## Phase 6：教學內容建構（NotebookLM grounded 模式 — 內容必須來自實際影片）🎯 進行中
 > 62 個學習單元的 4 個 tab 全部有實質內容、且 LLM 生成內容**完全 grounded 在教授實際影片字幕上**；`learning_units.content` 不再是空骨架。
-> **核心架構（NotebookLM 模式）**：YT 字幕 → LlamaIndex IngestionPipeline 入庫 → 生成時 retrieve 該 video 字幕 chunks 注入 prompt → LLM 生成必須引用 timestamp citation、不引入字幕未出現的概念 → 教授抽查時可比對「LLM 生成 vs 影片實際 timestamp 處內容」。
-> **資料流**：YT playlist URL → fetcher 抓 metadata + 字幕 → PATCH 寫入 concepts metadata + RAG ingest 字幕 → LLM grounded 生成 unit content → 教授抽查 → 修正 prompt 重跑（如需）。
+> **核心架構（NotebookLM 模式）**：YT 字幕 → LlamaIndex IngestionPipeline 入庫 → 生成時 retrieve 該 video 字幕 chunks 注入 prompt → LLM 生成必須引用 timestamp citation、不引入字幕未出現的概念 → 品管抽查時可比對「LLM 生成 vs 影片實際 timestamp 處內容」。
+> **資料流**：YT playlist URL → fetcher 抓 metadata + 字幕 → PATCH 寫入 concepts metadata + RAG ingest 字幕 → LLM grounded 生成 unit content → 自行抽查品管 → 修正 prompt 重跑（如需）。
 > **OSS**：RAG 沿用 Phase 2-1 LlamaIndex；LLM 生成沿用 Phase 2-4c `services/quiz/generate.py` 與 OpenAI `json_object` mode；字幕抓取沿用 yt-dlp。**禁止為此 Phase 引入新框架**。
 > **Concept 範圍**（2026-05-22 修訂）：62 個影片 concept（video_order 1-62）全部進學習路徑；PREREQUISITE 鏈 1→2→3→…→62 完整串連。1-3 仍保留 `category="課程介紹"` 供未來知識圖譜 styling 區分使用。
 
@@ -103,13 +103,13 @@
   - [ ] 6-3a-3 實機 LLM 全跑（延至 6-4 合併執行；預估 62 concept × 2 題 × 2 LLM call ≈ 250-500k token / $5-15 USD）
 - [x] 6-3b ExercisesTab 改造：從「按需現生」→「優先讀題庫，題庫不足才現生」(GET /quiz/from-bank + ApiRequestError 404 QUESTION_BANK_EMPTY fallback；6 bank service tests + 5 route integration tests；前端 Loading 文案分「查找題庫題目 (< 1 秒)」/「AI 正在生成 (5-15 秒)」兩階段)
 
-### 6-4 內容品管
-- [ ] 6-4a 教授抽查 5-10 個 unit 全部 4 tab 品質：核心檢查「LLM 生成內容是否真的反映該 video timestamp 處的教法」（可直接點 citation 跳到影片時間點對照）；不脫離 C++ 教學情境；程式碼可編譯；**6-2b 的 59 部實機批次跑在此階段合併執行**
+### 6-4 內容品管（2026-07-04 修訂：移除教授抽查，改為自行品管）
+- [ ] 6-4a 自行抽查 5-10 個 unit 全部 4 tab 品質：核心檢查「LLM 生成內容是否真的反映該 video timestamp 處的教法」（點 citation 跳到影片時間點對照）；不脫離 C++ 教學情境；程式碼可編譯；**6-2b 的 59 部實機批次跑在此階段合併執行**
 - [ ] **6-4a-deferred-ui 必驗（grounded 資料就緒後立即跑，不可跳過）**：批次跑完取得至少 1 個 promoted unit 後，重新驗收以下「6-2 系列因無資料而延後驗收」的 UI 狀態
   - **6-2c grounded path**：概念說明 tab 的 grounded markdown 渲染 + 內嵌 citation 點擊跳轉是否真的 `player.seekTo`（之前只驗了 pending fallback path）
   - **6-2d grounded path（含卡片 + Workspace 轉場）**：範例 tab 卡片列表（title / code / explanation / citation 標籤）+ 「在 Workspace 開啟」按鈕 → Workspace `<CodeEditor initialValue>` 是否載入範例程式碼 + 重整 / 再 navigate 後不重複覆蓋（一次性消費）
   - **6-2e grounded path**：摘要 tab 的 grounded 三狀態渲染 — (a) `summary.needs_more_source=true` notice + reason；(b) `summary.key_points` bullet list + `summary.citations` 時間戳/節錄標籤；(c) 同概念 tab 的 `parseTimestampStart` 跳轉行為**不**在摘要 tab 重做（UI 提示使用者回概念 tab 點 citation）— 驗收僅需確認三狀態正確切換、不需驗 seekTo
-- [ ] 6-4b 依抽查反饋調整 6-2a prompt template 並針對問題 unit 局部重跑；對品質太差的 unit 評估升級到 Whisper 重 transcribe（B 方案）作為 source
+- [ ] 6-4b 依自查結果調整 6-2a prompt template 並針對問題 unit 局部重跑；對品質太差的 unit 評估升級到 Whisper 重 transcribe（B 方案）作為 source
 
 ### 6-5 Coddy（EDF Chat）對話品質優化（2026-06-23 使用者反饋新增）
 > 背景：使用者實測 Workspace AI 對話後反饋 Coddy 目前不太討學生喜歡——反問問題語氣生硬、不自然；且 RAG 是否檢索影片內容目前綁在 `hint_level >= 2` 門檻（見 `services/edf/decision.py` `use_rag` 判斷），而非「這個問題是否真的需要/提到影片內容」，導致該查影片時沒查、語氣也不夠自然。
@@ -124,11 +124,22 @@
 - [ ] 6-6c 視覺優化：依 6-6a 研究結論重新設計 `knowledge-graph-style.ts` stylesheet/layout 參數；對照 `.claude/rules/frontend.md` R1-R8 規則（僅 GitHub Dark token、禁裝飾性彩色、反 AI 感規則）逐條檢核
 - [ ] 6-6d 真人測試驗收：確認學生真的能從圖譯讀懂自己的學習進度與弱項，不只是視覺好看
 
+### 6-R 健壯性強化（2026-07-04 架構審查新增，同日完成）✅
+> 背景：上線前架構審查發現三個系統性缺口：可觀測性為零（500 不留痕）、安全規範未落地（rate limit / token exp 只在文件）、外部依賴網路例外未馴服。全部本機完成 + 測試驗證（後端 513 tests 全綠，+14 新測試）。
+- [x] 6-R1 (H) `unhandled_error_handler` 補 traceback logging（6-4a 實機跑前置）
+- [x] 6-R2 (H) NextAuth token `exp` 驗證（401 TOKEN_EXPIRED）+ 前端 401 統一重導 /login
+- [x] 6-R3 (H) per-user rate limit（`core/rate_limit.py` Redis INCR+EXPIRE，fail-open；掛 12 個 LLM 端點 + /code/execute；429 帶 retry_after_seconds）
+- [x] 6-R4 (M) Judge0 httpx 網路例外 → 503 JUDGE0_UNAVAILABLE（submit）/ 該輪重試（polling）
+- [x] 6-R5 (M) Evidence 層 LLM 回傳 ValidationError → 502 LLM_PARSE_ERROR（quiz 系列原已防護）
+- [x] 6-R6 (M) chat interact fail-safe：user message 於 LLM 呼叫前先 commit，LLM 失敗不丟學生輸入
+- [x] 6-R7 (M) `get_or_create_user`：首登並發 IntegrityError 重查 + last_login_at 1 小時節流
+- [x] 6-R8 (L) `func.count()` 取代全表載入（chat/quiz）/ 容錯 except 補 `logger.warning` / Next proxy 30s timeout（504 BACKEND_TIMEOUT）/ 422 統一 VALIDATION_ERROR 格式
+
 ---
 
 ## Phase 7：上線實測（須實際部署到 Zeabur / VPS）
 > Golden path 跑通、監控告警接通、效能 baseline 記錄；可對外開放給真實學生使用。
-> **前置條件**：Phase 4 配置層完成；Phase 6 至少 6-1 + 6-2b 完成（含字幕 RAG ingest + grounded LLM 生成 unit content）；Zeabur 帳號 + VPS（Judge0 self-host）就緒。
+> **前置條件**：Phase 4 配置層完成；Phase 6 至少 6-1 + 6-2b 完成（含字幕 RAG ingest + grounded LLM 生成 unit content）；6-R 健壯性 H 級完成 ✅（2026-07-04）；Zeabur 帳號 + VPS（Judge0 self-host）就緒。
 > ⚠ 上次卡關於 API 串接（前後端 proxy / NextAuth callback URL / CORS / Judge0 endpoint），重啟前先排查 `web/app/api/*` proxy 設定、`backend/app/core/config.py` 環境變數、Zeabur dashboard service 連線狀態。
 
 ### 7-1 Golden path 整合驗證

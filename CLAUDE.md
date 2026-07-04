@@ -36,8 +36,9 @@
   - 6-3a-1 ✅`generate_question(video_order=...)` grounded mode（含 grounding prompt 規則 + 4 mock tests；學生現生題 backward compat 保留）
   - 6-3a-2 ✅批次 service `services/quiz/batch_generator.py` + CLI `scripts/generate_unit_questions.py`（per-concept N 題 × generate+validate + skip_existing；8 mock+DB tests）
   - 6-3b ✅ExercisesTab 題庫優先（GET /quiz/from-bank → 404 QUESTION_BANK_EMPTY fallback /quiz/generate；6 bank + 5 route tests；前端 Loading 文案分兩階段）
-  - **下一步**：**6-4a 教授抽查 + 6-3a-3 實機跑 + 6-4a-deferred-ui 必跑**（須備好 OpenAI API key + 預估 $5-15 USD）；或先平行 Phase 5 教師端
-  - 後端 499 tests 全綠；實機 LLM 全跑延至 6-4 合併執行
+  - 6-R ✅健壯性強化（2026-07-04 架構審查）：500 traceback logging + token exp 驗證 + per-user rate limit（Redis fail-open）+ Judge0 網路例外 503 + LLM schema 驗證 502 + chat fail-safe 持久化 + user service 節流/race 防護 + 前端 401 重導/proxy timeout
+  - **下一步**：**6-4a 自行品管抽查 + 6-3a-3 實機跑 + 6-4a-deferred-ui 必跑**（須備好 OpenAI API key + 預估 $5-15 USD；2026-07-04 已移除教授抽查）；或先平行 Phase 5 教師端
+  - 後端 513 tests 全綠；實機 LLM 全跑延至 6-4 合併執行
   - 6-5（新增）Coddy 對話品質優化：RAG 觸發改內容相關性（非 hint_level 門檻）+ persona 語氣自然度，待排入執行
   - 6-6（新增）知識圖譜優化：視覺改版 + 跨章依賴重構多對多圖 + 學術研究調研，待排入執行
 - **Phase 5 ⇄ Phase 6 平行**：教師端可隨時插入並行

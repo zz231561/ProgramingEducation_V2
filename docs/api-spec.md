@@ -146,3 +146,28 @@ GET    /api/analytics/student/{user_id}/summary  -- 個人行為摘要
 ```
 GET    /api/health                -- { status, db, redis, judge0 }
 ```
+
+## 標準錯誤格式（2026-07-04 健壯性強化）
+
+所有錯誤統一回傳（含 422 請求驗證失敗）：
+
+```
+{ error: string, message: string, detail?: object }
+```
+
+| Status | error | 情境 | detail |
+|--------|-------|------|--------|
+| 401 | `UNAUTHORIZED` | 未帶 session token | — |
+| 401 | `INVALID_TOKEN` | token 解密失敗 | — |
+| 401 | `TOKEN_EXPIRED` | token `exp` 已過期（前端統一重導 /login） | — |
+| 403 | `FORBIDDEN` | 角色權限不足 | — |
+| 422 | `VALIDATION_ERROR` | Pydantic 請求驗證失敗 | `{ errors: [...] }` |
+| 422 | `INPUT_REJECTED` | prompt injection 偵測 | — |
+| 429 | `RATE_LIMITED` | per-user 限流（LLM 端點 + /code/execute，預設 10 次/分鐘） | `{ retry_after_seconds }` |
+| 502 | `LLM_ERROR` / `LLM_PARSE_ERROR` | OpenAI 呼叫失敗 / 回傳不符 schema | — |
+| 502 | `BACKEND_UNAVAILABLE` | Next.js proxy 連不到 FastAPI | — |
+| 503 | `JUDGE0_UNAVAILABLE` | Judge0 5xx 或網路層連線失敗 | — |
+| 503 | `LLM_UNAVAILABLE` | OPENAI_API_KEY 未設定 | — |
+| 504 | `EXECUTION_TIMEOUT` | Judge0 polling 逾時 | — |
+| 504 | `BACKEND_TIMEOUT` | Next.js proxy 30 秒逾時 | — |
+| 500 | `INTERNAL_ERROR` | 未處理例外（後端已記 traceback） | — |

@@ -15,7 +15,7 @@
 - [ ] **練習題重複曝光**（6-3b 已標）→ Phase 6 後段 / Phase 7 前
   - **背景**：`/quiz/from-bank` service 已支援 `exclude_question_ids` 但前端 ExercisesTab 未維護已答題清單，學生重複進同 unit 練習可能抽到同題
   - **如何處理**：前端在 `useEffect` 用 `getQuizHistory` 取出該 concept 已答 question_ids → 傳給 from-bank（需 endpoint 也支援 query param 或新 POST 形式）；或後端直接 join student_answers 在 service 內過濾
-  - **影響**：學生短時間重練命中率低時感受不明顯（grounded 題庫每 concept 2-3 題不大），但長期會被學生抱怨；6-4 教授抽查時若反映此問題優先處理
+  - **影響**：學生短時間重練命中率低時感受不明顯（grounded 題庫每 concept 2-3 題不大），但長期會被學生抱怨；6-4 自行品管時若發現此問題優先處理
   - **如何處理**：批次跑完拿到至少 1 個 promoted unit 後，依 changelog 2026-05-22 6-2d 條目「How to verify」步驟 1-4 逐項操作；其中第 3-4 步是 sessionStorage 一次性消費的關鍵驗收，**不可漏跑**
   - **若驗收失敗**：第一優先檢查 `web/lib/pending-workspace-code.ts` 的 `consumePendingWorkspaceCode()` 是否真的有 `removeItem`；其次檢查 `web/app/(app)/workspace/page.tsx` 是否用 `useState` lazy initializer（而非直接呼叫，會導致 re-render 多次 consume）
 
@@ -61,7 +61,7 @@
   - **如何處理**：兩種策略可選 —
     - (a) LLM 依 concept name + difficulty 自動生成 summary + examples（成本低）— Phase 6-2 採此策略
     - (b) 教授/助教手動填寫（品質高，工時大）— Phase 6-4 抽查階段視需要補充
-  - **決策**：先 (a) MVP，Phase 6-4 教授抽查後決定是否人工校對
+  - **決策**：先 (a) MVP，Phase 6-4 自行抽查後決定是否人工校對（2026-07-04 修訂：教授抽查已移除）
 
 ### Learn 頁面視覺化升級
 - [ ] **3-1c 卡片版 ≠ ui-wireframes.md 期望的「節點+箭頭」graph 版**
@@ -75,6 +75,17 @@
   - **如何處理**：兩種策略可選 —
     - (a) 接受現狀（chat 評估本來噪音多，quiz/comprehension 是更可信信號）
     - (b) 在 concepts 表加 `edf_parent_tag` 欄位，建立粗 tag → 多影片 concept 的 mapping，讓 EDF 評估平均更新到對應影片 concept
+
+### 程式碼層（2026-07-04 健壯性審查新增）
+- [ ] **OpenAI client lazy-singleton 邏輯重複於 9 個服務模組**（evidence / feedback / quiz×4 / reflection / comprehension×2 / learning）
+  - **刻意延後**：各模組測試都對自己模組的 `_client` / `_get_client` 做 monkeypatch，抽共用 `core/llm.py` 需連動改 9 檔 + 大量測試，風險與收益不成比例
+  - **如何處理**：待某次需要統一調整 LLM client 行為（如加 retry / timeout 參數）時一併抽取
+- [ ] **429 冷卻倒數 toast UI 未實作**（frontend.md 規範有、無 toast 基礎設施）
+  - **現況**：6-R3 後端 429 訊息已帶「請於 N 秒後再試」，經 `ApiRequestError.message` 透傳給各頁面既有錯誤顯示，功能可用但非 toast 形式
+  - **如何處理**：待引入 shadcn/ui toast（sonner）後在 `web/lib/api.ts` 統一攔截 429 發 toast
+- [ ] **backend.md「OpenAI 失敗 → 快取最近回應」降級策略未實作**
+  - **現況**：6-R6 已保證 LLM 失敗時學生輸入不丟失（user message 先 commit），前端可重試；降級快取為進一步優化
+  - **如何處理**：Redis 存 per-user 最近一次成功回應，LLM 5xx 時回傳並標註 fallback
 
 ### 程式碼層
 - ✅ ~~`backend/requirements.lock` 過時~~ — 2026-05-05（4-1a）已透過 `uv pip compile pyproject.toml -o requirements.lock` 重產（38 行 → 272 行，含全部 transitive）；pyproject.toml 補完 LlamaIndex 三套件 + psycopg2-binary。pyBKT 註解確認**未實際 import**（updater.py 註解保留為未來演算法升級線索），無需安裝

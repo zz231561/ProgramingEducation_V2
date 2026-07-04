@@ -1,5 +1,30 @@
 # 變更日誌
 
+## [2026-07-04] — feat(6-R)：健壯性強化（架構審查）+ 移除教授抽查
+
+### Added
+- `backend/core/rate_limit.py`：per-user rate limit dependency（Redis INCR+EXPIRE 固定窗口，Redis 掛掉 fail-open 放行）；掛上 12 個 LLM 端點（chat interact / quiz generate+hint / quiz feedback / reflection create / comprehension epl+predict+variation 全系列）+ `/code/execute`；429 回 `RATE_LIMITED` + `detail.retry_after_seconds`
+- `core/auth.py`：NextAuth token `exp` claim 驗證，過期回 401 `TOKEN_EXPIRED`（原本被竊 cookie 永久有效）
+- `core/errors.py`：`unhandled_error_handler` 補 `logger.exception` traceback（原 500 完全無痕跡）；新增 `validation_error_handler` 把 422 轉統一 `{error, message, detail}` 格式
+- `tests/test_rate_limit.py`（5 tests）+ auth exp / errors logging+422 / judge0 網路例外 / evidence schema / chat fail-safe / user 節流 共 14 個新測試 → **後端 513 tests 全綠**
+- `docs/api-spec.md` 新增「標準錯誤格式」一節（全部 error code 對照表）
+
+### Changed
+- `services/judge0.py`：httpx 網路例外（ConnectError / Timeout）submit 階段轉 503 `JUDGE0_UNAVAILABLE`、polling 階段視同該輪失敗重試（原直接冒泡 500）
+- `services/edf/evidence.py`：LLM 回傳合法 JSON 但不符 schema（ValidationError）→ 502 `LLM_PARSE_ERROR`（原冒泡 500）
+- `services/chat.py`：**fail-safe 持久化** — user message 於 LLM 呼叫前先 commit，OpenAI 失敗不再連學生輸入一起 rollback；`list_sessions` count 改 `func.count()`（原全表載入）
+- `services/user.py`：首登並發 race 防護（IntegrityError → rollback 重查）+ `last_login_at` 1 小時節流（原每個 authenticated request 都寫 DB）；lookup 改用 `google_id or sub`（修 google_id=None 永遠 miss 的邊界）
+- `services/quiz/orchestrator.py`：`list_history` count 改 `func.count()`
+- 容錯 swallow 全面補 `logger.warning`（chat / orchestrator / mastery_hook / quiz generate RAG fallback）
+- `web/lib/api.ts`：401 統一重導 `/login`（原為 TODO；已在 /login 不重導避免迴圈）
+- `web/app/api/[...path]/route.ts`：proxy 加 30 秒 `AbortSignal.timeout`，逾時回 504 `BACKEND_TIMEOUT`（原 backend 卡死時前端 request 無限懸掛）
+- `.claude/rules/backend.md` 錯誤處理表補「Token 過期 / 網路層例外 / LLM schema」三列 + 容錯 swallow 必須留痕規則
+- `docs/roadmap.md`：新增 6-R 段（8 項全勾）；**6-4 移除教授抽查改為自行品管**（實機批次跑 + deferred-ui 驗收保留）；Phase 7 前置條件加註 6-R 完成
+- `docs/tech-debt.md`：新增 3 筆刻意延後項（OpenAI client 抽取 / 429 toast UI / LLM 降級快取）+ 教授抽查字樣同步修訂
+- 既有 `test_user_service.py` 2 個測試配合節流行為改寫 + 新增節流內不寫 DB 測試
+
+---
+
 ## [2026-06-23] — docs：新增 roadmap 6-6 知識圖譜優化（使用者反饋）
 
 ### Added

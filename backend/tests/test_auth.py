@@ -57,6 +57,27 @@ def test_decode_invalid_token():
     assert exc_info.value.status_code == 401
 
 
+def test_decode_expired_token():
+    """exp 已過期的 token 應拋出 401 TOKEN_EXPIRED（防被竊 cookie 永久有效）。"""
+    import time
+    from core.errors import AppError
+
+    token = encrypt_test_token({**SAMPLE_PAYLOAD, "exp": int(time.time()) - 60})
+    with pytest.raises(AppError) as exc_info:
+        decode_nextauth_token(token)
+    assert exc_info.value.status_code == 401
+    assert exc_info.value.error == "TOKEN_EXPIRED"
+
+
+def test_decode_token_with_future_exp():
+    """exp 尚未過期的 token 應正常解碼。"""
+    import time
+
+    token = encrypt_test_token({**SAMPLE_PAYLOAD, "exp": int(time.time()) + 3600})
+    result = decode_nextauth_token(token)
+    assert result.email == "test@example.com"
+
+
 # === 整合測試：/auth/me 端點 ===
 
 async def test_auth_me_without_token(client: AsyncClient):

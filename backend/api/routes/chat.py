@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.deps import get_current_db_user, get_db, User
 from core.errors import AppError
+from core.rate_limit import rate_limit
 from services.chat import interact, list_sessions, get_session_messages, delete_session
 
 router = APIRouter(prefix="/chat", tags=["chat"])
@@ -75,7 +76,11 @@ class SessionDetailResponse(BaseModel):
 
 # === Endpoints ===
 
-@router.post("/interact", response_model=InteractResponse)
+@router.post(
+    "/interact",
+    response_model=InteractResponse,
+    dependencies=[Depends(rate_limit("llm"))],
+)
 async def chat_interact(
     body: InteractRequest,
     user: User = Depends(get_current_db_user),

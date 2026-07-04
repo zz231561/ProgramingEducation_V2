@@ -28,6 +28,8 @@ async function proxyRequest(
   const init: RequestInit = {
     method: req.method,
     headers,
+    // backend 卡死時不可讓前端 request 無限懸掛；LLM 端點最慢約 15-20 秒，30 秒留足餘裕
+    signal: AbortSignal.timeout(30_000),
   };
 
   // 有 body 的 method 才附帶 body
@@ -43,7 +45,16 @@ async function proxyRequest(
       statusText: upstream.statusText,
       headers: upstream.headers,
     });
-  } catch {
+  } catch (err) {
+    if (err instanceof DOMException && err.name === "TimeoutError") {
+      return NextResponse.json(
+        {
+          error: "BACKEND_TIMEOUT",
+          message: "後端回應逾時，請稍後再試",
+        },
+        { status: 504 },
+      );
+    }
     return NextResponse.json(
       {
         error: "BACKEND_UNAVAILABLE",

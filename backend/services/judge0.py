@@ -68,16 +68,22 @@ async def submit_and_poll(
 
     async with httpx.AsyncClient(timeout=15.0) as client:
         # Step 1: 提交
-        submit_resp = await client.post(
-            f"{base_url}/submissions",
-            headers=headers,
-            params={"base64_encoded": "true", "wait": "false"},
-            json={
-                "source_code": base64.b64encode(source_code.encode()).decode(),
-                "language_id": language_id,
-                "stdin": base64.b64encode(stdin.encode()).decode() if stdin else "",
-            },
-        )
+        # 網路層例外（連線失敗 / timeout）須轉 503，不可冒泡成 500 誤導為內部錯誤
+        try:
+            submit_resp = await client.post(
+                f"{base_url}/submissions",
+                headers=headers,
+                params={"base64_encoded": "true", "wait": "false"},
+                json={
+                    "source_code": base64.b64encode(source_code.encode()).decode(),
+                    "language_id": language_id,
+                    "stdin": base64.b64encode(stdin.encode()).decode() if stdin else "",
+                },
+            )
+        except httpx.HTTPError as e:
+            raise AppError(
+                503, "JUDGE0_UNAVAILABLE", "執行服務暫時不可用，請稍後再試"
+            ) from e
 
         if submit_resp.status_code != 201:
             _handle_submit_error(submit_resp)
@@ -90,11 +96,15 @@ async def submit_and_poll(
         for _ in range(_MAX_POLLS):
             await asyncio.sleep(_POLL_INTERVAL)
 
-            poll_resp = await client.get(
-                f"{base_url}/submissions/{token}",
-                headers=headers,
-                params={"base64_encoded": "true", "fields": "stdout,stderr,compile_output,exit_code,time,memory,status"},
-            )
+            # polling 途中的暫時性網路錯誤視同該輪失敗，留給下一輪重試
+            try:
+                poll_resp = await client.get(
+                    f"{base_url}/submissions/{token}",
+                    headers=headers,
+                    params={"base64_encoded": "true", "fields": "stdout,stderr,compile_output,exit_code,time,memory,status"},
+                )
+            except httpx.HTTPError:
+                continue
 
             if poll_resp.status_code != 200:
                 continue

@@ -20,6 +20,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.deps import get_current_db_user, get_db
 from core.errors import AppError
+from core.rate_limit import rate_limit
 from models.quiz import ComprehensionType, StudentAnswer
 from models.user import User
 from services.comprehension import (
@@ -142,7 +143,11 @@ class EplGradeOut(BaseModel):
     feedback: str | None
 
 
-@router.post("/{student_answer_id}/epl/generate", response_model=EplGenerateOut)
+@router.post(
+    "/{student_answer_id}/epl/generate",
+    response_model=EplGenerateOut,
+    dependencies=[Depends(rate_limit("llm"))],
+)
 async def epl_generate(
     student_answer_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
@@ -157,7 +162,11 @@ async def epl_generate(
     )
 
 
-@router.post("/{student_answer_id}/epl/grade", response_model=EplGradeOut)
+@router.post(
+    "/{student_answer_id}/epl/grade",
+    response_model=EplGradeOut,
+    dependencies=[Depends(rate_limit("llm"))],
+)
 async def epl_grade(
     student_answer_id: uuid.UUID,
     body: GradeEplRequest,
@@ -204,7 +213,9 @@ class PredictGradeOut(BaseModel):
 
 
 @router.post(
-    "/{student_answer_id}/predict_output/generate", response_model=PredictGenerateOut
+    "/{student_answer_id}/predict_output/generate",
+    response_model=PredictGenerateOut,
+    dependencies=[Depends(rate_limit("llm"))],
 )
 async def predict_generate(
     student_answer_id: uuid.UUID,
@@ -221,7 +232,9 @@ async def predict_generate(
 
 
 @router.post(
-    "/{student_answer_id}/predict_output/grade", response_model=PredictGradeOut
+    "/{student_answer_id}/predict_output/grade",
+    response_model=PredictGradeOut,
+    dependencies=[Depends(rate_limit("llm"))],
 )
 async def predict_grade(
     student_answer_id: uuid.UUID,

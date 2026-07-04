@@ -17,6 +17,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.deps import get_current_db_user, get_db
+from core.rate_limit import rate_limit
 from models.user import User
 from services.comprehension import (
     start_variation_for_answer,
@@ -53,7 +54,9 @@ class VariationGradeOut(BaseModel):
 
 
 @router.post(
-    "/{student_answer_id}/variation/generate", response_model=VariationGenerateOut
+    "/{student_answer_id}/variation/generate",
+    response_model=VariationGenerateOut,
+    dependencies=[Depends(rate_limit("llm"))],
 )
 async def variation_generate(
     student_answer_id: uuid.UUID,
@@ -80,7 +83,9 @@ async def variation_generate(
 
 
 @router.post(
-    "/{student_answer_id}/variation/grade", response_model=VariationGradeOut
+    "/{student_answer_id}/variation/grade",
+    response_model=VariationGradeOut,
+    dependencies=[Depends(rate_limit("llm"))],
 )
 async def variation_grade(
     student_answer_id: uuid.UUID,

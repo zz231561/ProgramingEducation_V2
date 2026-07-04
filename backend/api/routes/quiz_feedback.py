@@ -16,6 +16,7 @@ from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.deps import get_current_db_user, get_db
+from core.rate_limit import rate_limit
 from models.user import User
 from services.quiz import generate_quiz_feedback
 
@@ -44,7 +45,11 @@ class QuizFeedbackResponse(BaseModel):
     recommended_units: list[RecommendedUnitOut]
 
 
-@router.get("/answers/{answer_id}/feedback", response_model=QuizFeedbackResponse)
+@router.get(
+    "/answers/{answer_id}/feedback",
+    response_model=QuizFeedbackResponse,
+    dependencies=[Depends(rate_limit("llm"))],
+)
 async def quiz_feedback(
     answer_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),

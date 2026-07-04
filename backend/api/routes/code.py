@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 
 from api.deps import get_current_db_user, User
+from core.rate_limit import rate_limit
 from services.judge0 import submit_and_poll, ExecutionResult, CPP_LANGUAGE_ID
 
 router = APIRouter(prefix="/code", tags=["code"])
@@ -17,7 +18,11 @@ class ExecuteRequest(BaseModel):
     stdin: str = Field(default="", max_length=10_000)
 
 
-@router.post("/execute", response_model=ExecutionResult)
+@router.post(
+    "/execute",
+    response_model=ExecutionResult,
+    dependencies=[Depends(rate_limit("execute"))],
+)
 async def execute_code(
     body: ExecuteRequest,
     _user: User = Depends(get_current_db_user),

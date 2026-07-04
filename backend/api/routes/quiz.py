@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.deps import get_current_db_user, get_db
 from core.errors import AppError
+from core.rate_limit import rate_limit
 from models.quiz import Question, QuestionType, StudentAnswer
 from models.user import User
 from services.quiz import (
@@ -129,7 +130,11 @@ async def from_bank(
     return QuestionForStudentOut.from_question(question)
 
 
-@router.post("/generate", response_model=QuestionForStudentOut)
+@router.post(
+    "/generate",
+    response_model=QuestionForStudentOut,
+    dependencies=[Depends(rate_limit("llm"))],
+)
 async def generate(
     body: GenerateRequest,
     db: AsyncSession = Depends(get_db),
@@ -188,7 +193,11 @@ class HintResponse(BaseModel):
     fallback: bool  # True = LLM 失敗用了固定句子
 
 
-@router.post("/hint", response_model=HintResponse)
+@router.post(
+    "/hint",
+    response_model=HintResponse,
+    dependencies=[Depends(rate_limit("llm"))],
+)
 async def hint(
     body: HintRequest,
     db: AsyncSession = Depends(get_db),

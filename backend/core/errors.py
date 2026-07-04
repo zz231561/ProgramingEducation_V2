@@ -1,10 +1,14 @@
 """標準錯誤回應模型與例外類別。"""
 
+import logging
 from typing import Any
 
 from fastapi import Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
+
+logger = logging.getLogger(__name__)
 
 
 class ErrorResponse(BaseModel):
@@ -43,8 +47,29 @@ async def app_error_handler(_request: Request, exc: AppError) -> JSONResponse:
     )
 
 
-async def unhandled_error_handler(_request: Request, _exc: Exception) -> JSONResponse:
-    """攔截未處理的例外，回傳通用 500 錯誤。"""
+async def validation_error_handler(
+    _request: Request, exc: RequestValidationError
+) -> JSONResponse:
+    """將 Pydantic 請求驗證錯誤轉為與 ErrorResponse 一致的格式。
+
+    FastAPI 預設回傳 `{"detail": [...]}` list 格式，與前端統一攔截
+    假設的 `{error, message}` 不符 → 統一包裝，原始欄位錯誤放 detail.errors。
+    """
+    return JSONResponse(
+        status_code=422,
+        content=ErrorResponse(
+            error="VALIDATION_ERROR",
+            message="輸入驗證失敗，請檢查欄位格式",
+            detail={"errors": exc.errors()},
+        ).model_dump(exclude_none=True),
+    )
+
+
+async def unhandled_error_handler(request: Request, exc: Exception) -> JSONResponse:
+    """攔截未處理的例外，記錄 traceback 後回傳通用 500 錯誤。"""
+    logger.exception(
+        "Unhandled error on %s %s: %r", request.method, request.url.path, exc
+    )
     return JSONResponse(
         status_code=500,
         content=ErrorResponse(

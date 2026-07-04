@@ -47,3 +47,50 @@ def test_error_response_model():
     data = err.model_dump(exclude_none=True)
     assert "detail" not in data
     assert data["error"] == "TEST"
+
+
+async def test_unhandled_error_logs_traceback(caplog):
+    """未處理例外應記錄 traceback（生產環境 500 唯一的 debug 線索）。"""
+    import logging
+    from unittest.mock import MagicMock
+
+    from core.errors import unhandled_error_handler
+
+    request = MagicMock()
+    request.method = "POST"
+    request.url.path = "/chat/interact"
+
+    with caplog.at_level(logging.ERROR, logger="core.errors"):
+        resp = await unhandled_error_handler(request, RuntimeError("boom"))
+
+    assert resp.status_code == 500
+    assert any("boom" in r.message for r in caplog.records)
+    assert any(r.exc_info or "Unhandled error" in r.message for r in caplog.records)
+
+
+async def test_validation_error_returns_standard_format():
+    """422 請求驗證錯誤應轉為與 ErrorResponse 一致的格式（前端統一攔截依賴此格式）。"""
+    from fastapi.exceptions import RequestValidationError
+    from pydantic import BaseModel
+
+    from core.errors import validation_error_handler
+
+    _app = FastAPI()
+    _app.add_exception_handler(RequestValidationError, validation_error_handler)  # type: ignore[arg-type]
+
+    class _Body(BaseModel):
+        question: str
+
+    @_app.post("/needs-body")
+    async def _endpoint(body: _Body):
+        return {"ok": True}
+
+    transport = ASGITransport(app=_app)
+    async with AsyncClient(transport=transport, base_url="http://test") as c:
+        resp = await c.post("/needs-body", json={})
+
+    assert resp.status_code == 422
+    body = resp.json()
+    assert body["error"] == "VALIDATION_ERROR"
+    assert "message" in body
+    assert "errors" in body["detail"]

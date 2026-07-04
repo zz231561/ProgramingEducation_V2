@@ -125,3 +125,43 @@ async def test_submit_service_unavailable():
             await submit_and_poll("int main(){}")
 
     assert exc_info.value.status_code == 503
+
+
+@pytest.mark.asyncio
+async def test_submit_network_error_returns_503():
+    """網路層例外（連線失敗 / timeout）應轉 503，不可冒泡成 500。"""
+    import httpx
+
+    mock_client = AsyncMock()
+    mock_client.post.side_effect = httpx.ConnectError("connection refused")
+    mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+    mock_client.__aexit__ = AsyncMock(return_value=False)
+
+    with patch("services.judge0.httpx.AsyncClient", return_value=mock_client):
+        with pytest.raises(AppError) as exc_info:
+            await submit_and_poll("int main(){}")
+
+    assert exc_info.value.status_code == 503
+    assert exc_info.value.error == "JUDGE0_UNAVAILABLE"
+
+
+@pytest.mark.asyncio
+async def test_poll_network_error_retries_until_timeout():
+    """polling 途中持續網路錯誤 → 重試耗盡後回 504。"""
+    import httpx
+
+    submit_resp = _mock_response(201, {"token": "abc-123"})
+
+    mock_client = AsyncMock()
+    mock_client.post.return_value = submit_resp
+    mock_client.get.side_effect = httpx.ReadTimeout("timeout")
+    mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+    mock_client.__aexit__ = AsyncMock(return_value=False)
+
+    with patch("services.judge0.httpx.AsyncClient", return_value=mock_client):
+        with patch("services.judge0.asyncio.sleep", new_callable=AsyncMock):
+            with pytest.raises(AppError) as exc_info:
+                await submit_and_poll("int main(){}")
+
+    assert exc_info.value.status_code == 504
+    assert exc_info.value.error == "EXECUTION_TIMEOUT"

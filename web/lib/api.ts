@@ -46,9 +46,13 @@ export async function api<T = unknown>(
       message: "未知錯誤",
     }));
 
-    // 401 → 重導登入（Phase 1-2 實作 NextAuth 後啟用）
-    if (res.status === 401) {
-      // TODO: window.location.href = "/login";
+    // 401 → 重導登入（token 過期 / 未登入統一入口；已在 /login 則不重導避免迴圈）
+    if (
+      res.status === 401 &&
+      typeof window !== "undefined" &&
+      !window.location.pathname.startsWith("/login")
+    ) {
+      window.location.href = "/login";
     }
 
     throw new ApiRequestError(res.status, body);

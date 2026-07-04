@@ -264,3 +264,48 @@ async def test_interact_unknown_reflection_id_does_not_block():
             )
     assert session.id is not None
     assert feedback_mock.call_args.kwargs["reflection_block"] == ""
+
+
+@pytest.mark.asyncio
+async def test_interact_persists_user_message_when_llm_fails():
+    """Fail-safe：Feedback LLM 失敗時 user message 已先 commit，學生輸入不可蒸發。"""
+    from core.errors import AppError
+    from services.chat import interact
+
+    user_id = uuid.uuid4()
+
+    with (
+        patch("services.chat.analyze_evidence", new_callable=AsyncMock, return_value=_mock_evidence()),
+        patch(
+            "services.chat.generate_feedback",
+            new_callable=AsyncMock,
+            side_effect=AppError(502, "LLM_ERROR", "AI 服務暫時不可用"),
+        ),
+    ):
+        async with TestSessionFactory() as db:
+            with pytest.raises(AppError):
+                await interact(
+                    db=db,
+                    user_id=user_id,
+                    code="while(true){}",
+                    question="為什麼跑不停？",
+                )
+
+    # 用新 session 驗證 user message 與 session title 已持久化
+    async with TestSessionFactory() as db:
+        sessions = (
+            (await db.execute(select(ChatSession).where(ChatSession.user_id == user_id)))
+            .scalars()
+            .all()
+        )
+        assert len(sessions) == 1
+        assert sessions[0].title == "為什麼跑不停？"
+
+        messages = (
+            (await db.execute(select(ChatMessage).where(ChatMessage.session_id == sessions[0].id)))
+            .scalars()
+            .all()
+        )
+        assert len(messages) == 1
+        assert messages[0].role == MessageRole.USER
+        assert messages[0].content == "為什麼跑不停？"

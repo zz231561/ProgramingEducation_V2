@@ -5,10 +5,11 @@
 - `submit_answer` — 學生作答：判分 → 寫 StudentAnswer → 更新 mastery
 """
 
+import logging
 from datetime import datetime, timezone
 from uuid import UUID
 
-from sqlalchemy import desc, select
+from sqlalchemy import desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.errors import AppError
@@ -20,6 +21,8 @@ from services.quiz.generate import generate_question
 from services.quiz.grade import grade_answer
 from services.quiz.select import select_weak_concepts
 from services.quiz.validate import ValidationReport, validate_question
+
+logger = logging.getLogger(__name__)
 
 # Cold-start fallback：學生無弱項紀錄時，挑入門概念
 COLD_START_FALLBACK_TAG = "syntax-basic"
@@ -171,9 +174,9 @@ async def submit_answer(
     )
     try:
         await update_mastery(db, user_id, evidence)
-    except Exception:
+    except Exception as e:
         # mastery 失敗不阻擋作答記錄寫入（同 chat 容錯）
-        pass
+        logger.warning("update_mastery failed (non-blocking): %r", e)
 
     await db.commit()
     await db.refresh(student_answer)
@@ -187,12 +190,13 @@ async def list_history(
     limit: int = 20,
 ) -> tuple[list[StudentAnswer], int]:
     """學生作答歷史（分頁，依 answered_at 降冪）。"""
-    count = (
+    total = (
         await db.execute(
-            select(StudentAnswer).where(StudentAnswer.user_id == user_id)
+            select(func.count())
+            .select_from(StudentAnswer)
+            .where(StudentAnswer.user_id == user_id)
         )
-    ).scalars()
-    total = len(list(count))
+    ).scalar_one()
 
     rows = (
         await db.execute(

@@ -79,7 +79,13 @@ def decode_nextauth_token(token: str, cookie_name: str = DEV_COOKIE_NAME) -> Tok
 
     # payload 是 bytes，解碼為 dict
     import json
+    import time
     claims = json.loads(payload)
+
+    # JWE 解密成功只代表 token 完整未竄改，exp 過期仍須拒絕（防被竊 cookie 永久有效）
+    exp = claims.get("exp")
+    if exp is not None and exp < time.time():
+        raise AppError(401, "TOKEN_EXPIRED", "登入已過期，請重新登入")
 
     return TokenPayload(
         sub=claims.get("sub", ""),

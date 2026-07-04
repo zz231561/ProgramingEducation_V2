@@ -10,6 +10,7 @@
 - 不 commit；caller 在自己的 transaction 末尾 commit 一次
 """
 
+import logging
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -17,6 +18,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from models.quiz import Question
 from services.edf.models import BloomLevel, ErrorType, EvidenceResult
 from services.mastery import update_mastery
+
+logger = logging.getLogger(__name__)
 
 
 async def apply_comprehension_mastery(
@@ -46,6 +49,6 @@ async def apply_comprehension_mastery(
     )
     try:
         await update_mastery(db, user_id, evidence)
-    except Exception:
+    except Exception as e:
         # mastery 失敗不阻擋 comprehension 寫入（與 quiz/submit 容錯一致）
-        pass
+        logger.warning("update_mastery failed (non-blocking): %r", e)

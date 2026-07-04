@@ -1,8 +1,9 @@
 """Chat service — 管理對話 session 和 EDF 管線串接。"""
 
+import logging
 import uuid
 
-from sqlalchemy import select, desc
+from sqlalchemy import select, desc, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -17,6 +18,8 @@ from services.edf.reflection_context import (
 )
 from services.mastery import update_mastery
 from services.security.sanitizer import sanitize_input, wrap_student_input, wrap_student_code
+
+logger = logging.getLogger(__name__)
 
 
 async def get_or_create_session(
@@ -92,6 +95,20 @@ async def interact(
     history_rows = (await db.execute(history_stmt)).scalars().all()
     chat_history = [{"role": m.role.value, "content": m.content} for m in history_rows]
 
+    # Fail-safe 持久化：user message 在 LLM 呼叫前先 commit。
+    # OpenAI 偶發失敗是常態，不可讓學生打的問題隨 rollback 蒸發。
+    user_msg = ChatMessage(
+        session_id=session.id,
+        role=MessageRole.USER,
+        content=question,
+        code_snapshot=code,
+        execution_result=execution_result,
+    )
+    db.add(user_msg)
+    if not history_rows:
+        session.title = question[:50] if len(question) > 50 else question
+    await db.commit()
+
     # 反思（best-effort）— 在 Evidence 之前載入，兩層共用
     reflection = await _load_reflection_safely(db, user_id, reflection_id)
     reflection_evidence_summary = format_reflection_for_evidence(reflection)
@@ -110,8 +127,8 @@ async def interact(
     # 容錯：mastery 失敗不阻擋教學回應（與 RAG 同款處理）
     try:
         await update_mastery(db, user_id, evidence)
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning("update_mastery failed (non-blocking): %r", e)
 
     # Decision 層
     strategy = decide_strategy(evidence, hint_level)
@@ -125,17 +142,7 @@ async def interact(
         reflection_block=reflection_feedback_block,
     )
 
-    # 儲存 user message
-    user_msg = ChatMessage(
-        session_id=session.id,
-        role=MessageRole.USER,
-        content=question,
-        code_snapshot=code,
-        execution_result=execution_result,
-    )
-    db.add(user_msg)
-
-    # 儲存 assistant message
+    # 儲存 assistant message（user message 已於 LLM 呼叫前 commit）
     assistant_msg = ChatMessage(
         session_id=session.id,
         role=MessageRole.ASSISTANT,
@@ -143,10 +150,6 @@ async def interact(
         evidence=evidence.model_dump(),
     )
     db.add(assistant_msg)
-
-    # 更新 session title（首次訊息）
-    if not history_rows:
-        session.title = question[:50] if len(question) > 50 else question
 
     await db.commit()
     await db.refresh(session)
@@ -161,8 +164,12 @@ async def list_sessions(
     limit: int = 20,
 ) -> tuple[list[ChatSession], int]:
     """取得使用者所有 session（分頁）。"""
-    count_stmt = select(ChatSession).where(ChatSession.user_id == user_id)
-    total = len((await db.execute(count_stmt)).scalars().all())
+    count_stmt = (
+        select(func.count())
+        .select_from(ChatSession)
+        .where(ChatSession.user_id == user_id)
+    )
+    total = (await db.execute(count_stmt)).scalar_one()
 
     stmt = (
         select(ChatSession)

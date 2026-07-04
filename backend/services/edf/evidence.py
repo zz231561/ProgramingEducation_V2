@@ -6,6 +6,7 @@
 import json
 
 from openai import AsyncOpenAI
+from pydantic import ValidationError
 
 from core.config import settings
 from core.errors import AppError
@@ -107,9 +108,9 @@ async def analyze_evidence(
 
     raw = response.choices[0].message.content or "{}"
 
+    # JSON mode 只保證合法 JSON，不保證符合 schema（如非法 enum 值）→ 兩段都要防
     try:
         data = json.loads(raw)
-    except json.JSONDecodeError as e:
+        return EvidenceResult(**data)
+    except (json.JSONDecodeError, ValidationError) as e:
         raise AppError(502, "LLM_PARSE_ERROR", "AI 回傳格式異常") from e
-
-    return EvidenceResult(**data)

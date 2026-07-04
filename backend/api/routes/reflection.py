@@ -16,6 +16,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.deps import get_current_db_user, get_db
+from core.rate_limit import rate_limit
 from models.reflection import Reflection, ReflectionSourceType
 from models.user import User
 from services.reflection import (
@@ -83,7 +84,12 @@ class ReflectionOut(BaseModel):
 # === Endpoints ===
 
 
-@router.post("", response_model=ReflectionOut, status_code=201)
+@router.post(
+    "",
+    response_model=ReflectionOut,
+    status_code=201,
+    dependencies=[Depends(rate_limit("llm"))],
+)
 async def create(
     body: CreateReflectionRequest,
     db: AsyncSession = Depends(get_db),

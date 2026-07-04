@@ -1,12 +1,22 @@
 """使用者 service 測試 — 首次登入建立記錄、重複登入更新資訊。"""
 
+from datetime import datetime, timedelta, timezone
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.auth import TokenPayload
 from models.user import User, UserRole
-from services.user import get_or_create_user
+from services.user import get_or_create_user, _LOGIN_UPDATE_INTERVAL
 from tests.helpers import TestSessionFactory
+
+
+async def _age_last_login(db: AsyncSession, user: User) -> None:
+    """把 last_login_at 撥回節流間隔之前，模擬「距上次登入已超過 1 小時」。"""
+    user.last_login_at = (
+        datetime.now(timezone.utc) - _LOGIN_UPDATE_INTERVAL - timedelta(minutes=5)
+    )
+    await db.commit()
 
 
 SAMPLE_TOKEN = TokenPayload(
@@ -45,10 +55,11 @@ async def test_return_existing_user_on_repeat_login():
         assert len(users) == 1
 
 
-async def test_update_profile_on_repeat_login():
-    """重複登入應更新 name / avatar_url。"""
+async def test_update_profile_after_throttle_interval():
+    """距上次登入超過節流間隔時，重複登入應更新 name / avatar_url。"""
     async with TestSessionFactory() as db:
-        await get_or_create_user(db, SAMPLE_TOKEN)
+        user = await get_or_create_user(db, SAMPLE_TOKEN)
+        await _age_last_login(db, user)
 
         updated_token = TokenPayload(
             sub="nextauth-id-1",
@@ -63,14 +74,30 @@ async def test_update_profile_on_repeat_login():
         assert user.avatar_url == "https://example.com/alice-new.jpg"
 
 
-async def test_update_last_login_at():
-    """重複登入應更新 last_login_at。"""
+def _as_utc(dt: datetime) -> datetime:
+    """SQLite 測試環境 refresh 後回傳 naive datetime — 比較前統一補 UTC。"""
+    return dt if dt.tzinfo is not None else dt.replace(tzinfo=timezone.utc)
+
+
+async def test_update_last_login_at_after_throttle_interval():
+    """距上次登入超過節流間隔時，重複登入應更新 last_login_at。"""
+    async with TestSessionFactory() as db:
+        user1 = await get_or_create_user(db, SAMPLE_TOKEN)
+        await _age_last_login(db, user1)
+        aged_login = _as_utc(user1.last_login_at)
+
+        user2 = await get_or_create_user(db, SAMPLE_TOKEN)
+        assert _as_utc(user2.last_login_at) > aged_login
+
+
+async def test_no_db_write_within_throttle_interval():
+    """節流間隔內重複登入不應更新 last_login_at（避免每 request 寫 DB）。"""
     async with TestSessionFactory() as db:
         user1 = await get_or_create_user(db, SAMPLE_TOKEN)
         first_login = user1.last_login_at
 
         user2 = await get_or_create_user(db, SAMPLE_TOKEN)
-        assert user2.last_login_at >= first_login
+        assert user2.last_login_at == first_login
 
 
 async def test_fallback_to_sub_when_no_google_id():

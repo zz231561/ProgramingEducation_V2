@@ -4,12 +4,18 @@ from contextlib import asynccontextmanager
 from collections.abc import AsyncIterator
 
 from fastapi import FastAPI
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 
 from core.config import settings
 from core.database import engine
 from core.redis import init_redis, close_redis
-from core.errors import AppError, app_error_handler, unhandled_error_handler
+from core.errors import (
+    AppError,
+    app_error_handler,
+    unhandled_error_handler,
+    validation_error_handler,
+)
 from api.routes.auth import router as auth_router
 from api.routes.chat import router as chat_router
 from api.routes.code import router as code_router
@@ -56,6 +62,7 @@ app.add_middleware(
 
 # === 全域錯誤處理 ===
 app.add_exception_handler(AppError, app_error_handler)  # type: ignore[arg-type]
+app.add_exception_handler(RequestValidationError, validation_error_handler)  # type: ignore[arg-type]
 app.add_exception_handler(Exception, unhandled_error_handler)  # type: ignore[arg-type]
 
 # === 路由註冊 ===

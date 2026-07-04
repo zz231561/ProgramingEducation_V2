@@ -9,6 +9,7 @@ Phase 6-3a grounded mode：`video_order` 提供時改走 `get_chunks_by_video_or
 """
 
 import json
+import logging
 from typing import Any
 
 from openai import AsyncOpenAI
@@ -21,6 +22,8 @@ from models.concept import Concept
 from models.quiz import Question, QuestionSource, QuestionType
 from services.rag import retrieve_chunks
 from services.rag.retrieve import get_chunks_by_video_order
+
+logger = logging.getLogger(__name__)
 
 _client: AsyncOpenAI | None = None
 
@@ -160,8 +163,9 @@ async def _fetch_rag_chunks_for_concept(concept: Concept, top_k: int = 3) -> lis
             f"{concept.name_zh} {concept.tag}：{concept.description}",
             top_k=top_k,
         )
-    except Exception:
+    except Exception as e:
         # RAG 失敗不阻擋出題，沒教材就靠 LLM 內建知識
+        logger.warning("RAG retrieval failed for quiz generate (non-blocking): %r", e)
         return []
 
 
@@ -169,7 +173,12 @@ async def _fetch_grounded_chunks_for_video(video_order: int) -> list[Any]:
     # 6-3a：取 video 完整字幕（時間順序）；失敗回 [] 不阻擋出題（同 _fetch_rag_chunks_for_concept）
     try:
         return await get_chunks_by_video_order(video_order)
-    except Exception:
+    except Exception as e:
+        logger.warning(
+            "Grounded chunks fetch failed for video %s (non-blocking): %r",
+            video_order,
+            e,
+        )
         return []
 
 

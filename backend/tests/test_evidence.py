@@ -131,3 +131,28 @@ async def test_analyze_evidence_bad_json():
             await analyze_evidence("int main(){}")
 
     assert exc_info.value.status_code == 502
+
+
+@pytest.mark.asyncio
+async def test_analyze_evidence_schema_mismatch():
+    """LLM 回傳合法 JSON 但不符 schema（非法 enum）→ 502，不可冒泡成 500。"""
+    bad_data = {
+        "error_type": "not-a-valid-type",
+        "error_message": "",
+        "concept_tags": [],
+        "bloom_level": 99,
+        "bloom_reasoning": "",
+        "code_analysis": "",
+    }
+
+    mock_client = AsyncMock()
+    mock_client.chat.completions.create = AsyncMock(
+        return_value=_mock_openai_response(bad_data),
+    )
+
+    with patch("services.edf.evidence._get_client", return_value=mock_client):
+        with pytest.raises(AppError) as exc_info:
+            await analyze_evidence("int main(){}")
+
+    assert exc_info.value.status_code == 502
+    assert exc_info.value.error == "LLM_PARSE_ERROR"

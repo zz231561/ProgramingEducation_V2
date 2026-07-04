@@ -43,7 +43,8 @@
   - K1 ✅跨章多對多依賴 DAG（migration `i5d6e7f8a9b0` 90 條 curated 邊 + `get_prerequisite_closure` BFS 回溯 + 實機驗證；K1d UI 抽查待使用者）
   - K2 ✅動態知識狀態（`edf_parent_tag` mapping + 三層 fan-out 讓對話重新驅動 BKT；`/concepts/mastery` 加 last_practiced_at；K2c 決策：暫不引入真 AST）
   - K3 ✅後端（連續失敗觸發 + closure 回溯嫌疑排序 + 題庫診斷題 + `GET /concepts/{tag}/diagnosis`；K3e 前端入口待做，建議併 K5）
-  - **下一步（K 系列）**：K4 Coddy 自適應（K-Graph state 注入 prompt + RAG 相關性觸發 + 補救路徑）→ K5 視覺改版（含 K3e 前端入口）
+  - K4a/b ✅（K-Graph 鷹架注入 prompt + Coddy persona 語氣改寫 + RAG 相關性觸發 RAG_MIN_SCORE=0.40）
+  - **下一步（K 系列）**：K4c 補救路徑（learning path 動態插 remedial units）→ K4d 真人驗收（需 API key）→ K5 視覺改版（含 K3e 前端入口）
 - **Phase 5 ⇄ Phase 6 平行**：教師端可隨時插入並行
 - **Phase 7 上線實測**：須 Phase 6 至少 6-1 + 6-2 完成 + Zeabur + VPS 就緒
 

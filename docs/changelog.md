@@ -1,5 +1,20 @@
 # 變更日誌
 
+## [2026-07-04] — feat(K4a/b)：Coddy 自適應提示 — K-Graph 鷹架 + RAG 相關性觸發
+
+### Added
+- **K4a** `services/edf/kgraph_context.py`：學生知識狀態 → prompt block（解析 evidence tags 直接命中 + `edf_parent_tag` group 已曝光成員、弱者優先取 6 筆）+ 鷹架分級指令（以**最弱**相關概念 confidence 決定：<0.4 框架填空/逐行拆解、0.4-0.7 引導式提問、>0.7 只點 edge case）；best-effort 無資料回空字串不擋教學流程
+- `chat.py` interact 在 mastery 更新後讀取 kgraph block（鷹架依最新狀態）注入 `generate_feedback`
+- 測試 +9（7 kgraph + 2 RAG 分數過濾）→ **後端 541 tests 全綠**
+
+### Changed
+- **K4b（原 6-5a）** RAG 觸發改內容相關性：`TeachingStrategy` 移除 `use_rag` 欄位與 `hint>=2 && bloom>=ANALYZE` 寫死規則；`fetch_rag_chunks_safe` 每次互動都檢索、只注入 cosine >= `RAG_MIN_SCORE`（0.40 初始值，K4d 實測調參）的 chunks，全低於門檻回空（該查就查、不相關不硬塞）
+- **K4a（原 6-5b）** persona 語氣改寫：Coddy 具名、先肯定再引導、提問具體到程式碼、小事直接回答；RULE-5 從「永遠以提問結尾」放寬為「自然的下一步收尾（提問或行動建議），不必刻意反問」
+- `.claude/rules/edf-pipeline.md` 同步：RAG 觸發規範改為相關性分數、prompt 組裝順序加 kgraph 層、persona 描述更新
+- 既有 decision / feedback 測試配合 `use_rag` 移除改寫
+
+---
+
 ## [2026-07-04] — feat(K3)：根源弱點定位器後端（圖回溯認知診斷）
 
 ### Added

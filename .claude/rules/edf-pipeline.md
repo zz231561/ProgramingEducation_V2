@@ -19,11 +19,13 @@ globs: backend/services/edf/**
 
 ### Decision（教學策略）
 - Bloom × Hint Ladder 6×6 策略矩陣（保留 V1 設計）
-- RAG 觸發條件：hint_level >= 2 且 bloom_level 屬於 {ANALYZE, EVALUATE, CREATE}
+- ~~RAG 觸發條件：hint/bloom 門檻~~ → **K4b（2026-07-04）改為內容相關性**：Feedback 層每次互動都檢索，只注入 cosine 分數 >= `RAG_MIN_SCORE`（0.40 初始值，K4d 驗收調整）的 chunks
 
 ### Feedback（回應生成）
-- 分層 prompt 組裝：preamble → persona → strategy → context → reflection → RAG
+- 分層 prompt 組裝：preamble → persona → strategy → context → **kgraph** → reflection → RAG
+- **K-Graph 鷹架（K4a）**：`kgraph_context.py` 依學生最弱相關概念的 confidence 分級——<0.4 框架填空/逐行拆解、0.4-0.7 引導式提問、>0.7 只點 edge case
 - AI 可引用學生的反思計畫（如「你前面說要用迴圈處理，可以更具體嗎？」）
+- Persona = Coddy（K4a 語氣修訂）：先肯定再引導、提問具體到程式碼、小事直接回答不硬展開教學；RULE-5 允許以行動建議收尾（不強制反問）
 - 輸出驗證：阻擋完整程式碼洩漏，保持教學引導
 
 ## Bloom 認知等級（6 級）

@@ -1,6 +1,7 @@
 "use client";
 
 import { Bot, User } from "lucide-react";
+import { MarkdownContent } from "@/components/ui/markdown";
 import type { MessageItem } from "@/lib/chat-types";
 import { BloomBadge, extractBloomLevel } from "./bloom-badge";
 import { EdfTimeline } from "./edf-timeline";
@@ -33,11 +34,17 @@ export function MessageBubble({ message }: MessageBubbleProps) {
           }`}
         >
           <div className="text-text-primary">
-            {message.content.split("\n").map((line, i) => (
-              <p key={i} className={i > 0 ? "mt-1.5" : ""}>
-                {line || " "}
-              </p>
-            ))}
+            {isUser ? (
+              // 使用者輸入不是 Markdown，維持純文字換行呈現
+              message.content.split("\n").map((line, i) => (
+                <p key={i} className={i > 0 ? "mt-1.5" : ""}>
+                  {line || " "}
+                </p>
+              ))
+            ) : (
+              // Coddy 回覆走 Markdown（粗體 / 列表 / inline code / code block）
+              <MarkdownContent>{message.content}</MarkdownContent>
+            )}
           </div>
           {bloomLevel !== null && (
             <div className="mt-2 pt-2 border-t border-border-muted">

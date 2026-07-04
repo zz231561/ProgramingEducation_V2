@@ -23,6 +23,9 @@ export function ChatInput({ onSend, disabled = false }: ChatInputProps) {
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+      // IME（中文注音等）組字中的 Enter 是「確認選字」，不可送出；
+      // keyCode 229 為 Safari 在 compositionend 後仍標記 isComposing=false 的相容判斷
+      if (e.nativeEvent.isComposing || e.keyCode === 229) return;
       if (e.key === "Enter" && !e.shiftKey) {
         e.preventDefault();
         handleSubmit();

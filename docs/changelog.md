@@ -1,5 +1,15 @@
 # 變更日誌
 
+## [2026-07-04] — fix(chat)：Coddy 回覆 Markdown 渲染 + IME Enter 誤送出 + 樂觀顯示
+
+### Fixed
+- **Markdown 未渲染**：Coddy 回覆的粗體 / 列表 / inline code / code block 原本以純文字逐行顯示 → 新增共用 `components/ui/markdown.tsx`（`MarkdownContent`，react-markdown + remark-gfm，樣式對齊 frontend.md Code Block 規格：bg-inset / border / JetBrains Mono），`message-bubble.tsx` assistant 訊息改走 Markdown；使用者訊息維持純文字（輸入非 Markdown）；`concept-tab.tsx` 改 import 共用元件消除重複的 MARKDOWN_COMPONENTS
+- **中文輸入法 Enter 誤送出**：`chat-input.tsx` keydown 加 `e.nativeEvent.isComposing || e.keyCode === 229` 判斷——IME 組字中的 Enter 是確認選字，不再直接送出（Safari 相容以 229 補判）
+- **使用者訊息未即時顯示**：`use-chat.ts` `sendMessage` 改樂觀更新——送出後立即以暫時 id 上畫面（後接「Coddy思考中」indicator），API 成功後原位替換為 server 版訊息；失敗時保留使用者訊息、只補錯誤回覆（原本失敗才補 user 訊息的邏輯移除）
+- 驗證：`tsc --noEmit` + `next build` 通過（前端無測試基礎設施，UI 行為請手動驗收）
+
+---
+
 ## [2026-07-04] — feat(K4c)：補救路徑 — 診斷結果重新開放前置單元
 
 ### Added

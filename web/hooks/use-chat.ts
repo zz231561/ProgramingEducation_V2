@@ -43,6 +43,21 @@ export function useChat(options: UseChatOptions = {}) {
       const code = options.getCode?.() ?? "";
       if (!question.trim()) return;
 
+      // 樂觀更新：使用者訊息立即上畫面，後面接「Coddy思考中」indicator；
+      // API 成功後以 server 版（真實 id）原位取代
+      const tempId = crypto.randomUUID();
+      setItems((prev) => [
+        ...prev,
+        {
+          type: "message",
+          id: tempId,
+          role: "user",
+          content: question,
+          codeSnapshot: code || undefined,
+          createdAt: new Date().toISOString(),
+        },
+      ]);
+
       setIsLoading(true);
       try {
         // Phase 2-5e：若 sessionStorage 有 active reflection_id，後端注入 EDF prompt
@@ -63,8 +78,9 @@ export function useChat(options: UseChatOptions = {}) {
         sessionIdRef.current = res.session_id;
 
         setItems((prev) => [
-          ...prev,
-          toMessageItem(res.user_message),
+          ...prev.map((it) =>
+            it.id === tempId ? toMessageItem(res.user_message) : it,
+          ),
           toMessageItem(res.assistant_message),
         ]);
 
@@ -73,11 +89,16 @@ export function useChat(options: UseChatOptions = {}) {
           options.onSessionCreated?.(res.session_id, title);
         }
       } catch {
-        const now = new Date().toISOString();
+        // 樂觀的使用者訊息保留在畫面上，只補一則錯誤回覆
         setItems((prev) => [
           ...prev,
-          { type: "message", id: crypto.randomUUID(), role: "user", content: question, createdAt: now },
-          { type: "message", id: crypto.randomUUID(), role: "assistant", content: "無法取得 AI 回應，請稍後再試。", createdAt: now },
+          {
+            type: "message",
+            id: crypto.randomUUID(),
+            role: "assistant",
+            content: "無法取得 AI 回應，請稍後再試。",
+            createdAt: new Date().toISOString(),
+          },
         ]);
       } finally {
         setIsLoading(false);

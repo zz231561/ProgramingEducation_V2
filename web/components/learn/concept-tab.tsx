@@ -12,9 +12,8 @@
 
 import { useRef } from "react";
 import { MonitorPlay } from "lucide-react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 
+import { MarkdownContent } from "@/components/ui/markdown";
 import { Citation, Unit } from "@/lib/learning";
 
 import {
@@ -97,12 +96,7 @@ function GroundedExplanation({
   return (
     <>
       <div className="rounded-md border border-border-default bg-surface-1 p-4 text-sm leading-relaxed text-text-secondary">
-        <ReactMarkdown
-          remarkPlugins={[remarkGfm]}
-          components={MARKDOWN_COMPONENTS}
-        >
-          {markdown}
-        </ReactMarkdown>
+        <MarkdownContent>{markdown}</MarkdownContent>
       </div>
       {citations.length > 0 && (
         <CitationList citations={citations} onClick={onCitationClick} />
@@ -110,44 +104,6 @@ function GroundedExplanation({
     </>
   );
 }
-
-// 缺 @tailwindcss/typography 時，手動覆寫 Markdown 元素以維持可讀性
-const MARKDOWN_COMPONENTS = {
-  h1: ({ children }: { children?: React.ReactNode }) => (
-    <h1 className="mt-3 mb-2 text-base font-medium text-text-primary">{children}</h1>
-  ),
-  h2: ({ children }: { children?: React.ReactNode }) => (
-    <h2 className="mt-3 mb-2 text-sm font-medium text-text-primary">{children}</h2>
-  ),
-  h3: ({ children }: { children?: React.ReactNode }) => (
-    <h3 className="mt-3 mb-1.5 text-sm font-medium text-text-primary">{children}</h3>
-  ),
-  p: ({ children }: { children?: React.ReactNode }) => (
-    <p className="mb-2 last:mb-0">{children}</p>
-  ),
-  ul: ({ children }: { children?: React.ReactNode }) => (
-    <ul className="mb-2 list-disc pl-5">{children}</ul>
-  ),
-  ol: ({ children }: { children?: React.ReactNode }) => (
-    <ol className="mb-2 list-decimal pl-5">{children}</ol>
-  ),
-  li: ({ children }: { children?: React.ReactNode }) => (
-    <li className="mb-0.5">{children}</li>
-  ),
-  code: ({ children }: { children?: React.ReactNode }) => (
-    <code className="rounded-sm bg-bg-inset px-1 font-mono text-[0.8125rem] text-text-primary">
-      {children}
-    </code>
-  ),
-  pre: ({ children }: { children?: React.ReactNode }) => (
-    <pre className="my-2 overflow-x-auto rounded-md border border-border-default bg-bg-inset p-3 font-mono text-[0.8125rem] text-text-primary">
-      {children}
-    </pre>
-  ),
-  strong: ({ children }: { children?: React.ReactNode }) => (
-    <strong className="text-text-primary">{children}</strong>
-  ),
-};
 
 function CitationList({
   citations,

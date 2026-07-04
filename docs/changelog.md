@@ -1,5 +1,18 @@
 # 變更日誌
 
+## [2026-07-04] — feat(K4c)：補救路徑 — 診斷結果重新開放前置單元
+
+### Added
+- `services/learning/remedial.py`：`open_remedial_units` — 嫌疑概念在學生 default path 的既有 units 重新開放（completed/locked → available + 清 completed_at；available/in_progress 不動仍列入回傳）；**不新建 row**（62 concept 都已有 unit），不觸碰 (path_id, order_index) 唯一約束；completed → available 為系統級動作（手動 transition 禁止，但診斷已證明概念沒學牢，有教學依據）
+- `POST /concepts/{tag}/diagnosis/remediate`：先跑診斷（404 未知 concept / 409 未觸發），觸發後開放全部嫌疑 units，回傳 order_index 升冪的補救清單（= 建議學習順序，最基礎先學）
+- `tests/test_remedial.py` 5 tests（service reopen/noop + route 409/404/整合）→ **後端 546 tests 全綠**
+
+### Changed
+- `docs/api-spec.md` 補 remediate 端點；roadmap K4c 勾選
+- K4 僅剩 K4d 真人驗收（需 OPENAI_API_KEY，建議與 6-4a 實機批次合併執行）
+
+---
+
 ## [2026-07-04] — feat(K4a/b)：Coddy 自適應提示 — K-Graph 鷹架 + RAG 相關性觸發
 
 ### Added

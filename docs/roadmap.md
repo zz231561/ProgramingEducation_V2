@@ -154,8 +154,8 @@
 ### K4 Coddy 自適應提示 + 補救路徑（功能四；吸收原 6-5 全部）
 - [x] K4a K-Graph State 注入 EDF Feedback prompt（`services/edf/kgraph_context.py`）：解析 evidence tags（直接命中 + parent group 已曝光成員）→ 依最弱概念 confidence 分級鷹架（<0.4 填空/拆解、0.4-0.7 引導提問、>0.7 只點 edge case）；persona 改寫為 Coddy 自然語氣 + RULE-5 允許行動建議收尾（原 6-5b）；7 tests
 - [x] K4b RAG 觸發改內容相關性：`TeachingStrategy` 移除 `use_rag`，Feedback 層每次檢索、`RAG_MIN_SCORE=0.40` 分數過濾（原 6-5a）；門檻初始值待 K4d 依實際命中率調整；tests 更新 +2
-- [ ] K4c 補救路徑：K3 定位弱點後在 learning path 動態插入 remedial units（前置概念單元），完成後返回原任務
-- [ ] K4d 真人測試驗收（原 6-5c）：比對改動前後語氣 / RAG 命中率（含 RAG_MIN_SCORE 調參）/ 鷹架適切度——**需 OpenAI API key 實測**
+- [x] K4c 補救路徑（`services/learning/remedial.py` + `POST /concepts/{tag}/diagnosis/remediate`）：診斷觸發後把嫌疑概念在 default path 的既有 units **重新開放**（completed/locked → available、清 completed_at；系統級動作繞過手動轉移限制）；不新建 row 不動 order 唯一約束；order_index 升冪 = 建議補救順序；未觸發回 409；5 tests
+- [ ] K4d 真人測試驗收（原 6-5c）：比對改動前後語氣 / RAG 命中率（含 RAG_MIN_SCORE 調參）/ 鷹架適切度 / 補救路徑 Learn 頁呈現——**需 OpenAI API key 實測**
 
 ### K5 知識圖譜視覺改版（功能五；吸收原 6-6a/c/d）
 - [ ] K5a 套件調研決策記錄：Cytoscape.js（Tier 1 已鎖定 + 已深度整合）vs React Flow / D3 遷移成本效益——查 GitHub 開源實作 + 學術文獻；**預設維持 Cytoscape.js，除非調研發現決定性優勢**

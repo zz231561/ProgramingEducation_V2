@@ -99,6 +99,10 @@ GET    /api/concepts/{tag}/diagnosis  -- 根源弱點診斷（K3）
   resp: { target_tag, triggered, recent_failure_streak,
           suspects: [{ tag, name_zh, depth, confidence(null=盲區),
                        exposure_count, question_id(null=題庫無題) }] }
+POST   /api/concepts/{tag}/diagnosis/remediate  -- 開放補救路徑（K4c）
+  409 DIAGNOSIS_NOT_TRIGGERED 若未達連續失敗門檻
+  resp: { target_tag, remedial_units: [{ unit_id, concept_tag, name_zh,
+          order_index, previous_status, status }] }  -- order 升冪 = 補救順序
 ```
 
 ## Dashboard

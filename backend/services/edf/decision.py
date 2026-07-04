@@ -6,16 +6,20 @@
 
 from pydantic import BaseModel, Field
 
-from .models import BloomLevel, EvidenceResult
+from .models import EvidenceResult
 
 
 class TeachingStrategy(BaseModel):
-    """Decision 層輸出 — Feedback 層使用的教學指令。"""
+    """Decision 層輸出 — Feedback 層使用的教學指令。
+
+    K4b（2026-07-04）：移除 `use_rag` — RAG 注入改由 Feedback 層依檢索
+    相似度分數決定（見 `rag_integration.RAG_MIN_SCORE`），不再由
+    hint/bloom 門檻寫死。
+    """
 
     hint_level: int = Field(ge=0, le=5, description="當前提示等級 0-5")
     instruction: str = Field(description="給 Feedback 層的策略指令")
     allow_code_snippet: bool = Field(default=False, description="是否允許回應包含程式碼片段")
-    use_rag: bool = Field(default=False, description="是否觸發 RAG 檢索")
 
 
 # === 6×6 策略矩陣 ===
@@ -81,12 +85,8 @@ def decide_strategy(
 
     instruction, allow_code = _STRATEGY_MATRIX[(bloom, clamped_hint)]
 
-    # RAG 觸發條件：hint_level >= 2 且 bloom_level 屬於高階認知
-    use_rag = clamped_hint >= 2 and bloom >= BloomLevel.ANALYZE
-
     return TeachingStrategy(
         hint_level=clamped_hint,
         instruction=instruction,
         allow_code_snippet=allow_code,
-        use_rag=use_rag,
     )

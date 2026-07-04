@@ -79,14 +79,13 @@ async def test_generate_feedback_llm_error():
 # === RAG 注入路徑 ===
 
 @pytest.mark.asyncio
-async def test_generate_feedback_fetches_rag_when_use_rag_true():
+async def test_generate_feedback_injects_relevant_chunks():
+    """K4b：檢索到達標 chunks → 注入教材參考片段。"""
     mock_client = AsyncMock()
     mock_client.chat.completions.create = AsyncMock(
         return_value=mock_openai_response("根據教材，先檢查迴圈條件。"),
     )
     mock_fetch = AsyncMock(return_value=[make_chunk("教材片段：迴圈三要素")])
-
-    strategy = make_strategy(allow_code=False).model_copy(update={"use_rag": True})
 
     with (
         patch("services.edf.feedback._get_client", return_value=mock_client),
@@ -94,7 +93,7 @@ async def test_generate_feedback_fetches_rag_when_use_rag_true():
     ):
         await generate_feedback(
             evidence=make_evidence(),
-            strategy=strategy,
+            strategy=make_strategy(allow_code=False),
             student_message="為什麼跑不停？",
         )
 
@@ -106,7 +105,8 @@ async def test_generate_feedback_fetches_rag_when_use_rag_true():
 
 
 @pytest.mark.asyncio
-async def test_generate_feedback_skips_rag_when_use_rag_false():
+async def test_generate_feedback_always_attempts_retrieval():
+    """K4b：不再依 strategy 開關 — 每次互動都嘗試檢索。"""
     mock_client = AsyncMock()
     mock_client.chat.completions.create = AsyncMock(
         return_value=mock_openai_response("先看看迴圈條件。"),
@@ -119,23 +119,21 @@ async def test_generate_feedback_skips_rag_when_use_rag_false():
     ):
         await generate_feedback(
             evidence=make_evidence(),
-            strategy=make_strategy(),  # use_rag=False (預設)
+            strategy=make_strategy(),
             student_message="為什麼跑不停？",
         )
 
-    mock_fetch.assert_not_awaited()
+    mock_fetch.assert_awaited_once()
 
 
 @pytest.mark.asyncio
 async def test_generate_feedback_continues_when_rag_returns_empty():
-    """RAG 失敗（fetch_rag_chunks_safe 已內部吞錯回傳空 list）時仍應正常出回覆。"""
+    """無相關 chunks（分數過濾後為空 / RAG 失敗已吞錯）→ 不注入且正常出回覆。"""
     mock_client = AsyncMock()
     mock_client.chat.completions.create = AsyncMock(
         return_value=mock_openai_response("沒有教材也能教。"),
     )
-    mock_fetch = AsyncMock(return_value=[])  # 模擬 RAG 失敗已被吞掉
-
-    strategy = make_strategy().model_copy(update={"use_rag": True})
+    mock_fetch = AsyncMock(return_value=[])
 
     with (
         patch("services.edf.feedback._get_client", return_value=mock_client),
@@ -143,7 +141,7 @@ async def test_generate_feedback_continues_when_rag_returns_empty():
     ):
         result = await generate_feedback(
             evidence=make_evidence(),
-            strategy=strategy,
+            strategy=make_strategy(),
             student_message="help",
         )
 
@@ -151,3 +149,29 @@ async def test_generate_feedback_continues_when_rag_returns_empty():
     call_args = mock_client.chat.completions.create.call_args
     system_msg = call_args.kwargs["messages"][0]["content"]
     assert "教材參考片段" not in system_msg
+
+
+@pytest.mark.asyncio
+async def test_generate_feedback_injects_kgraph_block():
+    """K4a：kgraph_block 非空時應注入 system prompt。"""
+    mock_client = AsyncMock()
+    mock_client.chat.completions.create = AsyncMock(
+        return_value=mock_openai_response("你已經會 while 了，試試看。"),
+    )
+    mock_fetch = AsyncMock(return_value=[])
+
+    with (
+        patch("services.edf.feedback._get_client", return_value=mock_client),
+        patch("services.edf.feedback.fetch_rag_chunks_safe", mock_fetch),
+    ):
+        await generate_feedback(
+            evidence=make_evidence(),
+            strategy=make_strategy(),
+            student_message="怎麼寫迴圈？",
+            kgraph_block="學生知識狀態（依過往練習紀錄）：\n- while 迴圈：熟練度 0.25（練習 2 次）\n鷹架指令：拆小步驟",
+        )
+
+    call_args = mock_client.chat.completions.create.call_args
+    system_msg = call_args.kwargs["messages"][0]["content"]
+    assert "學生知識狀態" in system_msg
+    assert "鷹架指令" in system_msg

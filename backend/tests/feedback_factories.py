@@ -23,7 +23,6 @@ def make_strategy(hint: int = 2, allow_code: bool = True) -> TeachingStrategy:
         hint_level=hint,
         instruction="指出具體位置 + 概念名稱",
         allow_code_snippet=allow_code,
-        use_rag=False,
     )
 
 

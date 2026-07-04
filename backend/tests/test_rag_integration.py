@@ -86,3 +86,42 @@ async def test_fetch_rag_chunks_safe_swallows_exceptions():
         result = await fetch_rag_chunks_safe(_evidence(error_message="x"))
 
     assert result == []
+
+
+# === K4b：相關性分數過濾 ===
+
+@pytest.mark.asyncio
+async def test_fetch_filters_low_score_chunks():
+    """低於 RAG_MIN_SCORE 的 chunks 應被過濾。"""
+    from services.edf.rag_integration import RAG_MIN_SCORE
+
+    chunks = [
+        RetrievedChunk(text="高相關", score=RAG_MIN_SCORE + 0.2, doc_id=None, metadata={}),
+        RetrievedChunk(text="低相關", score=RAG_MIN_SCORE - 0.2, doc_id=None, metadata={}),
+    ]
+    with patch(
+        "services.edf.rag_integration.retrieve_chunks",
+        new_callable=AsyncMock,
+        return_value=chunks,
+    ):
+        result = await fetch_rag_chunks_safe(_evidence(error_message="x"))
+
+    assert [c.text for c in result] == ["高相關"]
+
+
+@pytest.mark.asyncio
+async def test_fetch_returns_empty_when_all_below_threshold():
+    """全部低於門檻 → 空 list（prompt 不注入）。"""
+    from services.edf.rag_integration import RAG_MIN_SCORE
+
+    chunks = [
+        RetrievedChunk(text="a", score=RAG_MIN_SCORE - 0.01, doc_id=None, metadata={}),
+    ]
+    with patch(
+        "services.edf.rag_integration.retrieve_chunks",
+        new_callable=AsyncMock,
+        return_value=chunks,
+    ):
+        result = await fetch_rag_chunks_safe(_evidence(error_message="x"))
+
+    assert result == []

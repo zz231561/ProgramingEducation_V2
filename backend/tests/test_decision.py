@@ -26,7 +26,6 @@ def test_low_bloom_low_hint():
     assert isinstance(result, TeachingStrategy)
     assert result.hint_level == 0
     assert result.allow_code_snippet is False
-    assert result.use_rag is False
 
 
 def test_low_bloom_high_hint():
@@ -40,34 +39,18 @@ def test_high_bloom_low_hint():
     """Bloom 6 + Hint 0 → 開放式提問。"""
     result = decide_strategy(_make_evidence(6), hint_level=0)
     assert result.allow_code_snippet is False
-    assert result.use_rag is False
 
 
 def test_high_bloom_high_hint():
-    """Bloom 5 + Hint 3 → 允許程式碼 + 觸發 RAG。"""
+    """Bloom 5 + Hint 3 → 允許程式碼。"""
     result = decide_strategy(_make_evidence(5), hint_level=3)
     assert result.allow_code_snippet is True
-    assert result.use_rag is True
 
 
-# === RAG 觸發條件 ===
-
-def test_rag_triggered_analyze_hint2():
-    """Bloom ANALYZE + Hint 2 → 觸發 RAG。"""
+def test_strategy_has_no_use_rag_field():
+    """K4b：RAG 注入改由 Feedback 層依分數決定，策略不再帶 use_rag。"""
     result = decide_strategy(_make_evidence(BloomLevel.ANALYZE), hint_level=2)
-    assert result.use_rag is True
-
-
-def test_rag_not_triggered_apply_hint2():
-    """Bloom APPLY + Hint 2 → 不觸發 RAG（Bloom 不夠高）。"""
-    result = decide_strategy(_make_evidence(BloomLevel.APPLY), hint_level=2)
-    assert result.use_rag is False
-
-
-def test_rag_not_triggered_analyze_hint1():
-    """Bloom ANALYZE + Hint 1 → 不觸發 RAG（hint 不夠高）。"""
-    result = decide_strategy(_make_evidence(BloomLevel.ANALYZE), hint_level=1)
-    assert result.use_rag is False
+    assert not hasattr(result, "use_rag")
 
 
 # === 邊界值 ===

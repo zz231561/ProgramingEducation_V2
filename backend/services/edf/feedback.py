@@ -1,8 +1,9 @@
 """Feedback 層 — 分層 prompt 組裝 + LLM 回應生成 + 輸出驗證。
 
-組裝順序：preamble → persona → strategy → context → rag (optional) → student message
+組裝順序：preamble → persona → strategy → context → kgraph → reflection → rag
 輸出驗證：阻擋完整程式碼洩漏，保持教學引導。
-RAG 觸發條件由 Decision 層計算（strategy.use_rag）；本層只負責安全注入。
+RAG（K4b）：每次互動都檢索，由相似度分數決定是否注入（rag_integration 過濾）。
+K-Graph state（K4a）：學生 mastery 狀態 + 鷹架指令，由 caller 預先渲染傳入。
 """
 
 import re
@@ -41,12 +42,15 @@ RULE-1: 絕對不要提供完整的解答程式碼。
 RULE-2: 程式碼片段最多 8 行，且必須包含 TODO 或 FIXME 註解讓學生完成。
 RULE-3: 用繁體中文回覆，技術術語保留英文。
 RULE-4: 回覆控制在 200 字以內，簡潔有力。
-RULE-5: 永遠以提問結尾，引導學生思考下一步。\
+RULE-5: 以自然的下一步收尾 — 可以是引導式提問，也可以是具體的行動建議\
+（如「試著把第 6 行改掉再跑一次」）；不必刻意反問。\
 """
 
 PERSONA = """\
-你是一位有耐心的大學助教，說話風格親切但專業。\
-你會根據學生的程度調整解釋深度。\
+你叫 Coddy，是一位陪學生寫 code 的大學助教。語氣自然口語，像坐在學生旁邊一起看螢幕：\
+先肯定學生做對或想對的部分，再聊卡住的地方。\
+避免制式句型（「你覺得呢？」「你認為會發生什麼？」連續出現會顯得機械），\
+提問要具體到程式碼本身。學生只是確認小事時，直接給答案加一句補充即可，不用硬展開教學。\
 """
 
 
@@ -55,15 +59,15 @@ def build_system_prompt(
     strategy: TeachingStrategy,
     rag_chunks: list[RetrievedChunk] | None = None,
     reflection_block: str = "",
+    kgraph_block: str = "",
 ) -> str:
     """組裝完整 system prompt。
 
-    順序：preamble → persona → strategy → context → reflection → rag
+    順序：preamble → persona → strategy → context → kgraph → reflection → rag
     （`.claude/rules/edf-pipeline.md` 規範的層次）
 
-    `reflection_block`（Phase 2-5e）：caller 透過
-    `services.edf.reflection_context.format_reflection_for_feedback` 預先渲染；
-    傳空字串等於不注入。
+    `reflection_block`（Phase 2-5e）/ `kgraph_block`（K4a）：
+    caller 預先渲染；傳空字串等於不注入。
     """
     strategy_block = f"""\
 教學策略指令：{strategy.instruction}
@@ -81,6 +85,9 @@ def build_system_prompt(
 """
 
     blocks = [PREAMBLE, PERSONA, strategy_block, context_block]
+
+    if kgraph_block:
+        blocks.append(kgraph_block)
 
     if reflection_block:
         blocks.append(reflection_block)
@@ -140,17 +147,20 @@ async def generate_feedback(
     student_message: str,
     chat_history: list[dict[str, str]] | None = None,
     reflection_block: str = "",
+    kgraph_block: str = "",
 ) -> str:
     """組裝 prompt、呼叫 LLM、驗證輸出，回傳教學回應。
 
     `reflection_block`（Phase 2-5e）：學生反思的詳細版字串；空字串代表不注入。
+    `kgraph_block`（K4a）：學生 K-Graph 知識狀態 + 鷹架指令；空字串代表不注入。
+    RAG（K4b）：一律檢索，`fetch_rag_chunks_safe` 內部依相似度分數過濾。
     """
     client = _get_client()
 
-    rag_chunks: list[RetrievedChunk] = (
-        await fetch_rag_chunks_safe(evidence) if strategy.use_rag else []
+    rag_chunks: list[RetrievedChunk] = await fetch_rag_chunks_safe(evidence)
+    system_prompt = build_system_prompt(
+        evidence, strategy, rag_chunks, reflection_block, kgraph_block
     )
-    system_prompt = build_system_prompt(evidence, strategy, rag_chunks, reflection_block)
 
     messages: list[dict[str, str]] = [{"role": "system", "content": system_prompt}]
 

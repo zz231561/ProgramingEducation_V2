@@ -18,6 +18,11 @@ logger = logging.getLogger(__name__)
 # 注入 prompt 的教材片段數 — 3 筆兼顧召回與 token 預算
 RAG_TOP_K = 3
 
+# K4b：相關性門檻 — 只注入 cosine 分數達標的 chunks（取代原 hint/bloom 寫死觸發）。
+# text-embedding-3-small 的相關 chunk 分數常落在 0.3-0.6 區間；
+# 0.40 為初始值，K4d 真人驗收時依實際命中率調整。
+RAG_MIN_SCORE = 0.40
+
 
 def build_rag_query(evidence: EvidenceResult) -> str:
     """從 Evidence 結果組裝 RAG 檢索 query。
@@ -36,9 +41,23 @@ def build_rag_query(evidence: EvidenceResult) -> str:
 
 
 async def fetch_rag_chunks_safe(evidence: EvidenceResult) -> list[RetrievedChunk]:
-    """安全地檢索教材片段。任何異常（網路、空索引、API key 失效）都吞掉並回傳空 list。"""
+    """安全地檢索教材片段，只回傳相關性達標的 chunks（K4b）。
+
+    - 每次互動都檢索（embedding 成本可忽略），由分數決定是否注入 —
+      「該查影片時就查」取代原 hint_level/bloom 門檻
+    - 全部低於門檻 → 回空 list（prompt 不注入，Coddy 用自身知識回答）
+    - 任何異常（網路、空索引、API key 失效）都吞掉並回傳空 list
+    """
     try:
-        return await retrieve_chunks(build_rag_query(evidence), top_k=RAG_TOP_K)
+        chunks = await retrieve_chunks(build_rag_query(evidence), top_k=RAG_TOP_K)
     except Exception as e:
         logger.warning("RAG retrieval failed, continuing without RAG: %r", e)
         return []
+
+    relevant = [c for c in chunks if c.score >= RAG_MIN_SCORE]
+    if len(relevant) < len(chunks):
+        logger.info(
+            "RAG relevance filter: %d/%d chunks kept (min_score=%.2f)",
+            len(relevant), len(chunks), RAG_MIN_SCORE,
+        )
+    return relevant

@@ -12,6 +12,7 @@ from models.reflection import Reflection
 from services.edf.evidence import analyze_evidence
 from services.edf.decision import decide_strategy
 from services.edf.feedback import generate_feedback
+from services.edf.kgraph_context import fetch_kgraph_block_safe
 from services.edf.reflection_context import (
     format_reflection_for_evidence,
     format_reflection_for_feedback,
@@ -133,6 +134,9 @@ async def interact(
     # Decision 層
     strategy = decide_strategy(evidence, hint_level)
 
+    # K-Graph state（K4a）— 在 mastery 更新後讀取，鷹架依最新狀態調整；best-effort
+    kgraph_block = await fetch_kgraph_block_safe(db, user_id, evidence)
+
     # Feedback 層
     ai_response = await generate_feedback(
         evidence=evidence,
@@ -140,6 +144,7 @@ async def interact(
         student_message=question,
         chat_history=chat_history,
         reflection_block=reflection_feedback_block,
+        kgraph_block=kgraph_block,
     )
 
     # 儲存 assistant message（user message 已於 LLM 呼叫前 commit）

@@ -51,11 +51,7 @@
   - **進度**：6-1a/b 已完成；6-1b+/c/d/e/f 進行中
   - **如何處理**：fetcher 已寫好（`backend/scripts/fetch_playlist_metadata.py`）；接下來擴充 EXPECTED 1-62、加 video 1-3 migration、PATCH script 寫入 DB、字幕 RAG ingest
   - **格式**：CSV，欄位 `video_order, youtube_id, duration_seconds, title_zh`，已產出於 `data/teaching_content/videos.csv`
-- [ ] **跨章節 PREREQUISITE 邊未標**（目前只有線性 04→05→...→62 共 58 條）→ **延後到 Phase 6 教學內容建構完成後執行（2026-05-07 決議）；正式追蹤於 roadmap Phase 6-6（2026-06-23 擴大為視覺 + 核心機制優化）**
-  - **影響**：拓撲排序生成路徑時，學生 confidence 高跳過某 unit 後不會牽連解鎖實際依賴的後續 unit
-  - **範例**：47 遞迴函式真正依賴 36 函式 + 29 for 迴圈；52 指標與陣列依賴 48 陣列 + 51 指標；目前圖譜只有 N→N+1 線性鏈
-  - **如何處理**：Phase 6 完成後，教授標關鍵跨章依賴（< 30 條，可參考 6-1e RAG 中的字幕內容輔助判斷）→ AI 加 patch migration
-  - **新增範圍**：video_order 1-3（課程簡介、環境安裝、語言簡介）標記 `category="課程介紹"` 不參與 PREREQUISITE 鏈（2026-05-07 確認）；重構時保持此設計
+- ✅ ~~跨章節 PREREQUISITE 邊未標~~ — 2026-07-04 **K1a 完成**：migration `i5d6e7f8a9b0` 以 curated 依賴 map 取代線性鏈 → 90 條多對多 PREREQUISITE 邊（AI curated，教授人工標註已移除）；實機驗證 0 孤兒節點 / 0 反向邊；原範例（52 指標與陣列 ← 48 陣列 + 51 指標）已落地，47 遞迴修訂為 ← 25 if-else + 37 參數 + 38 回傳值（36 函式經 37/38 傳遞依賴）
 - [ ] **學習單元 content 為空骨架**（`{summary: "", examples: [], exercise_question_ids: []}`）→ **正式追蹤於 roadmap Phase 6-2 / 6-3 / 6-4**
   - **影響**：3-1d 學習單元頁的「範例程式」「摘要」tab 無實質內容
   - **如何處理**：兩種策略可選 —
@@ -64,11 +60,11 @@
   - **決策**：先 (a) MVP，Phase 6-4 自行抽查後決定是否人工校對（2026-07-04 修訂：教授抽查已移除）
 
 ### Learn 頁面視覺化升級
-- [ ] **3-1c 卡片版 ≠ ui-wireframes.md 期望的「節點+箭頭」graph 版**
-  - **影響**：與知識圖譜頁 (`/knowledge`) 風格不統一；無法直觀顯示 PREREQUISITE 依賴的分支
-  - **如何處理**：3-1d/e 完成後，回頭把 detail 頁從 ordered list 升級為 reactflow / d3 graph（可復用 knowledge 頁的元件）
+- [ ] **3-1c 卡片版 ≠ ui-wireframes.md 期望的「節點+箭頭」graph 版** → **併入 roadmap K5 一併評估（2026-07-04）**
+  - **影響**：與知識圖譜頁 (`/knowledge`) 風格不統一；無法直觀顯示 PREREQUISITE 依賴的分支（K1a 後已是多對多 DAG，分支資訊更豐富）
+  - **如何處理**：K5 視覺改版時評估復用 knowledge 頁 Cytoscape 元件
 
-### EDF Mastery 連動暫時退場
+### EDF Mastery 連動暫時退場 → **正式追蹤於 roadmap K2a（2026-07-04）**
 - [ ] **EDF chat 評估的 ConceptTag 不再寫入 BKT mastery**
   - **背景**：3-1c+ 把 concepts 表完全替換為 59 影片 concept；EDF 的 20 粗 tag 只留在 `services/edf/models.py` enum 給 LLM 提示用；`update_mastery` 找不到 concept 自動跳過
   - **影響**：學生在 Workspace 與 AI Tutor 對話時的 mastery 不再上下調；只有 quiz 答題 + comprehension 驗證會驅動 BKT

@@ -111,18 +111,7 @@
   - **6-2e grounded path**：摘要 tab 的 grounded 三狀態渲染 — (a) `summary.needs_more_source=true` notice + reason；(b) `summary.key_points` bullet list + `summary.citations` 時間戳/節錄標籤；(c) 同概念 tab 的 `parseTimestampStart` 跳轉行為**不**在摘要 tab 重做（UI 提示使用者回概念 tab 點 citation）— 驗收僅需確認三狀態正確切換、不需驗 seekTo
 - [ ] 6-4b 依自查結果調整 6-2a prompt template 並針對問題 unit 局部重跑；對品質太差的 unit 評估升級到 Whisper 重 transcribe（B 方案）作為 source
 
-### 6-5 Coddy（EDF Chat）對話品質優化（2026-06-23 使用者反饋新增）
-> 背景：使用者實測 Workspace AI 對話後反饋 Coddy 目前不太討學生喜歡——反問問題語氣生硬、不自然；且 RAG 是否檢索影片內容目前綁在 `hint_level >= 2` 門檻（見 `services/edf/decision.py` `use_rag` 判斷），而非「這個問題是否真的需要/提到影片內容」，導致該查影片時沒查、語氣也不夠自然。
-- [ ] 6-5a RAG 觸發條件改為「內容相關性」而非 hint_level 門檻：評估方案（如先 retrieve 再用相似度分數判斷是否要注入，取代現有 `clamped_hint >= 2 and bloom >= ANALYZE` 寫死規則）
-- [ ] 6-5b Persona / 語氣優化：重新檢視 `services/edf/feedback.py` 的 persona/preamble 文字，改善反問語氣的自然度，降低「為了套用策略矩陣而硬問」的生硬感
-- [ ] 6-5c 真人測試驗收：抽幾輪實際對話比對改動前後語氣與 RAG 命中率差異
-
-### 6-6 知識圖譜優化（視覺 + 核心機制，2026-06-23 使用者反饋新增）
-> 背景：使用者反饋 `/knowledge` 頁面目前視覺不佳；現況 62 節點僅有線性 PREREQUISITE 鏈（04→05→...→62，58 條邊），fcose layout 畫出來接近一條長鏈，不直觀也不太能反映真實依賴關係。呼應既有決議「知識圖譜重構為 Phase 6 後續工作」（roadmap 已確認決策）與 tech-debt「跨章節 PREREQUISITE 邊未標」項目，本次擴大範圍納入視覺改版 + 核心機制研究。
-- [ ] 6-6a 研究調研：查 `docs/references.md` §5 學術資源（如 awesome-ai-llm4education）及最新論文，找知識圖譜輔助學習路徑規劃 / 視覺化呈現的實證設計，產出簡短決策記錄（是否調整 fcose 參數或 layout 演算法、是否需要「推薦下一步」等互動機制）；**Cytoscape.js 為 Tier 1 已鎖定套件，研究範圍限於用法調整，非更換套件**
-- [ ] 6-6b 核心機制：依教授標的跨章關鍵依賴（< 30 條，可參考 6-1e RAG 字幕內容輔助判斷）重構為多對多 PREREQUISITE 圖，取代現有純線性鏈（對應 tech-debt 既有項目）
-- [ ] 6-6c 視覺優化：依 6-6a 研究結論重新設計 `knowledge-graph-style.ts` stylesheet/layout 參數；對照 `.claude/rules/frontend.md` R1-R8 規則（僅 GitHub Dark token、禁裝飾性彩色、反 AI 感規則）逐條檢核
-- [ ] 6-6d 真人測試驗收：確認學生真的能從圖譯讀懂自己的學習進度與弱項，不只是視覺好看
+> ⚠ 原 6-5（Coddy 對話品質）與 6-6（知識圖譜優化）已於 2026-07-04 依功能規格書**整併至 Phase 6-K**（6-5 → K4；6-6 → K1 + K5），原 sub-task 內容完整保留於對應 K 項。
 
 ### 6-R 健壯性強化（2026-07-04 架構審查新增，同日完成）✅
 > 背景：上線前架構審查發現三個系統性缺口：可觀測性為零（500 不留痕）、安全規範未落地（rate limit / token exp 只在文件）、外部依賴網路例外未馴服。全部本機完成 + 測試驗證（後端 513 tests 全綠，+14 新測試）。
@@ -134,6 +123,43 @@
 - [x] 6-R6 (M) chat interact fail-safe：user message 於 LLM 呼叫前先 commit，LLM 失敗不丟學生輸入
 - [x] 6-R7 (M) `get_or_create_user`：首登並發 IntegrityError 重查 + last_login_at 1 小時節流
 - [x] 6-R8 (L) `func.count()` 取代全表載入（chat/quiz）/ 容錯 except 補 `logger.warning` / Next proxy 30s timeout（504 BACKEND_TIMEOUT）/ 422 統一 VALIDATION_ERROR 格式
+
+---
+
+## Phase 6-K：K-Graph 自適應學習引擎（2026-07-04 功能規格書新增）🎯
+> 目標：把知識圖譜從「靜態視覺化」升級為驅動自適應學習的核心引擎——學生依各自難度與弱點學習。
+> **整併說明**：原 6-5 全部併入 K4；原 6-6a/c/d 併入 K5、6-6b 併入 K1。tech-debt「跨章節 PREREQUISITE 邊未標」由 K1 消除、「EDF Mastery 連動暫時退場」由 K2 消除、「Learn 頁 graph 版升級」併入 K5 評估。
+> **執行順序依據（依技術相依性）**：K1 資料基礎（多對多邊 + 圖走訪）→ K2 狀態數據源 → K3 依賴 K1 走訪 + K2 狀態 → K4 消費 K2/K3 輸出 → K5 視覺化需要 K1 邊 + K2 動態狀態才有內容可畫。
+> **可行性註記**：schema 原生支援多對多（`concept_edges` unique triple）、拓撲排序已處理 DAG、mastery 已有 BKT——K1/K2 主要是資料與整合工作，非架構重寫。
+
+### K1 跨章依賴多對多圖（功能一；吸收原 6-6b）
+- [x] K1a curated 依賴 DAG migration（`i5d6e7f8a9b0`）：以 curated map（每 concept 1-3 個真實直接前置，依 C++ 教學相依性 + RAG 字幕輔助判斷）取代線性鏈 61 條 → **90 條多對多 PREREQUISITE 邊**；全部 source.video_order < target.video_order 保證無環；除 video 1 外每節點至少 1 條入邊保證連通
+- [x] K1b `get_prerequisite_closure` 圖走訪（`services/graph/traversal.py`：單查詢載邊 + 記憶體 BFS + max_depth 限制 + 菱形去重；5 tests）— K3 根源回溯的基礎
+- [x] K1c 實機驗證：alembic upgrade 實跑 + DB 驗證（90 邊 / 遞迴←25+37+38 / 0 孤兒節點 / 0 反向邊）
+- [ ] K1d UI 抽查：`/knowledge` 頁面確認多對多邊渲染正常、Learn 路徑生成不受影響（使用者手動）
+
+### K2 動態知識狀態追蹤（功能二）
+- [ ] K2a EDF ConceptTag → 影片 concept 對映：`concepts` 加 `edf_parent_tag` 欄位 + mapping seed，讓 Workspace 對話重新驅動 BKT（消 tech-debt「EDF Mastery 連動暫時退場」）
+- [ ] K2b K-Graph State API：`GET /concepts/k-state` 回傳該學生全圖 `{tag, confidence, exposure_count, last_practiced_at}`（K4 prompt 封裝 + K5 著色的數據源）
+- [ ] K2c 程式碼分析信號評估：現階段以 LLM Evidence（error_type / concept_tags / bloom）為信號；真 AST（tree-sitter / libclang）走 references.md §1 決策矩陣評估成本效益後決定（不預設引入）
+
+### K3 根源弱點定位器（功能三）
+- [ ] K3a 觸發器：同 concept 連續 N 次失敗（quiz submit / comprehension fail）→ 標記待診斷
+- [ ] K3b 回溯演算法：沿 K1b closure 回溯，結合 K2 confidence 定位「最淺層的低 confidence 前置節點」→ 產出診斷假設鏈
+- [ ] K3c 診斷驗證：從題庫（6-3）抽前置節點題目做微測驗，確認/排除假設 → 寫回 mastery
+- [ ] K3d 診斷 API + 前端入口（quiz 結果頁「找出根本原因」）
+
+### K4 Coddy 自適應提示 + 補救路徑（功能四；吸收原 6-5 全部）
+- [ ] K4a K-Graph State 注入 EDF Feedback prompt：低熟練 → 填空/逐行拆解鷹架、高熟練 → 只提示 edge case；一併優化 persona 反問語氣自然度（原 6-5b）
+- [ ] K4b RAG 觸發改內容相關性：先 retrieve 再依相似度分數決定注入，取代 `hint_level>=2 && bloom>=ANALYZE` 寫死規則（原 6-5a）
+- [ ] K4c 補救路徑：K3 定位弱點後在 learning path 動態插入 remedial units（前置概念單元），完成後返回原任務
+- [ ] K4d 真人測試驗收（原 6-5c）：比對改動前後語氣 / RAG 命中率 / 提示鷹架適切度
+
+### K5 知識圖譜視覺改版（功能五；吸收原 6-6a/c/d）
+- [ ] K5a 套件調研決策記錄：Cytoscape.js（Tier 1 已鎖定 + 已深度整合）vs React Flow / D3 遷移成本效益——查 GitHub 開源實作 + 學術文獻；**預設維持 Cytoscape.js，除非調研發現決定性優勢**
+- [ ] K5b 多對多邊 + 熟練度視覺：依 K2 state 節點著色 + 依賴邊方向清晰化 + 分章 cluster layout（fcose constraints / dagre / klay 評估）
+- [ ] K5c 個人化路徑高亮：目前單元 / 已完成 / 補救路徑（K4c）圖上呈現；對照 `.claude/rules/frontend.md` R1-R8 逐條檢核
+- [ ] K5d 真人測試驗收（原 6-6d）：學生能從圖讀懂自己的進度與弱項，不只是好看
 
 ---
 
@@ -174,5 +200,6 @@
 - **OSS 重用**：開發前必查 `docs/references.md` §1 決策矩陣；禁止 AGPL/GPL 套件；禁止移植已有對應套件的演算法（如 BKT 必用 pyBKT）
 - **執行順序**：功能優先（Phase 2 → 3）→ 部署準備（Phase 4）→ **Phase 5 教師端 ⇄ Phase 6 教學內容建構（可平行）** → 上線實測（Phase 7）；所有需要實際部署才能驗證的工作集中在 Phase 7
 - **Phase 6 採 NotebookLM grounded 模式**（2026-05-07 確認）：所有 LLM 生成的 unit content / 練習題必須 grounded 在教授實際 YT 影片字幕上，禁止 LLM 自由發揮；source 採 Whisper API（B1 方案，6-1e 已完成 62 部 transcribe），品質不夠的 unit 在 6-4 抽查時局部重跑
-- **Concept 範圍 62 個**（2026-05-07 確認 / 2026-05-22 修訂）：video_order 1-62 全部 seed 為 concept 且**全部進學習路徑**（PREREQUISITE 鏈 1→2→3→…→62）；1-3 仍保留 `category="課程介紹"` 供未來知識圖譜 styling 區分使用
-- **知識圖譜重構為 Phase 6 後續工作**（2026-05-07 確認）：目前線性 04→05→...→62 的 PREREQUISITE 鏈為 MVP；Phase 6 完成後依教授標的跨章依賴重構為多對多圖（記入 tech-debt 追蹤）
+- **Concept 範圍 62 個**（2026-05-07 確認 / 2026-05-22 修訂）：video_order 1-62 全部 seed 為 concept 且**全部進學習路徑**；1-3 仍保留 `category="課程介紹"` 供知識圖譜 styling 區分使用
+- ~~知識圖譜重構為 Phase 6 後續工作（2026-05-07）~~ → **已於 2026-07-04 K1a 完成**：線性鏈已替換為 curated 多對多依賴 DAG（90 條邊，AI curated + 實機驗證，教授人工標註已隨教授抽查一併移除）
+- **Phase 6-K 自適應學習引擎**（2026-07-04 功能規格書確認）：五大功能執行順序 K1→K2→K3→K4→K5（依技術相依性：資料基礎 → 狀態 → 診斷 → Coddy 整合 → 視覺）；原 6-5/6-6 整併入 K 系列；視覺化套件預設維持 Cytoscape.js（K5a 調研驗證此預設）

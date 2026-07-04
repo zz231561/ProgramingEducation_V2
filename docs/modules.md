@@ -19,10 +19,12 @@ pgvector + LlamaIndex 索引 C++ 教材/cppreference/講義，檢索結果注入
 - Embedding: OpenAI text-embedding-3-small
 - 參考：DeepTutor (hybrid retrieval + citation tracking)、Open TutorAI CE (教材上傳→向量化→對話引用)
 
-## Module 5：知識圖譜
-PostgreSQL 鄰接表（非 Neo4j，100 人規模 + 20 ConceptTag + <200 邊，不需圖資料庫）
-- 先修/包含/特化/相關 4 種邊類型
-- Cytoscape.js 或 D3.js 視覺化，節點顏色依精熟度：綠 >0.7 / 黃 0.4-0.7 / 紅 <0.4
+## Module 5：知識圖譜（K-Graph 自適應引擎核心，2026-07-04 升級）
+PostgreSQL 鄰接表（非 Neo4j，100 人規模 + 62 concept + ~90 邊，不需圖資料庫）
+- 先修/包含/特化/相關 4 種邊類型；PREREQUISITE 為 **curated 多對多依賴 DAG**（K1a 取代原線性鏈；全邊 source.video_order < target.video_order 保證無環）
+- 圖走訪：`services/graph/traversal.py` `get_prerequisite_closure`（BFS 回溯 + depth 限制）— 根源弱點診斷（K3）的基礎
+- Cytoscape.js 視覺化（Tier 1 鎖定），節點顏色依精熟度：綠 >0.7 / 黃 0.4-0.7 / 紅 <0.4
+- 規劃中（roadmap Phase 6-K）：K2 動態知識狀態 API / K3 根源弱點定位 / K4 Coddy 自適應提示 / K5 視覺改版
 
 ## Module 6：智慧出題
 4 階段管線 (Select → Generate → Validate → Present)，支援選擇題/填空題/程式撰寫題

@@ -1,5 +1,21 @@
 # 變更日誌
 
+## [2026-07-04] — feat(K1)：K-Graph 自適應學習引擎啟動 — 跨章多對多依賴 DAG
+
+### Added
+- **Phase 6-K 納入 roadmap**（功能規格書五大功能）：K1 跨章多對多圖 / K2 動態知識狀態 / K3 根源弱點定位 / K4 Coddy 自適應（吸收原 6-5 全部）/ K5 視覺改版（吸收原 6-6a/c/d）；執行順序 K1→K2→K3→K4→K5 依技術相依性排定
+- **K1a** migration `i5d6e7f8a9b0`：curated 依賴 map（每 concept 1-3 個真實直接前置，依 C++ 教學相依性判斷）取代線性 PREREQUISITE 鏈 61 條 → **90 條多對多邊**；不變量：全邊 source.video_order < target.video_order（無環）、除 video 1 外每節點 ≥1 入邊（連通）；downgrade 可還原線性鏈
+- **K1b** `services/graph/traversal.py`：`get_prerequisite_closure(db, tag, max_depth)` — 單查詢載全邊 + 記憶體 BFS 回溯 + 菱形去重，回傳 (concept, depth) 依 (depth, video_order) 排序；供 K3 根源診斷使用；5 個新測試（**後端 518 tests 全綠**）
+- **K1c** 實機驗證：alembic upgrade 實跑 dev DB + SQL 驗證（90 prerequisite 邊 / cpp-47-recursion ← 25 if-else + 37 參數 + 38 回傳值 / 0 孤兒節點 / 0 反向邊）
+
+### Changed
+- `docs/roadmap.md`：**移除 6-5 / 6-6 段**（內容完整整併至 K4 / K1+K5，留整併說明）；已確認決策更新（知識圖譜重構決議標記完成、新增 Phase 6-K 決策）
+- `docs/tech-debt.md`：「跨章節 PREREQUISITE 邊未標」✅ 消除（K1a）；「EDF Mastery 連動退場」cross-ref K2a；「Learn 頁 graph 版」併入 K5
+- `docs/modules.md` Module 5 升級為 K-Graph 引擎描述；`docs/db-schema.md` 補邊資料現況注記
+- 可行性檢查結論：schema 原生支援多對多（unique triple）、拓撲排序已處理 DAG、quiz select 的出度中心性加權在 DAG 下才真正生效（線性鏈時全部 out_degree=1 無區分度）——K1 為資料工程而非架構重寫
+
+---
+
 ## [2026-07-04] — feat(6-R)：健壯性強化（架構審查）+ 移除教授抽查
 
 ### Added

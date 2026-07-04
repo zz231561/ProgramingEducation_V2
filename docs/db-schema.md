@@ -78,6 +78,10 @@ concept_edges
 ├── weight (float, default 1.0)
 └── UNIQUE (source_id, target_id, edge_type) ★
 
+-- 邊資料現況（2026-07-04 K1a，migration i5d6e7f8a9b0）：
+-- PREREQUISITE 為 curated 多對多依賴 DAG（90 條，每 concept 1-3 個直接前置）
+-- 無環不變量：全部 source.video_order < target.video_order（課程順序即拓撲序）
+
 student_mastery
 ├── id (UUID, PK)
 ├── user_id (FK → users, ON DELETE CASCADE)

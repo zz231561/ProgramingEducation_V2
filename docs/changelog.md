@@ -1,5 +1,19 @@
 # 變更日誌
 
+## [2026-07-04] — feat(K3)：根源弱點定位器後端（圖回溯認知診斷）
+
+### Added
+- `services/diagnosis/root_cause.py`：**K3a** stateless 觸發判定（該 concept 最近作答連續失敗 streak，遇答對截斷，>= 3 觸發）+ **K3b** closure（max_depth=3）回溯嫌疑排序（已曝光低 confidence 優先 → 未曝光盲區；高 confidence 前置排除；上限 3）+ **K3c** 每個嫌疑附題庫 validated 診斷題 question_id
+- **K3d-API** `GET /concepts/{tag}/diagnosis`（獨立 route 檔避免 concepts.py 破 250 行；純 DB 讀取不掛 rate limit；未觸發回 triggered=false 供前端隱藏入口）
+- `tests/test_diagnosis.py` 9 tests（streak 截斷 / 嫌疑排序 / 高 conf 排除 / 題庫附題 / route 401+404+整合）→ **後端 533 tests 全綠**
+- 新增 K3e（前端入口）追蹤項，建議與 K5 視覺改版一併設計
+
+### Changed
+- `docs/api-spec.md` 補 diagnosis 端點；roadmap K3a-d 勾選
+- ⚠ `services/diagnosis/root_cause.py` 165 行（>150 提醒門檻）：單一職責完整（觸發+排序+附題），暫不拆分，K4c 補救路徑若復用再評估
+
+---
+
 ## [2026-07-04] — feat(K2)：動態知識狀態追蹤 — EDF 對話重新驅動 BKT
 
 ### Added

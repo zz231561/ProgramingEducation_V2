@@ -144,11 +144,12 @@
 - [x] K2b 擴充既有 `GET /concepts/mastery` 加 `last_practiced_at`（不新建 k-state 端點）；1 test
 - [x] K2c 程式碼分析信號決策（2026-07-04 記錄）：**現階段沿用 LLM Evidence，不引入真 AST**——LLM 已輸出 concept_tags + error_type + bloom（等效於 AST→概念對映的產物）；tree-sitter/libclang 需自建「AST 特徵 → concept」規則工程，成本高且與 LLM 重複；待 Phase 5 行為資料可檢驗 LLM tagging 可靠度後重評（記 tech-debt）
 
-### K3 根源弱點定位器（功能三；2026-07-04 細化）
-- [ ] K3a 觸發器：**無新表、stateless 查詢**——診斷入口直接查該 concept 最近 N=3 筆 `student_answers`（含 comprehension 欄位）全錯即符合觸發條件
-- [ ] K3b 回溯演算法：沿 K1b closure（max_depth=3）回溯，結合 mastery confidence 定位「depth 最淺的低 confidence（<0.4）前置節點」→ 產出診斷假設鏈（依 depth 升序）
-- [ ] K3c 診斷驗證：從題庫（6-3）以 `pick_random_validated_question` 抽前置節點題目做微測驗，確認/排除假設 → 作答走既有 submit 流程寫回 mastery
-- [ ] K3d 診斷 API（`GET /concepts/{tag}/diagnosis`）+ 前端入口（quiz 結果頁「找出根本原因」）
+### K3 根源弱點定位器（功能三；2026-07-04 細化，後端同日完成）
+- [x] K3a 觸發器：stateless 連續失敗判定（最近作答由新往舊數、遇答對截斷；streak >= 3 觸發；無新表）
+- [x] K3b 回溯演算法（`services/diagnosis/root_cause.py`）：closure max_depth=3 回溯；嫌疑排序 = 已曝光低 confidence（depth 淺、conf 低優先）→ 未曝光盲區（depth、video_order）；已曝光高 confidence 前置排除；上限 3 個
+- [x] K3c 診斷驗證：每個嫌疑節點附題庫 validated 診斷題 question_id（題庫無題為 null）；作答走既有 /quiz/submit 自然寫回 mastery，不重造判分
+- [x] K3d-API `GET /concepts/{tag}/diagnosis`（未觸發回 triggered=false 供前端隱藏入口）；9 tests
+- [ ] K3e 前端入口：quiz 結果頁答錯時顯示「找出根本原因」→ 呼叫診斷 API → 呈現嫌疑鏈 + 微測驗入口（建議與 K5 視覺改版一併設計）
 
 ### K4 Coddy 自適應提示 + 補救路徑（功能四；吸收原 6-5 全部）
 - [ ] K4a K-Graph State 注入 EDF Feedback prompt：低熟練 → 填空/逐行拆解鷹架、高熟練 → 只提示 edge case；一併優化 persona 反問語氣自然度（原 6-5b）

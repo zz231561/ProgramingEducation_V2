@@ -11,6 +11,9 @@
  */
 
 const KEY = "active_reflection_id";
+// U1c：記錄「這個反思是否經由正確管道（前往 Workspace 按鈕）帶入」。
+// 值 = 反思 id；與 KEY 不一致代表殘留（例如在 Quiz 建了反思但直接手動開 /workspace）。
+const HANDOFF_KEY = "active_reflection_handoff";
 
 /** SSR safe 取值 — server side 直接回 null（避免存取 window）。 */
 export function getActiveReflectionId(): string | null {
@@ -27,6 +30,9 @@ export function setActiveReflectionId(id: string): void {
   if (typeof window === "undefined") return;
   try {
     window.sessionStorage.setItem(KEY, id);
+    // 呼叫點只有「前往 Workspace」轉場按鈕，故 set 即代表正確管道 handoff。
+    // 不做一次性消費：同 tab 內重新整理 Workspace 仍應保留當下解題脈絡。
+    window.sessionStorage.setItem(HANDOFF_KEY, id);
     // 同 tab 內的其他元件（例如 Workspace sidebar）需要被通知；
     // sessionStorage 預設只在 *其他* tab 觸發 storage event
     window.dispatchEvent(new CustomEvent("active-reflection-change"));
@@ -39,9 +45,31 @@ export function clearActiveReflectionId(): void {
   if (typeof window === "undefined") return;
   try {
     window.sessionStorage.removeItem(KEY);
+    window.sessionStorage.removeItem(HANDOFF_KEY);
     window.dispatchEvent(new CustomEvent("active-reflection-change"));
   } catch {
     /* noop */
+  }
+}
+
+/**
+ * U1c gating：Workspace 進入時呼叫。
+ *
+ * 若存在 active reflection 但沒有對應的 handoff 標記（= 非經「前往 Workspace」
+ * 按鈕帶入的殘留），清除並回傳 null；否則回傳反思 id。
+ */
+export function getHandedOffReflectionId(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const id = window.sessionStorage.getItem(KEY);
+    if (!id) return null;
+    if (window.sessionStorage.getItem(HANDOFF_KEY) !== id) {
+      clearActiveReflectionId();
+      return null;
+    }
+    return id;
+  } catch {
+    return null;
   }
 }
 

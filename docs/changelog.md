@@ -1,5 +1,15 @@
 # 變更日誌
 
+## [2026-07-06] — fix(workspace)：第 1 批 U1a/b/c — 首登誤顯、反思側欄比例、反思 handoff gating
+
+### Fixed
+- **U1a**：根路由 `/`（`app/(app)/page.tsx`）原為 Phase 1「程式碼編輯器將在後續任務中實作」placeholder——首次登入 OAuth callback 偶爾落在 `/`（NextAuth callbackUrl 遺失時預設值）即誤顯此畫面；改為 server-side `redirect("/workspace")`
+- **U1b**：反思側欄被壓成細縫的根因＝react-resizable-panels **v4 裸數字解讀為 px 而非 %**（`maxSize={40}` = 最大 40 像素）；workspace 頁全部 Panel size props 改百分比字串（`"28%"`/`"40%"` 等，含 editor/output 垂直組）
+- **U1c**：反思顯示 gating——`setActiveReflectionId`（僅「前往 Workspace」按鈕呼叫）同步寫 `active_reflection_handoff` 標記；Workspace 進入改用 `getHandedOffReflectionId()`：標記不符（直接 navigate 的殘留）→ 自動清除不顯示；同 tab 重新整理仍保留（非一次性消費，保住「當下解題脈絡」語意）；舊 session 殘留無標記 → 下次進 Workspace 自動清
+- 驗證：`tsc --noEmit` + eslint + `next build` 全綠（前端無既有測試套件）
+
+---
+
 ## [2026-07-06] — docs(planning)：實作順序 + LLM 模型選型 v2 定案（任務導向路由）
 
 ### Added

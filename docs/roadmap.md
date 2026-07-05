@@ -196,9 +196,9 @@
 > 教師端功能＝既有 Phase 5，不另立項。
 
 ### 6-U1 Bug 修正
-- [ ] U1a 修正：首次登入偶爾錯誤顯示 Workspace「待製作」畫面（初始 route / session 判定時序問題）
-- [ ] U1b 修正：反思計畫在 Workspace 顯示的 UI 比例錯誤
-- [ ] U1c 反思計畫顯示 gating：僅在透過正確管道（Quiz / Learn「前往 Workspace」轉場）進入時顯示；直接 navigate `/workspace` 不顯示殘留反思（`sessionStorage` `active_reflection_id` 的清理時機）
+- [x] U1a 根路由 `/` 的 Phase 1 placeholder 改為 redirect `/workspace`（OAuth callback 落在 `/` 即命中）
+- [x] U1b 反思側欄比例錯誤：react-resizable-panels v4 裸數字＝px 非 %（`maxSize={40}`＝40 像素），全改百分比字串
+- [x] U1c 反思 handoff gating：`active_reflection_handoff` 標記 + `getHandedOffReflectionId()`，非正確管道進入自動清除殘留
 
 ### 6-U2 UI/UX 與機制調整
 - [ ] U2a QUIZ 介面美化（對照 ui-ux-spec + frontend.md R1-R8 檢核）

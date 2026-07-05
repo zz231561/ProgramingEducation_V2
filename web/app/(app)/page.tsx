@@ -1,17 +1,12 @@
-import { Code } from "lucide-react";
+import { redirect } from "next/navigation";
 
+/**
+ * 根路由 — 一律導向 Workspace（U1a）。
+ *
+ * 背景：首次登入時 OAuth callback 偶爾落在 `/`（NextAuth callbackUrl 遺失時的
+ * 預設值），原本這裡是 Phase 1 的「待製作」placeholder，造成使用者誤以為
+ * Workspace 沒做完。改為 server-side redirect 徹底消除此路徑。
+ */
 export default function Home() {
-  return (
-    <div className="flex h-full items-center justify-center">
-      <div className="text-center">
-        <Code className="mx-auto size-12 text-text-muted/50" />
-        <h1 className="mt-4 text-xl font-medium text-text-primary">
-          Workspace
-        </h1>
-        <p className="mt-2 text-sm text-text-secondary">
-          程式碼編輯器將在後續任務中實作
-        </p>
-      </div>
-    </div>
-  );
+  redirect("/workspace");
 }

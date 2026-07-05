@@ -15,6 +15,7 @@ import { api } from "@/lib/api";
 import {
   ACTIVE_REFLECTION_EVENT,
   getActiveReflectionId,
+  getHandedOffReflectionId,
 } from "@/lib/active-reflection";
 import { consumePendingWorkspaceCode } from "@/lib/pending-workspace-code";
 
@@ -63,9 +64,11 @@ export default function WorkspacePage() {
     };
   }, []);
 
-  // 進入 Workspace 時若有 active reflection（例如剛從 Quiz 跳來），自動展開
+  // 進入 Workspace 時的反思 gating（U1c）：
+  // 只有經「前往 Workspace」按鈕正確 handoff 的反思才顯示並自動展開；
+  // 直接 navigate 進來的殘留反思會被 getHandedOffReflectionId 清除。
   useEffect(() => {
-    if (getActiveReflectionId()) setReflectionOpen(true);
+    if (getHandedOffReflectionId()) setReflectionOpen(true);
   }, []);
 
   const handleCodeChange = useCallback(
@@ -133,11 +136,12 @@ export default function WorkspacePage() {
         </>
       ) : (
         <PanelGroup orientation="vertical" className="min-h-0 flex-1">
-          <Panel defaultSize={70} minSize={30}>
+          {/* react-resizable-panels v4：裸數字是 px，百分比必須用字串（U1b） */}
+          <Panel defaultSize="70%" minSize="30%">
             <CodeEditor initialValue={initialCode} onChange={handleCodeChange} />
           </Panel>
           <PanelResizeHandle className="relative flex h-1 items-center justify-center transition-colors before:absolute before:inset-x-0 before:h-px before:bg-border-default hover:before:bg-accent-blue data-[resize-handle-active]:before:bg-accent-blue" />
-          <Panel defaultSize={30} minSize={15}>
+          <Panel defaultSize="30%" minSize="15%">
             <OutputPanel collapsed={false} onToggleCollapse={toggleOutput} />
           </Panel>
         </PanelGroup>
@@ -151,11 +155,11 @@ export default function WorkspacePage() {
 
   return (
     <PanelGroup orientation="horizontal" className="h-full">
-      <Panel defaultSize={28} minSize={20} maxSize={40}>
+      <Panel defaultSize="28%" minSize="20%" maxSize="40%">
         <ReflectionSidebar onCollapse={toggleReflection} />
       </Panel>
       <PanelResizeHandle className="relative flex w-1 items-center justify-center transition-colors before:absolute before:inset-y-0 before:w-px before:bg-border-default hover:before:bg-accent-blue data-[resize-handle-active]:before:bg-accent-blue" />
-      <Panel minSize={40}>{editorAndOutput}</Panel>
+      <Panel minSize="40%">{editorAndOutput}</Panel>
     </PanelGroup>
   );
 }

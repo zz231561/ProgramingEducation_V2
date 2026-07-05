@@ -108,7 +108,7 @@
 - [ ] **6-4a-deferred-ui 必驗（grounded 資料就緒後立即跑，不可跳過）**：批次跑完取得至少 1 個 promoted unit 後，重新驗收以下「6-2 系列因無資料而延後驗收」的 UI 狀態
   - **6-2c grounded path**：概念說明 tab 的 grounded markdown 渲染 + 內嵌 citation 點擊跳轉是否真的 `player.seekTo`（之前只驗了 pending fallback path）
   - **6-2d grounded path（含卡片 + Workspace 轉場）**：範例 tab 卡片列表（title / code / explanation / citation 標籤）+ 「在 Workspace 開啟」按鈕 → Workspace `<CodeEditor initialValue>` 是否載入範例程式碼 + 重整 / 再 navigate 後不重複覆蓋（一次性消費）
-  - **6-2e grounded path**：摘要 tab 的 grounded 三狀態渲染 — (a) `summary.needs_more_source=true` notice + reason；(b) `summary.key_points` bullet list + `summary.citations` 時間戳/節錄標籤；(c) 同概念 tab 的 `parseTimestampStart` 跳轉行為**不**在摘要 tab 重做（UI 提示使用者回概念 tab 點 citation）— 驗收僅需確認三狀態正確切換、不需驗 seekTo
+  - ~~**6-2e grounded path**：摘要 tab 的 grounded 三狀態渲染~~ → **已作廢（2026-07-06 U2b 決策：LEARN 摘要 tab 直接移除，無需驗收）**
 - [ ] 6-4b 依自查結果調整 6-2a prompt template 並針對問題 unit 局部重跑；對品質太差的 unit 評估升級到 Whisper 重 transcribe（B 方案）作為 source
 
 > ⚠ 原 6-5（Coddy 對話品質）與 6-6（知識圖譜優化）已於 2026-07-04 依功能規格書**整併至 Phase 6-K**（6-5 → K4；6-6 → K1 + K5），原 sub-task 內容完整保留於對應 K 項。
@@ -163,6 +163,13 @@
 - [x] K5c 個人化路徑高亮：underlay ring = 路徑狀態（藍=目前 / 綠=已完成 / 紅=補救嫌疑，`?remedial=` query 觸發 + 鏡頭聚焦）；R1-R8 檢核通過（灰階 cluster 容器、無外來 hex、無 emoji）
 - [ ] K5d 真人測試驗收（原 6-6d）：學生能從圖讀懂自己的進度與弱項，不只是好看
 
+### K6 熟練度演算法 v2 — 訊號分級 + 遺忘衰減 + 透明化（2026-07-06 session 定案）
+> **動機**：現行 `services/mastery/updater.py` 對 quiz 作答與 chat 對話用同一組 BKT 參數全額更新（quiz 權重過高），且標準 BKT 無遺忘機制（confidence 只增不減）。
+> **📌 論文關鍵技術**（完整引用清單見 `docs/references.md` §5.1）：BKT（Corbett & Anderson 1995）、BKT+Forgetting（Khajah et al. 2016）、Ebbinghaus 遺忘曲線指數衰減、FSRS 記憶穩定度、Duolingo HLR、Open Learner Model（Bull & Kay）。
+- [ ] K6a 訊號分級 BKT 參數：quiz 作答＝強證據（沿用現參數）；chat evidence＝弱證據（guess 調高 ≈0.4、learn 調低 ≈0.05 → 單次更新幅度自然縮小）；以 slip/guess 表達「觀察通道雜訊」而非外掛權重係數；Phase 5 真實資料後用 pyBKT `fit()`（含 `forgets=True`）學出參數直接替換
+- [ ] K6b 遺忘曲線惰性衰減：讀取時計算 `confidence' = floor + (confidence − floor) × exp(−λ × 距 last_practiced_at 天數)`；半衰期隨 success_count/exposure_count 成長（FSRS 穩定度概念：練得越熟忘得越慢）；floor 下限（初始 ≈0.25）避免歸零打擊信心；套用點＝`GET /concepts/mastery` + quiz Select 層 + K3 診斷，惰性計算不需排程 job；λ/floor 數值實作時列出供調整
+- [ ] K6c 精熟度事件級透明化（OLM）：介面顯示趨勢 + 語意化事件（「答對指標題，掌握度提升」「兩週未練習，該複習了」）；**不給逐筆 ± 數值帳本**（避免分數導向 / gaming / 損失厭惡）；衰減一律 framing 為複習提示而非扣分，銜接 K-Graph 節點變暗視覺
+
 ### DEV 開發者模式（2026-07-05 與使用者共同定案：Settings 入口 / 分類重置 / 真改 DB role / A+B+C+D 全納首版）
 > **安全前提（不可妥協）**：後端 `DEV_MODE_ENABLED` 總開關（生產預設關）+ `DEV_MODE_EMAILS` email 白名單，兩者皆環境變數（白名單不寫死、不進 git）；所有 dev 變更端點掛 `require_dev_user` 逐一驗證（403），前端 UI 只是入口不是防線；操作寫 log 留痕。
 - [x] DEV-1 後端 gating 基礎：config 雙環境變數 + `core/dev_mode.py` `is_dev_email` + `require_dev_user` dependency + `GET /dev/status` + rate limit 豁免（追加功能 B）；11 tests
@@ -175,6 +182,25 @@
 - [x] DEV-8 K3 診斷模擬器（追加 C）：`POST /dev/simulate-failures` 注入連錯 N 次（stub 題可重用）→ 回診斷摘要 + 圖譜補救連結
 - [x] DEV-9 題庫檢視器（追加 D）：`GET /dev/questions?tag=` 列題（validate 狀態）+ `/quiz?question=<id>` 深連結直接作答
 - [ ] DEV-E 假學生資料 seeder（延後至 Phase 5 教師端開工時）
+
+---
+
+## Phase 6-U：學生端 UI/UX 修正與機制調整（2026-07-06 session 規劃）🎯
+> 來源：2026-07-06 session 討論（現狀確認 + 設計裁決 + 待辦清單）。與 Phase 6-K 剩餘驗收、Phase 5 教師端可平行。
+> 教師端功能＝既有 Phase 5，不另立項。
+
+### 6-U1 Bug 修正
+- [ ] U1a 修正：首次登入偶爾錯誤顯示 Workspace「待製作」畫面（初始 route / session 判定時序問題）
+- [ ] U1b 修正：反思計畫在 Workspace 顯示的 UI 比例錯誤
+- [ ] U1c 反思計畫顯示 gating：僅在透過正確管道（Quiz / Learn「前往 Workspace」轉場）進入時顯示；直接 navigate `/workspace` 不顯示殘留反思（`sessionStorage` `active_reflection_id` 的清理時機）
+
+### 6-U2 UI/UX 與機制調整
+- [ ] U2a QUIZ 介面美化（對照 ui-ux-spec + frontend.md R1-R8 檢核）
+- [ ] U2b 移除 LEARN 摘要 tab（2026-07-06 決策：直接移除；批次生成管線的 summary 欄位處置記 tech-debt）
+- [ ] U2c 拔除 1-3 章節（課程介紹）的範例程式內容
+- [ ] U2d QUIZ tab 改題庫優先：弱項出題先抽題庫（Select 弱項概念 + 複用 6-3b from-bank 機制），題庫無題才即時生成——省 LLM 成本與延遲
+- [ ] U2e Workspace 程式碼存檔：編輯器內容目前重整即消失（僅 chat 快照 / 作答記錄入 DB）；新增自動存檔或「我的程式碼」功能
+- [ ] U2f 範例程式製作（優先度低，排最後）
 
 ---
 
@@ -218,3 +244,7 @@
 - **Concept 範圍 62 個**（2026-05-07 確認 / 2026-05-22 修訂）：video_order 1-62 全部 seed 為 concept 且**全部進學習路徑**；1-3 仍保留 `category="課程介紹"` 供知識圖譜 styling 區分使用
 - ~~知識圖譜重構為 Phase 6 後續工作（2026-05-07）~~ → **已於 2026-07-04 K1a 完成**：線性鏈已替換為 curated 多對多依賴 DAG（90 條邊，AI curated + 實機驗證，教授人工標註已隨教授抽查一併移除）
 - **Phase 6-K 自適應學習引擎**（2026-07-04 功能規格書確認）：五大功能執行順序 K1→K2→K3→K4→K5（依技術相依性：資料基礎 → 狀態 → 診斷 → Coddy 整合 → 視覺）；原 6-5/6-6 整併入 K 系列；視覺化套件預設維持 Cytoscape.js（K5a 調研驗證此預設）
+- **K6 熟練度演算法 v2**（2026-07-06 確認）：訊號分級（quiz 強證據 / chat 弱證據，以 BKT slip/guess/learn 參數表達，不外掛權重係數）+ 遺忘曲線惰性衰減（floor 下限、半衰期隨練習次數成長）；透明化採「事件級解釋，不給逐筆帳本」、衰減 framing 為複習提示；**關鍵技術文獻標注於 references.md §5.1 供論文引用**
+- **題庫策略**（2026-07-06 確認）：不採 NotebookLM（無公開 API、輸出無法對齊題目 schema 與 citation）；成本控制走「批次 grounded 生成 + 題庫優先」；即時生成題目 validated=True 後永久入庫持續擴充題庫（現行機制確認保留）；QUIZ tab 弱項出題改題庫優先列 U2d
+- **LEARN 摘要移除**（2026-07-06 確認）：摘要 tab 直接移除（U2b）；依據＝提供現成摘要的被動學習效益低（Fiorella & Mayer 2015 生成式學習）+ 冗餘效應增加外在認知負荷
+- **反思計畫粒度**（2026-07-06 確認）：現行即為「每題一份」（Quiz 與 Learn 練習皆以 `sourceType="quiz"` + question id 建立），符合預期不需改；Workspace 顯示 gating 問題列 U1c

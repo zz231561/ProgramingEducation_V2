@@ -15,14 +15,19 @@
   - **必驗項目**（任一 promoted unit 即可作 sample）：
     - 6-2c：grounded markdown render + 點 citation 真的呼叫 `player.seekTo`
     - 6-2d：卡片列表（title/code/explanation/citation）+ 「在 Workspace 開啟」→ CodeEditor `initialValue` 載入 + 一次性消費（重整不再覆蓋）
-    - 6-2e：摘要 tab 三狀態切換 — (a) `summary.needs_more_source=true` notice；(b) `summary.key_points` bullet + `summary.citations` 標籤；(c) 舊 `summary: string` legacy fallback（同 lazy seed 空字串時不應觸發）
+    - ~~6-2e：摘要 tab 三狀態切換~~ → **已作廢（2026-07-06 U2b 決策：LEARN 摘要 tab 直接移除）**
     - 6-3b：ExercisesTab 命中題庫 path（前端 Loading 顯示「查找題庫題目」< 1 秒、不打 LLM、直接顯示題目）— 當前只能驗 fallback 「AI 正在生成」path
+  - **如何處理**：批次跑完拿到至少 1 個 promoted unit 後，依 changelog 2026-05-22 6-2d 條目「How to verify」步驟 1-4 逐項操作；其中第 3-4 步是 sessionStorage 一次性消費的關鍵驗收，**不可漏跑**
+  - **若驗收失敗**：第一優先檢查 `web/lib/pending-workspace-code.ts` 的 `consumePendingWorkspaceCode()` 是否真的有 `removeItem`；其次檢查 `web/app/(app)/workspace/page.tsx` 是否用 `useState` lazy initializer（而非直接呼叫，會導致 re-render 多次 consume）
 - [ ] **練習題重複曝光**（6-3b 已標）→ Phase 6 後段 / Phase 7 前
   - **背景**：`/quiz/from-bank` service 已支援 `exclude_question_ids` 但前端 ExercisesTab 未維護已答題清單，學生重複進同 unit 練習可能抽到同題
   - **如何處理**：前端在 `useEffect` 用 `getQuizHistory` 取出該 concept 已答 question_ids → 傳給 from-bank（需 endpoint 也支援 query param 或新 POST 形式）；或後端直接 join student_answers 在 service 內過濾
   - **影響**：學生短時間重練命中率低時感受不明顯（grounded 題庫每 concept 2-3 題不大），但長期會被學生抱怨；6-4 自行品管時若發現此問題優先處理
-  - **如何處理**：批次跑完拿到至少 1 個 promoted unit 後，依 changelog 2026-05-22 6-2d 條目「How to verify」步驟 1-4 逐項操作；其中第 3-4 步是 sessionStorage 一次性消費的關鍵驗收，**不可漏跑**
-  - **若驗收失敗**：第一優先檢查 `web/lib/pending-workspace-code.ts` 的 `consumePendingWorkspaceCode()` 是否真的有 `removeItem`；其次檢查 `web/app/(app)/workspace/page.tsx` 是否用 `useState` lazy initializer（而非直接呼叫，會導致 re-render 多次 consume）
+
+### 內容生成管線（2026-07-06 U2b 決策衍生）
+- [ ] **unit content 生成管線的 `summary` 欄位閒置**
+  - **背景**：2026-07-06 決策直接移除 LEARN 摘要 tab（roadmap U2b），但 6-2a grounded prompt / Pydantic 模型 / staging 表仍會生成並儲存 `summary` object
+  - **如何處理**：U2b 執行時先只移除前端 tab（資料留著無害）；6-4 實機批次重跑前評估從 prompt 移除 summary 段以省 token（62 unit × summary 生成成本）
 
 ### 部署相關（待實測）
 - [ ] **Zeabur PREBUILT + source.type=IMAGE schema 未實測**
@@ -47,16 +52,11 @@
     ```
 
 ### 內容層（教學課綱）
-- ✅ ~~`concept_edges` seed 的 23 條邊為 AI 暫定值~~ — 2026-05-05 完全替換為 58 條線性 PREREQUISITE（隨 e1f2a3b4c5d6 重 seed）
-- ✅ ~~`concepts` seed 的 `category` / `difficulty_level` / `name_zh` 為暫定值~~ — 2026-05-05 完全替換為 59 影片 concept
-
-### 內容層（教學課綱）— 新一批待補
 - 🔄 **YT video metadata 未補**（已從 59 → 62 個影片 concept；2026-05-07 教授交付 playlist URL，fetcher script 已產 59 列 CSV，待擴充至 62 列）→ **正式追蹤於 roadmap Phase 6-1**
   - **影響**：3-1d 學習單元頁的概念說明 tab 無法 embed YT player；只能顯示影片標題與「待補」placeholder
   - **進度**：6-1a/b 已完成；6-1b+/c/d/e/f 進行中
   - **如何處理**：fetcher 已寫好（`backend/scripts/fetch_playlist_metadata.py`）；接下來擴充 EXPECTED 1-62、加 video 1-3 migration、PATCH script 寫入 DB、字幕 RAG ingest
   - **格式**：CSV，欄位 `video_order, youtube_id, duration_seconds, title_zh`，已產出於 `data/teaching_content/videos.csv`
-- ✅ ~~跨章節 PREREQUISITE 邊未標~~ — 2026-07-04 **K1a 完成**：migration `i5d6e7f8a9b0` 以 curated 依賴 map 取代線性鏈 → 90 條多對多 PREREQUISITE 邊（AI curated，教授人工標註已移除）；實機驗證 0 孤兒節點 / 0 反向邊；原範例（52 指標與陣列 ← 48 陣列 + 51 指標）已落地，47 遞迴修訂為 ← 25 if-else + 37 參數 + 38 回傳值（36 函式經 37/38 傳遞依賴）
 - [ ] **學習單元 content 為空骨架**（`{summary: "", examples: [], exercise_question_ids: []}`）→ **正式追蹤於 roadmap Phase 6-2 / 6-3 / 6-4**
   - **影響**：3-1d 學習單元頁的「範例程式」「摘要」tab 無實質內容
   - **如何處理**：兩種策略可選 —
@@ -68,9 +68,6 @@
 - [ ] **3-1c 卡片版 ≠ ui-wireframes.md 期望的「節點+箭頭」graph 版** → **併入 roadmap K5 一併評估（2026-07-04）**
   - **影響**：與知識圖譜頁 (`/knowledge`) 風格不統一；無法直觀顯示 PREREQUISITE 依賴的分支（K1a 後已是多對多 DAG，分支資訊更豐富）
   - **如何處理**：K5 視覺改版時評估復用 knowledge 頁 Cytoscape 元件
-
-### EDF Mastery 連動暫時退場
-- ✅ ~~EDF chat 評估的 ConceptTag 不再寫入 BKT mastery~~ — 2026-07-04 **K2a 完成**：採原選項 (b) 強化版——`concepts.edf_parent_tag` mapping（migration `j6e7f8a9b0c1`）+ 三層 fan-out（直接命中 → 已曝光組員 → 冷啟動入門 concept），Workspace 對話重新驅動 BKT 且不淹沒 quiz 精準信號
 
 ### AST 程式碼分析信號（K2c 決策記錄，2026-07-04）
 - [ ] **真 AST（tree-sitter / libclang）暫不引入** — 現以 LLM Evidence 為程式碼分析信號
@@ -89,7 +86,6 @@
   - **如何處理**：Redis 存 per-user 最近一次成功回應，LLM 5xx 時回傳並標註 fallback
 
 ### 程式碼層
-- ✅ ~~`backend/requirements.lock` 過時~~ — 2026-05-05（4-1a）已透過 `uv pip compile pyproject.toml -o requirements.lock` 重產（38 行 → 272 行，含全部 transitive）；pyproject.toml 補完 LlamaIndex 三套件 + psycopg2-binary。pyBKT 註解確認**未實際 import**（updater.py 註解保留為未來演算法升級線索），無需安裝
 - [ ] **`backend/pyproject.toml` 沒設 hatchling packages**
   - 直接 `pip install -e .` 會失敗（hatchling 找不到 wheel target）
   - 目前繞過：直接列依賴而非 install self
@@ -97,4 +93,8 @@
 
 ## ✅ 已消除
 
-（無）
+- ~~`concept_edges` seed 的 23 條邊為 AI 暫定值~~ — 2026-05-05 完全替換為 58 條線性 PREREQUISITE（隨 e1f2a3b4c5d6 重 seed）
+- ~~`concepts` seed 的 `category` / `difficulty_level` / `name_zh` 為暫定值~~ — 2026-05-05 完全替換為 59 影片 concept
+- ~~`backend/requirements.lock` 過時~~ — 2026-05-05（4-1a）以 `uv pip compile` 重產（38 → 272 行含 transitive）；pyBKT 確認未實際 import，無需安裝
+- ~~跨章節 PREREQUISITE 邊未標~~ — 2026-07-04 **K1a 完成**：migration `i5d6e7f8a9b0` curated 依賴 map 取代線性鏈 → 90 條多對多邊；實機驗證 0 孤兒節點 / 0 反向邊
+- ~~EDF chat ConceptTag 不寫入 BKT mastery~~ — 2026-07-04 **K2a 完成**：`edf_parent_tag` mapping + 三層 fan-out，Workspace 對話重新驅動 BKT 且不淹沒 quiz 精準信號

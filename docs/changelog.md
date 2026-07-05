@@ -1,5 +1,26 @@
 # 變更日誌
 
+## [2026-07-06] — docs(planning)：session 規劃定案 — K6 熟練度演算法 v2 + Phase 6-U 學生端修正清單 + 文檔重整
+
+### Added
+- **roadmap K6 熟練度演算法 v2**（2026-07-06 與使用者 AskUserQuestion 裁決）：K6a 訊號分級 BKT 參數（quiz 強證據沿用現參數 / chat 弱證據 guess↑ learn↓，以 slip/guess 表達觀察通道雜訊、不外掛權重係數）+ K6b 遺忘曲線惰性衰減（`floor + (conf−floor)·exp(−λ·days)`，半衰期隨練習次數成長＝FSRS 穩定度概念，floor 防歸零，讀取端套用不需排程）+ K6c 事件級透明化（OLM；語意化事件不給逐筆帳本，衰減 framing 為複習提示接 K-Graph 節點變暗）
+- **roadmap Phase 6-U 學生端修正**：U1a 首登誤顯 Workspace 待製作畫面 / U1b 反思 UI 比例 / U1c 反思顯示 gating（sessionStorage 殘留）/ U2a QUIZ 美化 / U2b 移除 LEARN 摘要 tab / U2c 拔除 1-3 章範例程式 / U2d QUIZ tab 改題庫優先 / U2e Workspace 程式碼存檔 / U2f 範例程式製作（低優先）；教師端＝既有 Phase 5 不另立項
+- **references.md §5.1 論文關鍵文獻標注**（使用者論文引用需求）：BKT（Corbett & Anderson 1995）/ BKT+Forgetting（Khajah et al. 2016）/ Ebbinghaus 指數衰減 / FSRS 記憶穩定度 / Duolingo HLR（Settles & Meeker 2016）/ contextual guess-slip（Baker et al. 2008）/ OLM（Bull & Kay + 2020 系統性回顧）/ 生成式學習（Fiorella & Mayer 2015）
+- tech-debt 新增：unit content 生成管線 `summary` 欄位閒置（U2b 移除 tab 後，6-4 批次重跑前評估從 prompt 移除以省 token）
+
+### Changed
+- roadmap 6-4a-deferred-ui 的 6-2e 摘要驗收作廢（U2b 決策）；tech-debt 同步
+- tech-debt 重整：修正「練習題重複曝光」條目內錯置的 6-2d 驗收段落（歸回 deferred-ui 條目）；5 個 ✅ 已完成項目歸檔至「已消除」節
+
+### Decisions（第一區現狀確認 + 第二區裁決）
+- **題庫成本**：不採 NotebookLM（無公開 API、輸出對不齊題目 schema/citation）；批次 grounded 生成 + 題庫優先已是解方，QUIZ tab 補上題庫優先（U2d）即完整
+- **題目入庫**：即時生成題 validated=True 後永久入庫且會被 from-bank 重複抽用（現行機制確認保留）
+- **代碼存儲**：chat 快照 + 作答記錄入 DB；編輯器本身無存檔（重整即失）→ 列 U2e
+- **反思粒度**：現行即「每題一份」（quiz source + question id），符合預期不改
+- **LEARN 摘要**：直接移除（生成式學習研究：提供現成摘要效益低 + 冗餘效應）
+
+---
+
 ## [2026-07-05] — feat(DEV-7~9)：EDF Debug 面板 + K3 診斷模擬器 + 題庫檢視器（開發者模式收尾）
 
 ### Added

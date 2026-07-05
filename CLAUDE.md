@@ -32,7 +32,7 @@
   - 6-2a/b ✅（grounded prompt + Pydantic + 批次生成 infra + staging 表 + 18 mock+DB tests）
   - 6-2c ✅程式碼完成 + fallback 已驗（grounded markdown / citation seek 主路徑待 6-4a-deferred-ui 補驗）
   - 6-2d ✅程式碼完成 + fallback 已驗（grounded card + Workspace handoff 主路徑待 6-4a-deferred-ui 補驗）
-  - 6-2e ✅程式碼完成 + fallback 已驗（grounded `summary.key_points` bullet + citation 標籤渲染主路徑待 6-4a-deferred-ui 補驗）
+  - 6-2e ✅程式碼完成（2026-07-06 決策：摘要 tab 將移除 U2b，deferred 驗收作廢）
   - 6-3a-1 ✅`generate_question(video_order=...)` grounded mode（含 grounding prompt 規則 + 4 mock tests；學生現生題 backward compat 保留）
   - 6-3a-2 ✅批次 service `services/quiz/batch_generator.py` + CLI `scripts/generate_unit_questions.py`（per-concept N 題 × generate+validate + skip_existing；8 mock+DB tests）
   - 6-3b ✅ExercisesTab 題庫優先（GET /quiz/from-bank → 404 QUESTION_BANK_EMPTY fallback /quiz/generate；6 bank + 5 route tests；前端 Loading 文案分兩階段）
@@ -45,7 +45,9 @@
   - K3 ✅全數完成（後端連續失敗觸發 + closure 回溯 + `GET /concepts/{tag}/diagnosis`；K3e 前端：答錯自動查診斷 → 嫌疑鏈 + 微測驗 `GET /quiz/questions/{id}` + 補救開放 + 圖譜跳轉）
   - K4a/b/c ✅（K-Graph 鷹架注入 prompt + Coddy persona 改寫 + RAG 相關性觸發 + 補救路徑 remediate API）；K4d 真人驗收待 API key 實測
   - K5a/b/c ✅（2026-07-05，六輪迭代）：Cytoscape.js + mastery band 填色 + 路徑 ring（藍=目前/綠=已完成/紅=補救 `?remedial=`）+ **語意縮放全覽**（overview=同批概念節點放大字體/尺寸並重排每章緊湊網格 `overview-layout.ts`；detail=蛇形星系佈局；zoom 門檻 0.45 動畫切換 `graph-mode.ts`）+ 點擊容器/節點皆 zoom in 該章 + GalaxyNav 含全覽鈕 + zoom cap 1.0 + 跨章邊淡出；⚠ `knowledge-graph.tsx` 265 行拆分計畫待核可
-  - **下一步（K 系列）**：**K5d 真人驗收**（學生能否從圖讀懂進度與弱項；含 K1d UI 抽查）→ K4d 真人驗收（可與 6-4a 實機批次合併）
+  - K6 熟練度演算法 v2 ⏳（2026-07-06 定案）：K6a 訊號分級 BKT 參數（quiz 強/chat 弱證據）+ K6b 遺忘曲線惰性衰減（floor + 半衰期隨練習成長）+ K6c 事件級透明化（不給逐筆帳本）；**論文關鍵文獻標注 references.md §5.1**
+  - **下一步（K 系列）**：**K5d 真人驗收**（學生能否從圖讀懂進度與弱項；含 K1d UI 抽查）→ K4d 真人驗收（可與 6-4a 實機批次合併）→ K6a/b/c 實作
+- **🎯 Phase 6-U 學生端修正**（2026-07-06 session 定案，與 6-K 驗收 / Phase 5 可平行）：U1a 首登誤顯 Workspace 待製作 / U1b 反思 UI 比例 / U1c 反思顯示 gating / U2a QUIZ 美化 / U2b 移除 LEARN 摘要 / U2c 拔 1-3 章範例 / U2d QUIZ tab 題庫優先 / U2e Workspace 程式碼存檔 / U2f 範例程式（低優先）；決策細節見 roadmap 已確認決策節
 - **DEV 開發者模式 ✅ 全數完成**（2026-07-05；拆解見 roadmap DEV 節）：後端 gating（`DEV_MODE_ENABLED`+`DEV_MODE_EMAILS`、`require_dev_user`）+ rate limit 豁免 + Settings 六卡（身分切換 / 幽靈解鎖 / 熟練度編輯 / K3 診斷模擬 / 題庫檢視 `/quiz?question=` 深連結 / 分類重置）+ EDF Debug 面板（chat `debug_sink`，dev 才附）；+33 tests；**UI 驗收待使用者**；DEV-E 假學生 seeder 留 Phase 5
 - **Phase 5 ⇄ Phase 6 平行**：教師端可隨時插入並行
 - **Phase 7 上線實測**：須 Phase 6 至少 6-1 + 6-2 完成 + Zeabur + VPS 就緒

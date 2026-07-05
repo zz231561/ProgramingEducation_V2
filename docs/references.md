@@ -142,6 +142,21 @@
 | PRIMM (Sentance & Waite, 2017) | Predict-Run-Investigate-Modify-Make 五階段 |
 | Desirable difficulties (Bjork & Bjork, 1994-2020) | 策略性摩擦提升長期記憶 |
 
+### 5.1 K6 熟練度演算法關鍵文獻（📌 論文引用標注，2026-07-06）
+
+> K6a / K6b / K6c 與 U2b 的實作理論依據。論文撰寫時直接引用本清單。
+
+| 主題 | 文獻 | 在本系統的對應 |
+|------|------|----------------|
+| BKT 基礎 | Corbett & Anderson (1995), *Knowledge tracing: Modeling the acquisition of procedural knowledge*, UMUAI | `services/mastery/updater.py` Bayes 線上更新；[pyBKT (EDM 2021)](https://arxiv.org/abs/2105.00385) 為參數擬合工具 |
+| BKT + 遺忘 | Khajah, Lindsey & Mozer (2016), *How Deep is Knowledge Tracing?*, EDM — BKT 加 forgetting 可匹敵 DKT；[KT Survey (arXiv:2105.15106)](https://arxiv.org/pdf/2105.15106) §forgetting 綜述 | K6b 衰減設計依據；pyBKT 原生支援 `forgets=True` |
+| 遺忘曲線 | Ebbinghaus (1885/1913) 指數衰減；[個人化遺忘機制 (arXiv:2404.12127)](https://arxiv.org/pdf/2404.12127) | K6b `exp(−λ × days)` 函式形 |
+| 記憶穩定度 | [FSRS 演算法](https://github.com/open-spaced-repetition/free-spaced-repetition-scheduler)（MIT；Anki 已採用）— 穩定度隨成功複習成長 → 半衰期變長 | K6b 半衰期隨 success_count 成長 |
+| 間隔重複 | Settles & Meeker (2016), *A Trainable Spaced Repetition Model for Language Learning*（Duolingo HLR）, ACL | K6b 半衰期參數化思路；衰減 framing＝複習提示（cracked skill / due for review） |
+| 證據通道雜訊 | BKT slip/guess 語意（Corbett & Anderson 1995；Baker, Corbett & Aleven 2008 contextual guess/slip） | K6a 弱證據＝高 guess / 低 learn，留在 BKT 數學框架內、不外掛權重係數 |
+| Open Learner Model | Bull & Kay (2007/2016) SMILI 框架；[OLM 與 SRL 系統性回顧 (Computers & Education, 2020)](https://www.sciencedirect.com/science/article/abs/pii/S0360131520300774)；[OLM 知識監控實證 (RPTEL 2020)](https://telrp.springeropen.com/articles/10.1186/s41039-020-00137-5) | K6c 事件級透明化、不給逐筆帳本（避免分數導向 / gaming / 損失厭惡） |
+| 生成式學習 | Fiorella & Mayer (2015), *Learning as a Generative Activity* — 自我生成摘要 > 提供現成摘要；Sweller 冗餘效應（CLT） | U2b 移除 LEARN 摘要 tab 的依據 |
+
 ---
 
 ## 6. 功能對照（細節參考）

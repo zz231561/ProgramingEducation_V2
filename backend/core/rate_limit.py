@@ -14,6 +14,7 @@ from fastapi import Request
 
 from core.auth import get_current_user
 from core.config import settings
+from core.dev_mode import is_dev_email
 from core.errors import AppError
 from core.redis import get_redis
 
@@ -32,6 +33,9 @@ def rate_limit(scope: str, limit_per_minute: int | None = None) -> Callable:
 
     async def _check(request: Request) -> None:
         token = get_current_user(request)  # 未登入在此即拋 401
+        if is_dev_email(token.email):
+            # 開發者帳號豁免限流（DEV 系列；密集測試 LLM 端點不受 10 次/分擋）
+            return
         limit = limit_per_minute or settings.RATE_LIMIT_PER_MINUTE
         key = f"rl:{token.google_id or token.sub}:{scope}"
 

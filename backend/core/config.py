@@ -41,6 +41,21 @@ class Settings(BaseSettings):
     # === Rate Limiting ===
     RATE_LIMIT_PER_MINUTE: int = 10
 
+    # === 開發者模式 ===
+    # 總開關（生產環境保持 False，即使 email 在白名單也無效）
+    DEV_MODE_ENABLED: bool = False
+    # 白名單 email（逗號分隔），只在 DEV_MODE_ENABLED=true 時生效
+    DEV_MODE_EMAILS: str = ""
+
+    @property
+    def dev_mode_emails(self) -> set[str]:
+        """白名單 email 集合（小寫正規化，空字串過濾）。"""
+        return {
+            e.strip().lower()
+            for e in self.DEV_MODE_EMAILS.split(",")
+            if e.strip()
+        }
+
     @property
     def cors_origins(self) -> list[str]:
         """CORS 允許的 origins — 僅 NEXTAUTH_URL。

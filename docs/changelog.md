@@ -1,5 +1,19 @@
 # 變更日誌
 
+## [2026-07-05] — feat(DEV-1)：開發者模式後端 gating 基礎 + rate limit 豁免
+
+### Added
+- **開發者模式規劃定案**（與使用者 AskUserQuestion 四項裁決）：首版含使用者 4 項（分類重置 / 幽靈解鎖 / 熟練度編輯 / 身分切換真改 role）+ 追加 A EDF Debug 面板、B rate limit 豁免、C K3 診斷模擬器、D 題庫檢視器；UI 入口 = Settings 頁區塊；完整拆解見 roadmap DEV-1 ~ DEV-9（E 假學生 seeder 延後 Phase 5）
+- **DEV-1 後端 gating 基礎**：
+  - `core/config.py` 新增 `DEV_MODE_ENABLED`（總開關，生產預設關）+ `DEV_MODE_EMAILS`（逗號分隔白名單，環境變數不進 git）；`core/dev_mode.py` `is_dev_email()`（小寫/空白正規化，開關關閉一律 False）
+  - `api/deps.py` 新增 `require_dev_user` dependency（後續所有 dev 變更端點的統一防線，非 dev 403）
+  - `GET /dev/status`：已登入使用者查自己 `is_dev`，供前端決定是否渲染開發者區塊
+  - **Rate limit 豁免（追加功能 B）**：dev 帳號跳過 per-user 限流（不寫入 Redis 計數），一般帳號行為不變
+  - 本機 `backend/.env` 已加 `DEV_MODE_ENABLED=true` + 白名單（gitignored）；`.env.example` 補範本
+- Tests +11（`test_dev_mode.py`：白名單判定 5 / status 端點 4 / 限流豁免 2）；後端全量 561 passed
+
+---
+
 ## [2026-07-05] — fix(K5-視覺淨化)：移除星雲背景圖層 + 修 detail panel setState-in-effect（使用者七驗回饋）
 
 ### Removed

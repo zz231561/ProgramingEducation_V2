@@ -163,6 +163,19 @@
 - [x] K5c 個人化路徑高亮：underlay ring = 路徑狀態（藍=目前 / 綠=已完成 / 紅=補救嫌疑，`?remedial=` query 觸發 + 鏡頭聚焦）；R1-R8 檢核通過（灰階 cluster 容器、無外來 hex、無 emoji）
 - [ ] K5d 真人測試驗收（原 6-6d）：學生能從圖讀懂自己的進度與弱項，不只是好看
 
+### DEV 開發者模式（2026-07-05 與使用者共同定案：Settings 入口 / 分類重置 / 真改 DB role / A+B+C+D 全納首版）
+> **安全前提（不可妥協）**：後端 `DEV_MODE_ENABLED` 總開關（生產預設關）+ `DEV_MODE_EMAILS` email 白名單，兩者皆環境變數（白名單不寫死、不進 git）；所有 dev 變更端點掛 `require_dev_user` 逐一驗證（403），前端 UI 只是入口不是防線；操作寫 log 留痕。
+- [x] DEV-1 後端 gating 基礎：config 雙環境變數 + `core/dev_mode.py` `is_dev_email` + `require_dev_user` dependency + `GET /dev/status` + rate limit 豁免（追加功能 B）；11 tests
+- [ ] DEV-2 Settings「開發者工具」區塊殼 + `useDevMode`（打 `/dev/status`，非 dev 完全不渲染）
+- [ ] DEV-3 分類重置：熟練度 / 課程進度 / 測驗紀錄 / 對話紀錄四鍵 + 一鍵全部（`POST /dev/reset`）
+- [ ] DEV-4 幽靈解鎖：開關開啟時 locked unit 前端可點 + 後端放行讀取（不改 unit status、不觸發 BKT）
+- [ ] DEV-5 熟練度編輯器：concept 單選或整章批次設定 confidence 0-1（`PUT /dev/mastery`）
+- [ ] DEV-6 身分切換：student ⇄ teacher 真改 `users.role` + session 同步（`PUT /dev/role`）
+- [ ] DEV-7 EDF Debug 面板（追加 A）：chat 回應對 dev 附中間層 payload（Bloom / Hint / 策略 / RAG 分數 / K-Graph 鷹架）+ 前端展開 UI
+- [ ] DEV-8 K3 診斷模擬器（追加 C）：一鍵注入指定 concept 連續答錯 N 次觸發診斷鏈
+- [ ] DEV-9 題庫檢視器（追加 D）：指定 concept 列題（含 validate 狀態）+ 直接作答指定題
+- [ ] DEV-E 假學生資料 seeder（延後至 Phase 5 教師端開工時）
+
 ---
 
 ## Phase 7：上線實測（須實際部署到 Zeabur / VPS）

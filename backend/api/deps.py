@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.auth import get_current_user, get_token_from_request, decode_nextauth_token, TokenPayload
 from core.database import get_db
+from core.dev_mode import is_dev_email
 from core.errors import AppError
 from core.redis import get_redis
 from models.user import User, UserRole
@@ -42,12 +43,25 @@ def require_roles(*roles: UserRole) -> Callable:
     return _check_role
 
 
+async def require_dev_user(
+    user: User = Depends(get_current_db_user),
+) -> User:
+    """依賴注入 — 開發者模式 gating（DEV 系列端點專用）。
+
+    防線在後端：總開關 + email 白名單雙重驗證，非 dev 帳號一律 403。
+    """
+    if not is_dev_email(user.email):
+        raise AppError(403, "FORBIDDEN", "開發者模式未開放")
+    return user
+
+
 __all__ = [
     "get_db",
     "get_redis",
     "get_current_user",
     "get_current_db_user",
     "require_roles",
+    "require_dev_user",
     "TokenPayload",
     "User",
 ]

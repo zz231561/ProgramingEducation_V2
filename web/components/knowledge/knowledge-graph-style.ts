@@ -2,26 +2,44 @@
  * Knowledge Graph 視覺樣式 — Cytoscape stylesheet + tokens。
  *
  * 風格參考：Obsidian Graph View（小圓點 + 細曲線 + hover 點亮鄰居）。
+ * K5b 改版：節點填色 = 熟練度（K2 state）、分章 compound cluster、
+ *           prerequisite 邊箭頭強化；章節 cluster 用灰階容器（R8.4 顏色僅功能性）。
+ * K5c 疊加：underlay ring = 路徑狀態（目前 / 已完成 / 補救）。
  * 所有色票必須來自 GitHub Dark token（frontend.md），不可引入外來 hex。
- * 顏色僅用於功能性語意（category / edge_type），符合 R8.4。
+ *
+ * GraphData → elements 轉換 → `knowledge-graph-elements.ts`
  */
 
-import type { ElementDefinition, StylesheetCSS } from "cytoscape";
+import type { StylesheetCSS } from "cytoscape";
 
-import type { GraphData, MasteryEntry } from "./knowledge-graph-types";
-import { getMasteryBand } from "./knowledge-graph-types";
+import type { MasteryBand } from "./knowledge-graph-types";
 
 // === Design tokens（與 frontend.md 對齊） ===
 
 export const TOKEN = {
   bgCanvas: "#0D1117",
+  bgDefault: "#161B22",
   borderDefault: "#30363D",
+  borderMuted: "#21262D",
   borderEmphasis: "#6E7681",
   textPrimary: "#E6EDF3",
   textSecondary: "#8B949E",
+  textMuted: "#6E7681",
+  green: "#3FB950",
+  orange: "#D29922",
+  red: "#F85149",
+  blue: "#58A6FF",
 } as const;
 
-// category → 節點背景色（語意：分類，非裝飾）— Detail Panel 也共用同一表
+// K5b：mastery band → 節點填色（語意：知識狀態，非裝飾）— 圖例與 Detail Panel 共用
+export const MASTERY_COLOR: Record<MasteryBand, string> = {
+  mastered: TOKEN.green,
+  learning: TOKEN.orange,
+  struggling: TOKEN.red,
+  unseen: TOKEN.borderDefault, // 灰 = 尚未互動
+};
+
+// category → 分類色（Detail Panel badge 沿用；K5b 起節點填色改用 MASTERY_COLOR）
 export const CATEGORY_COLOR: Record<string, string> = {
   "基礎語法": "#58A6FF", // blue
   "記憶體": "#F85149",   // red
@@ -33,12 +51,12 @@ export const CATEGORY_COLOR: Record<string, string> = {
 
 export const DEFAULT_CATEGORY_COLOR = TOKEN.borderEmphasis;
 
-// === Stylesheet (Obsidian-style) ===
+// === Stylesheet (Obsidian-style + K5b/c) ===
 
 export const STYLESHEET: StylesheetCSS[] = [
-  // --- Node base ---
+  // --- Concept 節點（有 tag data；章節 parent 不會命中）---
   {
-    selector: "node",
+    selector: "node[tag]",
     css: {
       "background-color": "data(color)",
       "border-color": TOKEN.borderDefault,
@@ -61,68 +79,88 @@ export const STYLESHEET: StylesheetCSS[] = [
     },
   },
   {
-    selector: "node:selected",
+    selector: "node[tag]:selected",
     css: {
       "border-color": TOKEN.borderEmphasis,
       "border-width": 2,
     },
   },
+  // --- K5b 分章 cluster 容器（compound parent；灰階 = 非裝飾，R8.4 白名單）---
+  {
+    selector: "node:parent",
+    css: {
+      shape: "round-rectangle",
+      "background-color": TOKEN.bgDefault,
+      "background-opacity": 0.55,
+      "border-color": TOKEN.borderMuted,
+      "border-width": 1,
+      label: "data(label)",
+      color: TOKEN.textMuted,
+      "font-size": "12px",
+      "font-family": "Inter, 'Noto Sans TC', sans-serif",
+      "text-valign": "top",
+      "text-halign": "center",
+      "text-margin-y": -6,
+      padding: "20px",
+    },
+  },
   // --- Hover 鄰居高亮（label 變亮 + 邊框轉強）---
   {
-    selector: "node.highlighted",
+    selector: "node[tag].highlighted",
     css: {
       "border-color": TOKEN.borderEmphasis,
       "border-width": 2,
       color: TOKEN.textPrimary,
     },
   },
-  // --- 淡化非鄰居（hover 時其他元素降透明度）---
+  // --- 淡化非鄰居（hover 時其他元素降透明度；章節容器不淡化避免視覺跳動）---
   {
-    selector: ".faded",
+    selector: "node[tag].faded, edge.faded",
     css: { opacity: 0.18 },
   },
 
-  // --- Mastery 外圈（roadmap 2-3c）— 顏色用於功能性語意（學習狀態），符合 R8.4 ---
+  // --- K5c 路徑狀態 ring（underlay）— 語意：目前單元 / 已完成 / 補救路徑 ---
   {
-    selector: 'node[mastery_band = "mastered"]',
+    selector: 'node[path_status = "completed"]',
     css: {
-      "underlay-color": "#3FB950",
+      "underlay-color": TOKEN.green,
       "underlay-padding": 4,
-      "underlay-opacity": 0.9,
+      "underlay-opacity": 0.4,
       "underlay-shape": "ellipse",
     },
   },
   {
-    selector: 'node[mastery_band = "learning"]',
+    selector: 'node[path_status = "current"]',
     css: {
-      "underlay-color": "#D29922",
-      "underlay-padding": 4,
+      "underlay-color": TOKEN.blue,
+      "underlay-padding": 5,
       "underlay-opacity": 0.9,
       "underlay-shape": "ellipse",
     },
   },
+  // 補救嫌疑節點（診斷跳轉）：紅 ring，優先級最高（宣告在後者勝出）
   {
-    selector: 'node[mastery_band = "struggling"]',
+    selector: "node[?remedial]",
     css: {
-      "underlay-color": "#F85149",
-      "underlay-padding": 4,
+      "underlay-color": TOKEN.red,
+      "underlay-padding": 6,
       "underlay-opacity": 0.9,
       "underlay-shape": "ellipse",
+      "border-color": TOKEN.borderEmphasis,
     },
   },
-  // unseen（無 row）：不畫 underlay，保持原樣
 
-  // --- Edge base ---
+  // --- Edge base（K5b：箭頭放大 + 提高不透明度讓依賴方向可讀）---
   {
     selector: "edge",
     css: {
       "line-color": TOKEN.borderDefault,
-      width: 1,
-      opacity: 0.55,
+      width: 1.2,
+      opacity: 0.7,
       "curve-style": "bezier",
       "control-point-step-size": 30,
       "target-arrow-color": TOKEN.borderDefault,
-      "arrow-scale": 0.75,
+      "arrow-scale": 1,
       "transition-property": "opacity, line-color, width",
       "transition-duration": 120,
     },
@@ -155,43 +193,8 @@ export const STYLESHEET: StylesheetCSS[] = [
     css: {
       "line-color": TOKEN.borderEmphasis,
       "target-arrow-color": TOKEN.borderEmphasis,
-      width: 1.5,
+      width: 1.8,
       opacity: 0.95,
     },
   },
 ];
-
-// === GraphData → Cytoscape elements ===
-
-export function toElements(
-  data: GraphData,
-  masteryMap?: Map<string, MasteryEntry>,
-): ElementDefinition[] {
-  const nodes: ElementDefinition[] = data.nodes.map((n) => {
-    const mastery = masteryMap?.get(n.tag);
-    return {
-      data: {
-        id: n.id,
-        tag: n.tag,
-        label: n.name_zh,
-        color: CATEGORY_COLOR[n.category] ?? DEFAULT_CATEGORY_COLOR,
-        // Obsidian 比例：18 base + 4 per difficulty (1-5 → 22-38 px)
-        size: 18 + n.difficulty_level * 4,
-        category: n.category,
-        difficulty_level: n.difficulty_level,
-        mastery_band: getMasteryBand(mastery?.confidence),
-        confidence: mastery?.confidence ?? null,
-      },
-    };
-  });
-  const edges: ElementDefinition[] = data.edges.map((e) => ({
-    data: {
-      id: e.id,
-      source: e.source,
-      target: e.target,
-      edge_type: e.edge_type,
-      weight: e.weight,
-    },
-  }));
-  return [...nodes, ...edges];
-}

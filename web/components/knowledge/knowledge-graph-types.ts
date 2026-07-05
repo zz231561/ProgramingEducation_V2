@@ -48,6 +48,17 @@ export type MasteryEntry = {
 /** 精熟度視覺分群（前端衍生）。 */
 export type MasteryBand = "mastered" | "learning" | "struggling" | "unseen";
 
+/** K5c 個人化路徑節點狀態（由 default path units 衍生）。 */
+export type PathNodeStatus = "current" | "completed";
+
+/** K5c 路徑高亮 overlay — 疊加在 mastery 著色之上的 ring 語意。 */
+export type PathOverlay = {
+  /** concept tag → 路徑狀態；不在 map 內 = 無 ring。 */
+  statusByTag: Map<string, PathNodeStatus>;
+  /** 診斷補救嫌疑節點（來自 /knowledge?remedial= query param）。 */
+  remedialTags: Set<string>;
+};
+
 /** confidence → band 對應；undefined（無 row）= unseen。 */
 export function getMasteryBand(confidence: number | undefined): MasteryBand {
   if (confidence === undefined) return "unseen";

@@ -6,15 +6,19 @@
 - validated=False 的題不被抽中
 - 不同 concept_tag 不串題
 - exclude_question_ids 過濾
+- U2d：question_type 過濾 + exclude_answered_by 排除已答過
 """
 
 from __future__ import annotations
+
+import uuid
 
 import pytest
 from sqlalchemy import select
 
 from models.concept import Concept
-from models.quiz import Question, QuestionSource
+from models.quiz import Question, QuestionSource, StudentAnswer
+from models.user import User
 from services.quiz.bank import pick_random_validated_question
 from tests.helpers import TestSessionFactory
 
@@ -122,3 +126,60 @@ async def test_multiple_validated_questions_all_eligible():
     async with TestSessionFactory() as db:
         all_rows = (await db.execute(select(Question))).scalars().all()
         assert len(all_rows) == 7
+
+
+# === U2d：question_type 過濾 + 重複曝光防護 ===
+
+
+@pytest.mark.asyncio
+async def test_question_type_filter():
+    """指定 question_type 只抽該題型；無該題型 → None。"""
+    async with TestSessionFactory() as db:
+        db.add(_make_question(["syntax-basic"], validated=True, qtype="multiple_choice"))
+        await db.commit()
+
+    async with TestSessionFactory() as db:
+        assert (
+            await pick_random_validated_question(
+                db, "syntax-basic", question_type="coding"
+            )
+        ) is None
+        q = await pick_random_validated_question(
+            db, "syntax-basic", question_type="multiple_choice"
+        )
+        assert q is not None
+        assert q.type == "multiple_choice"
+
+
+@pytest.mark.asyncio
+async def test_exclude_answered_by_filters_answered_questions():
+    """已答過的題不再抽中；未答過的其他學生不受影響。"""
+    async with TestSessionFactory() as db:
+        user_a = User(google_id=f"g-{uuid.uuid4()}", email="a@bank.test", name="A")
+        user_b = User(google_id=f"g-{uuid.uuid4()}", email="b@bank.test", name="B")
+        question = _make_question(["syntax-basic"], validated=True)
+        db.add_all([user_a, user_b, question])
+        await db.flush()
+        db.add(
+            StudentAnswer(
+                user_id=user_a.id,
+                question_id=question.id,
+                answer={"selected_index": 0},
+                is_correct=True,
+            )
+        )
+        await db.commit()
+        user_a_id, user_b_id = user_a.id, user_b.id
+
+    async with TestSessionFactory() as db:
+        # A 已答過唯一一題 → None（caller fallback 現生）
+        assert (
+            await pick_random_validated_question(
+                db, "syntax-basic", exclude_answered_by=user_a_id
+            )
+        ) is None
+        # B 沒答過 → 正常抽中
+        q = await pick_random_validated_question(
+            db, "syntax-basic", exclude_answered_by=user_b_id
+        )
+        assert q is not None

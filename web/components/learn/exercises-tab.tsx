@@ -7,7 +7,7 @@
  */
 
 import { useCallback, useState } from "react";
-import { Sparkles } from "lucide-react";
+import { CheckCircle2, Sparkles } from "lucide-react";
 import Link from "next/link";
 
 import { ReflectionFlow } from "@/components/reflection/reflection-flow";
@@ -185,7 +185,8 @@ function ReflectionDoneSummary({ reflection }: { reflection: Reflection }) {
   return (
     <div className="space-y-3 rounded-md border border-border-default bg-surface-1 p-4">
       <div className="flex items-center gap-2 text-sm text-accent-green">
-        <span>✓ 反思已記錄</span>
+        <CheckCircle2 className="size-4" />
+        <span>反思已記錄</span>
         {score !== null && score !== undefined && (
           <span className="text-text-muted">（品質分數 {Math.round(score * 100)}%）</span>
         )}

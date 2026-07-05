@@ -380,14 +380,58 @@ async def test_from_bank_empty_returns_404(client: AsyncClient):
     assert resp.json()["error"] == "QUESTION_BANK_EMPTY"
 
 
-async def test_from_bank_concept_tag_required(client: AsyncClient):
-    """concept_tag missing → 422（FastAPI Query 預設驗證）。"""
+async def test_from_bank_weakness_mode_without_concept_tag(client: AsyncClient):
+    """U2d：省略 concept_tag → 後端挑目標概念（cold-start 落到 syntax-basic）再抽題庫。"""
+    await _seed_starter_concept()
+    await _seed_validated_bank_question("syntax-basic")
     token = encrypt_test_token(STUDENT_PAYLOAD)
+
     resp = await client.get(
         "/quiz/from-bank",
         cookies={"authjs.session-token": token},
     )
-    assert resp.status_code == 422
+    assert resp.status_code == 200
+    assert "syntax-basic" in resp.json()["concept_tags"]
+
+
+async def test_from_bank_question_type_filter(client: AsyncClient):
+    """U2d：question_type 過濾——題庫只有 MC 卻要 coding → 404 fallback。"""
+    await _seed_validated_bank_question("syntax-basic")
+    token = encrypt_test_token(STUDENT_PAYLOAD)
+
+    resp = await client.get(
+        "/quiz/from-bank?concept_tag=syntax-basic&question_type=coding",
+        cookies={"authjs.session-token": token},
+    )
+    assert resp.status_code == 404
+    assert resp.json()["error"] == "QUESTION_BANK_EMPTY"
+
+
+async def test_from_bank_excludes_already_answered(client: AsyncClient):
+    """U2d 重複曝光防護：唯一一題已答過 → 404（前端 fallback 現生新題）。"""
+    q = await _seed_validated_bank_question("syntax-basic")
+    token = encrypt_test_token(STUDENT_PAYLOAD)
+
+    # 先命中一次並作答
+    first = await client.get(
+        "/quiz/from-bank?concept_tag=syntax-basic",
+        cookies={"authjs.session-token": token},
+    )
+    assert first.status_code == 200
+    submit = await client.post(
+        "/quiz/submit",
+        json={"question_id": str(q.id), "answer": {"selected_index": 1}},
+        cookies={"authjs.session-token": token},
+    )
+    assert submit.status_code == 200
+
+    # 再抽 → 已答過的題被排除
+    resp = await client.get(
+        "/quiz/from-bank?concept_tag=syntax-basic",
+        cookies={"authjs.session-token": token},
+    )
+    assert resp.status_code == 404
+    assert resp.json()["error"] == "QUESTION_BANK_EMPTY"
 
 
 async def test_from_bank_only_returns_matching_tag(client: AsyncClient):

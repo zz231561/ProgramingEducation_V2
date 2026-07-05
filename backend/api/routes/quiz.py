@@ -17,6 +17,7 @@ from services.quiz import (
     generate_hint,
     list_history,
     pick_random_validated_question,
+    pick_target_concept,
     submit_answer,
 )
 from sqlalchemy import select as sa_select  # noqa: F401  used by hint endpoint
@@ -112,20 +113,36 @@ class HistoryResponse(BaseModel):
 
 @router.get("/from-bank", response_model=QuestionForStudentOut)
 async def from_bank(
-    concept_tag: str = Query(..., min_length=1, max_length=50),
+    concept_tag: str | None = Query(default=None, min_length=1, max_length=50),
+    question_type: str | None = Query(default=None, max_length=20),
     db: AsyncSession = Depends(get_db),
-    _user: User = Depends(get_current_db_user),
+    user: User = Depends(get_current_db_user),
 ) -> QuestionForStudentOut:
     """Phase 6-3b：從題庫隨機抽 validated grounded 題目（不呼叫 LLM）。
 
+    - `concept_tag` 指定 → 抽該概念題（Learn 練習 tab）
+    - `concept_tag` 省略 → **U2d 弱項模式**：沿用出題 Select 邏輯挑最弱概念再抽題庫
+      （Quiz 頁題庫優先，省 LLM 成本與延遲）
+    - 一律排除該學生已答過的題（重複曝光防護）；全部答過 → 404 → 前端
+      fallback 至 /quiz/generate 現生新題（新題 validated 後入庫，題庫自然成長）
+
     命中 → 直接回題目；無題 → 404 QUESTION_BANK_EMPTY，前端 fallback 至 /quiz/generate。
     """
-    question = await pick_random_validated_question(db, concept_tag=concept_tag)
+    tag = concept_tag
+    if tag is None:
+        concept = await pick_target_concept(db, user.id)
+        tag = concept.tag
+    question = await pick_random_validated_question(
+        db,
+        concept_tag=tag,
+        question_type=question_type,
+        exclude_answered_by=user.id,
+    )
     if question is None:
         raise AppError(
             404,
             "QUESTION_BANK_EMPTY",
-            f"題庫尚無針對 {concept_tag} 的 validated 題目",
+            f"題庫尚無針對 {tag} 的可用題目（未答過且 validated）",
         )
     return QuestionForStudentOut.from_question(question)
 

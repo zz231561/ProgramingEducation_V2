@@ -1,5 +1,21 @@
 # 變更日誌
 
+## [2026-07-06] — feat(quiz)：第 4 批 U2d 題庫優先 + U2a 美化 + 重複曝光消除
+
+### Added（U2d）
+- **`GET /quiz/from-bank` 弱項模式**：省略 `concept_tag` → 後端以 `pick_target_concept`（原 orchestrator 私有函式轉公開）挑最弱概念再抽題庫；新增 `question_type` 過濾（尊重使用者選的題型）
+- **重複曝光防護（tech-debt 消除）**：bank service 加 `exclude_answered_by`——server-side 排除該生已答過的題，Learn ExercisesTab 與 Quiz 頁同時生效、前端零改動；全部答過 → 404 → fallback 現生新題（validated 後入庫，題庫自然成長）
+- **QuizRunner 題庫優先**：先 from-bank（< 1s）→ 404 QUESTION_BANK_EMPTY 才 LLM 現生；Loading 兩階段文案（「正在從題庫挑題」/「AI 正在生成新題」）
+
+### Changed（U2a）
+- Quiz 入口重設計：題型選擇改資訊卡（lucide icon + 一句話說明 + aria-pressed；active 用 border-emphasis 不用色塊，R8.5 合規）+ 視覺階層重整 + 「優先從題庫取題」提示
+- 修 R8.2 符號字違規 ×2：exercises-tab「✓ 反思已記錄」、unit-action-bar「已完成 ✓」→ lucide CheckCircle2
+
+### Tests
+- bank service +2（type 過濾 / exclude_answered_by 雙使用者）；route +3（弱項模式 / type 過濾 404 / 已答過排除端到端）；`test_from_bank_concept_tag_required` 改寫（省略 tag 已是合法模式）；後端全量 **605 passed**
+
+---
+
 ## [2026-07-06] — feat(mastery)：第 3 批 K6a/b/c 熟練度演算法 v2 + knowledge-graph 拆檔
 
 ### Added

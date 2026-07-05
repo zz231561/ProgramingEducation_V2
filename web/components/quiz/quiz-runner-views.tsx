@@ -6,7 +6,7 @@
  * 無狀態 presentational 元件 + 錯誤訊息轉換；流程邏輯留在 quiz-runner.tsx。
  */
 
-import { FileQuestion, Loader2, Play } from "lucide-react";
+import { Code2, ListChecks, Loader2, Play, Target } from "lucide-react";
 
 import { ApiRequestError } from "@/lib/api";
 import { Question, QuestionType } from "@/lib/quiz";
@@ -15,6 +15,15 @@ export const TYPE_LABELS: Record<QuestionType, string> = {
   multiple_choice: "選擇題",
   coding: "程式撰寫題",
   fill_blank: "填空題",
+};
+
+/** U2a：題型選擇卡的圖示與一句話說明。 */
+const TYPE_META: Record<
+  "multiple_choice" | "coding",
+  { icon: typeof ListChecks; hint: string }
+> = {
+  multiple_choice: { icon: ListChecks, hint: "觀念判斷，快速檢驗理解" },
+  coding: { icon: Code2, hint: "實際撰寫 C++，深度練習" },
 };
 
 export function IdleView({
@@ -29,43 +38,74 @@ export function IdleView({
   error: string | null;
 }) {
   return (
-    <div className="mx-auto max-w-md space-y-4 text-center">
-      <FileQuestion className="mx-auto size-10 text-text-muted/60" />
-      <h1 className="text-xl font-medium text-text-primary">Quiz 測驗</h1>
-      <p className="text-sm leading-6 text-text-secondary">
-        AI 依你目前的弱項自動出題；提交後立即顯示對錯與解析。
-      </p>
+    <div className="mx-auto max-w-md space-y-6">
+      <div className="space-y-2 text-center">
+        <span className="inline-flex size-11 items-center justify-center rounded-md border border-border-default bg-surface-1">
+          <Target className="size-5 text-text-secondary" />
+        </span>
+        <h1 className="text-xl font-medium text-text-primary">Quiz 測驗</h1>
+        <p className="text-sm leading-6 text-text-secondary">
+          系統依你目前的弱項概念出題，作答後立即顯示解析，
+          <br />
+          連續失誤時自動診斷根源弱點。
+        </p>
+      </div>
 
-      <div className="space-y-2 text-left">
-        <label className="block text-xs text-text-secondary">題型</label>
-        <div className="flex gap-2">
-          {(["multiple_choice", "coding"] as const).map((t) => (
-            <button
-              key={t}
-              type="button"
-              onClick={() => onTypeChange(t)}
-              className={`flex-1 rounded-md border px-3 py-2 text-sm transition-colors ${
-                type === t
-                  ? "border-border-emphasis bg-surface-2 text-text-primary"
-                  : "border-border-default bg-surface-1 text-text-secondary hover:border-border-emphasis hover:text-text-primary"
-              }`}
-            >
-              {TYPE_LABELS[t]}
-            </button>
-          ))}
+      <div className="space-y-2">
+        <span className="block text-xs font-medium uppercase tracking-wide text-text-muted">
+          題型
+        </span>
+        <div className="grid grid-cols-2 gap-2">
+          {(["multiple_choice", "coding"] as const).map((t) => {
+            const { icon: Icon, hint } = TYPE_META[t];
+            const active = type === t;
+            return (
+              <button
+                key={t}
+                type="button"
+                onClick={() => onTypeChange(t)}
+                aria-pressed={active}
+                className={`rounded-md border p-3 text-left transition-colors ${
+                  active
+                    ? "border-border-emphasis bg-surface-2"
+                    : "border-border-default bg-surface-1 hover:border-border-emphasis"
+                }`}
+              >
+                <span className="flex items-center gap-2">
+                  <Icon
+                    className={`size-4 ${active ? "text-text-primary" : "text-text-muted"}`}
+                  />
+                  <span
+                    className={`text-sm font-medium ${
+                      active ? "text-text-primary" : "text-text-secondary"
+                    }`}
+                  >
+                    {TYPE_LABELS[t]}
+                  </span>
+                </span>
+                <span className="mt-1 block text-xs leading-5 text-text-muted">
+                  {hint}
+                </span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      <button
-        type="button"
-        onClick={onStart}
-        className="inline-flex h-9 items-center gap-2 rounded-md bg-btn-primary-bg px-4 text-sm font-medium text-white hover:bg-btn-primary-hover"
-      >
-        <Play className="size-4" />
-        開始 Quiz
-      </button>
+      <div className="flex flex-col items-center gap-2">
+        <button
+          type="button"
+          onClick={onStart}
+          className="inline-flex h-9 w-full max-w-60 items-center justify-center gap-2 rounded-md bg-btn-primary-bg px-4 text-sm font-medium text-white hover:bg-btn-primary-hover"
+        >
+          <Play className="size-4" />
+          開始 Quiz
+        </button>
+        <p className="text-xs text-text-muted">優先從題庫取題，通常一秒內開始</p>
+      </div>
+
       {error && (
-        <div className="rounded-md border-l-2 border-accent-red bg-surface-2 px-3 py-2 text-left text-xs text-accent-red">
+        <div className="rounded-md border-l-2 border-accent-red bg-surface-2 px-3 py-2 text-xs text-accent-red">
           {error}
         </div>
       )}
@@ -73,12 +113,18 @@ export function IdleView({
   );
 }
 
-export function LoadingView() {
+export function LoadingView({ source }: { source: "bank" | "generate" }) {
   return (
     <div className="flex flex-col items-center gap-3 py-16 text-text-secondary">
       <Loader2 className="size-6 animate-spin" />
-      <p className="text-sm">AI 正在生成題目（含自我審查 retry）...</p>
-      <p className="text-xs text-text-muted">通常 5–15 秒</p>
+      {source === "bank" ? (
+        <p className="text-sm">正在從題庫挑題...</p>
+      ) : (
+        <>
+          <p className="text-sm">題庫無可用題目，AI 正在生成新題（含自我審查）...</p>
+          <p className="text-xs text-text-muted">通常 5–15 秒</p>
+        </>
+      )}
     </div>
   );
 }

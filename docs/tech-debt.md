@@ -14,11 +14,6 @@
     - 6-3b：ExercisesTab 命中題庫 path（前端 Loading 顯示「查找題庫題目」< 1 秒、不打 LLM、直接顯示題目）— 當前只能驗 fallback 「AI 正在生成」path
   - **如何處理**：批次跑完拿到至少 1 個 promoted unit 後，依 changelog 2026-05-22 6-2d 條目「How to verify」步驟 1-4 逐項操作；其中第 3-4 步是 sessionStorage 一次性消費的關鍵驗收，**不可漏跑**
   - **若驗收失敗**：第一優先檢查 `web/lib/pending-workspace-code.ts` 的 `consumePendingWorkspaceCode()` 是否真的有 `removeItem`；其次檢查 `web/app/(app)/workspace/page.tsx` 是否用 `useState` lazy initializer（而非直接呼叫，會導致 re-render 多次 consume）
-- [ ] **練習題重複曝光**（6-3b 已標）→ Phase 6 後段 / Phase 7 前
-  - **背景**：`/quiz/from-bank` service 已支援 `exclude_question_ids` 但前端 ExercisesTab 未維護已答題清單，學生重複進同 unit 練習可能抽到同題
-  - **如何處理**：前端在 `useEffect` 用 `getQuizHistory` 取出該 concept 已答 question_ids → 傳給 from-bank（需 endpoint 也支援 query param 或新 POST 形式）；或後端直接 join student_answers 在 service 內過濾
-  - **影響**：學生短時間重練命中率低時感受不明顯（grounded 題庫每 concept 2-3 題不大），但長期會被學生抱怨；6-4 自行品管時若發現此問題優先處理
-
 
 ### 部署相關（待實測）
 - [ ] **Zeabur PREBUILT + source.type=IMAGE schema 未實測**
@@ -81,6 +76,7 @@
 
 ## ✅ 已消除
 
+- ~~練習題重複曝光~~ — 2026-07-06 **U2d 一併消除**：bank service 加 `exclude_answered_by`（server-side join student_answers），Learn/Quiz 兩入口同時生效；全答過 → 404 → fallback 現生新題入庫
 - ~~`knowledge-graph.tsx` 265 行超標~~ — 2026-07-06 拆出 `use-graph-nav.ts` hook（章節游標 + 鏡頭動作）；主元件 212 行 + hook 119 行
 - ~~unit content 生成管線的 `summary` 欄位閒置~~ — 2026-07-06 **U2b 完成**：Summary model / prompt / LLM call 全移除（非僅前端 tab），批次直接省 1/3 calls
 - ~~`backend/.env` 的 `OPENAI_API_KEY` 未填~~ — 2026-07-06 確認已填（只驗證存在性未讀值）；第 5 批實機批次前使用者需確認 OpenAI 帳戶儲值 $10

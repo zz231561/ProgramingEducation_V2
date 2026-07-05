@@ -4,7 +4,7 @@
 → validated=True commit；validated=False rollback 該題、不阻擋同 concept 其他題。
 
 設計取捨：
-- 不走 orchestrator.generate_for_student：那條 path 為「學生弱項補強」，會 _pick_target_concept；
+- 不走 orchestrator.generate_for_student：那條 path 為「學生弱項補強」，會 pick_target_concept；
   批次模式直接針對指定 concept，且強制走 grounded mode（傳 video_order）。
 - 題型 mix 預設 multiple_choice + coding（涵蓋認知 + 實作）；caller 可自訂。
 - 每題獨立 validate；validate 失敗 → 該題回滾、結果記 ValidationFail，下一題繼續。

@@ -13,6 +13,7 @@ from services.quiz.hint import HintResult, generate_hint
 from services.quiz.orchestrator import (
     generate_for_student,
     list_history,
+    pick_target_concept,
     submit_answer,
 )
 from services.quiz.select import (
@@ -37,6 +38,7 @@ __all__ = [
     "grade_answer",
     "list_history",
     "pick_random_validated_question",
+    "pick_target_concept",
     "select_weak_concepts",
     "submit_answer",
     "validate_question",

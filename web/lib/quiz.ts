@@ -56,12 +56,21 @@ export async function generateQuestion(
 /**
  * Phase 6-3b：從題庫隨機抽 validated grounded 題目（不呼叫 LLM）。
  *
- * 命中 → 直接回題目（< 1 秒）；無題 → 拋 ApiRequestError(404, "QUESTION_BANK_EMPTY")
- * caller 可 catch 後 fallback 至 generateQuestion。
+ * - conceptTag 指定 → 抽該概念（Learn 練習 tab）
+ * - conceptTag 省略 → U2d 弱項模式：後端沿用 Select 邏輯挑最弱概念（Quiz 頁）
+ * - questionType 可選：依使用者選的題型過濾
+ * - 後端一律排除已答過的題；命中 → < 1 秒回題；無題 → 拋
+ *   ApiRequestError(404, "QUESTION_BANK_EMPTY")，caller fallback 至 generateQuestion。
  */
-export async function getQuestionFromBank(conceptTag: string): Promise<Question> {
-  const qs = new URLSearchParams({ concept_tag: conceptTag }).toString();
-  return api<Question>(`/quiz/from-bank?${qs}`);
+export async function getQuestionFromBank(
+  conceptTag?: string,
+  questionType?: QuestionType,
+): Promise<Question> {
+  const params = new URLSearchParams();
+  if (conceptTag) params.set("concept_tag", conceptTag);
+  if (questionType) params.set("question_type", questionType);
+  const qs = params.toString();
+  return api<Question>(`/quiz/from-bank${qs ? `?${qs}` : ""}`);
 }
 
 /**

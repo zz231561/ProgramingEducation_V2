@@ -31,7 +31,7 @@ COLD_START_FALLBACK_TAG = "syntax-basic"
 MAX_VALIDATE_RETRIES = 2
 
 
-async def _pick_target_concept(db: AsyncSession, user_id: UUID) -> Concept:
+async def pick_target_concept(db: AsyncSession, user_id: UUID) -> Concept:
     """先取弱項；無弱項則 fallback 到入門 concept。
 
     Cold-start 兩段 fallback：
@@ -89,7 +89,7 @@ async def generate_for_student(
         bloom_level: 目標 Bloom 等級（1-6，預設 APPLY=3）
         concept_tag: 指定 concept tag（3-1e Learn 練習 tab 用）；
                      若提供 → 直接針對該 concept 出題；
-                     若 None → 走原弱項補強邏輯（_pick_target_concept）
+                     若 None → 走原弱項補強邏輯（pick_target_concept）
 
     Returns:
         validated=True 的 Question 物件
@@ -101,7 +101,7 @@ async def generate_for_student(
     if concept_tag is not None:
         concept = await _resolve_concept_by_tag(db, concept_tag)
     else:
-        concept = await _pick_target_concept(db, user_id)
+        concept = await pick_target_concept(db, user_id)
     difficulty = max(1, min(5, concept.difficulty_level))
 
     last_report: ValidationReport | None = None

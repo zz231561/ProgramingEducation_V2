@@ -15,6 +15,7 @@
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
+import { ApiRequestError } from "@/lib/api";
 import {
   HintResponse,
   Question,
@@ -23,6 +24,7 @@ import {
   SubmitResponse,
   generateQuestion,
   getQuestionById,
+  getQuestionFromBank,
   requestHint,
   submitAnswer,
 } from "@/lib/quiz";
@@ -42,7 +44,7 @@ import { Timer } from "./timer";
 
 type Phase =
   | { mode: "idle" }
-  | { mode: "loading" }
+  | { mode: "loading"; source: "bank" | "generate" }
   | { mode: "question"; question: Question; startedAt: number }
   | { mode: "submitting"; question: Question }
   | { mode: "result"; question: Question; result: SubmitResponse };
@@ -55,10 +57,29 @@ export function QuizRunner() {
   const [hints, setHints] = useState<HintResponse[]>([]);
   const [hintBusy, setHintBusy] = useState(false);
 
+  // U2d 題庫優先：先抽題庫（弱項模式 + 排除已答過，< 1s），
+  // 題庫無可用題才 fallback LLM 現生（5-15s；新題 validated 後入庫）
   const fetchQuestion = useCallback(async () => {
     setError(null);
     setHints([]);
-    setPhase({ mode: "loading" });
+    setPhase({ mode: "loading", source: "bank" });
+    try {
+      const q = await getQuestionFromBank(undefined, type);
+      setPhase({ mode: "question", question: q, startedAt: Date.now() });
+      return;
+    } catch (e) {
+      const bankEmpty =
+        e instanceof ApiRequestError &&
+        e.status === 404 &&
+        e.body.error === "QUESTION_BANK_EMPTY";
+      if (!bankEmpty) {
+        setPhase({ mode: "idle" });
+        setError(humanizeError(e));
+        return;
+      }
+    }
+
+    setPhase({ mode: "loading", source: "generate" });
     try {
       const q = await generateQuestion({ type, bloom_level: 3 });
       setPhase({ mode: "question", question: q, startedAt: Date.now() });
@@ -80,7 +101,7 @@ export function QuizRunner() {
   useEffect(() => {
     if (!deepLinkQuestionId) return;
     let cancelled = false;
-    setPhase({ mode: "loading" });
+    setPhase({ mode: "loading", source: "bank" });
     getQuestionById(deepLinkQuestionId).then(
       (q) => {
         if (!cancelled) startQuestion(q);
@@ -152,7 +173,7 @@ export function QuizRunner() {
   }
 
   if (phase.mode === "loading") {
-    return <LoadingView />;
+    return <LoadingView source={phase.source} />;
   }
 
   if (phase.mode === "result") {

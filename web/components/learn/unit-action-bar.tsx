@@ -7,7 +7,7 @@
  * 純展示元件，狀態與 callback 由父層 prop-driven。
  */
 
-import { ChevronLeft, ChevronRight, Play } from "lucide-react";
+import { CheckCircle2, ChevronLeft, ChevronRight, Play } from "lucide-react";
 
 import { Unit } from "@/lib/learning";
 
@@ -75,7 +75,10 @@ export function ActionButton({
   }
   if (unit.status === "completed") {
     return (
-      <span className="text-sm text-accent-green">已完成 ✓</span>
+      <span className="inline-flex items-center gap-1.5 text-sm text-accent-green">
+        <CheckCircle2 className="size-4" />
+        已完成
+      </span>
     );
   }
   // locked

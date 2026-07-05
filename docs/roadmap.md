@@ -201,10 +201,10 @@
 - [x] U1c 反思 handoff gating：`active_reflection_handoff` 標記 + `getHandedOffReflectionId()`，非正確管道進入自動清除殘留
 
 ### 6-U2 UI/UX 與機制調整
-- [ ] U2a QUIZ 介面美化（對照 ui-ux-spec + frontend.md R1-R8 檢核）
+- [x] U2a QUIZ 介面美化：入口改題型選擇卡（icon + 說明 + aria-pressed）+ 視覺階層重整 + 題庫優先提示；修 exercises-tab / unit-action-bar 兩處 R8.2 ✓ 符號字違規（改 lucide icon）
 - [x] U2b 移除 LEARN 摘要：前端 tab + summary-tab.tsx 刪除；生成管線 Summary model / prompt / LLM call 移除（批次省 1/3 calls）；lazy-seed 骨架同步去 summary 欄位
 - [x] U2c 拔除課程介紹範例：後端 `concept_category` 直通 UnitOut；前端課程介紹單元隱藏範例 tab；批次生成對 intro concept 跳過 examples LLM call（不標 needs_more_source）
-- [ ] U2d QUIZ tab 改題庫優先：弱項出題先抽題庫（Select 弱項概念 + 複用 6-3b from-bank 機制），題庫無題才即時生成——省 LLM 成本與延遲
+- [x] U2d QUIZ tab 題庫優先：`GET /quiz/from-bank` 支援省略 concept_tag（弱項模式，複用 pick_target_concept）+ question_type 過濾；QuizRunner 兩階段 loading + 404 fallback 現生；**練習題重複曝光 tech-debt 一併消除**（bank 一律排除該生已答過的題，Learn/Quiz 兩入口同時生效；全答過 → fallback 現生新題入庫，題庫自然成長）
 - [ ] U2e Workspace 程式碼存檔：編輯器內容目前重整即消失（僅 chat 快照 / 作答記錄入 DB）；新增自動存檔或「我的程式碼」功能
 - [ ] U2f 範例程式製作（2026-07-06 順序定案：排第 6 批，教師端 Phase 5 之前）
 

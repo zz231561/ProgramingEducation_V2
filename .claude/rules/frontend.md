@@ -99,3 +99,4 @@ Active tab: `border-bottom: 2px solid #F78166`
 - `shadcn/ui/button.tsx` 預設變體（基礎庫，避免動）
 - `lucide-react` icon（線條圖示，非 emoji）
 - 邊框實線色 `border-accent-X`（功能性，無填充）
+- **Knowledge Graph 星系背景**（2026-07-05 使用者核准之裝飾例外）：`galaxy-backgrounds.ts` 程序生成低透明度星雲 SVG，色相限 token 藍/紫/灰；範圍僅限 `/knowledge` 章節 cluster 背景與其半透明導覽按鈕，不得擴散至其他頁面

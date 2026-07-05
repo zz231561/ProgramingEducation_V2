@@ -87,6 +87,14 @@ function KnowledgePageInner() {
     [pathUnits, remedialTags],
   );
 
+  // 目前進度 concept（進場鏡頭 zoom 至其星系）
+  const currentTag = useMemo(() => {
+    for (const [tag, status] of pathOverlay.statusByTag) {
+      if (status === "current") return tag;
+    }
+    return null;
+  }, [pathOverlay]);
+
   return (
     <div className="flex h-full flex-col">
       <header className="space-y-1.5 border-b border-border-default px-4 py-3">
@@ -110,6 +118,7 @@ function KnowledgePageInner() {
               data={graphData}
               masteryMap={masteryMap}
               pathOverlay={pathOverlay}
+              currentTag={currentTag}
               focusTags={remedialTags}
               onNodeClick={setSelectedTag}
             />

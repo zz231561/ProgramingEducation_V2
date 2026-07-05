@@ -18,8 +18,8 @@ import type {
 } from "./knowledge-graph-types";
 import { getMasteryBand } from "./knowledge-graph-types";
 
-/** 章節 parent 節點 id 前綴（與 concept uuid 區隔）。 */
-const CHAPTER_ID_PREFIX = "chapter:";
+/** 章節 parent 節點 id 前綴（與 concept uuid 區隔）；星系導覽 fit 也用它定位。 */
+export const CHAPTER_ID_PREFIX = "chapter:";
 
 export function toElements(
   data: GraphData,

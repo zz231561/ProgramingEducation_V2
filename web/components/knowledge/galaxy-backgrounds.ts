@@ -31,7 +31,7 @@ function nebulaEllipses(rand: () => number, hue: string): string {
     const rx = (90 + rand() * 100).toFixed(1);
     const ry = (36 + rand() * 55).toFixed(1);
     const rot = (rand() * 180).toFixed(1);
-    const op = (0.1 + rand() * 0.1).toFixed(2);
+    const op = (0.18 + rand() * 0.14).toFixed(2);
     out += `<ellipse cx="${ox}" cy="${oy}" rx="${rx}" ry="${ry}" fill="${hue}" opacity="${op}" transform="rotate(${rot} ${ox} ${oy})" filter="url(#b)"/>`;
   }
   return out;
@@ -60,8 +60,8 @@ export function galaxyDataUri(chapterIndex: number): string {
     `<defs>` +
     `<filter id="b" x="-50%" y="-50%" width="200%" height="200%">` +
     `<feGaussianBlur stdDeviation="20"/></filter>` +
-    `<radialGradient id="g"><stop offset="0" stop-color="${hue}" stop-opacity="0.28"/>` +
-    `<stop offset="0.55" stop-color="${hue}" stop-opacity="0.1"/>` +
+    `<radialGradient id="g"><stop offset="0" stop-color="${hue}" stop-opacity="0.5"/>` +
+    `<stop offset="0.55" stop-color="${hue}" stop-opacity="0.2"/>` +
     `<stop offset="1" stop-color="${hue}" stop-opacity="0"/></radialGradient>` +
     `</defs>` +
     `<circle cx="${c}" cy="${c}" r="${c * 0.8}" fill="url(#g)"/>` +

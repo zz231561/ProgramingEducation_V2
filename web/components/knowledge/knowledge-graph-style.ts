@@ -96,7 +96,7 @@ export const STYLESHEET: StylesheetCSS[] = [
       "border-width": 0,
       "background-image": "data(galaxy)",
       "background-fit": "cover",
-      "background-image-opacity": 0.5,
+      "background-image-opacity": 0.8,
       label: "data(label)",
       color: TOKEN.textMuted,
       "font-size": "12px",

@@ -1,9 +1,9 @@
 /**
- * Overview 層樣式（zoom out 的章節級「最適排版」）+ 雙層 crossfade 類別。
+ * Overview（全覽）語意縮放樣式 — `.ov` 類別由 graph-mode.ts 切換。
  *
- * 星系節點：星雲背景 + 大字章名（font 52px × overview zoom ≈ 0.3 → 螢幕上
- * 約 15px 可讀）；章間聚合依賴邊粗線大箭頭。`.mode-hidden` 以 opacity
- * transition 隱藏另一層，鏡頭縮放動畫穿越門檻時形成平滑 crossfade。
+ * zoom out 後仍顯示全部概念節點與名稱：節點與字體改用放大的世界座標
+ * 尺寸（font 30px × 全覽 zoom ≈ 0.3 → 螢幕約 9-10px 可讀），
+ * cell 間距由 overview-layout.ts 配合此處尺寸設計，標籤互不重疊。
  */
 
 import type { StylesheetCSS } from "cytoscape";
@@ -11,52 +11,38 @@ import type { StylesheetCSS } from "cytoscape";
 import { TOKEN } from "./knowledge-graph-style";
 
 export const OVERVIEW_STYLES: StylesheetCSS[] = [
+  // 概念節點：放大節點（ov_size = size × 1.7）與字體，文字轉主色提高對比
   {
-    selector: "node[?overview]",
+    selector: "node[tag].ov",
     css: {
-      shape: "ellipse",
-      width: "data(size)",
-      height: "data(size)",
-      "background-opacity": 0,
-      "border-width": 0,
-      "background-image": "data(galaxy)",
-      "background-fit": "cover",
-      "background-clip": "node",
-      "background-image-opacity": 0.95,
-      label: "data(label)",
+      width: "data(ov_size)",
+      height: "data(ov_size)",
+      "font-size": "30px",
+      "text-max-width": "240px",
+      "text-margin-y": 8,
       color: TOKEN.textPrimary,
-      "font-size": "52px",
-      "font-family": "Inter, 'Noto Sans TC', sans-serif",
-      "text-valign": "center",
-      "text-halign": "center",
-      "text-wrap": "wrap",
-      "text-max-width": "460px",
-      "line-height": 1.35,
-      "transition-property": "opacity",
-      "transition-duration": 220,
     },
   },
+  // 章節容器標籤同步放大，維持章名可讀
   {
-    selector: "edge[?overview]",
+    selector: "node:parent.ov",
     css: {
-      "line-color": TOKEN.borderEmphasis,
-      width: 5,
-      opacity: 0.45,
-      "curve-style": "bezier",
-      "control-point-step-size": 80,
-      "target-arrow-shape": "triangle",
-      "target-arrow-color": TOKEN.borderEmphasis,
-      "arrow-scale": 2.2,
-      "transition-property": "opacity",
-      "transition-duration": 220,
+      "font-size": "48px",
+      "text-margin-y": -16,
+      color: TOKEN.textSecondary,
     },
   },
-  // 雙層切換：隱藏層透明化 + 停用互動（宣告在最後，優先級最高）
+  // 邊與箭頭等比加粗，避免 zoom out 後細到不可見
   {
-    selector: ".mode-hidden",
+    selector: "edge.ov",
     css: {
-      opacity: 0,
-      events: "no",
+      width: 3,
+      "arrow-scale": 2,
     },
+  },
+  // 跨章依賴邊在全覽時是有效資訊，比 detail 的 0.18 略提高
+  {
+    selector: "edge[?cross].ov",
+    css: { opacity: 0.3 },
   },
 ];

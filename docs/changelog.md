@@ -1,5 +1,21 @@
 # 變更日誌
 
+## [2026-07-05] — refactor(K5-語意縮放)：全覽改「全節點放大重排」，移除章節星系節點層（使用者六驗回饋）
+
+### Changed
+- **五驗雙層視圖會錯意修正**：使用者要的不是 zoom out 換成章節級星系節點，而是**同一批概念節點與名稱全部保留**，依 zoom 比例調整節點大小、字體與排列。現改為語意縮放（semantic zoom）：
+  - **zoom < 0.45**：全部 59 個概念節點放大（節點 ×1.7、字體 11→30px 世界座標、文字轉主色）並重排為緊湊網格——9 章排 3×3、章內近方形 cell 網格（新 `overview-layout.ts`，cell 260×180 配合字體推算）；全覽 fit（zoom ≈ 0.3）下名稱約 9-10px 螢幕可讀且互不重疊
+  - **zoom ≥ 0.45**：回到蛇形星系佈局與原尺寸；切換時節點位置 320ms 動畫過渡 + 尺寸/字體 style transition，`graph-mode.ts` 改傳雙佈局座標
+- 移除 overview 星系節點層與章間聚合邊（`overviewElements` / `GALAXY_ID_PREFIX` / `.mode-hidden` crossfade 機制）；跨章依賴邊改在全覽時 opacity 0.3 呈現（detail 仍 0.18 淡出）
+- 軌道弧線 underlay 依模式 crossfade 兩條路徑（detail 蛇形 / overview 網格蛇形順序），SVG 抽出為 `orbit-underlay.tsx`；星空範圍覆蓋兩佈局聯集
+- 鏡頭改瞄準「目標佈局包圍盒」而非元素現況（`graph-camera.ts` 新增 `boundsOf` + `animateToBounds`）：從全覽點章 zoom in 時節點正在移回 detail 位置，fit 對元素現況會對錯座標
+- 驗證：`tsc` + `next build` 通過；視覺效果與間距參數待使用者實機驗收調整
+
+### 技術債
+- `knowledge-graph.tsx` 265 行（>250 硬性門檻）：已提出拆分計畫（抽章節導覽/鏡頭 hook），待使用者核可
+
+---
+
 ## [2026-07-05] — feat(K5-雙層視圖)：星雲回歸 + 章節級全覽排版 + 點擊聚焦（使用者五驗回饋）
 
 ### Changed

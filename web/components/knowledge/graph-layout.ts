@@ -38,8 +38,8 @@ export function orderedCategories(nodes: ConceptNode[]): string[] {
   });
 }
 
-/** 章內節點排序（video_order 升冪、null 殿後、tag 決勝）。 */
-function sortWithinChapter(nodes: ConceptNode[]): ConceptNode[] {
+/** 章內節點排序（video_order 升冪、null 殿後、tag 決勝）；overview 佈局共用。 */
+export function sortWithinChapter(nodes: ConceptNode[]): ConceptNode[] {
   return [...nodes].sort((a, b) => {
     const ao = a.video_order ?? Number.MAX_SAFE_INTEGER;
     const bo = b.video_order ?? Number.MAX_SAFE_INTEGER;

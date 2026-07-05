@@ -1,33 +1,54 @@
 /**
- * 雙層視圖模式切換（overview 章節級 / detail 概念級）。
+ * 語意縮放模式切換（overview 全覽 / detail 概念級）。
  *
- * 由 zoom 門檻驅動：鏡頭動畫每 frame 觸發 viewport 事件，穿越門檻的
- * 瞬間切換 `.mode-hidden` 類別，搭配 220ms opacity transition 形成
- * 「縮放中自然 crossfade」的平滑過場。
+ * 兩種模式顯示同一批概念節點：overview 把節點與字體放大（`.ov` 樣式）
+ * 並重排為緊湊網格（overview-layout.ts），讓 zoom out 後名稱仍可讀；
+ * detail 回到蛇形星系佈局。切換由 viewport zoom 門檻驅動，
+ * 節點位置以動畫過渡、尺寸靠 style transition 平滑變化。
  */
 
 import type { Core } from "cytoscape";
 
+import type { NodePosition } from "./graph-layout";
+
 export type ViewMode = "overview" | "detail";
 
-/** 低於此 zoom 顯示章節級 overview（全覽 fit ≈ 0.25-0.3、單章 fit ≥ 0.6）。 */
+export type ModeLayouts = {
+  detail: Map<string, NodePosition>;
+  overview: Map<string, NodePosition>;
+};
+
+/** 低於此 zoom 切換 overview（全覽 fit ≈ 0.3、單章 fit ≥ 0.6）。 */
 export const OVERVIEW_ZOOM_THRESHOLD = 0.45;
+/** 佈局切換的位置動畫時長（underlay 軌道 crossfade 同步此值）。 */
+export const MODE_TRANSITION_MS = 320;
 
 export function modeForZoom(zoom: number): ViewMode {
   return zoom < OVERVIEW_ZOOM_THRESHOLD ? "overview" : "detail";
 }
 
-/** 套用視圖模式：只顯示對應層，另一層淡出並停用互動。 */
-export function applyMode(cy: Core, mode: ViewMode): void {
-  cy.batch(() => {
-    const overview = cy.elements("[?overview]");
-    const detail = cy.elements().difference(overview);
-    if (mode === "overview") {
-      overview.removeClass("mode-hidden");
-      detail.addClass("mode-hidden");
+/** 套用模式：toggle `.ov` 樣式 + 概念節點移至對應佈局座標。 */
+export function applyMode(
+  cy: Core,
+  mode: ViewMode,
+  layouts: ModeLayouts,
+  animate: boolean,
+): void {
+  const isOverview = mode === "overview";
+  const target = isOverview ? layouts.overview : layouts.detail;
+  cy.elements().toggleClass("ov", isOverview);
+  cy.nodes("[tag]").forEach((node) => {
+    const pos = target.get(node.id());
+    if (!pos) return;
+    node.stop();
+    if (animate) {
+      node.animate({
+        position: { ...pos },
+        duration: MODE_TRANSITION_MS,
+        easing: "ease-in-out",
+      });
     } else {
-      overview.addClass("mode-hidden");
-      detail.removeClass("mode-hidden");
+      node.position({ ...pos });
     }
   });
 }

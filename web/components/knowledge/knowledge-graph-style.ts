@@ -74,7 +74,9 @@ export const STYLESHEET: StylesheetCSS[] = [
       "text-margin-y": 6,
       "text-wrap": "wrap",
       "text-max-width": "100px",
-      "transition-property": "opacity, border-color, border-width, color",
+      // width/height/font-size 隨 .ov（語意縮放）切換，需平滑過渡
+      "transition-property":
+        "opacity, border-color, border-width, color, width, height, font-size",
       "transition-duration": 120,
     },
   },
@@ -106,7 +108,7 @@ export const STYLESHEET: StylesheetCSS[] = [
       "text-halign": "center",
       "text-margin-y": -8,
       padding: "48px",
-      "transition-property": "opacity",
+      "transition-property": "opacity, font-size",
       "transition-duration": 220,
     },
   },

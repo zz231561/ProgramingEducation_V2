@@ -5,9 +5,10 @@
  *
  * Presentational 元件 — 由 KnowledgePage 傳入 graphData + masteryMap + pathOverlay，
  * 自己只負責 Cytoscape 生命週期與互動。
- * 雙層視圖：zoom < 門檻顯示章節級星系（overview-style.ts），否則顯示概念級
- * detail；切換由 graph-mode.ts 依 viewport zoom 驅動，crossfade 平滑過場。
- * 點擊星系 / 章節容器 / 概念節點一律鏡頭 zoom in 至該章（概念另開詳情面板）。
+ * 語意縮放（2026-07-05 改版）：overview / detail 顯示同一批概念節點；
+ * zoom < 門檻時節點與字體放大並重排為緊湊網格（overview-layout.ts），
+ * 讓全覽時所有節點名稱仍可讀；切換由 graph-mode.ts 依 viewport zoom 驅動。
+ * 點擊概念節點 zoom in 至該章（並開詳情面板）。
  * K5c：focusTags（補救跳轉）優先於 currentTag 進度聚焦。
  */
 
@@ -15,10 +16,19 @@ import cytoscape, { type Core, type EventObject } from "cytoscape";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { GalaxyNav } from "./galaxy-nav";
-import { fitWithCap } from "./graph-camera";
-import { computeChapterAnchors, computePositions } from "./graph-layout";
-import { applyMode, modeForZoom, type ViewMode } from "./graph-mode";
-import { CHAPTER_ID_PREFIX, toElements } from "./knowledge-graph-elements";
+import { animateToBounds, boundsOf, fitWithCap } from "./graph-camera";
+import {
+  computeChapterAnchors,
+  computePositions,
+  type NodePosition,
+} from "./graph-layout";
+import {
+  applyMode,
+  modeForZoom,
+  type ModeLayouts,
+  type ViewMode,
+} from "./graph-mode";
+import { toElements } from "./knowledge-graph-elements";
 import { STYLESHEET, TOKEN } from "./knowledge-graph-style";
 import type {
   GraphData,
@@ -26,7 +36,13 @@ import type {
   PathOverlay,
 } from "./knowledge-graph-types";
 import { buildOrbitPath, buildStars } from "./orbit-scene";
+import { computeOverviewLayout } from "./overview-layout";
 import { OVERVIEW_STYLES } from "./overview-style";
+import { OrbitUnderlay } from "./orbit-underlay";
+
+// fit 目標包圍盒外擴：detail 章節（節點 + 下方標籤）/ overview 全覽（cell 半格）
+const CHAPTER_FIT_MARGIN = 130;
+const OVERVIEW_FIT_MARGIN = 150;
 
 export type KnowledgeGraphProps = {
   data: GraphData;
@@ -52,6 +68,7 @@ export function KnowledgeGraph({
   const containerRef = useRef<HTMLDivElement>(null);
   const underlayRef = useRef<SVGGElement>(null);
   const cyRef = useRef<Core | null>(null);
+  const [viewMode, setViewMode] = useState<ViewMode>("detail");
 
   const elements = useMemo(
     () => toElements(data, masteryMap, pathOverlay),
@@ -59,8 +76,21 @@ export function KnowledgeGraph({
   );
   const positions = useMemo(() => computePositions(data), [data]);
   const anchors = useMemo(() => computeChapterAnchors(data), [data]);
+  const overview = useMemo(() => computeOverviewLayout(data), [data]);
+  const layouts: ModeLayouts = useMemo(
+    () => ({ detail: positions, overview: overview.positions }),
+    [positions, overview],
+  );
   const orbitPath = useMemo(() => buildOrbitPath(anchors), [anchors]);
-  const stars = useMemo(() => buildStars(anchors), [anchors]);
+  const overviewOrbitPath = useMemo(
+    () => buildOrbitPath(overview.orbitAnchors),
+    [overview],
+  );
+  // 星空覆蓋兩種佈局的聯集範圍
+  const stars = useMemo(
+    () => buildStars([...anchors, ...overview.orbitAnchors]),
+    [anchors, overview],
+  );
 
   // 進場聚焦章節：補救 tags > 目前進度 > 第一章
   const initialChapterIdx = useMemo(() => {
@@ -81,14 +111,20 @@ export function KnowledgeGraph({
     setChapterIdx(initialChapterIdx);
   }
 
+  // 章節 fit 一律瞄準 detail 佈局座標（overview 點章 zoom in 時，
+  // 節點會在鏡頭動畫中移回 detail 位置，故不能拿元素現況當目標）
   const fitChapter = useCallback(
     (cy: Core, idx: number, animate: boolean) => {
-      const parent = cy.getElementById(
-        `${CHAPTER_ID_PREFIX}${anchors[idx]?.category ?? ""}`,
-      );
-      fitWithCap(cy, parent, animate);
+      const category = anchors[idx]?.category;
+      if (!category) return;
+      const pts = data.nodes
+        .filter((n) => n.category === category)
+        .map((n) => positions.get(n.id))
+        .filter((p): p is NodePosition => p !== undefined);
+      if (pts.length === 0) return;
+      animateToBounds(cy, boundsOf(pts, CHAPTER_FIT_MARGIN), animate);
     },
-    [anchors],
+    [anchors, data, positions],
   );
 
   const handleNav = useCallback(
@@ -100,7 +136,7 @@ export function KnowledgeGraph({
     [chapterIdx, anchors.length, fitChapter],
   );
 
-  // 點擊星系 / 章節容器 / 概念節點 → zoom in 至該章
+  // 點擊章節容器 / 概念節點 → zoom in 至該章
   const zoomToCategory = useCallback(
     (cy: Core, category: string) => {
       const idx = anchors.findIndex((a) => a.category === category);
@@ -111,16 +147,14 @@ export function KnowledgeGraph({
     [anchors, fitChapter],
   );
 
-  // 全覽：zoom out 至章節級視圖（overview 層自動接手，章名維持可讀）
+  // 全覽：zoom out 至 overview 佈局範圍（跨過門檻後節點自動放大重排）
   const handleOverview = useCallback(() => {
     const cy = cyRef.current;
     if (!cy) return;
-    cy.animate({
-      fit: { eles: cy.elements("node[?overview]"), padding: 48 },
-      duration: 500,
-      easing: "ease-in-out",
-    });
-  }, []);
+    const pts = [...overview.positions.values()];
+    if (pts.length === 0) return;
+    animateToBounds(cy, boundsOf(pts, OVERVIEW_FIT_MARGIN), true);
+  }, [overview]);
 
   // Cytoscape lifecycle
   useEffect(() => {
@@ -131,7 +165,7 @@ export function KnowledgeGraph({
       elements,
       style: [...STYLESHEET, ...OVERVIEW_STYLES],
       layout: {
-        // 確定性佈局：概念座標由 graph-layout.ts 算好；星系節點自帶 position
+        // 確定性佈局：detail 座標由 graph-layout.ts 算好（overview 由模式切換動畫移位）
         name: "preset",
         positions: (node: { id: () => string }) =>
           positions.get(node.id()) ?? undefined,
@@ -143,7 +177,7 @@ export function KnowledgeGraph({
       maxZoom: 3,
     });
 
-    // 統一點擊：星系 / parent / 概念節點都帶 category → zoom in 該章
+    // 統一點擊：parent / 概念節點都帶 category → zoom in 該章
     cy.on("tap", "node[category]", (evt: EventObject) => {
       const target = evt.target;
       const tag = target.data("tag") as string | undefined;
@@ -162,7 +196,7 @@ export function KnowledgeGraph({
       cy.elements().removeClass("faded highlighted");
     });
 
-    // viewport 同步：underlay transform + 雙層模式切換（crossfade 過場）
+    // viewport 同步：underlay transform + 語意縮放模式切換（初次套用不做動畫）
     let mode: ViewMode | null = null;
     const syncViewport = () => {
       underlayRef.current?.setAttribute(
@@ -171,8 +205,9 @@ export function KnowledgeGraph({
       );
       const next = modeForZoom(cy.zoom());
       if (next !== mode) {
+        applyMode(cy, next, layouts, mode !== null);
         mode = next;
-        applyMode(cy, next);
+        setViewMode(next);
       }
     };
     cy.on("viewport", syncViewport);
@@ -194,6 +229,7 @@ export function KnowledgeGraph({
   }, [
     elements,
     positions,
+    layouts,
     onNodeClick,
     focusTags,
     initialChapterIdx,
@@ -208,31 +244,13 @@ export function KnowledgeGraph({
       className="relative h-full w-full overflow-hidden"
       style={{ backgroundColor: TOKEN.bgCanvas }}
     >
-      <svg
-        className="pointer-events-none absolute inset-0 h-full w-full"
-        aria-hidden
-      >
-        <g ref={underlayRef}>
-          <path
-            d={orbitPath}
-            fill="none"
-            stroke={TOKEN.borderDefault}
-            strokeWidth={2}
-            strokeDasharray="2 10"
-            opacity={0.6}
-          />
-          {stars.map((s, i) => (
-            <circle
-              key={i}
-              cx={s.x}
-              cy={s.y}
-              r={s.r}
-              fill={TOKEN.textPrimary}
-              opacity={s.opacity}
-            />
-          ))}
-        </g>
-      </svg>
+      <OrbitUnderlay
+        groupRef={underlayRef}
+        detailPath={orbitPath}
+        overviewPath={overviewOrbitPath}
+        stars={stars}
+        mode={viewMode}
+      />
       <div ref={containerRef} className="relative h-full w-full" />
       <GalaxyNav
         label={navLabel}

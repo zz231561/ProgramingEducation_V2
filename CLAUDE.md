@@ -44,7 +44,7 @@
   - K2 ✅動態知識狀態（`edf_parent_tag` mapping + 三層 fan-out 讓對話重新驅動 BKT；`/concepts/mastery` 加 last_practiced_at；K2c 決策：暫不引入真 AST）
   - K3 ✅全數完成（後端連續失敗觸發 + closure 回溯 + `GET /concepts/{tag}/diagnosis`；K3e 前端：答錯自動查診斷 → 嫌疑鏈 + 微測驗 `GET /quiz/questions/{id}` + 補救開放 + 圖譜跳轉）
   - K4a/b/c ✅（K-Graph 鷹架注入 prompt + Coddy persona 改寫 + RAG 相關性觸發 + 補救路徑 remediate API）；K4d 真人驗收待 API key 實測
-  - K5a/b/c ✅（2026-07-05，五輪迭代定稿）：Cytoscape.js + mastery band 填色 + 路徑 ring（藍=目前/綠=已完成/紅=補救 `?remedial=`）+ **星雲雙層視圖**（detail=概念級星雲章節容器；overview=章節級大星系+章間依賴邊，zoom 門檻 0.45 crossfade 切換 `graph-mode.ts`）+ 蛇形軌道 preset 佈局 + 點擊星系/容器/節點皆 zoom in 該章 + GalaxyNav 含全覽鈕 + zoom cap 1.0 + 跨章邊淡出
+  - K5a/b/c ✅（2026-07-05，六輪迭代）：Cytoscape.js + mastery band 填色 + 路徑 ring（藍=目前/綠=已完成/紅=補救 `?remedial=`）+ **語意縮放全覽**（overview=同批概念節點放大字體/尺寸並重排每章緊湊網格 `overview-layout.ts`；detail=蛇形星系佈局；zoom 門檻 0.45 動畫切換 `graph-mode.ts`）+ 點擊容器/節點皆 zoom in 該章 + GalaxyNav 含全覽鈕 + zoom cap 1.0 + 跨章邊淡出；⚠ `knowledge-graph.tsx` 265 行拆分計畫待核可
   - **下一步（K 系列）**：**K5d 真人驗收**（學生能否從圖讀懂進度與弱項；含 K1d UI 抽查）→ K4d 真人驗收（可與 6-4a 實機批次合併）
 - **Phase 5 ⇄ Phase 6 平行**：教師端可隨時插入並行
 - **Phase 7 上線實測**：須 Phase 6 至少 6-1 + 6-2 完成 + Zeabur + VPS 就緒

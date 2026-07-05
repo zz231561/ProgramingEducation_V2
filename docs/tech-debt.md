@@ -4,6 +4,11 @@
 
 ## ⚠ 待處理
 
+### 前端檔案大小
+- [ ] **`web/components/knowledge/knowledge-graph.tsx` 265 行（>250 硬性門檻）**（2026-07-05 K5 語意縮放改版產生）
+  - **背景**：主元件同時負責 Cytoscape 生命週期、章節導覽游標、鏡頭動作（fitChapter / handleNav / zoomToCategory / handleOverview）
+  - **如何處理**：抽 `use-graph-nav.ts` hook（章節游標 + 鏡頭動作，約 -80 行）；已提出待使用者核可後執行
+
 ### 延遲驗收（Phase 6-2 → 6-4 必跑）
 - [ ] **6-2 grounded UI 狀態尚未真機驗收** → **6-4a-deferred-ui 必驗（roadmap 已標）**
   - **背景**：6-2c / 6-2d / 6-2e 完成時 DB 內無任何 promoted `concept_explanation` / `code_examples` / `summary` object，使用者只能驗 fallback / placeholder 狀態。grounded 主路徑必須等 6-2b 實機批次（延至 6-4 合併執行）跑完才驗得到

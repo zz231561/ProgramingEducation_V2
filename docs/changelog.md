@@ -1,5 +1,24 @@
 # 變更日誌
 
+## [2026-07-06] — docs(planning)：實作順序 + LLM 模型選型 v2 定案（任務導向路由）
+
+### Added
+- **roadmap 6-M LLM 模型選型 v2**（與使用者三輪討論定案，取代原論文指定的單一 GPT-4o）：任務導向路由——對話組（EDF Feedback）/ 分析組（Evidence、Reflection、Comprehension 評分）= `gpt-5.4-mini`；生成組（Quiz generate / Hint / Comprehension 出題）= `gpt-5-mini`；審查組（Quiz validate）= `gpt-5.4`（cascade：弱生成 + 強把關）；Unit content 6-2b 批次 = `gpt-5.4`（教科書品質優先）；Embedding 維持 text-embedding-3-small。6-M1 實作 = 分組環境變數（GENERATE/VALIDATE/CONTENT，fallback LLM_MODEL），不抽共用 client
+- **費用估算**（依 2026-07 官方定價網查）：一次性批次 ≈ $6.6（content $4 + 生成 $1 + 審查 $1.6），儲值 $10；上線後即時互動 ≈ $35-40/月（100 學生，比 GPT-4o 省逾半）；不採 OpenAI Batch API（省 <$1.5 不值非同步改寫）
+- **references.md §5.1 補論文文獻**：FrugalGPT（arXiv:2305.05176）+ RouteLLM（arXiv:2406.18665）——cascade / 模型路由設計依據
+- **實作執行順序 10 批定案**（roadmap 已確認決策節）：U1 bugs → U2b/c 移除類 → k-graph 拆分 + K6 → quiz 模組（U2d/U2a/重複曝光） → 6-M1 + 實機批次 → U2f → 教師端（5-1→5-2→DEV-E→5-5） → U2e + 監控 → Phase 7 部署 → 5-3/5-4（待真實資料，Phase 5 資料策略註記同步修訂）
+
+### Changed
+- 真人驗收（K1d / K5d / K4d 語氣）改為使用者每次 session 後自測，不排入開發批次；K4d 的 RAG_MIN_SCORE 調參與對話組模型升級判斷併入第 5 批
+- U2f 範例程式製作移至第 6 批（教師端之前）
+- tech-debt：`OPENAI_API_KEY` 未填條目已消除（2026-07-06 驗證已填，僅驗證存在性）
+
+### Decisions
+- Claude 訂閱額度不能當 API key（訂閱與 API 分開計費），且後端鎖定 OpenAI——批次仍走 OpenAI，儲值 $10
+- 論文處理：模型選型準則寫入方法論（FrugalGPT/RouteLLM 支撐）、實驗記錄確切模型版本，取代鎖死 GPT-4o
+
+---
+
 ## [2026-07-06] — docs(planning)：session 規劃定案 — K6 熟練度演算法 v2 + Phase 6-U 學生端修正清單 + 文檔重整
 
 ### Added

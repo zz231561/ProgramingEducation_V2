@@ -41,7 +41,7 @@
 ## Phase 5：教師端（不需實際部署即可開發）
 > 教師可管理班級、查看學生行為分析圖表、指派作業｜對應 Teacher Dashboard
 > **前置條件**：Phase 4 完成。
-> **資料策略**：5-1 / 5-2 / 5-5 純檔案，本機 dev 即可開發 + 測試；5-3 / 5-4 演算法可先用合成資料寫 + 單元測試，等 Phase 7 部署後用真實資料調校。
+> **資料策略（2026-07-06 修訂）**：5-1 / 5-2 / 5-5 無真實學生資料依賴，**前移至 Phase 7 部署前開發**（5-2 收集機制必須先上線才有資料累積；5-5b 用 DEV-E 假學生 seeder 開發）；**5-3 / 5-4 延後至全案最後**——等 Phase 7 上線累積真實行為資料後才做（原「合成資料先寫」註記作廢）。
 
 ### 5-1 班級管理
 - [ ] 5-1a classes + class_members 表 migration
@@ -100,7 +100,7 @@
 - [ ] 6-3a 用 Phase 2-4 智慧出題管線批次模式為每 unit（4-62 共 59 個）生成至少 2 題；**generate prompt 加 grounding 規則**：題目情境必須與該 video 字幕中出現的範例 / 變數命名一致；validated=True 才入庫
   - [x] 6-3a-1 `generate_question(video_order=...)` grounded mode：grounded RAG 走 `get_chunks_by_video_order` + system prompt 加 grounding 規則 + 4 mock tests（480 全綠）；`video_order=None` 走原 semantic path（backward compat）
   - [x] 6-3a-2 批次 script + service：`services/quiz/batch_generator.py`（per-concept 跑 N 題 × generate+validate × MAX_VALIDATE_RETRIES=2）+ CLI `scripts/generate_unit_questions.py`（--only / --force / --dry-run）+ 8 mock+DB tests（488 全綠）；預設題型 mix multiple_choice + coding；validate fail 自動 retry，generate fail 直接 abort 與 orchestrator 一致
-  - [ ] 6-3a-3 實機 LLM 全跑（延至 6-4 合併執行；預估 62 concept × 2 題 × 2 LLM call ≈ 250-500k token / $5-15 USD）
+  - [ ] 6-3a-3 實機 LLM 全跑（延至 6-4 合併執行；2026-07-06 模型選型更新：生成 `gpt-5-mini` + 審查 `gpt-5.4`，連同 6-2b content 批次總費用 ≈ $6.6，儲值 $10；見 6-M）
 - [x] 6-3b ExercisesTab 改造：從「按需現生」→「優先讀題庫，題庫不足才現生」(GET /quiz/from-bank + ApiRequestError 404 QUESTION_BANK_EMPTY fallback；6 bank service tests + 5 route integration tests；前端 Loading 文案分「查找題庫題目 (< 1 秒)」/「AI 正在生成 (5-15 秒)」兩階段)
 
 ### 6-4 內容品管（2026-07-04 修訂：移除教授抽查，改為自行品管）
@@ -112,6 +112,12 @@
 - [ ] 6-4b 依自查結果調整 6-2a prompt template 並針對問題 unit 局部重跑；對品質太差的 unit 評估升級到 Whisper 重 transcribe（B 方案）作為 source
 
 > ⚠ 原 6-5（Coddy 對話品質）與 6-6（知識圖譜優化）已於 2026-07-04 依功能規格書**整併至 Phase 6-K**（6-5 → K4；6-6 → K1 + K5），原 sub-task 內容完整保留於對應 K 項。
+
+### 6-M LLM 模型選型 v2 — 任務導向路由（2026-07-06 session 定案）
+> **背景**：原論文規格指定 GPT-4o（2024 舊世代）；2026-07-06 定案改為「依任務特性路由模型」（cascade 設計：弱模型生成 + 強模型審查）。**📌 論文關鍵技術**：FrugalGPT（Chen et al. 2023）、RouteLLM（Ong et al. 2024），引用見 `references.md` §5.1；論文實驗章節記錄實驗當下確切模型版本。
+> **選型表**：對話組（EDF Feedback）+ 分析組（Evidence / Reflection / Comprehension 評分）= `gpt-5.4-mini`（K4d 實測不足再升 5.4）｜生成組（Quiz generate / Hint / Comprehension 出題）= `gpt-5-mini`｜審查組（Quiz validate）= `gpt-5.4`｜Unit content 6-2b 批次 = `gpt-5.4`（教科書本體，品質優先）｜Embedding 維持 `text-embedding-3-small`（861 chunks 已入庫不重嵌）。
+> **費用**：一次性批次 ≈ $6.6（content $4 + 題庫生成 $1 + 審查 $1.6）；儲值 $10；上線後即時互動估 $35-40/月（100 學生）。不採 OpenAI Batch API（省 <$1.5 不值得改寫非同步流程）。
+- [ ] 6-M1 分組模型環境變數：`LLM_MODEL_GENERATE` / `LLM_MODEL_VALIDATE` / `LLM_MODEL_CONTENT`（皆 fallback `LLM_MODEL`）+ 各模組 model 參照切換；**不抽共用 client**（tech-debt 既有決策）；未設定時行為不變，測試零影響
 
 ### 6-R 健壯性強化（2026-07-04 架構審查新增，同日完成）✅
 > 背景：上線前架構審查發現三個系統性缺口：可觀測性為零（500 不留痕）、安全規範未落地（rate limit / token exp 只在文件）、外部依賴網路例外未馴服。全部本機完成 + 測試驗證（後端 513 tests 全綠，+14 新測試）。
@@ -136,7 +142,7 @@
 - [x] K1a curated 依賴 DAG migration（`i5d6e7f8a9b0`）：以 curated map（每 concept 1-3 個真實直接前置，依 C++ 教學相依性 + RAG 字幕輔助判斷）取代線性鏈 61 條 → **90 條多對多 PREREQUISITE 邊**；全部 source.video_order < target.video_order 保證無環；除 video 1 外每節點至少 1 條入邊保證連通
 - [x] K1b `get_prerequisite_closure` 圖走訪（`services/graph/traversal.py`：單查詢載邊 + 記憶體 BFS + max_depth 限制 + 菱形去重；5 tests）— K3 根源回溯的基礎
 - [x] K1c 實機驗證：alembic upgrade 實跑 + DB 驗證（90 邊 / 遞迴←25+37+38 / 0 孤兒節點 / 0 反向邊）
-- [ ] K1d UI 抽查：`/knowledge` 頁面確認多對多邊渲染正常、Learn 路徑生成不受影響（使用者手動）
+- [ ] K1d UI 抽查：`/knowledge` 頁面確認多對多邊渲染正常、Learn 路徑生成不受影響（2026-07-06 改使用者 session 後自測，有問題再回報，不排入開發批次）
 
 ### K2 動態知識狀態追蹤（功能二；2026-07-04 缺口分析後細化）
 > 缺口分析：`GET /concepts/mastery` 已提供 per-concept 狀態（K2b 原規劃的 80%），缺 `last_practiced_at`；真正缺的是 EDF 20 粗 tag → 62 影片 concept 的橋接。
@@ -155,13 +161,13 @@
 - [x] K4a K-Graph State 注入 EDF Feedback prompt（`services/edf/kgraph_context.py`）：解析 evidence tags（直接命中 + parent group 已曝光成員）→ 依最弱概念 confidence 分級鷹架（<0.4 填空/拆解、0.4-0.7 引導提問、>0.7 只點 edge case）；persona 改寫為 Coddy 自然語氣 + RULE-5 允許行動建議收尾（原 6-5b）；7 tests
 - [x] K4b RAG 觸發改內容相關性：`TeachingStrategy` 移除 `use_rag`，Feedback 層每次檢索、`RAG_MIN_SCORE=0.40` 分數過濾（原 6-5a）；門檻初始值待 K4d 依實際命中率調整；tests 更新 +2
 - [x] K4c 補救路徑（`services/learning/remedial.py` + `POST /concepts/{tag}/diagnosis/remediate`）：診斷觸發後把嫌疑概念在 default path 的既有 units **重新開放**（completed/locked → available、清 completed_at；系統級動作繞過手動轉移限制）；不新建 row 不動 order 唯一約束；order_index 升冪 = 建議補救順序；未觸發回 409；5 tests
-- [ ] K4d 真人測試驗收（原 6-5c）：比對改動前後語氣 / RAG 命中率（含 RAG_MIN_SCORE 調參）/ 鷹架適切度 / 補救路徑 Learn 頁呈現——**需 OpenAI API key 實測**
+- [ ] K4d 真人測試驗收（原 6-5c）：比對改動前後語氣 / RAG 命中率（含 RAG_MIN_SCORE 調參）/ 鷹架適切度 / 補救路徑 Learn 頁呈現（2026-07-06：RAG_MIN_SCORE 調參與對話組模型是否升 `gpt-5.4` 併入第 5 批實機批次執行；語氣部分使用者自測）
 
 ### K5 知識圖譜視覺改版（功能五；吸收原 6-6a/c/d）
 - [x] K5a 套件調研決策記錄：維持 Cytoscape.js + fcose（決策記錄見 `docs/references.md` §1；dagre 不支援 compound、React Flow 定位 workflow editor 無決定性優勢）
 - [x] K5b 多對多邊 + 熟練度視覺：節點填色改 mastery band + 分章 compound cluster + prerequisite 箭頭強化；`toElements` 拆至 `knowledge-graph-elements.ts`；**2026-07-05 迭代（使用者三輪回饋）**：fcose → 確定性 preset 佈局 → **太陽系主題定案**（星雲雙層視圖（overview 章節級星系 ⇄ detail 概念級，zoom 門檻 crossfade）、蛇形軌道 + 軌道線/星空 underlay、點擊即聚焦、全覽鈕、zoom cap、跨章邊淡出；星系 SVG 隱形根因 = 缺 width/height，`galaxy-backgrounds.ts` 留作備援）；**2026-07-05 六驗**：overview 改語意縮放——保留全部概念節點與名稱、依 zoom 門檻放大節點/字體並重排每章緊湊網格（移除章節星系節點層，`overview-layout.ts`）；**七驗**：移除星雲背景圖層（純黑星空）+ 修 detail panel setState-in-effect lint
 - [x] K5c 個人化路徑高亮：underlay ring = 路徑狀態（藍=目前 / 綠=已完成 / 紅=補救嫌疑，`?remedial=` query 觸發 + 鏡頭聚焦）；R1-R8 檢核通過（灰階 cluster 容器、無外來 hex、無 emoji）
-- [ ] K5d 真人測試驗收（原 6-6d）：學生能從圖讀懂自己的進度與弱項，不只是好看
+- [ ] K5d 真人測試驗收（原 6-6d）：學生能從圖讀懂自己的進度與弱項，不只是好看（2026-07-06 改使用者 session 後自測，不排入開發批次）
 
 ### K6 熟練度演算法 v2 — 訊號分級 + 遺忘衰減 + 透明化（2026-07-06 session 定案）
 > **動機**：現行 `services/mastery/updater.py` 對 quiz 作答與 chat 對話用同一組 BKT 參數全額更新（quiz 權重過高），且標準 BKT 無遺忘機制（confidence 只增不減）。
@@ -200,7 +206,7 @@
 - [ ] U2c 拔除 1-3 章節（課程介紹）的範例程式內容
 - [ ] U2d QUIZ tab 改題庫優先：弱項出題先抽題庫（Select 弱項概念 + 複用 6-3b from-bank 機制），題庫無題才即時生成——省 LLM 成本與延遲
 - [ ] U2e Workspace 程式碼存檔：編輯器內容目前重整即消失（僅 chat 快照 / 作答記錄入 DB）；新增自動存檔或「我的程式碼」功能
-- [ ] U2f 範例程式製作（優先度低，排最後）
+- [ ] U2f 範例程式製作（2026-07-06 順序定案：排第 6 批，教師端 Phase 5 之前）
 
 ---
 
@@ -248,3 +254,5 @@
 - **題庫策略**（2026-07-06 確認）：不採 NotebookLM（無公開 API、輸出無法對齊題目 schema 與 citation）；成本控制走「批次 grounded 生成 + 題庫優先」；即時生成題目 validated=True 後永久入庫持續擴充題庫（現行機制確認保留）；QUIZ tab 弱項出題改題庫優先列 U2d
 - **LEARN 摘要移除**（2026-07-06 確認）：摘要 tab 直接移除（U2b）；依據＝提供現成摘要的被動學習效益低（Fiorella & Mayer 2015 生成式學習）+ 冗餘效應增加外在認知負荷
 - **反思計畫粒度**（2026-07-06 確認）：現行即為「每題一份」（Quiz 與 Learn 練習皆以 `sourceType="quiz"` + question id 建立），符合預期不需改；Workspace 顯示 gating 問題列 U1c
+- **LLM 模型選型 v2**（2026-07-06 確認）：放棄單一 GPT-4o，改任務導向路由（詳見 6-M 節選型表）；cascade 設計 = `gpt-5-mini` 生成 + `gpt-5.4` 審查；Unit content 批次用 `gpt-5.4`（教科書品質優先）；對話/分析組 `gpt-5.4-mini` 起步、K4d 實測後定案；文獻依據 FrugalGPT / RouteLLM（references.md §5.1）；論文記錄實驗當下確切模型版本
+- **實作執行順序**（2026-07-06 session 定案，共 10 批）：① U1a/b/c bug 修正 → ② U2b 移除摘要 + U2c 拔 1-3 範例 → ③ knowledge-graph.tsx 拆分（已核可）+ K6a/b/c → ④ U2d 題庫優先 + U2a QUIZ 美化 + 練習題重複曝光 → ⑤ 6-M1 模型分組 + 6-3a-3/6-4a 實機批次 + deferred-ui + K4d 調參（需 OpenAI 儲值 $10；key 已在 backend/.env） → ⑥ U2f 範例程式 → ⑦ 教師端 5-1 → 5-2 → DEV-E → 5-5 → ⑧ U2e Workspace 存檔 + 7-2a/b/c 監控程式碼 → ⑨ Phase 7 部署實測 → ⑩ 5-3/5-4 行為分析（待真實資料）；真人驗收（K1d/K5d/K4d 語氣）改使用者 session 後自測

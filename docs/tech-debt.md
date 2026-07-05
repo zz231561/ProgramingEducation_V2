@@ -40,9 +40,6 @@
   - **如何處理**：self-host VPS 部署時實測 stack 啟動 → workers 成功 register languages → backend 能透過 `/about` 與 `/submissions` 對話；若 worker fail 多半是 cgroups / privileged 問題
 
 ### 環境設定（使用者手動）
-- [ ] **`backend/.env` 的 `OPENAI_API_KEY` 未填**
-  - **影響**：2-1b 跑 LlamaIndex 索引、EDF Chat 互動會 401
-  - **如何處理**：使用者手動填入；不可由 AI 寫入（敏感資訊）
 - [ ] **git user.name / user.email 未設定**
   - **影響**：commit `3f702be` 與後續 commits 會用系統預設身分顯示在 GitHub
   - **如何處理**：
@@ -93,6 +90,7 @@
 
 ## ✅ 已消除
 
+- ~~`backend/.env` 的 `OPENAI_API_KEY` 未填~~ — 2026-07-06 確認已填（只驗證存在性未讀值）；第 5 批實機批次前使用者需確認 OpenAI 帳戶儲值 $10
 - ~~`concept_edges` seed 的 23 條邊為 AI 暫定值~~ — 2026-05-05 完全替換為 58 條線性 PREREQUISITE（隨 e1f2a3b4c5d6 重 seed）
 - ~~`concepts` seed 的 `category` / `difficulty_level` / `name_zh` 為暫定值~~ — 2026-05-05 完全替換為 59 影片 concept
 - ~~`backend/requirements.lock` 過時~~ — 2026-05-05（4-1a）以 `uv pip compile` 重產（38 → 272 行含 transitive）；pyBKT 確認未實際 import，無需安裝

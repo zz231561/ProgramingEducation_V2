@@ -156,6 +156,7 @@
 | 證據通道雜訊 | BKT slip/guess 語意（Corbett & Anderson 1995；Baker, Corbett & Aleven 2008 contextual guess/slip） | K6a 弱證據＝高 guess / 低 learn，留在 BKT 數學框架內、不外掛權重係數 |
 | Open Learner Model | Bull & Kay (2007/2016) SMILI 框架；[OLM 與 SRL 系統性回顧 (Computers & Education, 2020)](https://www.sciencedirect.com/science/article/abs/pii/S0360131520300774)；[OLM 知識監控實證 (RPTEL 2020)](https://telrp.springeropen.com/articles/10.1186/s41039-020-00137-5) | K6c 事件級透明化、不給逐筆帳本（避免分數導向 / gaming / 損失厭惡） |
 | 生成式學習 | Fiorella & Mayer (2015), *Learning as a Generative Activity* — 自我生成摘要 > 提供現成摘要；Sweller 冗餘效應（CLT） | U2b 移除 LEARN 摘要 tab 的依據 |
+| LLM 成本-品質路由 | [FrugalGPT (Chen, Zaharia & Zou, 2023, arXiv:2305.05176)](https://arxiv.org/abs/2305.05176) — LLM cascade：低成本模型先答、強模型把關，成本大幅下降品質持平；[RouteLLM (Ong et al., 2024, arXiv:2406.18665)](https://arxiv.org/abs/2406.18665) — query 導向模型路由 | 6-M 任務導向模型選型：`gpt-5-mini` 生成 + `gpt-5.4` 審查的 cascade 設計；分組環境變數路由（6-M1） |
 
 ---
 

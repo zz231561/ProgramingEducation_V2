@@ -46,6 +46,23 @@
 | **BloomBERT** | LLM 結構化輸出已足夠，引入額外模型增加維運成本 | 保留交叉驗證可能，Phase 1 不引入 |
 | **Socratic-LLM** fine-tune | 不做 fine-tuning（用 GPT-4o + prompt engineering）| — |
 
+### 📌 決策記錄：K5a 知識圖譜視覺化套件（2026-07-05）
+
+**結論：維持 Cytoscape.js + cytoscape-fcose，不遷移。**
+
+| 候選 | 評估 | 判定 |
+|------|------|------|
+| **Cytoscape.js**（現用） | MIT；graph-theory 導向，原生支援 compound node（分章 cluster 直接用 parent node 表達）；fcose 為 CoSE 系最新最快版，唯一同時支援 compound + placement constraint 的 force-directed layout；現有整合約 600 行 | ✅ 維持 |
+| **React Flow (@xyflow)** | MIT；定位是 workflow/node-editor（HTML 自訂節點強），但 layout 需外掛（dagre/elk）、cluster/combo 支援弱、大圖分析非其目標場景；遷移需重寫全部 graph 程式碼，無決定性優勢 | ❌ 不遷移 |
+| **D3 手刻** | 一切自建（layout/互動/hover），本文件 §1 Tier 1 已明令「禁止用 D3 從頭刻」 | ❌ 禁用 |
+
+**Layout 評估（K5b 分章 cluster）**：
+- **fcose** ✅ — 支援 compound node + constraint，force-directed 適合非嚴格層級的 90 條多對多 PREREQUISITE 邊
+- dagre ❌ — 純 hierarchical DAG 排版，**不支援 compound node**，無法做分章 cluster
+- klay/elk ❌ — layered 排版支援 compound 但整體視覺偏工程流程圖，與 Obsidian 風小圓點定位不符，且需新增依賴
+
+**依據**：[Cytoscape.js 2023 paper (Oxford Bioinformatics/PMC)](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC9889963/)、[cytoscape.js-dagre README（DAGs and trees 定位）](https://github.com/cytoscape/cytoscape.js-dagre)、[Cytoscape.js layouts 官方 blog（fcose = latest and greatest CoSE）](https://blog.js.cytoscape.org/2020/05/11/layouts/)、React Flow 官方 discussion（layout 需自接外部演算法）。
+
 ---
 
 ## 2. 授權白名單／黑名單

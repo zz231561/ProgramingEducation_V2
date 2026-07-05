@@ -51,24 +51,29 @@ export function ConceptDetailPanel({
   onClose,
   onSelectTag,
 }: ConceptDetailPanelProps) {
-  const [data, setData] = useState<ConceptDetailData | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  // 狀態綁定 tag：切換節點時在 render 期重設（derived state），
+  // 避免 effect 內同步 setState 觸發 cascading render（react-hooks lint）
+  const [state, setState] = useState<{
+    tag: string;
+    data: ConceptDetailData | null;
+    error: string | null;
+  }>({ tag, data: null, error: null });
+  if (state.tag !== tag) setState({ tag, data: null, error: null });
+  const { data, error } = state.tag === tag ? state : { data: null, error: null };
 
   useEffect(() => {
     let cancelled = false;
-    setData(null);
-    setError(null);
     (async () => {
       try {
         const result = await api<ConceptDetailData>(
           `/concepts/${encodeURIComponent(tag)}`,
         );
-        if (!cancelled) setData(result);
+        if (!cancelled) setState({ tag, data: result, error: null });
       } catch (e) {
         if (cancelled) return;
         const msg =
           e instanceof ApiRequestError ? e.body.message : "載入詳情失敗";
-        setError(msg);
+        setState({ tag, data: null, error: msg });
       }
     })();
     return () => {

@@ -1,5 +1,17 @@
 # 變更日誌
 
+## [2026-07-05] — fix(K5-視覺淨化)：移除星雲背景圖層 + 修 detail panel setState-in-effect（使用者七驗回饋）
+
+### Removed
+- **星雲背景圖層**（使用者裁決：嚴重影響視覺體驗，語意縮放效果本身已獲肯定）：章節 compound parent 改為無填色、僅章名標籤；刪除孤兒檔 `galaxy-backgrounds.ts`；`/knowledge` 只剩黑色畫布 + 灰階星空點與軌道虛線
+- `.claude/rules/frontend.md` R8 白名單撤銷「Knowledge Graph 星系背景」裝飾例外（剩餘星空點/導覽鈕皆灰階，屬既有白名單）
+
+### Fixed
+- `concept-detail-panel.tsx` react-hooks lint error（effect 內同步 `setState(null)` 重設會 cascading render）：改為 tag 綁定單一 state + render 期 derived-state 重設（與 knowledge-graph.tsx chapterIdx 同模式），loading 狀態由 `state.tag !== tag` 推導
+- 驗證：`tsc` + `eslint components/knowledge`（0 error）+ `next build` 通過
+
+---
+
 ## [2026-07-05] — refactor(K5-語意縮放)：全覽改「全節點放大重排」，移除章節星系節點層（使用者六驗回饋）
 
 ### Changed

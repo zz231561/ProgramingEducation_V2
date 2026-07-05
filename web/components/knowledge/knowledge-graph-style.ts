@@ -88,7 +88,7 @@ export const STYLESHEET: StylesheetCSS[] = [
     },
   },
   // --- 章節容器（compound parent，detail 層）---
-  // 背景與畫布一致（無填色無邊框），以低透明度星雲 SVG 區隔章節；
+  // 背景與畫布一致（無填色無邊框），僅以章名標籤區隔章節；
   // 拖曳 parent 可整體移動該章（cytoscape compound 原生行為）。
   {
     selector: "node:parent",
@@ -96,10 +96,6 @@ export const STYLESHEET: StylesheetCSS[] = [
       shape: "ellipse",
       "background-opacity": 0,
       "border-width": 0,
-      "background-image": "data(galaxy)",
-      "background-fit": "cover",
-      "background-clip": "node",
-      "background-image-opacity": 0.8,
       label: "data(label)",
       color: TOKEN.textMuted,
       "font-size": "13px",

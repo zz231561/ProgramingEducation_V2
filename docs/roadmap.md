@@ -159,7 +159,7 @@
 
 ### K5 知識圖譜視覺改版（功能五；吸收原 6-6a/c/d）
 - [x] K5a 套件調研決策記錄：維持 Cytoscape.js + fcose（決策記錄見 `docs/references.md` §1；dagre 不支援 compound、React Flow 定位 workflow editor 無決定性優勢）
-- [x] K5b 多對多邊 + 熟練度視覺：節點填色改 mastery band + 分章 compound cluster + prerequisite 箭頭強化；`toElements` 拆至 `knowledge-graph-elements.ts`；**2026-07-05 迭代（使用者三輪回饋）**：fcose → 確定性 preset 佈局 → **太陽系主題定案**（星雲雙層視圖（overview 章節級星系 ⇄ detail 概念級，zoom 門檻 crossfade）、蛇形軌道 + 軌道線/星空 underlay、點擊即聚焦、全覽鈕、zoom cap、跨章邊淡出；星系 SVG 隱形根因 = 缺 width/height，`galaxy-backgrounds.ts` 留作備援）；**2026-07-05 六驗**：overview 改語意縮放——保留全部概念節點與名稱、依 zoom 門檻放大節點/字體並重排每章緊湊網格（移除章節星系節點層，`overview-layout.ts`）
+- [x] K5b 多對多邊 + 熟練度視覺：節點填色改 mastery band + 分章 compound cluster + prerequisite 箭頭強化；`toElements` 拆至 `knowledge-graph-elements.ts`；**2026-07-05 迭代（使用者三輪回饋）**：fcose → 確定性 preset 佈局 → **太陽系主題定案**（星雲雙層視圖（overview 章節級星系 ⇄ detail 概念級，zoom 門檻 crossfade）、蛇形軌道 + 軌道線/星空 underlay、點擊即聚焦、全覽鈕、zoom cap、跨章邊淡出；星系 SVG 隱形根因 = 缺 width/height，`galaxy-backgrounds.ts` 留作備援）；**2026-07-05 六驗**：overview 改語意縮放——保留全部概念節點與名稱、依 zoom 門檻放大節點/字體並重排每章緊湊網格（移除章節星系節點層，`overview-layout.ts`）；**七驗**：移除星雲背景圖層（純黑星空）+ 修 detail panel setState-in-effect lint
 - [x] K5c 個人化路徑高亮：underlay ring = 路徑狀態（藍=目前 / 綠=已完成 / 紅=補救嫌疑，`?remedial=` query 觸發 + 鏡頭聚焦）；R1-R8 檢核通過（灰階 cluster 容器、無外來 hex、無 emoji）
 - [ ] K5d 真人測試驗收（原 6-6d）：學生能從圖讀懂自己的進度與弱項，不只是好看
 

@@ -2,7 +2,7 @@
  * GraphData → Cytoscape elements 轉換（K5b 自 knowledge-graph-style.ts 拆出）。
  *
  * 單一元素集（2026-07-05 語意縮放改版）：
- * - concept 節點（填色 = 熟練度）+ 分章 compound parent（星雲背景）
+ * - concept 節點（填色 = 熟練度）+ 分章 compound parent（無填色，僅章名標籤）
  * - overview / detail 共用同一批節點，zoom out 只切換 `.ov` 尺寸
  *   （ov_size）與佈局座標，由 graph-mode.ts 驅動
  * - K5c overlay：path_status（current/completed ring）+ remedial（紅 ring）
@@ -11,7 +11,6 @@
 
 import type { ElementDefinition } from "cytoscape";
 
-import { galaxyDataUri } from "./galaxy-backgrounds";
 import { computeChapterAnchors } from "./graph-layout";
 import { MASTERY_COLOR } from "./knowledge-graph-style";
 import type {
@@ -32,14 +31,13 @@ export function toElements(
   masteryMap?: Map<string, MasteryEntry>,
   pathOverlay?: PathOverlay,
 ): ElementDefinition[] {
-  // 分章 compound parents（依課綱順序；index 決定星雲樣式；標籤只用分類名）
+  // 分章 compound parents（依課綱順序；標籤只用分類名）
   const anchors = computeChapterAnchors(data);
-  const parents: ElementDefinition[] = anchors.map(({ category }, i) => ({
+  const parents: ElementDefinition[] = anchors.map(({ category }) => ({
     data: {
       id: `${CHAPTER_ID_PREFIX}${category}`,
       label: category,
       category,
-      galaxy: galaxyDataUri(i),
     },
   }));
 

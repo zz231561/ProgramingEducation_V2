@@ -9,6 +9,8 @@ export interface MessageItem {
   codeSnapshot?: string;
   /** EDF Evidence 結果（assistant 訊息才有） — 提供 bloom_level / concept_tags 等資訊給 UI 顯示 */
   evidence?: Record<string, unknown>;
+  /** DEV-7：EDF 中間層觀測（僅 dev 帳號、僅當輪互動有；歷史載入不持久化） */
+  debug?: Record<string, unknown>;
   createdAt: string;
 }
 
@@ -28,6 +30,8 @@ export interface InteractResponse {
   session_id: string;
   user_message: ApiMessage;
   assistant_message: ApiMessage;
+  /** DEV-7：dev 帳號附 EDF 中間層觀測；一般帳號 null */
+  debug?: Record<string, unknown> | null;
 }
 
 /** /chat/sessions/{id} 回應格式 */

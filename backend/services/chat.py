@@ -74,11 +74,14 @@ async def interact(
     hint_level: int = 0,
     execution_result: dict | None = None,
     reflection_id: uuid.UUID | None = None,
+    debug_sink: dict | None = None,
 ) -> tuple[ChatSession, ChatMessage, ChatMessage]:
     """主要教學互動 — 串接 EDF 三層管線。
 
     `reflection_id`（Phase 2-5e）：若提供，載入學生反思並注入 Evidence + Feedback 兩層 prompt；
     無或載入失敗都不擋流程（容錯，與 mastery / RAG 同款）。
+    `debug_sink`（DEV-7）：dev 帳號的中間層觀測 dict——收集 evidence / strategy /
+    kgraph / RAG 命中，由 route 附在回應 debug 欄位；None（一般帳號）零開銷。
 
     回傳 (session, user_message, assistant_message)。
     """
@@ -137,6 +140,15 @@ async def interact(
     # K-Graph state（K4a）— 在 mastery 更新後讀取，鷹架依最新狀態調整；best-effort
     kgraph_block = await fetch_kgraph_block_safe(db, user_id, evidence)
 
+    # DEV-7：dev 帳號收集中間層觀測（RAG 命中由 generate_feedback 補入）
+    if debug_sink is not None:
+        debug_sink.update({
+            "evidence": evidence.model_dump(),
+            "strategy": strategy.model_dump(),
+            "kgraph_block": kgraph_block,
+            "reflection_injected": bool(reflection_feedback_block),
+        })
+
     # Feedback 層
     ai_response = await generate_feedback(
         evidence=evidence,
@@ -145,6 +157,7 @@ async def interact(
         chat_history=chat_history,
         reflection_block=reflection_feedback_block,
         kgraph_block=kgraph_block,
+        debug_sink=debug_sink,
     )
 
     # 儲存 assistant message（user message 已於 LLM 呼叫前 commit）

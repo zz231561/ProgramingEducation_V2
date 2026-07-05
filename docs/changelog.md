@@ -1,5 +1,17 @@
 # 變更日誌
 
+## [2026-07-05] — feat(DEV-7~9)：EDF Debug 面板 + K3 診斷模擬器 + 題庫檢視器（開發者模式收尾）
+
+### Added
+- **DEV-7 EDF Debug 面板**：`interact()` / `generate_feedback()` 新增 `debug_sink` 參數（dev 帳號由 route 以 `is_dev_email` 判定才建 sink，一般帳號 None 零開銷、回傳形狀不變）——收集 evidence / strategy（hint level + 策略指令）/ RAG 命中（cosine 分數 + 200 字預覽）/ kgraph 鷹架 block；`InteractResponse.debug` 附回，前端 AI 訊息下方 `EdfDebugPanel` 摺疊面板（JetBrains Mono 灰階；僅當輪互動有，不持久化、載歷史不顯示）
+- **DEV-8 K3 診斷模擬器**：`POST /dev/simulate-failures {tag, count}` 注入連續答錯紀錄（找既有含該 tag 題目、無則建 `[dev]` stub 題並重用；answered_at 毫秒遞增保排序）→ 立即回診斷摘要（streak / triggered / 嫌疑 tags）；Settings 卡顯示結果 + 知識圖譜 `?remedial=` 補救高亮連結
+- **DEV-9 題庫檢視器**：`GET /dev/questions?tag=` python 端過濾 concept_tags（與 diagnosis 同款、dev 題量小可接受）回傳題型/Bloom/難度/validated/題幹摘要；Settings 卡列題 + 「作答」→ **`/quiz?question=<id>` 深連結**（QuizRunner 讀 searchParams 直接載入指定題，Quiz 頁補 Suspense 邊界）
+- 共用 `DevConceptSelect`（章節+概念下拉）與 `fetchConceptGraph()` module 快取（熟練度/診斷/題庫三卡共用，session 只打一次 graph）
+- Tests +8（debug sink 2 / 診斷模擬 3 / 題庫 1 / 403 防線 2）；後端全量 583 passed
+- 另修 K5 Cytoscape console 警告：移除自訂 `wheelSensitivity`、`font-family` 去引號（Cytoscape 樣式解析器不接受）
+
+---
+
 ## [2026-07-05] — feat(DEV-2~6)：開發者工具 Settings 區塊（分類重置 / 幽靈解鎖 / 熟練度編輯 / 身分切換）
 
 ### Added

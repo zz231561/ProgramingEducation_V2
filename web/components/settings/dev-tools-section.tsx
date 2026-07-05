@@ -10,7 +10,9 @@ import { TerminalSquare } from "lucide-react";
 
 import { useDevMode } from "@/hooks/use-dev-mode";
 
+import { DevDiagnosisCard } from "./dev-diagnosis-card";
 import { DevMasteryCard } from "./dev-mastery-card";
+import { DevQuestionBankCard } from "./dev-question-bank-card";
 import { DevResetCard } from "./dev-reset-card";
 import { DevRoleCard } from "./dev-role-card";
 import { DevUnlockCard } from "./dev-unlock-card";
@@ -34,6 +36,8 @@ export function DevToolsSection() {
         <DevRoleCard />
         <DevUnlockCard />
         <DevMasteryCard />
+        <DevDiagnosisCard />
+        <DevQuestionBankCard />
         <DevResetCard />
       </div>
     </section>

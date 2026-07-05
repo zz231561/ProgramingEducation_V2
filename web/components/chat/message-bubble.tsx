@@ -4,6 +4,7 @@ import { Bot, User } from "lucide-react";
 import { MarkdownContent } from "@/components/ui/markdown";
 import type { MessageItem } from "@/lib/chat-types";
 import { BloomBadge, extractBloomLevel } from "./bloom-badge";
+import { EdfDebugPanel } from "./edf-debug-panel";
 import { EdfTimeline } from "./edf-timeline";
 
 interface MessageBubbleProps {
@@ -52,6 +53,8 @@ export function MessageBubble({ message }: MessageBubbleProps) {
             </div>
           )}
         </div>
+        {/* DEV-7：dev 帳號的 EDF 中間層觀測（僅當輪互動附帶） */}
+        {!isUser && message.debug && <EdfDebugPanel debug={message.debug} />}
       </div>
     </div>
   );

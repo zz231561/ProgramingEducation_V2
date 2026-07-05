@@ -6,9 +6,28 @@
  * 存 localStorage 並以 CustomEvent 通知同分頁的訂閱者。
  */
 
+import type { GraphData } from "@/components/knowledge/knowledge-graph-types";
+
 import { api } from "./api";
 
 export type ResetCategory = "mastery" | "progress" | "quiz" | "chat";
+
+export type DevBankQuestion = {
+  id: string;
+  type: string;
+  bloom_level: number;
+  difficulty: number;
+  source: string;
+  validated: boolean;
+  stem: string;
+};
+
+export type DevSimulateResult = {
+  injected: number;
+  streak: number;
+  triggered: boolean;
+  suspect_tags: string[];
+};
 
 export const RESET_CATEGORY_LABEL: Record<ResetCategory, string> = {
   mastery: "熟練度",
@@ -53,6 +72,32 @@ export function devSetRole(
   role: "student" | "teacher",
 ): Promise<{ role: string }> {
   return api("/dev/role", { method: "PUT", body: JSON.stringify({ role }) });
+}
+
+/** 注入指定 concept 連續答錯 N 次，回傳診斷摘要（DEV-8）。 */
+export function devSimulateFailures(
+  tag: string,
+  count = 3,
+): Promise<DevSimulateResult> {
+  return api("/dev/simulate-failures", {
+    method: "POST",
+    body: JSON.stringify({ tag, count }),
+  });
+}
+
+/** 列出指定 concept 的題庫題目（DEV-9）。 */
+export function devListQuestions(
+  tag: string,
+): Promise<{ questions: DevBankQuestion[] }> {
+  return api(`/dev/questions?tag=${encodeURIComponent(tag)}`);
+}
+
+let graphPromise: Promise<GraphData> | null = null;
+
+/** 概念圖快取（多張 dev 卡共用下拉選單資料，整個 session 只打一次）。 */
+export function fetchConceptGraph(): Promise<GraphData> {
+  graphPromise ??= api<GraphData>("/concepts/graph");
+  return graphPromise;
 }
 
 // === 幽靈解鎖（DEV-4）===

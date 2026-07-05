@@ -46,7 +46,7 @@
   - K4a/b/c ✅（K-Graph 鷹架注入 prompt + Coddy persona 改寫 + RAG 相關性觸發 + 補救路徑 remediate API）；K4d 真人驗收待 API key 實測
   - K5a/b/c ✅（2026-07-05，六輪迭代）：Cytoscape.js + mastery band 填色 + 路徑 ring（藍=目前/綠=已完成/紅=補救 `?remedial=`）+ **語意縮放全覽**（overview=同批概念節點放大字體/尺寸並重排每章緊湊網格 `overview-layout.ts`；detail=蛇形星系佈局；zoom 門檻 0.45 動畫切換 `graph-mode.ts`）+ 點擊容器/節點皆 zoom in 該章 + GalaxyNav 含全覽鈕 + zoom cap 1.0 + 跨章邊淡出；⚠ `knowledge-graph.tsx` 265 行拆分計畫待核可
   - **下一步（K 系列）**：**K5d 真人驗收**（學生能否從圖讀懂進度與弱項；含 K1d UI 抽查）→ K4d 真人驗收（可與 6-4a 實機批次合併）
-- **🎯 DEV 開發者模式**（2026-07-05 與使用者定案，拆解見 roadmap DEV 節）：DEV-1~6 ✅（後端 gating + rate limit 豁免 + Settings 開發者區塊四卡：分類重置 `POST /dev/reset` / 幽靈解鎖 localStorage / 熟練度編輯 `PUT /dev/mastery` / 身分切換 `PUT /dev/role`；+25 tests）→ **下一步 DEV-7~9**（EDF debug 面板 / K3 診斷模擬器 / 題庫檢視器）；UI 驗收待使用者
+- **DEV 開發者模式 ✅ 全數完成**（2026-07-05；拆解見 roadmap DEV 節）：後端 gating（`DEV_MODE_ENABLED`+`DEV_MODE_EMAILS`、`require_dev_user`）+ rate limit 豁免 + Settings 六卡（身分切換 / 幽靈解鎖 / 熟練度編輯 / K3 診斷模擬 / 題庫檢視 `/quiz?question=` 深連結 / 分類重置）+ EDF Debug 面板（chat `debug_sink`，dev 才附）；+33 tests；**UI 驗收待使用者**；DEV-E 假學生 seeder 留 Phase 5
 - **Phase 5 ⇄ Phase 6 平行**：教師端可隨時插入並行
 - **Phase 7 上線實測**：須 Phase 6 至少 6-1 + 6-2 完成 + Zeabur + VPS 就緒
 

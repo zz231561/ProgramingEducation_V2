@@ -148,16 +148,23 @@ async def generate_feedback(
     chat_history: list[dict[str, str]] | None = None,
     reflection_block: str = "",
     kgraph_block: str = "",
+    debug_sink: dict | None = None,
 ) -> str:
     """組裝 prompt、呼叫 LLM、驗證輸出，回傳教學回應。
 
     `reflection_block`（Phase 2-5e）：學生反思的詳細版字串；空字串代表不注入。
     `kgraph_block`（K4a）：學生 K-Graph 知識狀態 + 鷹架指令；空字串代表不注入。
     RAG（K4b）：一律檢索，`fetch_rag_chunks_safe` 內部依相似度分數過濾。
+    `debug_sink`（DEV-7）：dev 帳號的中間層觀測 dict；非 None 時寫入 RAG 命中明細。
     """
     client = _get_client()
 
     rag_chunks: list[RetrievedChunk] = await fetch_rag_chunks_safe(evidence)
+    if debug_sink is not None:
+        debug_sink["rag_chunks"] = [
+            {"score": round(c.score, 4), "doc_id": c.doc_id, "preview": c.text[:200]}
+            for c in rag_chunks
+        ]
     system_prompt = build_system_prompt(
         evidence, strategy, rag_chunks, reflection_block, kgraph_block
     )

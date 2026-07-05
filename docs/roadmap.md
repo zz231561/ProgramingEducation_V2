@@ -171,9 +171,9 @@
 - [x] DEV-4 幽靈解鎖：純前端開關（localStorage + 僅 dev 生效）locked unit 可點瀏覽；unit 內容後端本就回傳給本人，狀態轉移限制不變
 - [x] DEV-5 熟練度編輯器：章節/單一概念 + confidence 滑桿（`PUT /dev/mastery` upsert）
 - [x] DEV-6 身分切換：student ⇄ teacher 真改 `users.role`（`PUT /dev/role`；教師端 UI 待 Phase 5）
-- [ ] DEV-7 EDF Debug 面板（追加 A）：chat 回應對 dev 附中間層 payload（Bloom / Hint / 策略 / RAG 分數 / K-Graph 鷹架）+ 前端展開 UI
-- [ ] DEV-8 K3 診斷模擬器（追加 C）：一鍵注入指定 concept 連續答錯 N 次觸發診斷鏈
-- [ ] DEV-9 題庫檢視器（追加 D）：指定 concept 列題（含 validate 狀態）+ 直接作答指定題
+- [x] DEV-7 EDF Debug 面板（追加 A）：interact `debug_sink` 收集 evidence/strategy/RAG 分數/kgraph（dev 才附、僅當輪不持久化）+ AI 訊息下摺疊面板
+- [x] DEV-8 K3 診斷模擬器（追加 C）：`POST /dev/simulate-failures` 注入連錯 N 次（stub 題可重用）→ 回診斷摘要 + 圖譜補救連結
+- [x] DEV-9 題庫檢視器（追加 D）：`GET /dev/questions?tag=` 列題（validate 狀態）+ `/quiz?question=<id>` 深連結直接作答
 - [ ] DEV-E 假學生資料 seeder（延後至 Phase 5 教師端開工時）
 
 ---

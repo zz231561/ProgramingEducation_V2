@@ -77,11 +77,16 @@ export function useChat(options: UseChatOptions = {}) {
         const isNew = sessionIdRef.current !== res.session_id;
         sessionIdRef.current = res.session_id;
 
+        // DEV-7：debug 觀測掛在 assistant 訊息上（僅 dev 帳號有值）
+        const assistantItem = {
+          ...toMessageItem(res.assistant_message),
+          debug: res.debug ?? undefined,
+        };
         setItems((prev) => [
           ...prev.map((it) =>
             it.id === tempId ? toMessageItem(res.user_message) : it,
           ),
-          toMessageItem(res.assistant_message),
+          assistantItem,
         ]);
 
         if (isNew) {

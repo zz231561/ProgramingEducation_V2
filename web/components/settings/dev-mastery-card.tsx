@@ -9,8 +9,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 
-import { api } from "@/lib/api";
-import { devSetMastery } from "@/lib/dev-mode";
+import { devSetMastery, fetchConceptGraph } from "@/lib/dev-mode";
 import type { GraphData } from "@/components/knowledge/knowledge-graph-types";
 
 const SELECT_CLASS =
@@ -28,7 +27,7 @@ export function DevMasteryCard() {
 
   useEffect(() => {
     let cancelled = false;
-    api<GraphData>("/concepts/graph").then(
+    fetchConceptGraph().then(
       (data) => {
         if (cancelled) return;
         setGraph(data);

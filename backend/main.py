@@ -25,6 +25,7 @@ from api.routes.comprehension_variation import router as comprehension_variation
 from api.routes.concepts import router as concepts_router
 from api.routes.dashboard import router as dashboard_router
 from api.routes.dev import router as dev_router
+from api.routes.dev_quiz import router as dev_quiz_router
 from api.routes.diagnosis import router as diagnosis_router
 from api.routes.health import router as health_router
 from api.routes.learning import router as learning_router
@@ -77,6 +78,7 @@ app.include_router(concepts_router)
 app.include_router(diagnosis_router)
 app.include_router(dashboard_router)
 app.include_router(dev_router)
+app.include_router(dev_quiz_router)
 app.include_router(quiz_router)
 app.include_router(quiz_feedback_router)
 app.include_router(quiz_questions_router)

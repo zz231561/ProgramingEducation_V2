@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.deps import get_current_db_user, get_db, User
+from core.dev_mode import is_dev_email
 from core.errors import AppError
 from core.rate_limit import rate_limit
 from services.chat import interact, list_sessions, get_session_messages, delete_session
@@ -48,6 +49,8 @@ class InteractResponse(BaseModel):
     session_id: uuid.UUID
     user_message: MessageOut
     assistant_message: MessageOut
+    # DEV-7：dev 帳號附 EDF 中間層觀測（evidence/strategy/RAG/kgraph）；一般帳號 None
+    debug: dict | None = None
 
 
 class SessionOut(BaseModel):
@@ -87,6 +90,8 @@ async def chat_interact(
     db: AsyncSession = Depends(get_db),
 ) -> InteractResponse:
     """主要教學互動 — 串接 EDF Pipeline。"""
+    # DEV-7：dev 帳號才建 sink（後端判定，非前端宣稱）
+    debug_sink: dict | None = {} if is_dev_email(user.email) else None
     session, user_msg, ai_msg = await interact(
         db=db,
         user_id=user.id,
@@ -96,9 +101,11 @@ async def chat_interact(
         hint_level=body.hint_level,
         execution_result=body.execution_result,
         reflection_id=body.reflection_id,
+        debug_sink=debug_sink,
     )
 
     return InteractResponse(
+        debug=debug_sink,
         session_id=session.id,
         user_message=MessageOut(
             id=user_msg.id,

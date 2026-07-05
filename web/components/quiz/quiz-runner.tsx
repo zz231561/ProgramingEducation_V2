@@ -12,7 +12,8 @@
  * - Learn 練習 tab = 學習場景含反思（已於 3-1e 整合）
  */
 
-import { useCallback, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
 
 import {
   HintResponse,
@@ -21,6 +22,7 @@ import {
   SubmitAnswer,
   SubmitResponse,
   generateQuestion,
+  getQuestionById,
   requestHint,
   submitAnswer,
 } from "@/lib/quiz";
@@ -72,6 +74,27 @@ export function QuizRunner() {
     setHints([]);
     setPhase({ mode: "question", question, startedAt: Date.now() });
   }, []);
+
+  // DEV-9 深連結：/quiz?question=<id> 直接載入指定題（題庫抽查用）
+  const deepLinkQuestionId = useSearchParams().get("question");
+  useEffect(() => {
+    if (!deepLinkQuestionId) return;
+    let cancelled = false;
+    setPhase({ mode: "loading" });
+    getQuestionById(deepLinkQuestionId).then(
+      (q) => {
+        if (!cancelled) startQuestion(q);
+      },
+      () => {
+        if (cancelled) return;
+        setPhase({ mode: "idle" });
+        setError("找不到指定題目");
+      },
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [deepLinkQuestionId, startQuestion]);
 
   const handleSubmit = useCallback(
     async (answer: SubmitAnswer) => {

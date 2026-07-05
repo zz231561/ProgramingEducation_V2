@@ -67,7 +67,7 @@ export const STYLESHEET: StylesheetCSS[] = [
       label: "data(label)",
       color: TOKEN.textSecondary,
       "font-size": "11px",
-      "font-family": "Inter, 'Noto Sans TC', sans-serif",
+      "font-family": "Inter, Noto Sans TC, sans-serif",
       // 標籤外置於節點下方（Obsidian 風）
       "text-valign": "bottom",
       "text-halign": "center",
@@ -99,7 +99,7 @@ export const STYLESHEET: StylesheetCSS[] = [
       label: "data(label)",
       color: TOKEN.textMuted,
       "font-size": "13px",
-      "font-family": "Inter, 'Noto Sans TC', sans-serif",
+      "font-family": "Inter, Noto Sans TC, sans-serif",
       "text-valign": "top",
       "text-halign": "center",
       "text-margin-y": -8,

@@ -172,7 +172,7 @@ export function KnowledgeGraph({
         fit: false,
         animate: false,
       } as unknown as cytoscape.LayoutOptions,
-      wheelSensitivity: 0.2,
+      // wheelSensitivity 維持預設：自訂值會被 Cytoscape 警告在不同滑鼠/OS 上縮放不自然
       minZoom: 0.12,
       maxZoom: 3,
     });

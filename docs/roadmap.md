@@ -149,7 +149,7 @@
 - [x] K3b 回溯演算法（`services/diagnosis/root_cause.py`）：closure max_depth=3 回溯；嫌疑排序 = 已曝光低 confidence（depth 淺、conf 低優先）→ 未曝光盲區（depth、video_order）；已曝光高 confidence 前置排除；上限 3 個
 - [x] K3c 診斷驗證：每個嫌疑節點附題庫 validated 診斷題 question_id（題庫無題為 null）；作答走既有 /quiz/submit 自然寫回 mastery，不重造判分
 - [x] K3d-API `GET /concepts/{tag}/diagnosis`（未觸發回 triggered=false 供前端隱藏入口）；9 tests
-- [ ] K3e 前端入口：quiz 結果頁答錯時顯示「找出根本原因」→ 呼叫診斷 API → 呈現嫌疑鏈 + 微測驗入口（建議與 K5 視覺改版一併設計）
+- [x] K3e 前端入口：答錯自動查診斷（未觸發自動隱藏）→ 嫌疑鏈 + 微測驗（`GET /quiz/questions/{id}` 直取診斷題）+ 補救開放 + 知識圖譜 `?remedial=` 跳轉；4 route tests
 
 ### K4 Coddy 自適應提示 + 補救路徑（功能四；吸收原 6-5 全部）
 - [x] K4a K-Graph State 注入 EDF Feedback prompt（`services/edf/kgraph_context.py`）：解析 evidence tags（直接命中 + parent group 已曝光成員）→ 依最弱概念 confidence 分級鷹架（<0.4 填空/拆解、0.4-0.7 引導提問、>0.7 只點 edge case）；persona 改寫為 Coddy 自然語氣 + RULE-5 允許行動建議收尾（原 6-5b）；7 tests
@@ -158,9 +158,9 @@
 - [ ] K4d 真人測試驗收（原 6-5c）：比對改動前後語氣 / RAG 命中率（含 RAG_MIN_SCORE 調參）/ 鷹架適切度 / 補救路徑 Learn 頁呈現——**需 OpenAI API key 實測**
 
 ### K5 知識圖譜視覺改版（功能五；吸收原 6-6a/c/d）
-- [ ] K5a 套件調研決策記錄：Cytoscape.js（Tier 1 已鎖定 + 已深度整合）vs React Flow / D3 遷移成本效益——查 GitHub 開源實作 + 學術文獻；**預設維持 Cytoscape.js，除非調研發現決定性優勢**
-- [ ] K5b 多對多邊 + 熟練度視覺：依 K2 state 節點著色 + 依賴邊方向清晰化 + 分章 cluster layout（fcose constraints / dagre / klay 評估）
-- [ ] K5c 個人化路徑高亮：目前單元 / 已完成 / 補救路徑（K4c）圖上呈現；對照 `.claude/rules/frontend.md` R1-R8 逐條檢核
+- [x] K5a 套件調研決策記錄：維持 Cytoscape.js + fcose（決策記錄見 `docs/references.md` §1；dagre 不支援 compound、React Flow 定位 workflow editor 無決定性優勢）
+- [x] K5b 多對多邊 + 熟練度視覺：節點填色改 mastery band + 分章 compound cluster（10 category parent + fcose nestingFactor）+ prerequisite 箭頭強化；`toElements` 拆至 `knowledge-graph-elements.ts`
+- [x] K5c 個人化路徑高亮：underlay ring = 路徑狀態（藍=目前 / 綠=已完成 / 紅=補救嫌疑，`?remedial=` query 觸發 + 鏡頭聚焦）；R1-R8 檢核通過（灰階 cluster 容器、無外來 hex、無 emoji）
 - [ ] K5d 真人測試驗收（原 6-6d）：學生能從圖讀懂自己的進度與弱項，不只是好看
 
 ---

@@ -38,13 +38,14 @@
   - 6-3b ✅ExercisesTab 題庫優先（GET /quiz/from-bank → 404 QUESTION_BANK_EMPTY fallback /quiz/generate；6 bank + 5 route tests；前端 Loading 文案分兩階段）
   - 6-R ✅健壯性強化（2026-07-04 架構審查）：500 traceback logging + token exp 驗證 + per-user rate limit（Redis fail-open）+ Judge0 網路例外 503 + LLM schema 驗證 502 + chat fail-safe 持久化 + user service 節流/race 防護 + 前端 401 重導/proxy timeout
   - **下一步**：**6-4a 自行品管抽查 + 6-3a-3 實機跑 + 6-4a-deferred-ui 必跑**（須備好 OpenAI API key + 預估 $5-15 USD；2026-07-04 已移除教授抽查）；或先平行 Phase 5 教師端
-  - 後端 513 tests 全綠；實機 LLM 全跑延至 6-4 合併執行
+  - 後端 550 tests 全綠（2026-07-05 K3e +4）；實機 LLM 全跑延至 6-4 合併執行
 - **🎯 Phase 6-K K-Graph 自適應學習引擎**（2026-07-04 功能規格書新增；原 6-5/6-6 整併入 K4 / K1+K5）
   - K1 ✅跨章多對多依賴 DAG（migration `i5d6e7f8a9b0` 90 條 curated 邊 + `get_prerequisite_closure` BFS 回溯 + 實機驗證；K1d UI 抽查待使用者）
   - K2 ✅動態知識狀態（`edf_parent_tag` mapping + 三層 fan-out 讓對話重新驅動 BKT；`/concepts/mastery` 加 last_practiced_at；K2c 決策：暫不引入真 AST）
-  - K3 ✅後端（連續失敗觸發 + closure 回溯嫌疑排序 + 題庫診斷題 + `GET /concepts/{tag}/diagnosis`；K3e 前端入口待做，建議併 K5）
+  - K3 ✅全數完成（後端連續失敗觸發 + closure 回溯 + `GET /concepts/{tag}/diagnosis`；K3e 前端：答錯自動查診斷 → 嫌疑鏈 + 微測驗 `GET /quiz/questions/{id}` + 補救開放 + 圖譜跳轉）
   - K4a/b/c ✅（K-Graph 鷹架注入 prompt + Coddy persona 改寫 + RAG 相關性觸發 + 補救路徑 remediate API）；K4d 真人驗收待 API key 實測
-  - **下一步（K 系列）**：K5 視覺改版（多對多邊 + 熟練度著色 + 路徑高亮，含 K3e 前端入口）→ K4d 真人驗收（可與 6-4a 實機批次合併）
+  - K5a/b/c ✅（2026-07-05）：維持 Cytoscape.js 決策記錄（references.md §1）+ 節點填色改 mastery band + 分章 compound cluster + prerequisite 箭頭強化 + 路徑 ring（藍=目前/綠=已完成/紅=補救 `?remedial=`）
+  - **下一步（K 系列）**：**K5d 真人驗收**（學生能否從圖讀懂進度與弱項；含 K1d UI 抽查）→ K4d 真人驗收（可與 6-4a 實機批次合併）
 - **Phase 5 ⇄ Phase 6 平行**：教師端可隨時插入並行
 - **Phase 7 上線實測**：須 Phase 6 至少 6-1 + 6-2 完成 + Zeabur + VPS 就緒
 

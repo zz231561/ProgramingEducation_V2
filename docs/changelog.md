@@ -1,5 +1,21 @@
 # 變更日誌
 
+## [2026-07-05] — feat(K5+K3e)：知識圖譜視覺改版 + 診斷前端入口
+
+### Added
+- **K5a 套件決策記錄**（`docs/references.md` §1）：維持 Cytoscape.js + fcose——fcose 是唯一同時支援 compound node + constraint 的 force-directed layout；dagre 不支援 compound（無法分章 cluster）；React Flow 定位 workflow editor、遷移需重寫全部 graph 程式碼無決定性優勢；D3 手刻本已禁用
+- **K5b 熟練度視覺**：節點填色改為 mastery band（綠=已掌握 / 橙=學習中 / 紅=需加強 / 灰=尚未互動，取代原 category 填色 + underlay 外圈）；每個 category 產生 compound parent 形成分章 cluster（fcose `nestingFactor: 0.15`）；prerequisite 邊箭頭放大（arrow-scale 0.75→1）+ 不透明度提高（0.55→0.7）；`toElements` 自 style 檔拆至 `knowledge-graph-elements.ts` 控制檔案大小
+- **K5c 路徑高亮**：underlay ring 改承載路徑語意——藍 ring=目前單元（in_progress，無則取 order 最小 available）/ 綠 ring=已完成 / 紅 ring=補救嫌疑；overlay 由 `/learning/paths/default` 衍生（`path-overlay.ts` 純函式，載入失敗不擋圖譜主體）；`/knowledge?remedial=tag1,tag2` query 觸發紅 ring + 鏡頭聚焦（K3e 跳轉入口）；header 圖例改共用 `graph-legend.tsx`
+- **K3e 診斷前端入口**：quiz 結果頁答錯自動查 `GET /concepts/{tag}/diagnosis`（未觸發或失敗自動隱藏，符合 K3d 設計）；觸發時顯示嫌疑鏈（depth / 熟練度 / 盲區標示）+ 每節點「微測驗」按鈕（新端點 `GET /quiz/questions/{id}` 直取 K3c 附掛的題庫診斷題，僅 validated）+「開放補救路徑」（POST remediate → 顯示重開單元順序 + Learn 連結）+「在知識圖譜查看嫌疑鏈」（`?remedial=` 跳轉）
+- 後端新增 `api/routes/quiz_questions.py`（獨立檔避免 quiz.py 破 250 行）+ 4 route tests（550 tests 全綠）
+
+### Changed
+- `quiz-runner.tsx`（291 行超標）拆出靜態子視圖至 `quiz-runner-views.tsx`（184 + 133 行）；ResultView 增 `onStartQuestion` 讓微測驗直接切入作答流程
+- Knowledge 頁改用 `useSearchParams`（補 Suspense boundary 符合 Next.js CSR bailout 規範），並行載入 default path 作 overlay
+- 驗證：`tsc --noEmit` + `next build` 通過；後端 550 tests 全綠；lint 僅剩既有 `concept-detail-panel.tsx` set-state-in-effect 舊警告（本次未觸碰）
+
+---
+
 ## [2026-07-04] — fix(chat)：Coddy 回覆 Markdown 渲染 + IME Enter 誤送出 + 樂觀顯示
 
 ### Fixed

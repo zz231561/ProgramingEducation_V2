@@ -49,6 +49,9 @@ POST   /api/quiz/submit           -- 提交作答
   resp: { is_correct, explanation, feedback, mastery_update,
           comprehension_check?: { type, prompt } }
 
+GET    /api/quiz/questions/{id}   -- 以 id 直取單題（K3e 診斷微測驗入口）
+  resp: Question（答案已 mask；僅 validated 題，否則 404 QUESTION_NOT_FOUND）
+
 GET    /api/quiz/history          -- 作答歷史
   query: { page?, limit?, concept_tag? }
   resp: { answers: [StudentAnswer], total }

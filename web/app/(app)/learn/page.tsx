@@ -19,6 +19,7 @@ import { Loader2 } from "lucide-react";
 
 import { PathDetailView } from "@/components/learn/path-detail";
 import { UnitContent } from "@/components/learn/unit-content";
+import { useGhostUnlock } from "@/hooks/use-dev-mode";
 import { ApiRequestError } from "@/lib/api";
 import {
   PathDetail,
@@ -36,6 +37,7 @@ type View =
 
 export default function LearnPage() {
   const [view, setView] = useState<View>({ mode: "loading" });
+  const ghostUnlock = useGhostUnlock();
 
   const loadDefault = useCallback(async () => {
     setView({ mode: "loading" });
@@ -99,6 +101,7 @@ export default function LearnPage() {
           onAfterStatusChange={(updatedDetail, newIndex) =>
             setView({ mode: "unit", detail: updatedDetail, unitIndex: newIndex })
           }
+          ghostUnlock={ghostUnlock}
         />
       </div>
     );
@@ -107,7 +110,11 @@ export default function LearnPage() {
   // detail 模式
   return (
     <div className="h-full overflow-y-auto px-6 py-8">
-      <PathDetailView detail={view.detail} onSelectUnit={handleSelectUnit} />
+      <PathDetailView
+        detail={view.detail}
+        onSelectUnit={handleSelectUnit}
+        ghostUnlock={ghostUnlock}
+      />
     </div>
   );
 }
@@ -123,11 +130,13 @@ function UnitView({
   unitIndex,
   onBackToDetail,
   onAfterStatusChange,
+  ghostUnlock,
 }: {
   detail: PathDetail;
   unitIndex: number;
   onBackToDetail: () => void;
   onAfterStatusChange: (detail: PathDetail, newIndex: number) => void;
+  ghostUnlock?: boolean;
 }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -137,10 +146,11 @@ function UnitView({
     return (offset: number) => {
       const target = unitIndex + offset;
       if (target < 0 || target >= detail.units.length) return null;
-      if (detail.units[target].status === "locked") return null;
+      // DEV-4 幽靈解鎖：locked 也可導航（僅瀏覽，狀態轉移仍受後端限制）
+      if (detail.units[target].status === "locked" && !ghostUnlock) return null;
       return () => onAfterStatusChange(detail, target);
     };
-  }, [detail, unitIndex, onAfterStatusChange]);
+  }, [detail, unitIndex, onAfterStatusChange, ghostUnlock]);
 
   const refreshAndStay = useCallback(async () => {
     const fresh = await getPath(detail.id);

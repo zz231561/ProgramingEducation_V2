@@ -166,11 +166,11 @@
 ### DEV 開發者模式（2026-07-05 與使用者共同定案：Settings 入口 / 分類重置 / 真改 DB role / A+B+C+D 全納首版）
 > **安全前提（不可妥協）**：後端 `DEV_MODE_ENABLED` 總開關（生產預設關）+ `DEV_MODE_EMAILS` email 白名單，兩者皆環境變數（白名單不寫死、不進 git）；所有 dev 變更端點掛 `require_dev_user` 逐一驗證（403），前端 UI 只是入口不是防線；操作寫 log 留痕。
 - [x] DEV-1 後端 gating 基礎：config 雙環境變數 + `core/dev_mode.py` `is_dev_email` + `require_dev_user` dependency + `GET /dev/status` + rate limit 豁免（追加功能 B）；11 tests
-- [ ] DEV-2 Settings「開發者工具」區塊殼 + `useDevMode`（打 `/dev/status`，非 dev 完全不渲染）
-- [ ] DEV-3 分類重置：熟練度 / 課程進度 / 測驗紀錄 / 對話紀錄四鍵 + 一鍵全部（`POST /dev/reset`）
-- [ ] DEV-4 幽靈解鎖：開關開啟時 locked unit 前端可點 + 後端放行讀取（不改 unit status、不觸發 BKT）
-- [ ] DEV-5 熟練度編輯器：concept 單選或整章批次設定 confidence 0-1（`PUT /dev/mastery`）
-- [ ] DEV-6 身分切換：student ⇄ teacher 真改 `users.role` + session 同步（`PUT /dev/role`）
+- [x] DEV-2 Settings「開發者工具」區塊殼 + `useDevMode`（打 `/dev/status`，非 dev 完全不渲染）
+- [x] DEV-3 分類重置：熟練度 / 課程進度 / 測驗紀錄 / 對話紀錄四鍵 + 一鍵全部（`POST /dev/reset`，二段確認）
+- [x] DEV-4 幽靈解鎖：純前端開關（localStorage + 僅 dev 生效）locked unit 可點瀏覽；unit 內容後端本就回傳給本人，狀態轉移限制不變
+- [x] DEV-5 熟練度編輯器：章節/單一概念 + confidence 滑桿（`PUT /dev/mastery` upsert）
+- [x] DEV-6 身分切換：student ⇄ teacher 真改 `users.role`（`PUT /dev/role`；教師端 UI 待 Phase 5）
 - [ ] DEV-7 EDF Debug 面板（追加 A）：chat 回應對 dev 附中間層 payload（Bloom / Hint / 策略 / RAG 分數 / K-Graph 鷹架）+ 前端展開 UI
 - [ ] DEV-8 K3 診斷模擬器（追加 C）：一鍵注入指定 concept 連續答錯 N 次觸發診斷鏈
 - [ ] DEV-9 題庫檢視器（追加 D）：指定 concept 列題（含 validate 狀態）+ 直接作答指定題

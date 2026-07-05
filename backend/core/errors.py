@@ -4,6 +4,7 @@ import logging
 from typing import Any
 
 from fastapi import Request
+from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
@@ -60,7 +61,9 @@ async def validation_error_handler(
         content=ErrorResponse(
             error="VALIDATION_ERROR",
             message="輸入驗證失敗，請檢查欄位格式",
-            detail={"errors": exc.errors()},
+            # jsonable_encoder：model_validator 的 ValueError 會出現在 ctx，
+            # 直接序列化會 TypeError → 先轉可序列化形式（對齊 FastAPI 預設 handler）
+            detail={"errors": jsonable_encoder(exc.errors())},
         ).model_dump(exclude_none=True),
     )
 

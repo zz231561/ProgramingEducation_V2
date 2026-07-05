@@ -5,6 +5,7 @@
  *
  * 3-1d 起：unit 變可點，locked 不可點。
  * 3-1c+ 簡化：Learn 頁面直接以此頁為主畫面（無 list 模式可返），故不顯示「返回」按鈕。
+ * DEV-4：ghostUnlock 開啟時 locked 也可點（僅瀏覽，狀態轉移仍受限）。
  */
 
 import { PathDetail, Unit } from "@/lib/learning";
@@ -14,9 +15,11 @@ import { UnitStatusIcon, statusLabel } from "./unit-status-icon";
 interface Props {
   detail: PathDetail;
   onSelectUnit: (unit: Unit) => void;
+  /** DEV-4 幽靈解鎖：locked unit 可點瀏覽（僅 dev 帳號生效）。 */
+  ghostUnlock?: boolean;
 }
 
-export function PathDetailView({ detail, onSelectUnit }: Props) {
+export function PathDetailView({ detail, onSelectUnit, ghostUnlock }: Props) {
   const total = detail.units.length;
   const completed = detail.units.filter((u) => u.status === "completed").length;
   const percent = total === 0 ? 0 : Math.round((completed / total) * 100);
@@ -46,6 +49,7 @@ export function PathDetailView({ detail, onSelectUnit }: Props) {
             unit={unit}
             index={index}
             onSelect={() => onSelectUnit(unit)}
+            ghostUnlock={ghostUnlock}
           />
         ))}
       </ol>
@@ -63,12 +67,14 @@ function UnitRow({
   unit,
   index,
   onSelect,
+  ghostUnlock,
 }: {
   unit: Unit;
   index: number;
   onSelect: () => void;
+  ghostUnlock?: boolean;
 }) {
-  const clickable = unit.status !== "locked";
+  const clickable = unit.status !== "locked" || ghostUnlock === true;
   return (
     <li
       role={clickable ? "button" : undefined}

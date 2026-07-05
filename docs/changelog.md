@@ -1,5 +1,23 @@
 # 變更日誌
 
+## [2026-07-05] — feat(DEV-2~6)：開發者工具 Settings 區塊（分類重置 / 幽靈解鎖 / 熟練度編輯 / 身分切換）
+
+### Added
+- **後端**（`services/dev_tools.py` + `/dev` 路由擴充，全掛 `require_dev_user`，操作寫 log 留痕）：
+  - `POST /dev/reset`：分類刪除使用者資料——mastery（student_mastery）/ progress（learning_paths+units+unit 反思；刪後 Learn 頁 lazy re-seed 全新路徑）/ quiz（student_answers+quiz 反思）/ chat（sessions+messages）；子表顯式先刪不依賴 FK cascade（SQLite/Postgres 行為一致）
+  - `PUT /dev/mastery`：tags 或整章 category 擇一（model_validator 強制）+ confidence 0-1 upsert；新記錄 exposure_count=1 讓前端 band 顯示為已互動
+  - `PUT /dev/role`：student ⇄ teacher 真改 `users.role`（admin 不開放）
+- **前端**（Settings 頁「開發者工具」區塊，非 dev 帳號完全不渲染；防線仍在後端）：
+  - `lib/dev-mode.ts`（API wrappers + is_dev module 快取 + 幽靈解鎖 localStorage/CustomEvent）+ `hooks/use-dev-mode.ts`（useDevMode / useGhostUnlock）
+  - 四張卡：身分切換（顯示 /auth/me 當前角色）/ 幽靈解鎖 toggle / 熟練度編輯（章節+概念下拉 from `/concepts/graph` + 滑桿）/ 分類重置（二段確認：點一下待確認 3 秒內再點執行，回報刪除筆數）
+  - **DEV-4 幽靈解鎖**：Learn 頁 locked unit 變可點瀏覽（列表 + 上一/下一單元導航）；unit 內容後端本就回傳給本人、action bar 對 locked 只顯示「尚未解鎖」，故不改後端、不影響 BKT
+- Tests +14（`test_dev_tools.py`：403 防線 3 / reset 3 / mastery 6 / role 2）；後端全量 575 passed
+
+### Fixed
+- `core/errors.py` `validation_error_handler` 潛在 bug：pydantic v2 `model_validator` 的 ValueError 會出現在 `errors()` 的 ctx，直接進 JSONResponse 會 TypeError → 加 `jsonable_encoder`（對齊 FastAPI 預設 handler 行為）
+
+---
+
 ## [2026-07-05] — feat(DEV-1)：開發者模式後端 gating 基礎 + rate limit 豁免
 
 ### Added

@@ -38,7 +38,7 @@
   - 6-3b ✅ExercisesTab 題庫優先（GET /quiz/from-bank → 404 QUESTION_BANK_EMPTY fallback /quiz/generate；6 bank + 5 route tests；前端 Loading 文案分兩階段）
   - 6-R ✅健壯性強化（2026-07-04 架構審查）：500 traceback logging + token exp 驗證 + per-user rate limit（Redis fail-open）+ Judge0 網路例外 503 + LLM schema 驗證 502 + chat fail-safe 持久化 + user service 節流/race 防護 + 前端 401 重導/proxy timeout
   - **下一步**：**6-4a 自行品管抽查 + 6-3a-3 實機跑 + 6-4a-deferred-ui 必跑**（須備好 OpenAI API key + 預估 $5-15 USD；2026-07-04 已移除教授抽查）；或先平行 Phase 5 教師端
-  - 後端 561 tests 全綠（2026-07-05 DEV-1 +11）；實機 LLM 全跑延至 6-4 合併執行
+  - 後端 575 tests 全綠（2026-07-05 DEV-2~6 +14）；實機 LLM 全跑延至 6-4 合併執行
 - **🎯 Phase 6-K K-Graph 自適應學習引擎**（2026-07-04 功能規格書新增；原 6-5/6-6 整併入 K4 / K1+K5）
   - K1 ✅跨章多對多依賴 DAG（migration `i5d6e7f8a9b0` 90 條 curated 邊 + `get_prerequisite_closure` BFS 回溯 + 實機驗證；K1d UI 抽查待使用者）
   - K2 ✅動態知識狀態（`edf_parent_tag` mapping + 三層 fan-out 讓對話重新驅動 BKT；`/concepts/mastery` 加 last_practiced_at；K2c 決策：暫不引入真 AST）
@@ -46,7 +46,7 @@
   - K4a/b/c ✅（K-Graph 鷹架注入 prompt + Coddy persona 改寫 + RAG 相關性觸發 + 補救路徑 remediate API）；K4d 真人驗收待 API key 實測
   - K5a/b/c ✅（2026-07-05，六輪迭代）：Cytoscape.js + mastery band 填色 + 路徑 ring（藍=目前/綠=已完成/紅=補救 `?remedial=`）+ **語意縮放全覽**（overview=同批概念節點放大字體/尺寸並重排每章緊湊網格 `overview-layout.ts`；detail=蛇形星系佈局；zoom 門檻 0.45 動畫切換 `graph-mode.ts`）+ 點擊容器/節點皆 zoom in 該章 + GalaxyNav 含全覽鈕 + zoom cap 1.0 + 跨章邊淡出；⚠ `knowledge-graph.tsx` 265 行拆分計畫待核可
   - **下一步（K 系列）**：**K5d 真人驗收**（學生能否從圖讀懂進度與弱項；含 K1d UI 抽查）→ K4d 真人驗收（可與 6-4a 實機批次合併）
-- **🎯 DEV 開發者模式**（2026-07-05 與使用者定案，拆解見 roadmap DEV 節）：DEV-1 ✅後端 gating（`DEV_MODE_ENABLED`+`DEV_MODE_EMAILS` 環境變數、`require_dev_user`、`GET /dev/status`、rate limit 豁免；11 tests）→ **下一步 DEV-2** Settings 開發者區塊殼 + useDevMode → DEV-3~9（分類重置/幽靈解鎖/熟練度編輯/身分切換/EDF debug/診斷模擬/題庫檢視）
+- **🎯 DEV 開發者模式**（2026-07-05 與使用者定案，拆解見 roadmap DEV 節）：DEV-1~6 ✅（後端 gating + rate limit 豁免 + Settings 開發者區塊四卡：分類重置 `POST /dev/reset` / 幽靈解鎖 localStorage / 熟練度編輯 `PUT /dev/mastery` / 身分切換 `PUT /dev/role`；+25 tests）→ **下一步 DEV-7~9**（EDF debug 面板 / K3 診斷模擬器 / 題庫檢視器）；UI 驗收待使用者
 - **Phase 5 ⇄ Phase 6 平行**：教師端可隨時插入並行
 - **Phase 7 上線實測**：須 Phase 6 至少 6-1 + 6-2 完成 + Zeabur + VPS 就緒
 

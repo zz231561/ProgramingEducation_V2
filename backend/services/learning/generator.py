@@ -10,8 +10,8 @@
 - **不採 RL**（守則 #7：禁用 OATutor RL；演算法用純 Python 拓撲 + 弱項補強已足夠）
 - **未練概念 confidence=0**：StudentMastery row 不存在時視為 0，弱項優先邏輯天然涵蓋 cold start
 - **不重複生成**：caller 應自行管理（一個學生可有多條路徑，schema 不限制）
-- **content 預留 shape**：3-1b 寫入 `{"summary": "", "examples": [], "exercise_question_ids": []}`
-  空骨架；實際 content 由 3-1d 學習單元頁或 LLM 生成 service 後續填入
+- **content 預留 shape**：寫入 `{"examples": [], "exercise_question_ids": []}` 空骨架
+  （U2b 移除 summary 欄位）；實際 content 由 LLM 生成 service 後續填入
 """
 
 from uuid import UUID
@@ -70,7 +70,7 @@ async def _fetch_user_confidence(
 
 def _empty_unit_content() -> dict:
     """LearningUnit.content 初始骨架；後續 service 填入實際教學內容。"""
-    return {"summary": "", "examples": [], "exercise_question_ids": []}
+    return {"examples": [], "exercise_question_ids": []}
 
 
 async def generate_learning_path(

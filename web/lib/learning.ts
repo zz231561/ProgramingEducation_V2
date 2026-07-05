@@ -44,21 +44,8 @@ export interface CodeExamples {
   examples: CodeExample[];
 }
 
-/**
- * 6-2a `summary` section — 3-7 個 key_points + citations，可能 needs_more_source。
- * Note：舊 lazy-seed content.summary 是 string；promote 後變成此 object。
- *       SummaryTab 透過 typeof 判斷哪一種形狀。
- */
-export interface SummaryContent {
-  needs_more_source: boolean;
-  reason: string;
-  key_points: string[];
-  citations: Citation[];
-}
-
 export interface UnitContent {
-  // 舊形狀（3-1d）— 6-2b promote 後 summary 會被新 grounded object 形狀取代
-  summary?: string | SummaryContent;
+  // 舊形狀（3-1d）；U2b 已移除摘要 tab — content JSON 內殘留的 summary 欄位直接忽略
   examples?: string[];
   exercise_question_ids?: string[];
   // 6-2a/b 新 grounded 形狀（promote 後 staging → learning_units.content）
@@ -75,6 +62,8 @@ export interface Unit {
   // 6-2c：嵌入 YT IFrame player 與 citation 跳轉所需
   video_youtube_id: string | null;
   video_duration_seconds: number | null;
+  // U2c：課程介紹單元隱藏範例程式 tab
+  concept_category: string | null;
   order_index: number;
   status: UnitStatus;
   completed_at: string | null;

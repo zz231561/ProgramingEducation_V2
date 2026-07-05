@@ -24,10 +24,6 @@
   - **如何處理**：前端在 `useEffect` 用 `getQuizHistory` 取出該 concept 已答 question_ids → 傳給 from-bank（需 endpoint 也支援 query param 或新 POST 形式）；或後端直接 join student_answers 在 service 內過濾
   - **影響**：學生短時間重練命中率低時感受不明顯（grounded 題庫每 concept 2-3 題不大），但長期會被學生抱怨；6-4 自行品管時若發現此問題優先處理
 
-### 內容生成管線（2026-07-06 U2b 決策衍生）
-- [ ] **unit content 生成管線的 `summary` 欄位閒置**
-  - **背景**：2026-07-06 決策直接移除 LEARN 摘要 tab（roadmap U2b），但 6-2a grounded prompt / Pydantic 模型 / staging 表仍會生成並儲存 `summary` object
-  - **如何處理**：U2b 執行時先只移除前端 tab（資料留著無害）；6-4 實機批次重跑前評估從 prompt 移除 summary 段以省 token（62 unit × summary 生成成本）
 
 ### 部署相關（待實測）
 - [ ] **Zeabur PREBUILT + source.type=IMAGE schema 未實測**
@@ -90,6 +86,7 @@
 
 ## ✅ 已消除
 
+- ~~unit content 生成管線的 `summary` 欄位閒置~~ — 2026-07-06 **U2b 完成**：Summary model / prompt / LLM call 全移除（非僅前端 tab），批次直接省 1/3 calls
 - ~~`backend/.env` 的 `OPENAI_API_KEY` 未填~~ — 2026-07-06 確認已填（只驗證存在性未讀值）；第 5 批實機批次前使用者需確認 OpenAI 帳戶儲值 $10
 - ~~`concept_edges` seed 的 23 條邊為 AI 暫定值~~ — 2026-05-05 完全替換為 58 條線性 PREREQUISITE（隨 e1f2a3b4c5d6 重 seed）
 - ~~`concepts` seed 的 `category` / `difficulty_level` / `name_zh` 為暫定值~~ — 2026-05-05 完全替換為 59 影片 concept

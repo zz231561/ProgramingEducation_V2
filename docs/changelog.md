@@ -1,5 +1,20 @@
 # 變更日誌
 
+## [2026-07-06] — feat(learn)：第 2 批 U2b 移除摘要 + U2c 拔課程介紹範例
+
+### Removed（U2b）
+- **前端**：LEARN 摘要 tab（`unit-content.tsx` 4 tab → 3 tab）、`summary-tab.tsx` 刪除、`learning.ts` SummaryContent 型別與 content.summary 欄位移除
+- **生成管線**：`content_generator.py` Summary model / `_SUMMARY_TASK` prompt / `generate_summary()` 全移除（3 section → 2 section，批次生成省 1/3 LLM calls）；`batch_generator.py` 聚合邏輯同步；lazy-seed 空骨架去 summary 欄位（既有 DB 內殘留 summary key 無害，前端直接忽略）
+
+### Added（U2c）
+- **`concept_category` 直通**：`UnitWithConcept` + `UnitOut` + 前端 `Unit` 型別加欄位；課程介紹單元（video 1-3）前端隱藏「範例程式」tab（含 activeTab 防呆退回概念說明）
+- **批次生成跳過**：`generate_unit_content` 對 category=課程介紹 concept 不呼叫 examples LLM call，回空 examples 且不標 needs_more_source（避免 6-4 抽查誤判待補）
+
+### Tests
+- test_content_generator 改 2 section + 新增 intro 跳過測試；test_batch_generator fixtures 去 summary；test_learning_route 加 concept_category 斷言；後端全量 **583 passed**；前端 tsc + eslint 乾淨
+
+---
+
 ## [2026-07-06] — fix(workspace)：第 1 批 U1a/b/c — 首登誤顯、反思側欄比例、反思 handoff gating
 
 ### Fixed

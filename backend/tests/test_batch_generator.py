@@ -37,7 +37,6 @@ from services.learning.batch_generator import (
 from services.learning.content_generator import (
     CodeExamples,
     ConceptExplanation,
-    Summary,
     UnitContent,
 )
 from services.learning.unit_content_promote import promote_concept
@@ -57,9 +56,6 @@ def _good_unit_content() -> UnitContent:
             citations=[],
         ),
         code_examples=CodeExamples(needs_more_source=False, reason="", examples=[]),
-        summary=Summary(
-            needs_more_source=False, reason="", key_points=["a", "b", "c"],
-        ),
     )
 
 
@@ -70,9 +66,6 @@ def _partial_needs_more_unit_content() -> UnitContent:
         ),
         code_examples=CodeExamples(
             needs_more_source=True, reason="字幕無程式碼", examples=[],
-        ),
-        summary=Summary(
-            needs_more_source=False, reason="", key_points=["a", "b", "c"],
         ),
     )
 
@@ -188,7 +181,7 @@ async def test_retry_succeeds_on_second_attempt():
         )
         content, attempt = await _generate_with_retry(concept, _fake_chunks())
     assert attempt == 2
-    assert content.summary.key_points == ["a", "b", "c"]
+    assert content.concept_explanation.markdown == "說明 [00:01]。"
 
 
 @pytest.mark.asyncio
@@ -252,7 +245,7 @@ async def test_generate_for_concept_writes_staging():
         ).scalar_one()
     assert row.status == StagingStatus.PENDING.value
     assert row.needs_more_source is False
-    assert row.content["summary"]["key_points"] == ["a", "b", "c"]
+    assert row.content["concept_explanation"]["markdown"] == "說明 [00:01]。"
 
 
 @pytest.mark.asyncio

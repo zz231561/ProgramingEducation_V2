@@ -185,7 +185,7 @@ async def test_unit_content_initialized_with_empty_skeleton():
 
     units = await _read_units_in_order(path.id)
     assert units[0].content == {
-        "summary": "", "examples": [], "exercise_question_ids": [],
+        "examples": [], "exercise_question_ids": [],
     }
 
 

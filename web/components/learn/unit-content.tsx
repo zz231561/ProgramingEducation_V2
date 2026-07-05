@@ -1,13 +1,14 @@
 "use client";
 
 /**
- * 學習單元內容頁（roadmap 3-1d）— 4 tab + 上下單元導航 + 完成按鈕。
+ * 學習單元內容頁（roadmap 3-1d）— tab 切換 + 上下單元導航 + 完成按鈕。
  *
- * 4 tab 內容：
+ * tab 內容：
  * - 概念說明：YT IFrame player + grounded markdown + citation 跳轉（6-2c，元件移至 concept-tab.tsx）
  * - 範例程式：grounded code examples + 「在 Workspace 開啟」（6-2d，元件移至 examples-tab.tsx）
+ *   ※ U2c：「課程介紹」分類單元（video 1-3）無程式內容，不顯示此 tab
  * - 練習題：3-1e 整合 placeholder
- * - 摘要：grounded key_points + citations（6-2e，元件移至 summary-tab.tsx）
+ * ※ 摘要 tab 已於 U2b（2026-07-06 決策）移除：提供現成摘要屬被動學習、效益低
  *
  * 設計原則：
  * - 元件純 prop-driven（status / 導航 / 完成 callback）
@@ -23,11 +24,13 @@ import { Unit } from "@/lib/learning";
 import { ConceptTab } from "./concept-tab";
 import { ExamplesTab } from "./examples-tab";
 import { ExercisesTab } from "./exercises-tab";
-import { SummaryTab } from "./summary-tab";
 import { ActionButton, NavButton } from "./unit-action-bar";
 import { UnitStatusIcon, statusLabel } from "./unit-status-icon";
 
-type Tab = "concept" | "examples" | "exercises" | "summary";
+type Tab = "concept" | "examples" | "exercises";
+
+/** U2c：課程介紹單元（影片 1-3）沒有可教的程式範例。 */
+const INTRO_CATEGORY = "課程介紹";
 
 interface Props {
   unit: Unit;
@@ -45,7 +48,6 @@ const TABS: { key: Tab; label: string }[] = [
   { key: "concept", label: "概念說明" },
   { key: "examples", label: "範例程式" },
   { key: "exercises", label: "練習題" },
-  { key: "summary", label: "摘要" },
 ];
 
 export function UnitContent({
@@ -60,6 +62,11 @@ export function UnitContent({
   busy,
 }: Props) {
   const [tab, setTab] = useState<Tab>("concept");
+
+  const isIntroUnit = unit.concept_category === INTRO_CATEGORY;
+  const tabs = isIntroUnit ? TABS.filter((t) => t.key !== "examples") : TABS;
+  // 防呆：若切到被隱藏的 tab（例如從一般單元導航到課程介紹單元），退回概念說明
+  const activeTab = tabs.some((t) => t.key === tab) ? tab : "concept";
 
   return (
     <div className="mx-auto w-full max-w-3xl space-y-5">
@@ -95,10 +102,10 @@ export function UnitContent({
 
       <div className="border-b border-border-default">
         <div className="flex gap-4">
-          {TABS.map((t) => (
+          {tabs.map((t) => (
             <TabButton
               key={t.key}
-              active={tab === t.key}
+              active={activeTab === t.key}
               onClick={() => setTab(t.key)}
             >
               {t.label}
@@ -108,15 +115,14 @@ export function UnitContent({
       </div>
 
       <div className="min-h-[240px]">
-        {tab === "concept" && <ConceptTab unit={unit} />}
-        {tab === "examples" && <ExamplesTab unit={unit} />}
-        {tab === "exercises" && (
+        {activeTab === "concept" && <ConceptTab unit={unit} />}
+        {activeTab === "examples" && !isIntroUnit && <ExamplesTab unit={unit} />}
+        {activeTab === "exercises" && (
           <ExercisesTab
             conceptTag={unit.concept_tag}
             conceptNameZh={unit.concept_name_zh}
           />
         )}
-        {tab === "summary" && <SummaryTab unit={unit} />}
       </div>
 
       <div className="flex items-center justify-between border-t border-border-default pt-4">

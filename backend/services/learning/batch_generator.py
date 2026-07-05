@@ -4,8 +4,9 @@
 
 設計取捨：
 - per-concept 不 per-unit：1 concept N user units 共用 grounded content。
-- needs_more_source 聚合：3 section 任一 flag → row 標 True。
-- 涵蓋全部 62 部（含 video_order 1-3 課程介紹）；只要有 video_order 就生成。
+- needs_more_source 聚合：2 section 任一 flag → row 標 True（U2b 移除 summary）。
+- 涵蓋全部 62 部（含 video_order 1-3 課程介紹）；只要有 video_order 就生成
+  （課程介紹單元的 code_examples 由 content_generator 跳過，見 U2c）。
 - promote 與 generate 分離：6-4 抽查通過後才 promote（unit_content_promote.py）。
 """
 
@@ -45,23 +46,20 @@ class GenerationResult:
 
 
 def _flatten_notes(unit_content: UnitContent) -> str:
-    """聚合 3 section 的 reason 字串，給 6-4 審查者一眼看出缺什麼。"""
+    """聚合 2 section 的 reason 字串，給 6-4 審查者一眼看出缺什麼。"""
     parts = []
     if unit_content.concept_explanation.needs_more_source:
         parts.append(f"concept: {unit_content.concept_explanation.reason}")
     if unit_content.code_examples.needs_more_source:
         parts.append(f"examples: {unit_content.code_examples.reason}")
-    if unit_content.summary.needs_more_source:
-        parts.append(f"summary: {unit_content.summary.reason}")
     return " | ".join(parts)
 
 
 def _aggregate_needs_more_source(unit_content: UnitContent) -> bool:
-    """3 section 任一 needs_more_source=True → 整 row 標 True。"""
+    """2 section 任一 needs_more_source=True → 整 row 標 True。"""
     return (
         unit_content.concept_explanation.needs_more_source
         or unit_content.code_examples.needs_more_source
-        or unit_content.summary.needs_more_source
     )
 
 

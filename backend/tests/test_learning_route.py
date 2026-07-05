@@ -215,6 +215,8 @@ async def test_get_path_returns_units_in_order(client: AsyncClient):
     assert body["units"][0]["video_duration_seconds"] == 600
     assert body["units"][1]["video_youtube_id"] is None
     assert body["units"][1]["video_duration_seconds"] is None
+    # U2c：concept category 直通（前端據此隱藏課程介紹單元的範例 tab）
+    assert body["units"][0]["concept_category"] == "基礎"
 
 
 async def test_get_path_other_user_returns_404(client: AsyncClient):

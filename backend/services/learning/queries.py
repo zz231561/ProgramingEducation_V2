@@ -51,6 +51,8 @@ class UnitWithConcept:
     concept_difficulty: int
     video_youtube_id: str | None
     video_duration_seconds: int | None
+    # U2c：前端依「課程介紹」分類隱藏範例程式 tab
+    concept_category: str | None
 
 
 async def _get_owned_path(
@@ -142,6 +144,7 @@ async def get_path_with_units(
             concept_difficulty=concept.difficulty_level,
             video_youtube_id=concept.video_youtube_id,
             video_duration_seconds=concept.video_duration_seconds,
+            concept_category=concept.category,
         )
         for unit, concept in rows
     ]

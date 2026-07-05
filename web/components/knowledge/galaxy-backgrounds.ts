@@ -1,16 +1,21 @@
 /**
  * K5 章節星系背景 — 程序生成低透明度星雲/星系 SVG（data URI）。
  *
+ * ⚠ 2026-07-05 太陽系主題定案後為**備援方案**：主方案為 NASA 行星影像
+ * （planet-theme.ts）；若真人驗收認定影像效果不佳，改回此程序生成路線
+ * （屆時需補 SVG width/height 屬性——canvas rasterize 對 viewBox-only SVG
+ * 會退回 300×150 預設尺寸導致幾乎不可見，headless 實驗已證實）。
+ * mulberry32 仍由軌道星空 underlay（orbit-scene.ts）共用。
+ *
  * 每章以 chapterIndex 為 seed（mulberry32）：樣式獨特但每次渲染完全一致。
- * 色相僅取 GitHub Dark token（藍/紫/灰），內部 opacity 0.1-0.2 + cytoscape
- * background-image-opacity 再壓一層，維持「低透明度美化」不搶節點主體。
+ * 色相僅取 GitHub Dark token（藍/紫/灰）。
  */
 
 const GALAXY_HUES = ["#58A6FF", "#BC8CFF", "#8B949E"] as const;
 const CANVAS = 480;
 
 /** 決定性 PRNG — 同 seed 永遠產生同序列。 */
-function mulberry32(seed: number): () => number {
+export function mulberry32(seed: number): () => number {
   let a = seed >>> 0;
   return () => {
     a |= 0;

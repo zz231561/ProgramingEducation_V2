@@ -6,16 +6,21 @@
  * Presentational 元件 — 由 KnowledgePage 傳入 graphData + masteryMap + pathOverlay，
  * 自己只負責 Cytoscape 生命週期與互動。
  * 視覺規格 / 色票 → `knowledge-graph-style.ts`；elements 轉換 → `knowledge-graph-elements.ts`
- * K5b 改版二：preset layout（`graph-layout.ts` 確定性座標）+ 章節星系背景
- * K5 調整三：進場鏡頭 zoom 至目前進度星系；GalaxyNav 左右鍵切換星系
+ * 太陽系主題：preset 蛇形軌道佈局（graph-layout.ts）+ NASA 行星容器（planet-theme.ts）
+ *            + 軌道弧線/星空 underlay（orbit-scene.ts，隨 viewport 同步 transform）
+ * 鏡頭：進場 zoom 至目前進度星球（上限 ZOOM_CAP 避免過大）；GalaxyNav 左右切換
  * K5c：focusTags（補救跳轉）優先於 currentTag 進度聚焦
  */
 
-import cytoscape, { type Core, type EventObject } from "cytoscape";
+import cytoscape, {
+  type Core,
+  type EventObject,
+  type NodeCollection,
+} from "cytoscape";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { GalaxyNav } from "./galaxy-nav";
-import { computePositions, orderedCategories } from "./graph-layout";
+import { computeChapterAnchors, computePositions } from "./graph-layout";
 import { CHAPTER_ID_PREFIX, toElements } from "./knowledge-graph-elements";
 import { STYLESHEET, TOKEN } from "./knowledge-graph-style";
 import type {
@@ -23,22 +28,48 @@ import type {
   MasteryEntry,
   PathOverlay,
 } from "./knowledge-graph-types";
+import { buildOrbitPath, buildStars } from "./orbit-scene";
+import { planetFor } from "./planet-theme";
 
-const FIT_PADDING = 60;
+const FIT_PADDING = 72;
 const NAV_ANIMATION_MS = 350;
+// 鏡頭放大上限：小章節 fit 後不再貼臉（使用者回饋「放太大」）
+const ZOOM_CAP = 1.0;
 
 export type KnowledgeGraphProps = {
   data: GraphData;
   masteryMap: Map<string, MasteryEntry>;
   /** K5c 路徑高亮 overlay（省略 = 無 ring）。 */
   pathOverlay?: PathOverlay;
-  /** 目前進度 concept（進場鏡頭 zoom 至其所屬星系）。 */
+  /** 目前進度 concept（進場鏡頭 zoom 至其所屬星球）。 */
   currentTag?: string | null;
   /** K5c：補救跳轉聚焦 tags；優先於 currentTag。 */
   focusTags?: string[];
   /** 點擊節點時觸發；接收 concept tag 供上層查詳情。*/
   onNodeClick?: (tag: string) => void;
 };
+
+/** fit 目標並套用 ZOOM_CAP（cap 時改用置中）。 */
+function fitWithCap(cy: Core, eles: NodeCollection, animate: boolean): void {
+  if (eles.empty()) return;
+  const bb = eles.boundingBox();
+  const fitZoom = Math.min(
+    (cy.width() - FIT_PADDING * 2) / bb.w,
+    (cy.height() - FIT_PADDING * 2) / bb.h,
+  );
+  const zoom = Math.min(ZOOM_CAP, fitZoom);
+  if (animate) {
+    cy.animate({
+      zoom,
+      center: { eles },
+      duration: NAV_ANIMATION_MS,
+      easing: "ease-in-out",
+    });
+  } else {
+    cy.zoom(zoom);
+    cy.center(eles);
+  }
+}
 
 export function KnowledgeGraph({
   data,
@@ -49,6 +80,7 @@ export function KnowledgeGraph({
   onNodeClick,
 }: KnowledgeGraphProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const underlayRef = useRef<SVGGElement>(null);
   const cyRef = useRef<Core | null>(null);
 
   const elements = useMemo(
@@ -56,16 +88,20 @@ export function KnowledgeGraph({
     [data, masteryMap, pathOverlay],
   );
   const positions = useMemo(() => computePositions(data), [data]);
-  const chapters = useMemo(() => orderedCategories(data.nodes), [data]);
+  const anchors = useMemo(() => computeChapterAnchors(data), [data]);
+  const orbitPath = useMemo(() => buildOrbitPath(anchors), [anchors]);
+  const stars = useMemo(() => buildStars(anchors), [anchors]);
 
-  // 進場聚焦章節：補救 tags > 目前進度 > 第一章
+  // 進場聚焦章節：補救 tags > 目前進度 > 第一章（太陽）
   const initialChapterIdx = useMemo(() => {
     const anchorTag = focusTags?.[0] ?? currentTag;
     if (!anchorTag) return 0;
     const category = data.nodes.find((n) => n.tag === anchorTag)?.category;
-    const idx = category ? chapters.indexOf(category) : -1;
+    const idx = category
+      ? anchors.findIndex((a) => a.category === category)
+      : -1;
     return idx >= 0 ? idx : 0;
-  }, [data, chapters, currentTag, focusTags]);
+  }, [data, anchors, currentTag, focusTags]);
 
   // derived-state 調整：initialChapterIdx 變動（如 path 載入完成）時重設游標
   const [chapterIdx, setChapterIdx] = useState(initialChapterIdx);
@@ -77,28 +113,21 @@ export function KnowledgeGraph({
 
   const fitChapter = useCallback(
     (cy: Core, idx: number, animate: boolean) => {
-      const parent = cy.getElementById(`${CHAPTER_ID_PREFIX}${chapters[idx]}`);
-      if (parent.empty()) return;
-      if (animate) {
-        cy.animate({
-          fit: { eles: parent, padding: FIT_PADDING },
-          duration: NAV_ANIMATION_MS,
-          easing: "ease-in-out",
-        });
-      } else {
-        cy.fit(parent, FIT_PADDING);
-      }
+      const parent = cy.getElementById(
+        `${CHAPTER_ID_PREFIX}${anchors[idx]?.category ?? ""}`,
+      );
+      fitWithCap(cy, parent, animate);
     },
-    [chapters],
+    [anchors],
   );
 
   const handleNav = useCallback(
     (dir: -1 | 1) => {
-      const next = Math.min(chapters.length - 1, Math.max(0, chapterIdx + dir));
+      const next = Math.min(anchors.length - 1, Math.max(0, chapterIdx + dir));
       setChapterIdx(next);
       if (cyRef.current) fitChapter(cyRef.current, next, true);
     },
-    [chapterIdx, chapters.length, fitChapter],
+    [chapterIdx, anchors.length, fitChapter],
   );
 
   // Cytoscape lifecycle
@@ -118,7 +147,7 @@ export function KnowledgeGraph({
         animate: false,
       } as unknown as cytoscape.LayoutOptions,
       wheelSensitivity: 0.2,
-      minZoom: 0.2,
+      minZoom: 0.12,
       maxZoom: 3,
     });
 
@@ -138,13 +167,23 @@ export function KnowledgeGraph({
       cy.elements().removeClass("faded highlighted");
     });
 
-    // 進場鏡頭：補救 tags 直接框住嫌疑鏈，否則 zoom 至進度所在星系
+    // 軌道/星空 underlay 與 viewport 同步（直接寫 DOM transform，避免 re-render）
+    const syncUnderlay = () => {
+      underlayRef.current?.setAttribute(
+        "transform",
+        `translate(${cy.pan().x} ${cy.pan().y}) scale(${cy.zoom()})`,
+      );
+    };
+    cy.on("viewport", syncUnderlay);
+
+    // 進場鏡頭：補救 tags 直接框住嫌疑鏈，否則 zoom 至進度所在星球
     if (focusTags && focusTags.length > 0) {
       const targets = cy.nodes().filter((n) => focusTags.includes(n.data("tag")));
-      if (targets.length > 0) cy.fit(targets, 80);
+      if (targets.length > 0) fitWithCap(cy, targets, false);
     } else {
       fitChapter(cy, initialChapterIdx, false);
     }
+    syncUnderlay();
 
     cyRef.current = cy;
     return () => {
@@ -153,17 +192,45 @@ export function KnowledgeGraph({
     };
   }, [elements, positions, onNodeClick, focusTags, initialChapterIdx, fitChapter]);
 
+  const navLabel = `${planetFor(chapterIdx).body} · ${
+    anchors[chapterIdx]?.category ?? ""
+  }（${chapterIdx + 1}/${anchors.length}）`;
+
   return (
-    <div className="relative h-full w-full">
-      <div
-        ref={containerRef}
-        className="h-full w-full"
-        style={{ backgroundColor: TOKEN.bgCanvas }}
-      />
+    <div
+      className="relative h-full w-full overflow-hidden"
+      style={{ backgroundColor: TOKEN.bgCanvas }}
+    >
+      <svg
+        className="pointer-events-none absolute inset-0 h-full w-full"
+        aria-hidden
+      >
+        <g ref={underlayRef}>
+          <path
+            d={orbitPath}
+            fill="none"
+            stroke={TOKEN.borderDefault}
+            strokeWidth={2}
+            strokeDasharray="2 10"
+            opacity={0.6}
+          />
+          {stars.map((s, i) => (
+            <circle
+              key={i}
+              cx={s.x}
+              cy={s.y}
+              r={s.r}
+              fill={TOKEN.textPrimary}
+              opacity={s.opacity}
+            />
+          ))}
+        </g>
+      </svg>
+      <div ref={containerRef} className="relative h-full w-full" />
       <GalaxyNav
-        label={`${chapters[chapterIdx] ?? ""}（${chapterIdx + 1}/${chapters.length}）`}
+        label={navLabel}
         canPrev={chapterIdx > 0}
-        canNext={chapterIdx < chapters.length - 1}
+        canNext={chapterIdx < anchors.length - 1}
         onPrev={() => handleNav(-1)}
         onNext={() => handleNav(1)}
       />

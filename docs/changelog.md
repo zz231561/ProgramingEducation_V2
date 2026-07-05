@@ -1,5 +1,22 @@
 # 變更日誌
 
+## [2026-07-05] — feat(K5-太陽系主題)：NASA 行星影像 + 蛇形軌道佈局（與使用者共同定案）
+
+### Added
+- **太陽系主題定案**（AskUserQuestion 四項裁決）：十章依課程順序對應「離太陽距離」（課程介紹=太陽 → 物件導向=冥王星）；NASA 真實影像優先（效果不佳再退程序生成 SVG）；蛇形軌道佈局；行星大小依章節概念數
+- **NASA 影像資產** `web/public/planets/*.jpg`（10 張，public domain，來源與後製記錄於 `CREDITS.md`）：太陽 SDO / 水星 MESSENGER / 金星 Mariner 10（裁單盤）/ 地球 Blue Marble 2012 / 火星 Viking / 木星 Cassini / 土星 Cassini / 天王星、海王星 Voyager 2 / 冥王星 New Horizons；`planet-theme.ts` 對應表
+- **軌道弧線 + 星空 underlay**（`orbit-scene.ts`）：Catmull-Rom 平滑軌道虛線貫穿十章錨點 + 140 顆 seeded 星點，掛在 cytoscape canvas 底下的 SVG `<g>`，監聽 `viewport` 事件同步 pan/zoom transform
+- 章節容器背景改 NASA 行星影像（ellipse 裁圓盤、`background-image-opacity: 0.55`、影像大小隨 cluster 自動縮放 = 行星大小 ∝ 概念數）；章名標籤改「章節 · 天體」
+
+### Fixed（使用者三驗回饋）
+- **星系背景隱形根因**：程序生成 SVG 缺 `width`/`height` 屬性，canvas rasterize 退回 300×150 預設尺寸 → cover 錯位成角落污漬（headless Edge 對照實驗證實）；NASA 影像為 JPG 無此問題，`galaxy-backgrounds.ts` 保留為備援並註記此坑
+- **zoom 過大**：`fitWithCap` 取代裸 fit——fit zoom 與 `ZOOM_CAP=1.0` 取小，小章節不再貼臉
+- **節點過密**：phyllotaxis 步距 52→74；章距 380→700、行距 680（蛇形 2×5）
+- **線條凌亂**：跨章依賴邊預設 opacity 0.18 淡出（`edge[?cross]`），hover 高亮恢復；章內邊維持 0.7
+- 驗證：`tsc` + `next build` 通過；headless Edge 實渲染抽查（地球章節聚焦圖）確認影像/裁切/zoom 上限效果
+
+---
+
 ## [2026-07-05] — feat(K5-視覺調整二)：進度星系聚焦 + 導覽 + 星雲增亮（使用者二驗回饋）
 
 ### Added

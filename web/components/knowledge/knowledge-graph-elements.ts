@@ -2,15 +2,16 @@
  * GraphData → Cytoscape elements 轉換（K5b 自 knowledge-graph-style.ts 拆出）。
  *
  * - 節點填色 = 熟練度 band（MASTERY_COLOR）
- * - 分章 cluster：每個 category 產生一個 compound parent 節點
+ * - 分章 cluster：每個 category 產生一個 compound parent（背景 = NASA 行星影像）
  * - K5c overlay：path_status（current/completed ring）+ remedial（紅 ring）
+ * - 跨章邊標記 cross=true（聚焦時淡出以降低視覺凌亂）
  */
 
 import type { ElementDefinition } from "cytoscape";
 
-import { galaxyDataUri } from "./galaxy-backgrounds";
 import { orderedCategories } from "./graph-layout";
 import { MASTERY_COLOR } from "./knowledge-graph-style";
+import { planetFor } from "./planet-theme";
 import type {
   GraphData,
   MasteryEntry,
@@ -26,15 +27,18 @@ export function toElements(
   masteryMap?: Map<string, MasteryEntry>,
   pathOverlay?: PathOverlay,
 ): ElementDefinition[] {
-  // 分章 compound parents（依課綱順序；index 同時決定星系背景樣式）
+  // 分章 compound parents（依課綱順序；index 決定對應天體）
   const categories = orderedCategories(data.nodes);
-  const parents: ElementDefinition[] = categories.map((category, i) => ({
-    data: {
-      id: `${CHAPTER_ID_PREFIX}${category}`,
-      label: category,
-      galaxy: galaxyDataUri(i),
-    },
-  }));
+  const parents: ElementDefinition[] = categories.map((category, i) => {
+    const planet = planetFor(i);
+    return {
+      data: {
+        id: `${CHAPTER_ID_PREFIX}${category}`,
+        label: `${category} · ${planet.body}`,
+        planet: planet.file,
+      },
+    };
+  });
 
   const nodes: ElementDefinition[] = data.nodes.map((n) => {
     const mastery = masteryMap?.get(n.tag);
@@ -59,6 +63,7 @@ export function toElements(
     };
   });
 
+  const categoryById = new Map(data.nodes.map((n) => [n.id, n.category]));
   const edges: ElementDefinition[] = data.edges.map((e) => ({
     data: {
       id: e.id,
@@ -66,6 +71,8 @@ export function toElements(
       target: e.target,
       edge_type: e.edge_type,
       weight: e.weight,
+      // 跨章依賴邊：預設淡出（聚焦單章時畫面才不凌亂），hover 高亮不受影響
+      cross: categoryById.get(e.source) !== categoryById.get(e.target),
     },
   }));
 

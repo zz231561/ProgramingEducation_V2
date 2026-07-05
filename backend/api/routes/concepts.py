@@ -97,7 +97,12 @@ class ConceptDetailOut(BaseModel):
 
 
 class MasteryEntryOut(BaseModel):
-    """單一 concept 的精熟度（給前端 Knowledge Graph 著色用）。"""
+    """單一 concept 的精熟度（給前端 Knowledge Graph 著色用）。
+
+    K6b/K6c：confidence = 衰減後 effective 值（圖譜著色直接用）；
+    raw_confidence + days_since_practiced + due_for_review 供前端做
+    事件級解釋（「兩週未練習，該複習了」），不提供逐筆帳本。
+    """
 
     tag: str
     confidence: float = Field(ge=0, le=1)
@@ -107,6 +112,10 @@ class MasteryEntryOut(BaseModel):
     bloom_level: int | None
     # K2b：最近練習時間（ISO 字串；K4 Coddy prompt 的時序信號）
     last_practiced_at: str | None = None
+    # K6b/K6c 衍生欄位
+    raw_confidence: float = Field(default=0.0, ge=0, le=1)
+    days_since_practiced: float | None = None
+    due_for_review: bool = False
 
     @classmethod
     def from_summary(cls, e: MasterySummaryEntry) -> "MasteryEntryOut":
@@ -120,6 +129,9 @@ class MasteryEntryOut(BaseModel):
             last_practiced_at=(
                 str(e.last_practiced_at) if e.last_practiced_at else None
             ),
+            raw_confidence=e.raw_confidence,
+            days_since_practiced=e.days_since_practiced,
+            due_for_review=e.due_for_review,
         )
 
 

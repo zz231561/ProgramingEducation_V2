@@ -192,8 +192,34 @@ function MasterySection({ mastery }: { mastery?: MasteryEntry }) {
           </span>
         ) : null}
       </div>
+      <MasteryHint mastery={mastery} />
     </section>
   );
+}
+
+/**
+ * K6c 事件級解釋 — framing 為複習提示而非扣分，不提供逐筆帳本。
+ * 顯著衰減（raw 與 effective 差 ≥5%）才解釋數值變化，避免雜訊。
+ */
+function MasteryHint({ mastery }: { mastery?: MasteryEntry }) {
+  if (!mastery || mastery.days_since_practiced === null) return null;
+  const days = Math.floor(mastery.days_since_practiced);
+  if (mastery.due_for_review) {
+    return (
+      <p className="mt-1.5 text-xs text-accent-orange">
+        已 {days} 天未練習，掌握度自 {Math.round(mastery.raw_confidence * 100)}%
+        回落至 {Math.round(mastery.confidence * 100)}%——建議複習這個概念
+      </p>
+    );
+  }
+  if (mastery.raw_confidence - mastery.confidence >= 0.05) {
+    return (
+      <p className="mt-1.5 text-xs text-text-muted">
+        距上次練習 {days} 天，掌握度緩慢回落中（複習可以恢復）
+      </p>
+    );
+  }
+  return null;
 }
 
 

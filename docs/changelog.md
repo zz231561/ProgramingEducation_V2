@@ -1,5 +1,18 @@
 # 變更日誌
 
+## [2026-07-06] — feat(mastery)：第 3 批 K6a/b/c 熟練度演算法 v2 + knowledge-graph 拆檔
+
+### Added
+- **K6a 訊號分級**：`BKT_CHAT_PARAMS(learn=0.05, slip=0.3, guess=0.4)`——chat「程式碼無錯」是弱證據（學生常帶寫到一半的碼求助），以 BKT 參數本身表達通道雜訊；`update_mastery` 加 `params` 參數，chat 傳弱證據、quiz/comprehension 沿用強證據預設；測試驗證雙向更新幅度皆顯著小於 quiz
+- **K6b 遺忘衰減**：新模組 `services/mastery/decay.py`——`effective = floor + (stored−floor)×exp(−ln2×days/half_life)`；floor=0.25、基準半衰期 14 天、每次成功練習 +50%（FSRS 穩定度）、上限 180 天；惰性計算不改 DB、BKT 更新仍以 stored 為 prior（衰減=提取強度下降，非習得倒退）。套用點：mastery summary（K4 鷹架自動連動）、quiz Select（衰減回弱項重新被選中=遺忘驅動複習）、K3 診斷（久未練習的前置概念可成嫌疑）
+- **K6c 事件級透明化**：`/concepts/mastery` 加 `raw_confidence`/`days_since_practiced`/`due_for_review`；detail panel 顯示「已 N 天未練習，掌握度自 X% 回落至 Y%——建議複習」（due 用 accent-orange）與輕量提示（差 ≥5% 才顯示避免雜訊）；圖譜 band 色以 effective confidence 驅動、衰減自然變暗；不做逐筆帳本
+- 測試 +18（decay 純函式 17 + mastery route 衰減整合 1）；後端全量 **601 passed**
+
+### Changed
+- `knowledge-graph.tsx` 265 行 → 212 行：章節游標 + 鏡頭動作拆出 `use-graph-nav.ts`（119 行），tech-debt 消除
+
+---
+
 ## [2026-07-06] — feat(learn)：第 2 批 U2b 移除摘要 + U2c 拔課程介紹範例
 
 ### Removed（U2b）

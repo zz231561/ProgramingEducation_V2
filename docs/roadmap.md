@@ -172,9 +172,9 @@
 ### K6 熟練度演算法 v2 — 訊號分級 + 遺忘衰減 + 透明化（2026-07-06 session 定案）
 > **動機**：現行 `services/mastery/updater.py` 對 quiz 作答與 chat 對話用同一組 BKT 參數全額更新（quiz 權重過高），且標準 BKT 無遺忘機制（confidence 只增不減）。
 > **📌 論文關鍵技術**（完整引用清單見 `docs/references.md` §5.1）：BKT（Corbett & Anderson 1995）、BKT+Forgetting（Khajah et al. 2016）、Ebbinghaus 遺忘曲線指數衰減、FSRS 記憶穩定度、Duolingo HLR、Open Learner Model（Bull & Kay）。
-- [ ] K6a 訊號分級 BKT 參數：quiz 作答＝強證據（沿用現參數）；chat evidence＝弱證據（guess 調高 ≈0.4、learn 調低 ≈0.05 → 單次更新幅度自然縮小）；以 slip/guess 表達「觀察通道雜訊」而非外掛權重係數；Phase 5 真實資料後用 pyBKT `fit()`（含 `forgets=True`）學出參數直接替換
-- [ ] K6b 遺忘曲線惰性衰減：讀取時計算 `confidence' = floor + (confidence − floor) × exp(−λ × 距 last_practiced_at 天數)`；半衰期隨 success_count/exposure_count 成長（FSRS 穩定度概念：練得越熟忘得越慢）；floor 下限（初始 ≈0.25）避免歸零打擊信心；套用點＝`GET /concepts/mastery` + quiz Select 層 + K3 診斷，惰性計算不需排程 job；λ/floor 數值實作時列出供調整
-- [ ] K6c 精熟度事件級透明化（OLM）：介面顯示趨勢 + 語意化事件（「答對指標題，掌握度提升」「兩週未練習，該複習了」）；**不給逐筆 ± 數值帳本**（避免分數導向 / gaming / 損失厭惡）；衰減一律 framing 為複習提示而非扣分，銜接 K-Graph 節點變暗視覺
+- [x] K6a 訊號分級 BKT 參數：`BKT_CHAT_PARAMS(learn=0.05, slip=0.3, guess=0.4)`——chat 傳弱證據參數、quiz/comprehension 沿用強證據預設；雙向更新幅度皆顯著小於 quiz（測試驗證）；Phase 5 真實資料後用 pyBKT `fit()` 替換
+- [x] K6b 遺忘曲線惰性衰減：`services/mastery/decay.py`（floor=0.25、基準半衰期 14 天、半衰期隨 success_count +50%/次、上限 180 天）；套用點＝mastery summary（K4 鷹架連動）+ quiz Select（衰減回弱項會重新被選中）+ K3 診斷嫌疑判定；讀取端惰性計算、DB 原值不動
+- [x] K6c 事件級透明化：API 加 `raw_confidence`/`days_since_practiced`/`due_for_review` 衍生欄位；detail panel 顯示「已 N 天未練習，掌握度自 X% 回落至 Y%——建議複習」（framing 複習提示非扣分）；圖譜節點 band 色以 effective confidence 驅動自動變暗；無逐筆帳本
 
 ### DEV 開發者模式（2026-07-05 與使用者共同定案：Settings 入口 / 分類重置 / 真改 DB role / A+B+C+D 全納首版）
 > **安全前提（不可妥協）**：後端 `DEV_MODE_ENABLED` 總開關（生產預設關）+ `DEV_MODE_EMAILS` email 白名單，兩者皆環境變數（白名單不寫死、不進 git）；所有 dev 變更端點掛 `require_dev_user` 逐一驗證（403），前端 UI 只是入口不是防線；操作寫 log 留痕。

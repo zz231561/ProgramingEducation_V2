@@ -214,6 +214,48 @@ async def test_mastery_route_returns_user_specific_rows(client: AsyncClient):
     assert by_tag["syntax-basic"]["confidence"] == 0.85
     assert by_tag["control-flow"]["confidence"] == 0.32
     assert by_tag["control-flow"]["error_count"] == 2
+    # K6b：無 last_practiced_at（舊資料）不衰減，衍生欄位取預設
+    assert by_tag["syntax-basic"]["raw_confidence"] == 0.85
+    assert by_tag["syntax-basic"]["due_for_review"] is False
+    assert by_tag["syntax-basic"]["days_since_practiced"] is None
+
+
+async def test_mastery_route_applies_decay_and_review_flag(client: AsyncClient):
+    """K6b/K6c：久未練習的 row 回傳衰減後 confidence + 複習提示旗標。"""
+    from datetime import datetime, timedelta, timezone
+
+    ids = await _seed_graph()
+    token = encrypt_test_token(STUDENT_PAYLOAD)
+    await client.get("/concepts/mastery", cookies={"authjs.session-token": token})
+
+    async with TestSessionFactory() as db:
+        user = (
+            await db.execute(select(User).where(User.email == "graph@test.com"))
+        ).scalar_one()
+        db.add(
+            StudentMastery(
+                user_id=user.id,
+                concept_id=ids["recursion"],
+                confidence=0.85,
+                exposure_count=3,
+                success_count=0,  # 半衰期 = 14 天基準
+                error_count=3,
+                bloom_level=3,
+                last_practiced_at=datetime.now(timezone.utc) - timedelta(days=28),
+            )
+        )
+        await db.commit()
+
+    resp = await client.get(
+        "/concepts/mastery",
+        cookies={"authjs.session-token": token},
+    )
+    entry = {b["tag"]: b for b in resp.json()}["recursion"]
+    assert entry["raw_confidence"] == 0.85
+    # 28 天 = 兩個半衰期：0.25 + 0.6/4 = 0.40
+    assert abs(entry["confidence"] - 0.40) < 0.01
+    assert entry["due_for_review"] is True
+    assert entry["days_since_practiced"] >= 27.9
 
 
 async def test_concept_detail_route_returns_directed_neighbors(client: AsyncClient):

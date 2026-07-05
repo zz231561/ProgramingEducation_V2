@@ -17,7 +17,7 @@ from services.edf.reflection_context import (
     format_reflection_for_evidence,
     format_reflection_for_feedback,
 )
-from services.mastery import update_mastery
+from services.mastery import BKT_CHAT_PARAMS, update_mastery
 from services.security.sanitizer import sanitize_input, wrap_student_input, wrap_student_code
 
 logger = logging.getLogger(__name__)
@@ -129,8 +129,9 @@ async def interact(
 
     # 精熟度更新（roadmap 2-3b）— 在 Feedback 之前跑，確保 BKT state 與此次互動同步
     # 容錯：mastery 失敗不阻擋教學回應（與 RAG 同款處理）
+    # K6a：chat「程式碼無錯」是弱證據 → 用 BKT_CHAT_PARAMS（更新幅度小）
     try:
-        await update_mastery(db, user_id, evidence)
+        await update_mastery(db, user_id, evidence, params=BKT_CHAT_PARAMS)
     except Exception as e:
         logger.warning("update_mastery failed (non-blocking): %r", e)
 

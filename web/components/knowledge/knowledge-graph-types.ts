@@ -37,7 +37,7 @@ export type ConceptDetailData = {
   neighbors: NeighborRecord[];
 };
 
-/** 與後端 MasteryEntryOut 對齊。 */
+/** 與後端 MasteryEntryOut 對齊。confidence = 衰減後 effective 值（K6b）。 */
 export type MasteryEntry = {
   tag: string;
   confidence: number;
@@ -45,6 +45,10 @@ export type MasteryEntry = {
   success_count: number;
   error_count: number;
   bloom_level: number | null;
+  // K6b/K6c：事件級解釋用衍生欄位（「兩週未練習，該複習了」）
+  raw_confidence: number;
+  days_since_practiced: number | null;
+  due_for_review: boolean;
 };
 
 /** 精熟度視覺分群（前端衍生）。 */

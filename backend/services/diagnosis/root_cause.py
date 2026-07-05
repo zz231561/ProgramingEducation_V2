@@ -18,6 +18,7 @@ from models.concept import Concept
 from models.mastery import StudentMastery
 from models.quiz import Question, StudentAnswer
 from services.graph import get_prerequisite_closure
+from services.mastery.decay import effective_confidence
 from services.quiz.bank import pick_random_validated_question
 
 # 觸發門檻：最近連續失敗次數
@@ -110,7 +111,14 @@ async def _rank_suspects(
         mastery = mastery_by_id.get(concept.id)
         if mastery is None:
             unexposed.append((concept, depth, None))
-        elif mastery.confidence < LOW_CONFIDENCE_THRESHOLD:
+        # K6b：以衰減後 effective confidence 判嫌疑——久未練習的前置概念
+        # 即使當年學會了，現在也可能是根因
+        elif (
+            effective_confidence(
+                mastery.confidence, mastery.last_practiced_at, mastery.success_count
+            )
+            < LOW_CONFIDENCE_THRESHOLD
+        ):
             exposed_low.append((concept, depth, mastery))
 
     exposed_low.sort(key=lambda t: (t[1], t[2].confidence))

@@ -10,18 +10,16 @@
  * 讓全覽時所有節點名稱仍可讀；切換由 graph-mode.ts 依 viewport zoom 驅動。
  * 點擊概念節點 zoom in 至該章（並開詳情面板）。
  * K5c：focusTags（補救跳轉）優先於 currentTag 進度聚焦。
+ *
+ * 拆檔（250 行硬性線）：章節游標 + 鏡頭動作在 use-graph-nav.ts。
  */
 
 import cytoscape, { type Core, type EventObject } from "cytoscape";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { GalaxyNav } from "./galaxy-nav";
-import { animateToBounds, boundsOf, fitWithCap } from "./graph-camera";
-import {
-  computeChapterAnchors,
-  computePositions,
-  type NodePosition,
-} from "./graph-layout";
+import { fitWithCap } from "./graph-camera";
+import { computeChapterAnchors, computePositions } from "./graph-layout";
 import {
   applyMode,
   modeForZoom,
@@ -39,10 +37,7 @@ import { buildOrbitPath, buildStars } from "./orbit-scene";
 import { computeOverviewLayout } from "./overview-layout";
 import { OVERVIEW_STYLES } from "./overview-style";
 import { OrbitUnderlay } from "./orbit-underlay";
-
-// fit 目標包圍盒外擴：detail 章節（節點 + 下方標籤）/ overview 全覽（cell 半格）
-const CHAPTER_FIT_MARGIN = 130;
-const OVERVIEW_FIT_MARGIN = 150;
+import { useGraphNav } from "./use-graph-nav";
 
 export type KnowledgeGraphProps = {
   data: GraphData;
@@ -92,69 +87,23 @@ export function KnowledgeGraph({
     [anchors, overview],
   );
 
-  // 進場聚焦章節：補救 tags > 目前進度 > 第一章
-  const initialChapterIdx = useMemo(() => {
-    const anchorTag = focusTags?.[0] ?? currentTag;
-    if (!anchorTag) return 0;
-    const category = data.nodes.find((n) => n.tag === anchorTag)?.category;
-    const idx = category
-      ? anchors.findIndex((a) => a.category === category)
-      : -1;
-    return idx >= 0 ? idx : 0;
-  }, [data, anchors, currentTag, focusTags]);
-
-  // derived-state 調整：initialChapterIdx 變動（如 path 載入完成）時重設游標
-  const [chapterIdx, setChapterIdx] = useState(initialChapterIdx);
-  const [prevInitialIdx, setPrevInitialIdx] = useState(initialChapterIdx);
-  if (prevInitialIdx !== initialChapterIdx) {
-    setPrevInitialIdx(initialChapterIdx);
-    setChapterIdx(initialChapterIdx);
-  }
-
-  // 章節 fit 一律瞄準 detail 佈局座標（overview 點章 zoom in 時，
-  // 節點會在鏡頭動畫中移回 detail 位置，故不能拿元素現況當目標）
-  const fitChapter = useCallback(
-    (cy: Core, idx: number, animate: boolean) => {
-      const category = anchors[idx]?.category;
-      if (!category) return;
-      const pts = data.nodes
-        .filter((n) => n.category === category)
-        .map((n) => positions.get(n.id))
-        .filter((p): p is NodePosition => p !== undefined);
-      if (pts.length === 0) return;
-      animateToBounds(cy, boundsOf(pts, CHAPTER_FIT_MARGIN), animate);
-    },
-    [anchors, data, positions],
-  );
-
-  const handleNav = useCallback(
-    (dir: -1 | 1) => {
-      const next = Math.min(anchors.length - 1, Math.max(0, chapterIdx + dir));
-      setChapterIdx(next);
-      if (cyRef.current) fitChapter(cyRef.current, next, true);
-    },
-    [chapterIdx, anchors.length, fitChapter],
-  );
-
-  // 點擊章節容器 / 概念節點 → zoom in 至該章
-  const zoomToCategory = useCallback(
-    (cy: Core, category: string) => {
-      const idx = anchors.findIndex((a) => a.category === category);
-      if (idx < 0) return;
-      setChapterIdx(idx);
-      fitChapter(cy, idx, true);
-    },
-    [anchors, fitChapter],
-  );
-
-  // 全覽：zoom out 至 overview 佈局範圍（跨過門檻後節點自動放大重排）
-  const handleOverview = useCallback(() => {
-    const cy = cyRef.current;
-    if (!cy) return;
-    const pts = [...overview.positions.values()];
-    if (pts.length === 0) return;
-    animateToBounds(cy, boundsOf(pts, OVERVIEW_FIT_MARGIN), true);
-  }, [overview]);
+  const {
+    chapterIdx,
+    initialChapterIdx,
+    fitChapter,
+    handleNav,
+    zoomToCategory,
+    handleOverview,
+    navLabel,
+  } = useGraphNav({
+    data,
+    positions,
+    anchors,
+    overview,
+    cyRef,
+    currentTag,
+    focusTags,
+  });
 
   // Cytoscape lifecycle
   useEffect(() => {
@@ -236,8 +185,6 @@ export function KnowledgeGraph({
     fitChapter,
     zoomToCategory,
   ]);
-
-  const navLabel = `${anchors[chapterIdx]?.category ?? ""}（${chapterIdx + 1}/${anchors.length}）`;
 
   return (
     <div

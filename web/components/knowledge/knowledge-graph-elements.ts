@@ -11,7 +11,7 @@ import type { ElementDefinition } from "cytoscape";
 
 import { orderedCategories } from "./graph-layout";
 import { MASTERY_COLOR } from "./knowledge-graph-style";
-import { planetFor } from "./planet-theme";
+import { planetBackgroundFor } from "./planet-theme";
 import type {
   GraphData,
   MasteryEntry,
@@ -27,18 +27,16 @@ export function toElements(
   masteryMap?: Map<string, MasteryEntry>,
   pathOverlay?: PathOverlay,
 ): ElementDefinition[] {
-  // 分章 compound parents（依課綱順序；index 決定對應天體）
+  // 分章 compound parents（依課綱順序；index 決定星球背景樣式）
+  // 標籤只用原分類名——星球是介面主題非主角（2026-07-05 使用者定案）
   const categories = orderedCategories(data.nodes);
-  const parents: ElementDefinition[] = categories.map((category, i) => {
-    const planet = planetFor(i);
-    return {
-      data: {
-        id: `${CHAPTER_ID_PREFIX}${category}`,
-        label: `${category} · ${planet.body}`,
-        planet: planet.file,
-      },
-    };
-  });
+  const parents: ElementDefinition[] = categories.map((category, i) => ({
+    data: {
+      id: `${CHAPTER_ID_PREFIX}${category}`,
+      label: category,
+      planet: planetBackgroundFor(i),
+    },
+  }));
 
   const nodes: ElementDefinition[] = data.nodes.map((n) => {
     const mastery = masteryMap?.get(n.tag);

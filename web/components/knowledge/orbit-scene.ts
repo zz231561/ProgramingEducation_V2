@@ -6,8 +6,8 @@
  * 星空與軌道因此跟著世界移動，背景色保持單一 #0D1117。
  */
 
-import { mulberry32 } from "./galaxy-backgrounds";
 import type { ChapterAnchor } from "./graph-layout";
+import { mulberry32 } from "./prng";
 
 const STAR_COUNT = 140;
 const SCENE_MARGIN = 520; // 星空超出章節範圍的外擴距離

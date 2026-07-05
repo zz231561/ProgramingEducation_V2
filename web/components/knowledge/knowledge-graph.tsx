@@ -12,14 +12,11 @@
  * K5c：focusTags（補救跳轉）優先於 currentTag 進度聚焦
  */
 
-import cytoscape, {
-  type Core,
-  type EventObject,
-  type NodeCollection,
-} from "cytoscape";
+import cytoscape, { type Core, type EventObject } from "cytoscape";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { GalaxyNav } from "./galaxy-nav";
+import { fitWithCap } from "./graph-camera";
 import { computeChapterAnchors, computePositions } from "./graph-layout";
 import { CHAPTER_ID_PREFIX, toElements } from "./knowledge-graph-elements";
 import { STYLESHEET, TOKEN } from "./knowledge-graph-style";
@@ -29,12 +26,6 @@ import type {
   PathOverlay,
 } from "./knowledge-graph-types";
 import { buildOrbitPath, buildStars } from "./orbit-scene";
-import { planetFor } from "./planet-theme";
-
-const FIT_PADDING = 72;
-const NAV_ANIMATION_MS = 350;
-// 鏡頭放大上限：小章節 fit 後不再貼臉（使用者回饋「放太大」）
-const ZOOM_CAP = 1.0;
 
 export type KnowledgeGraphProps = {
   data: GraphData;
@@ -48,28 +39,6 @@ export type KnowledgeGraphProps = {
   /** 點擊節點時觸發；接收 concept tag 供上層查詳情。*/
   onNodeClick?: (tag: string) => void;
 };
-
-/** fit 目標並套用 ZOOM_CAP（cap 時改用置中）。 */
-function fitWithCap(cy: Core, eles: NodeCollection, animate: boolean): void {
-  if (eles.empty()) return;
-  const bb = eles.boundingBox();
-  const fitZoom = Math.min(
-    (cy.width() - FIT_PADDING * 2) / bb.w,
-    (cy.height() - FIT_PADDING * 2) / bb.h,
-  );
-  const zoom = Math.min(ZOOM_CAP, fitZoom);
-  if (animate) {
-    cy.animate({
-      zoom,
-      center: { eles },
-      duration: NAV_ANIMATION_MS,
-      easing: "ease-in-out",
-    });
-  } else {
-    cy.zoom(zoom);
-    cy.center(eles);
-  }
-}
 
 export function KnowledgeGraph({
   data,
@@ -129,6 +98,15 @@ export function KnowledgeGraph({
     },
     [chapterIdx, anchors.length, fitChapter],
   );
+
+  // 全覽：zoom out 涵蓋所有節點（無 cap——全覽 zoom 必然 < 1）
+  const handleOverview = useCallback(() => {
+    cyRef.current?.animate({
+      fit: { eles: cyRef.current.nodes(), padding: 48 },
+      duration: 350,
+      easing: "ease-in-out",
+    });
+  }, []);
 
   // Cytoscape lifecycle
   useEffect(() => {
@@ -192,9 +170,8 @@ export function KnowledgeGraph({
     };
   }, [elements, positions, onNodeClick, focusTags, initialChapterIdx, fitChapter]);
 
-  const navLabel = `${planetFor(chapterIdx).body} · ${
-    anchors[chapterIdx]?.category ?? ""
-  }（${chapterIdx + 1}/${anchors.length}）`;
+  // 章名只用原分類標題——星球是介面主題非主角（2026-07-05 使用者定案）
+  const navLabel = `${anchors[chapterIdx]?.category ?? ""}（${chapterIdx + 1}/${anchors.length}）`;
 
   return (
     <div
@@ -233,6 +210,7 @@ export function KnowledgeGraph({
         canNext={chapterIdx < anchors.length - 1}
         onPrev={() => handleNav(-1)}
         onNext={() => handleNav(1)}
+        onOverview={handleOverview}
       />
     </div>
   );

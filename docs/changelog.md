@@ -1,5 +1,18 @@
 # 變更日誌
 
+## [2026-07-05] — refactor(K5-太陽系主題)：改程序生成 SVG 星球 + 全覽按鈕（使用者四驗回饋）
+
+### Changed
+- **NASA 影像 → 程序生成 SVG 星球**（使用者裁決：真實照片無法融入背景且搶走視覺焦點）：新 `planet-svg.ts` 生成低飽和 token 色相的漸層球體 + 特徵組合（太陽光暈/土星環/木星條紋/水星隕石坑/地球陸塊），data URI 帶明確 width/height（規避 canvas rasterize 坑）；`background-image-opacity` 0.55 維持低調；headless 驗證星球融入 #0D1117 且節點仍為主角
+- **章節標籤去天體名**：parent 標籤與導覽 pill 只顯示原分類名（如「運算子（4/10）」）——星球是介面主題非主角
+- 刪除 `web/public/planets/*.jpg` + `CREDITS.md`（NASA 方案棄用）與 `galaxy-backgrounds.ts`（星雲備援被星球 SVG 取代）；mulberry32 抽至 `prng.ts`；`fitWithCap` 抽至 `graph-camera.ts`（knowledge-graph.tsx 239→217 行）
+
+### Added
+- **全覽按鈕**（GalaxyNav 底部 pill 旁 Maximize 鈕）：動畫 zoom out 至涵蓋所有節點，供使用者隨時查看整張圖
+- 驗證：`tsc` + `next build` 通過；headless Edge 渲染抽查（SVG 星球 × cytoscape parent）
+
+---
+
 ## [2026-07-05] — feat(K5-太陽系主題)：NASA 行星影像 + 蛇形軌道佈局（與使用者共同定案）
 
 ### Added

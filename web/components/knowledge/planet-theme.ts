@@ -1,32 +1,29 @@
 /**
- * 太陽系主題對應（2026-07-05 與使用者討論定案）。
+ * 太陽系主題對應（2026-07-05 與使用者討論定案；同日四驗改程序生成 SVG）。
  *
- * 十個章節依課程順序 = 離太陽距離：學習之旅從太陽出發航向外太陽系，
- * 越遠越進階。影像為 NASA public domain（見 public/planets/CREDITS.md），
- * 行星視覺大小由章節概念數決定（cluster 越大 parent 越大，影像 cover 跟隨）。
+ * 十個章節依課程順序 = 離太陽距離；星球僅是介面主題非主角——
+ * 章節標籤只顯示原分類名，天體名不出現在 UI 文字。
+ * 色相全部取 GitHub Dark token（R8 白名單登記之裝飾例外）。
  */
 
-export type PlanetBody = {
-  /** 天體中文名（章節標籤與導覽指示用）。 */
-  body: string;
-  /** public/ 下的影像路徑。 */
-  file: string;
-};
+import { planetDataUri, type PlanetSpec } from "./planet-svg";
 
-const PLANETS: PlanetBody[] = [
-  { body: "太陽", file: "/planets/sun.jpg" },
-  { body: "水星", file: "/planets/mercury.jpg" },
-  { body: "金星", file: "/planets/venus.jpg" },
-  { body: "地球", file: "/planets/earth.jpg" },
-  { body: "火星", file: "/planets/mars.jpg" },
-  { body: "木星", file: "/planets/jupiter.jpg" },
-  { body: "土星", file: "/planets/saturn.jpg" },
-  { body: "天王星", file: "/planets/uranus.jpg" },
-  { body: "海王星", file: "/planets/neptune.jpg" },
-  { body: "冥王星", file: "/planets/pluto.jpg" },
+// token: blue #58A6FF / purple #BC8CFF / green #3FB950 / orange #D29922
+//        red #F85149 / gray #8B949E
+const SPECS: PlanetSpec[] = [
+  { hue: "#D29922", glow: true },                            // 太陽
+  { hue: "#8B949E", craters: 5 },                            // 水星
+  { hue: "#D29922", accent: "#8B949E", bands: 2 },           // 金星
+  { hue: "#58A6FF", accent: "#3FB950", patches: 4 },         // 地球
+  { hue: "#F85149", craters: 3 },                            // 火星
+  { hue: "#D29922", accent: "#F85149", bands: 4 },           // 木星
+  { hue: "#D29922", accent: "#8B949E", bands: 2, ring: true }, // 土星
+  { hue: "#58A6FF", bands: 1 },                              // 天王星
+  { hue: "#58A6FF", accent: "#BC8CFF", bands: 2 },           // 海王星
+  { hue: "#BC8CFF", accent: "#8B949E", craters: 4 },         // 冥王星
 ];
 
-/** 取章節對應天體（超出 10 章時輪替，避免 undefined）。 */
-export function planetFor(chapterIndex: number): PlanetBody {
-  return PLANETS[chapterIndex % PLANETS.length];
+/** 取章節對應星球背景 data URI（超出 10 章時輪替）。 */
+export function planetBackgroundFor(chapterIndex: number): string {
+  return planetDataUri(SPECS[chapterIndex % SPECS.length], chapterIndex);
 }

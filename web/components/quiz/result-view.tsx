@@ -11,6 +11,7 @@ import { CheckCircle2, XCircle } from "lucide-react";
 
 import { Question, SubmitResponse } from "@/lib/quiz";
 
+import { DiagnosisSection } from "./diagnosis-section";
 import { FeedbackSection } from "./feedback-section";
 
 interface Props {
@@ -18,9 +19,11 @@ interface Props {
   result: SubmitResponse;
   onNext: () => void;
   onExit: () => void;
+  /** K3e 微測驗入口：診斷嫌疑鏈點「微測驗」後直接切入該題作答。 */
+  onStartQuestion?: (question: Question) => void;
 }
 
-export function ResultView({ question, result, onNext, onExit }: Props) {
+export function ResultView({ question, result, onNext, onExit, onStartQuestion }: Props) {
   return (
     <div className="space-y-4">
       <ResultBanner isCorrect={result.is_correct} feedback={result.feedback} />
@@ -39,6 +42,14 @@ export function ResultView({ question, result, onNext, onExit }: Props) {
       />
 
       <FeedbackSection answerId={result.answer_id} />
+
+      {/* K3e：答錯才查診斷；未觸發時元件自行隱藏 */}
+      {!result.is_correct && question.concept_tags[0] && (
+        <DiagnosisSection
+          conceptTag={question.concept_tags[0]}
+          onStartQuestion={onStartQuestion}
+        />
+      )}
 
       <div className="flex items-center justify-end gap-2 pt-2">
         <button

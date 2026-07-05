@@ -64,6 +64,14 @@ export async function getQuestionFromBank(conceptTag: string): Promise<Question>
   return api<Question>(`/quiz/from-bank?${qs}`);
 }
 
+/**
+ * K3e：以 id 直取題目（診斷嫌疑鏈微測驗入口）。
+ * 僅 validated 題可取；不存在 → ApiRequestError(404, "QUESTION_NOT_FOUND")。
+ */
+export async function getQuestionById(questionId: string): Promise<Question> {
+  return api<Question>(`/quiz/questions/${questionId}`);
+}
+
 // === 3-2a 作答提交 ===
 
 /** 學生作答 payload — 形狀依 question.type 決定。 */

@@ -30,6 +30,7 @@ from api.routes.learning import router as learning_router
 from api.routes.learning_units import router as learning_units_router
 from api.routes.quiz import router as quiz_router
 from api.routes.quiz_feedback import router as quiz_feedback_router
+from api.routes.quiz_questions import router as quiz_questions_router
 from api.routes.reflection import router as reflection_router
 
 
@@ -76,6 +77,7 @@ app.include_router(diagnosis_router)
 app.include_router(dashboard_router)
 app.include_router(quiz_router)
 app.include_router(quiz_feedback_router)
+app.include_router(quiz_questions_router)
 app.include_router(reflection_router)
 app.include_router(comprehension_router)
 app.include_router(comprehension_variation_router)

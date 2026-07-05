@@ -8,6 +8,8 @@ export type ConceptNode = {
   description: string;
   difficulty_level: number;
   category: string;
+  /** 課綱影片順序（章節排序 + 章內排序依據）；非影片 concept 為 null。 */
+  video_order: number | null;
 };
 
 export type ConceptEdge = {

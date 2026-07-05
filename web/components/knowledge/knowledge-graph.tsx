@@ -1,19 +1,20 @@
 "use client";
 
 /**
- * Knowledge Graph — Cytoscape.js + fcose layout 視覺化全部 Concept 節點與 Edge。
+ * Knowledge Graph — Cytoscape.js 視覺化全部 Concept 節點與 Edge。
  *
  * Presentational 元件 — 由 KnowledgePage 傳入 graphData + masteryMap + pathOverlay，
  * 自己只負責 Cytoscape 生命週期與互動。
  * 視覺規格 / 色票 → `knowledge-graph-style.ts`；elements 轉換 → `knowledge-graph-elements.ts`
- * K5b：分章 compound cluster（fcose 原生支援 compound）
+ * K5b 改版二：preset layout（`graph-layout.ts` 確定性座標，取代 fcose 隨機結果）
+ *            + 章節星系背景（`galaxy-backgrounds.ts`），parent 可拖曳整章移動
  * K5c：focusTags 有值時 layout 完成後 fit 至補救節點
  */
 
 import cytoscape, { type Core, type EventObject } from "cytoscape";
-import fcose from "cytoscape-fcose";
 import { useEffect, useMemo, useRef } from "react";
 
+import { computePositions } from "./graph-layout";
 import { toElements } from "./knowledge-graph-elements";
 import { STYLESHEET, TOKEN } from "./knowledge-graph-style";
 import type {
@@ -21,9 +22,6 @@ import type {
   MasteryEntry,
   PathOverlay,
 } from "./knowledge-graph-types";
-
-// 註冊 fcose layout（idempotent，多次呼叫無害）
-cytoscape.use(fcose);
 
 export type KnowledgeGraphProps = {
   data: GraphData;
@@ -50,6 +48,7 @@ export function KnowledgeGraph({
     () => toElements(data, masteryMap, pathOverlay),
     [data, masteryMap, pathOverlay],
   );
+  const positions = useMemo(() => computePositions(data), [data]);
 
   // Cytoscape lifecycle
   useEffect(() => {
@@ -60,18 +59,16 @@ export function KnowledgeGraph({
       elements,
       style: STYLESHEET,
       layout: {
-        name: "fcose",
-        // quality=default 適合 < 100 節點；節點較小且 label 外置，間距放大避免標籤撞到鄰居
-        quality: "default",
+        // 確定性佈局：座標由 graph-layout.ts 預先算好（parent 由子節點自動推導）
+        name: "preset",
+        positions: (node: { id: () => string }) =>
+          positions.get(node.id()) ?? undefined,
+        fit: true,
+        padding: 48,
         animate: false,
-        nodeRepulsion: () => 12000,
-        idealEdgeLength: () => 110,
-        // compound cluster：拉近同章節點、與容器保持間距
-        nestingFactor: 0.15,
-        padding: 32,
-      } as cytoscape.LayoutOptions,
+      } as unknown as cytoscape.LayoutOptions,
       wheelSensitivity: 0.2,
-      minZoom: 0.3,
+      minZoom: 0.2,
       maxZoom: 3,
     });
 
@@ -102,7 +99,7 @@ export function KnowledgeGraph({
       cy.destroy();
       cyRef.current = null;
     };
-  }, [elements, onNodeClick, focusTags]);
+  }, [elements, positions, onNodeClick, focusTags]);
 
   return (
     <div

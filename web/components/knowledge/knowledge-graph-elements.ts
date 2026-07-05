@@ -8,6 +8,8 @@
 
 import type { ElementDefinition } from "cytoscape";
 
+import { galaxyDataUri } from "./galaxy-backgrounds";
+import { orderedCategories } from "./graph-layout";
 import { MASTERY_COLOR } from "./knowledge-graph-style";
 import type {
   GraphData,
@@ -24,12 +26,13 @@ export function toElements(
   masteryMap?: Map<string, MasteryEntry>,
   pathOverlay?: PathOverlay,
 ): ElementDefinition[] {
-  // 分章 compound parents（只為實際出現的 category 建立）
-  const categories = [...new Set(data.nodes.map((n) => n.category))];
-  const parents: ElementDefinition[] = categories.map((category) => ({
+  // 分章 compound parents（依課綱順序；index 同時決定星系背景樣式）
+  const categories = orderedCategories(data.nodes);
+  const parents: ElementDefinition[] = categories.map((category, i) => ({
     data: {
       id: `${CHAPTER_ID_PREFIX}${category}`,
       label: category,
+      galaxy: galaxyDataUri(i),
     },
   }));
 

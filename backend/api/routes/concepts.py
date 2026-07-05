@@ -37,6 +37,8 @@ class ConceptOut(BaseModel):
     description: str
     difficulty_level: int = Field(ge=1, le=5)
     category: str
+    # K5 preset layout 的排序依據（章節順序 + 章內順序）；非影片 concept 為 null
+    video_order: int | None = None
 
     @classmethod
     def from_orm(cls, c: Concept) -> "ConceptOut":
@@ -48,6 +50,7 @@ class ConceptOut(BaseModel):
             description=c.description,
             difficulty_level=c.difficulty_level,
             category=c.category,
+            video_order=c.video_order,
         )
 
 

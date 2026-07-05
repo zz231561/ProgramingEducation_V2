@@ -1,5 +1,16 @@
 # 變更日誌
 
+## [2026-07-05] — feat(K5-視覺調整)：確定性星系佈局（使用者初驗回饋）
+
+### Changed
+- **佈局改確定性 preset**（取代 fcose 隨機 force-directed）：章節沿左→右 S 曲線排列（`graph-layout.ts`：spacing 380 / 振幅 170），章內節點以 phyllotaxis 黃金角螺旋展開（形似星團、零重疊）；排序依據 = `video_order`（`/concepts/graph` 新增此欄位）——同資料每次渲染座標完全一致
+- **背景統一 + 星系區隔**：章節容器移除填色與邊框（背景與畫布一致 #0D1117），改掛程序生成的低透明度星雲 SVG（`galaxy-backgrounds.ts`：mulberry32 seeded → 每章樣式獨特且固定；色相僅用 token 藍/紫/灰 + `background-image-opacity: 0.5`）；拖曳章節（parent）可整體移動該星系
+- 移除 `knowledge-graph.tsx` 的 fcose import（`cytoscape-fcose` 依賴保留於 package.json，未從其他處使用）
+- ⚠ 設計註記：星系背景屬裝飾性視覺，與 frontend.md R8.4 有張力——依使用者 2026-07-05 明示要求實作，以低飽和灰藍紫階壓低違和
+- 驗證：`tsc` + `next build` 通過；後端 550 tests 全綠；星雲 SVG 以 qlmanage 轉圖抽查確認柔和不搶主體
+
+---
+
 ## [2026-07-05] — feat(K5+K3e)：知識圖譜視覺改版 + 診斷前端入口
 
 ### Added

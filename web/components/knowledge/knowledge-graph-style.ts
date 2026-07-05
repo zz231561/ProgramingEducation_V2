@@ -85,15 +85,18 @@ export const STYLESHEET: StylesheetCSS[] = [
       "border-width": 2,
     },
   },
-  // --- K5b 分章 cluster 容器（compound parent；灰階 = 非裝飾，R8.4 白名單）---
+  // --- K5b 分章 cluster 容器（compound parent）---
+  // 背景與畫布一致（無填色無邊框），改以低透明度星系 SVG 區隔章節；
+  // 拖曳 parent 可整體移動該章（cytoscape compound 原生行為）。
   {
     selector: "node:parent",
     css: {
-      shape: "round-rectangle",
-      "background-color": TOKEN.bgDefault,
-      "background-opacity": 0.55,
-      "border-color": TOKEN.borderMuted,
-      "border-width": 1,
+      shape: "ellipse",
+      "background-opacity": 0,
+      "border-width": 0,
+      "background-image": "data(galaxy)",
+      "background-fit": "cover",
+      "background-image-opacity": 0.5,
       label: "data(label)",
       color: TOKEN.textMuted,
       "font-size": "12px",
@@ -101,7 +104,7 @@ export const STYLESHEET: StylesheetCSS[] = [
       "text-valign": "top",
       "text-halign": "center",
       "text-margin-y": -6,
-      padding: "20px",
+      padding: "36px",
     },
   },
   // --- Hover 鄰居高亮（label 變亮 + 邊框轉強）---

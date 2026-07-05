@@ -5,11 +5,10 @@
  *
  * Presentational 元件 — 由 KnowledgePage 傳入 graphData + masteryMap + pathOverlay，
  * 自己只負責 Cytoscape 生命週期與互動。
- * 視覺規格 / 色票 → `knowledge-graph-style.ts`；elements 轉換 → `knowledge-graph-elements.ts`
- * 太陽系主題：preset 蛇形軌道佈局（graph-layout.ts）+ NASA 行星容器（planet-theme.ts）
- *            + 軌道弧線/星空 underlay（orbit-scene.ts，隨 viewport 同步 transform）
- * 鏡頭：進場 zoom 至目前進度星球（上限 ZOOM_CAP 避免過大）；GalaxyNav 左右切換
- * K5c：focusTags（補救跳轉）優先於 currentTag 進度聚焦
+ * 雙層視圖：zoom < 門檻顯示章節級星系（overview-style.ts），否則顯示概念級
+ * detail；切換由 graph-mode.ts 依 viewport zoom 驅動，crossfade 平滑過場。
+ * 點擊星系 / 章節容器 / 概念節點一律鏡頭 zoom in 至該章（概念另開詳情面板）。
+ * K5c：focusTags（補救跳轉）優先於 currentTag 進度聚焦。
  */
 
 import cytoscape, { type Core, type EventObject } from "cytoscape";
@@ -18,6 +17,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { GalaxyNav } from "./galaxy-nav";
 import { fitWithCap } from "./graph-camera";
 import { computeChapterAnchors, computePositions } from "./graph-layout";
+import { applyMode, modeForZoom, type ViewMode } from "./graph-mode";
 import { CHAPTER_ID_PREFIX, toElements } from "./knowledge-graph-elements";
 import { STYLESHEET, TOKEN } from "./knowledge-graph-style";
 import type {
@@ -26,13 +26,14 @@ import type {
   PathOverlay,
 } from "./knowledge-graph-types";
 import { buildOrbitPath, buildStars } from "./orbit-scene";
+import { OVERVIEW_STYLES } from "./overview-style";
 
 export type KnowledgeGraphProps = {
   data: GraphData;
   masteryMap: Map<string, MasteryEntry>;
   /** K5c 路徑高亮 overlay（省略 = 無 ring）。 */
   pathOverlay?: PathOverlay;
-  /** 目前進度 concept（進場鏡頭 zoom 至其所屬星球）。 */
+  /** 目前進度 concept（進場鏡頭 zoom 至其所屬章節）。 */
   currentTag?: string | null;
   /** K5c：補救跳轉聚焦 tags；優先於 currentTag。 */
   focusTags?: string[];
@@ -61,7 +62,7 @@ export function KnowledgeGraph({
   const orbitPath = useMemo(() => buildOrbitPath(anchors), [anchors]);
   const stars = useMemo(() => buildStars(anchors), [anchors]);
 
-  // 進場聚焦章節：補救 tags > 目前進度 > 第一章（太陽）
+  // 進場聚焦章節：補救 tags > 目前進度 > 第一章
   const initialChapterIdx = useMemo(() => {
     const anchorTag = focusTags?.[0] ?? currentTag;
     if (!anchorTag) return 0;
@@ -99,11 +100,24 @@ export function KnowledgeGraph({
     [chapterIdx, anchors.length, fitChapter],
   );
 
-  // 全覽：zoom out 涵蓋所有節點（無 cap——全覽 zoom 必然 < 1）
+  // 點擊星系 / 章節容器 / 概念節點 → zoom in 至該章
+  const zoomToCategory = useCallback(
+    (cy: Core, category: string) => {
+      const idx = anchors.findIndex((a) => a.category === category);
+      if (idx < 0) return;
+      setChapterIdx(idx);
+      fitChapter(cy, idx, true);
+    },
+    [anchors, fitChapter],
+  );
+
+  // 全覽：zoom out 至章節級視圖（overview 層自動接手，章名維持可讀）
   const handleOverview = useCallback(() => {
-    cyRef.current?.animate({
-      fit: { eles: cyRef.current.nodes(), padding: 48 },
-      duration: 350,
+    const cy = cyRef.current;
+    if (!cy) return;
+    cy.animate({
+      fit: { eles: cy.elements("node[?overview]"), padding: 48 },
+      duration: 500,
       easing: "ease-in-out",
     });
   }, []);
@@ -115,9 +129,9 @@ export function KnowledgeGraph({
     const cy = cytoscape({
       container: containerRef.current,
       elements,
-      style: STYLESHEET,
+      style: [...STYLESHEET, ...OVERVIEW_STYLES],
       layout: {
-        // 確定性佈局：座標由 graph-layout.ts 預先算好（parent 由子節點自動推導）
+        // 確定性佈局：概念座標由 graph-layout.ts 算好；星系節點自帶 position
         name: "preset",
         positions: (node: { id: () => string }) =>
           positions.get(node.id()) ?? undefined,
@@ -129,9 +143,12 @@ export function KnowledgeGraph({
       maxZoom: 3,
     });
 
-    cy.on("tap", "node[tag]", (evt: EventObject) => {
-      const tag = evt.target.data("tag") as string;
-      onNodeClick?.(tag);
+    // 統一點擊：星系 / parent / 概念節點都帶 category → zoom in 該章
+    cy.on("tap", "node[category]", (evt: EventObject) => {
+      const target = evt.target;
+      const tag = target.data("tag") as string | undefined;
+      if (tag) onNodeClick?.(tag);
+      zoomToCategory(cy, target.data("category") as string);
     });
 
     // Obsidian 風 hover 高亮：點亮鄰居 + 淡化其他（章節容器不參與）
@@ -145,32 +162,45 @@ export function KnowledgeGraph({
       cy.elements().removeClass("faded highlighted");
     });
 
-    // 軌道/星空 underlay 與 viewport 同步（直接寫 DOM transform，避免 re-render）
-    const syncUnderlay = () => {
+    // viewport 同步：underlay transform + 雙層模式切換（crossfade 過場）
+    let mode: ViewMode | null = null;
+    const syncViewport = () => {
       underlayRef.current?.setAttribute(
         "transform",
         `translate(${cy.pan().x} ${cy.pan().y}) scale(${cy.zoom()})`,
       );
+      const next = modeForZoom(cy.zoom());
+      if (next !== mode) {
+        mode = next;
+        applyMode(cy, next);
+      }
     };
-    cy.on("viewport", syncUnderlay);
+    cy.on("viewport", syncViewport);
 
-    // 進場鏡頭：補救 tags 直接框住嫌疑鏈，否則 zoom 至進度所在星球
+    // 進場鏡頭：補救 tags 直接框住嫌疑鏈，否則 zoom 至進度所在章節
     if (focusTags && focusTags.length > 0) {
       const targets = cy.nodes().filter((n) => focusTags.includes(n.data("tag")));
       if (targets.length > 0) fitWithCap(cy, targets, false);
     } else {
       fitChapter(cy, initialChapterIdx, false);
     }
-    syncUnderlay();
+    syncViewport();
 
     cyRef.current = cy;
     return () => {
       cy.destroy();
       cyRef.current = null;
     };
-  }, [elements, positions, onNodeClick, focusTags, initialChapterIdx, fitChapter]);
+  }, [
+    elements,
+    positions,
+    onNodeClick,
+    focusTags,
+    initialChapterIdx,
+    fitChapter,
+    zoomToCategory,
+  ]);
 
-  // 章名只用原分類標題——星球是介面主題非主角（2026-07-05 使用者定案）
   const navLabel = `${anchors[chapterIdx]?.category ?? ""}（${chapterIdx + 1}/${anchors.length}）`;
 
   return (

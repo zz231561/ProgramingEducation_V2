@@ -17,7 +17,8 @@ const COLS = 5;
 const CHAPTER_SPACING_X = 700;
 const ROW_GAP = 680;
 const ARC_LIFT = 60; // 每排的弧線起伏幅度
-const RADIUS_STEP = 74; // phyllotaxis r = step * sqrt(k)（原 52，依使用者回饋放寬）
+/** phyllotaxis r = step * sqrt(k)（原 52，依使用者回饋放寬）；overview 星系尺寸換算共用。 */
+export const RADIUS_STEP = 74;
 const GOLDEN_ANGLE = 2.399963; // rad ≈ 137.5°
 
 export type NodePosition = { x: number; y: number };

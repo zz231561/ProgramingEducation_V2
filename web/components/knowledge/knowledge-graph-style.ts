@@ -85,9 +85,8 @@ export const STYLESHEET: StylesheetCSS[] = [
       "border-width": 2,
     },
   },
-  // --- 太陽系章節容器（compound parent）---
-  // 背景與畫布一致（無填色無邊框），以低透明度 NASA 行星影像區隔章節
-  // （ellipse 裁成圓盤；影像大小隨 cluster 自動縮放 = 行星大小 ∝ 概念數）；
+  // --- 章節容器（compound parent，detail 層）---
+  // 背景與畫布一致（無填色無邊框），以低透明度星雲 SVG 區隔章節；
   // 拖曳 parent 可整體移動該章（cytoscape compound 原生行為）。
   {
     selector: "node:parent",
@@ -95,10 +94,10 @@ export const STYLESHEET: StylesheetCSS[] = [
       shape: "ellipse",
       "background-opacity": 0,
       "border-width": 0,
-      "background-image": "data(planet)",
+      "background-image": "data(galaxy)",
       "background-fit": "cover",
       "background-clip": "node",
-      "background-image-opacity": 0.55,
+      "background-image-opacity": 0.8,
       label: "data(label)",
       color: TOKEN.textMuted,
       "font-size": "13px",
@@ -107,6 +106,8 @@ export const STYLESHEET: StylesheetCSS[] = [
       "text-halign": "center",
       "text-margin-y": -8,
       padding: "48px",
+      "transition-property": "opacity",
+      "transition-duration": 220,
     },
   },
   // --- Hover 鄰居高亮（label 變亮 + 邊框轉強）---

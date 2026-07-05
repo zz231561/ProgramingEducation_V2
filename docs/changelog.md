@@ -1,5 +1,19 @@
 # 變更日誌
 
+## [2026-07-05] — feat(K5-雙層視圖)：星雲回歸 + 章節級全覽排版 + 點擊聚焦（使用者五驗回饋）
+
+### Changed
+- **太陽系行星 → 星雲星系回歸**（使用者裁決：行星干擾視覺、不簡潔）：恢復 `galaxy-backgrounds.ts` 星雲生成器（本次帶 `width`/`height` 修正，先前隱形問題不再發生）；刪除 `planet-svg.ts` / `planet-theme.ts`
+- **雙層視圖（semantic zoom）**：解決「zoom out 後節點與字體小到看不見」——
+  - **Overview 層**（zoom < 0.45）：每章一顆大型星系節點（星雲背景 + 52px 章名 + 概念數，全覽縮放下約 15px 可讀）+ 章間聚合依賴箭頭；概念層整層淡出
+  - **Detail 層**（zoom ≥ 0.45）：原概念級視圖（mastery 填色 + 路徑 ring + 星雲章節容器）
+  - **平滑過場**：模式由 viewport zoom 門檻驅動（`graph-mode.ts`），雙層各帶 220ms opacity transition——鏡頭縮放動畫穿越門檻時自然 crossfade，無跳切
+- **點擊即聚焦**：點星系（overview）/ 章節容器 / 概念節點，鏡頭一律動畫 zoom in 至該章（概念節點同時開詳情面板）；統一走 `node[category]` tap handler
+- 全覽按鈕改 fit overview 星系層（500ms ease-in-out）
+- 驗證：`tsc` + `next build` 通過；headless Edge 雙模式截圖抽查（overview 章名可讀性 / detail 星雲融入度）
+
+---
+
 ## [2026-07-05] — refactor(K5-太陽系主題)：改程序生成 SVG 星球 + 全覽按鈕（使用者四驗回饋）
 
 ### Changed

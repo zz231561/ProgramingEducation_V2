@@ -103,6 +103,14 @@
   - [x] 6-3a-3 實機 LLM 全跑（2026-07-06 ✅）：62 concept 題庫批次 + 補跑 → 138 題 validated（詳見 changelog；v17/v41 掛零 + 3 concept 缺 1 題記 tech-debt 待 6-4b）
 - [x] 6-3b ExercisesTab 改造：從「按需現生」→「優先讀題庫，題庫不足才現生」(GET /quiz/from-bank + ApiRequestError 404 QUESTION_BANK_EMPTY fallback；6 bank service tests + 5 route integration tests；前端 Loading 文案分「查找題庫題目 (< 1 秒)」/「AI 正在生成 (5-15 秒)」兩階段)
 - [x] 6-3c 知識點驅動題量（2026-07-06 晚間程式碼完成）：知識點萃取 service + 每點 1 MC + coding 固定 1 題（intro 0）+ `QuestionSource.BATCH` 分流（migration `k7f8a9b0c1d2`）+ `GET /quiz/unit-set` LEARN 整組作答 + validate 加 `point_meaningful` 面向 + generate「考點有意義」規則 + LEARN 前端整組逐題（`concept-quiz-tab.tsx`，不呼叫 LLM）+ `rereview_questions.py`；627 tests；**實機複審 + 批次生成待跑**
+- [ ] 6-3d QUIZ 弱項綜合測驗組（2026-07-06 晚間定案；文獻/GitHub 調研 → references.md §5.1 待補標注）：
+  - **需求**：QUIZ 弱項模式從「單節點、一題一題現生」→「一次生成整組 10 或 25 題」，含單節點題 + 綜合相連節點（多跳）題
+  - **決策（使用者三問定案）**：
+    1. 題型比例 = **依掌握度自適應**（整體掌握度低 → 偏單節點精準補強；掌握度回升 → 自動提高綜合題比例）
+    2. 生成策略 = **題庫優先只補缺口 + 並行生成（asyncio.gather）+ 進度條**；**重用舊題比例 ≤ 30%**（其餘 ≥70% 為當下新鮮生成，優先未答過題）
+    3. 程式題 = 每組 **1-2 題**，每題 **1 個弱項目標 + 2 個已掌握相連節點當鷹架情境**（ZPD + interleaving，避免全弱項過難）
+  - **文獻依據**：Interleaving/Desirable Difficulties（Bjork）、ZPD/Scaffolding（Vygotsky）、CAT content balancing、概念圖感知題目序列化（GNN+RL）、多跳 KGQA
+  - **技術要點**：generate 需支援「多 concept_tag 綜合出題」prompt 模式；多節點選法用現有 `get_prerequisite_closure`；程式題鷹架節點取「已掌握（effective confidence 高）的相連節點」；新端點 `POST /quiz/weakness-set?count=10|25`（需 rate limit 放寬）；前端 QUIZ 頁改題數選擇 + 進度條 + 整組作答
 
 ### 6-4 內容品管（2026-07-06 晚間再修訂：正式抽查移除，改由使用者實際操作回饋）
 - ~~6-4a 自行抽查~~ → **移除（2026-07-06 晚間使用者決策）**：staging 62 部已全量 approve + promote（`scripts/promote_unit_content.py`，promote 時剝除 summary/code_examples 殘留 key）；品質問題由使用者實際操作時回饋

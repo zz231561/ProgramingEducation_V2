@@ -25,7 +25,7 @@ export function DevRoleCard() {
 
   useEffect(() => {
     let cancelled = false;
-    api<{ role: string }>("/auth/me").then(
+    api<{ role: string }>("/users/me").then(
       (me) => {
         if (!cancelled) setRole(me.role);
       },

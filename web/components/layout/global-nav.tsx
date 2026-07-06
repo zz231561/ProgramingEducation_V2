@@ -106,7 +106,7 @@ function AvatarMenu() {
   /* 取得角色以決定是否顯示教師入口（失敗視為非教師） */
   useEffect(() => {
     let cancelled = false;
-    api<{ role: string }>("/auth/me")
+    api<{ role: string }>("/users/me")
       .then((me) => {
         if (!cancelled) setIsTeacher(me.role === "teacher");
       })

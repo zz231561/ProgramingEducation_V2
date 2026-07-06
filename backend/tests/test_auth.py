@@ -109,3 +109,22 @@ async def test_auth_me_repeat_returns_same_user(client: AsyncClient):
     resp1 = await client.get("/auth/me", cookies={"authjs.session-token": token})
     resp2 = await client.get("/auth/me", cookies={"authjs.session-token": token})
     assert resp1.json()["id"] == resp2.json()["id"]
+
+
+# === /users/me（瀏覽器端等價端點，避開 NextAuth /api/auth/* 碰撞）===
+
+async def test_users_me_without_token(client: AsyncClient):
+    resp = await client.get("/users/me")
+    assert resp.status_code == 401
+
+
+async def test_users_me_returns_role(client: AsyncClient):
+    """/users/me 回傳與 /auth/me 相同的使用者資訊（含 role）。"""
+    token = encrypt_test_token(SAMPLE_PAYLOAD)
+    resp = await client.get(
+        "/users/me", cookies={"authjs.session-token": token}
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["email"] == "test@example.com"
+    assert body["role"] == "student"

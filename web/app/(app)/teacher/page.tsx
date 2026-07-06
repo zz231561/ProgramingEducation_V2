@@ -20,7 +20,7 @@ export default function TeacherPage() {
 
   useEffect(() => {
     let cancelled = false;
-    api<{ role: string }>("/auth/me").then(
+    api<{ role: string }>("/users/me").then(
       (me) => {
         if (!cancelled) setGate(me.role === "teacher" ? "allowed" : "denied");
       },

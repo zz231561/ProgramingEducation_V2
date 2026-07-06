@@ -1,5 +1,17 @@
 # 變更日誌
 
+## [2026-07-07] — fix(auth)：/users/me 端點修 role 取得（NextAuth 路由碰撞）
+
+### Fixed
+- **`/auth/me` 經 Next.js proxy 取不到角色**（pre-existing，DEV-6 dev-role-card 從未驗過）：`/api/auth/*` 被 NextAuth `[...nextauth]` catch-all 攔截，`/api/auth/me` 到不了後端 → 「無法取得目前角色」；同時導致 5-1c-1 教師 gating（avatar 教師入口 / `/teacher` 頁）永遠失敗
+- **解法**：後端 auth.py 抽出 `build_user_response`；新增 `api/routes/users.py` `GET /users/me`（不在 `/auth` 前綴 → proxy 正常轉發）；前端三處（dev-role-card / global-nav / teacher page）改呼叫 `/users/me`
+- `/auth/me` 保留供後端測試（直打 ASGI 無碰撞）
+
+### Tests
+- +2（/users/me 未帶 token 401 / 回 role）；後端全量 **669 passed**；前端 build 通過
+
+---
+
 ## [2026-07-07] — feat(teacher)：5-1c-1 教師班級管理頁（前端，待 UI 驗收）
 
 ### Added

@@ -1,6 +1,21 @@
 # 變更日誌
 
-## [2026-07-07] — feat(auth)：5-1d-3/4 身分選擇 onboarding + 設定重置卡（前端，待 UI 驗收）
+## [2026-07-07] — feat(analytics)：5-2a coding_events 表（ProgSnap2）
+
+### Added
+- **coding_events 表**（migration `o1d2e3f4a5b6` + `models/coding_event.py`）：程式行為事件收集（Module 9）
+  - `event_type` 採 ProgSnap2 EventType 詞彙（submit/compile_error/runtime_error/success/hint_request/fix；String+CHECK）
+  - id=EventID、user_id=SubjectID（ProgSnap2 五欄主鍵對映，CC-BY-4.0）
+  - `concept_tags`/`execution_result`/`event_metadata` 用通用 JSON（相容 SQLite 測試）；`metadata` 保留字改名 `event_metadata`
+  - `session_id` FK chat_sessions ON DELETE SET NULL；`(user_id, created_at)` 複合索引供時序查詢
+- db-schema.md §Module 9 同步（JSON 取代 text[]/jsonb 註記）
+
+### Verified
+- migration up/down 可逆；欄位/索引/FK 正確；model 匯入；後端全量 **674 passed**
+
+---
+
+## [2026-07-07] — feat(auth)：5-1d-3/4 身分選擇 onboarding + 設定重置卡（前端，UI 驗收通過）
 
 ### Added
 - **Onboarding 三段 gate**（`onboarding-gate.tsx`，原 profile-gate 改名）：① 未選身分 → `RolePicker`（教師/學生兩卡）② 學生未填 profile → `ProfileSetupForm` ③ 放行；選完身分後 gate 重新評估

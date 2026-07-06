@@ -207,14 +207,16 @@ coding_events
 ├── id (UUID, PK)
 ├── user_id (FK → users, ON DELETE CASCADE) ★ index
 ├── session_id (FK → chat_sessions, nullable)
-├── event_type (enum: submit/compile_error/runtime_error/success/hint_request/fix)
-├── concept_tags (text[], nullable) ★ GIN index
+├── event_type (String+CHECK: submit/compile_error/runtime_error/success/hint_request/fix；ProgSnap2 詞彙)
+├── concept_tags (JSON list, nullable)      -- 改用通用 JSON（非 PG ARRAY）以相容 SQLite 測試；GIN 索引未建
 ├── code_snapshot (text, nullable)
-├── execution_result (jsonb, nullable)     -- Judge0 結果摘要
-├── hint_level (int 0-5, nullable)         -- 觸發的 hint 等級
-├── metadata (jsonb, nullable)             -- 額外資訊（error_type, fix_duration_ms 等）
-├── created_at ★ index (user_id, created_at) 複合索引供時序查詢
+├── execution_result (JSON, nullable)       -- Judge0 結果摘要
+├── hint_level (int 0-5, nullable)          -- 觸發的 hint 等級
+├── event_metadata (JSON, nullable)         -- 額外資訊（error_type, fix_duration_ms 等）；attr 避開 SQLAlchemy 保留字 metadata
+├── created_at
+└── ★ index (user_id, created_at) 複合索引供時序查詢
 ```
+> 實作對映（5-2a）：id=EventID、user_id=SubjectID（ProgSnap2 五欄主鍵）；migration `o1d2e3f4a5b6` + `models/coding_event.py`
 
 > `chat_messages` 表擴充欄位（Phase 5-2c）：
 > - `dialogue_act (enum: asking_hint/clarification/debugging/off_topic/acknowledgment, nullable)`

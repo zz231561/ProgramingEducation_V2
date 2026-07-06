@@ -57,13 +57,13 @@
 - 5-1d 身分自選 onboarding + 身分重置（2026-07-07 決策：production 自選教師/學生；單一身分；設定頁可切換身分＝全資料重置 + 警告）
   - [x] 5-1d-1 users 加 `role_selected` 布林 migration（`n0c1d2e3f4a5`，server_default false）+ `/users/me`·`/auth/me` 回傳（可逆驗證）
   - [x] 5-1d-2 後端 `POST /users/role` 自選/切換身分（`services/identity.py`）：首選只設定、已選過再改＝全清（reset_user_data + profile + class_members + 教師 classes）；admin 不可自選 422；5 route tests
-  - [ ] 5-1d-3 前端 onboarding 身分選擇頁（`RolePicker` + `OnboardingGate` 三段：選身分→學生填 profile→放行）— **程式碼完成，待 UI 驗收**
-  - [ ] 5-1d-4 Settings 身分重置卡（`identity-card.tsx`，二段確認 + 全清警告 + 成功後導回 onboarding）— **程式碼完成，待 UI 驗收**
+  - [x] 5-1d-3 前端 onboarding 身分選擇頁（`RolePicker` + `OnboardingGate` 三段：選身分→學生填 profile→放行）— **UI 驗收通過**
+  - [x] 5-1d-4 Settings 身分重置卡（`identity-card.tsx`，二段確認 + 全清警告 + 成功後導回 onboarding）— **UI 驗收通過**（5-1d 全數完成，5-1 班級管理收尾）
 > ⚠ 提權風險已知悉：自選教師＝任何人可看全班 PII；使用者評估後接受（單一教授小課程情境）
 
 ### 5-2 行為資料收集（Module 9）
 > **OSS**：✅ Tier 2 採用 ProgSnap2 EventType schema + StudyChat dialogue act 分類 schema
-- [ ] 5-2a coding_events 表 migration（**採用 ProgSnap2 五欄主鍵 + EventType 列舉**）
+- [x] 5-2a coding_events 表 migration（`o1d2e3f4a5b6` + `models/coding_event.py`；ProgSnap2 EventType 6 值 String+CHECK；id=EventID/user_id=SubjectID；concept_tags/execution_result/event_metadata 用 JSON；(user_id,created_at) 索引；up/down 可逆驗證）
 - [ ] 5-2b 後端 event logging service（從 Judge0 + EDF 現有流程擷取資料）
 - [ ] 5-2c chat_messages 擴充 dialogue_act 欄位（**採用 StudyChat schema**：asking_hint/clarification_request/debugging/off_topic/acknowledgment/verification）
 - [ ] 5-2d 行為指標聚合 service（編譯頻率/成功率/修復時間/hint 分布等）

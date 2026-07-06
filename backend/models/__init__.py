@@ -2,6 +2,7 @@
 
 from models.chat import ChatMessage, ChatSession
 from models.classroom import ClassMember, Classroom
+from models.coding_event import CodingEvent, CodingEventType
 from models.concept import Concept, ConceptEdge, EdgeType
 from models.learning import LearningPath, LearningUnit, LearningUnitStatus
 from models.mastery import StudentMastery
@@ -22,6 +23,8 @@ __all__ = [
     "ChatSession",
     "ClassMember",
     "Classroom",
+    "CodingEvent",
+    "CodingEventType",
     "ComprehensionType",
     "Concept",
     "ConceptEdge",

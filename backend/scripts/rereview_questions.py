@@ -28,11 +28,13 @@ from models.quiz import Question, StudentAnswer
 from services.quiz.validate import validate_question
 
 
-async def _run(dry_run: bool, only_source: str | None) -> int:
+async def _run(dry_run: bool, only_source: str | None, only_type: str | None) -> int:
     async with async_session() as db:
         stmt = select(Question).where(Question.validated.is_(True))
         if only_source is not None:
             stmt = stmt.where(Question.source == only_source)
+        if only_type is not None:
+            stmt = stmt.where(Question.type == only_type)
         stmt = stmt.order_by(Question.created_at)
         questions = (await db.execute(stmt)).scalars().all()
 
@@ -84,8 +86,12 @@ async def main() -> int:
     parser.add_argument(
         "--only-source", default=None, help="僅複審指定 source（generated / batch）"
     )
+    parser.add_argument(
+        "--only-type", default=None,
+        help="僅複審指定題型（multiple_choice / coding / fill_blank）",
+    )
     args = parser.parse_args()
-    return await _run(args.dry_run, args.only_source)
+    return await _run(args.dry_run, args.only_source, args.only_type)
 
 
 if __name__ == "__main__":

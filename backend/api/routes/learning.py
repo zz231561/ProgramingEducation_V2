@@ -67,6 +67,9 @@ class UnitOut(BaseModel):
     video_duration_seconds: int | None
     # U2c：課程介紹單元前端隱藏範例程式 tab
     concept_category: str | None
+    # 6-3c：資料驅動 tab 顯示——無 batch MC → 隱藏觀念題；無 batch coding → 隱藏程式實作題
+    has_concept_quiz: bool
+    has_coding_exercise: bool
     order_index: int
     status: str
     completed_at: str | None
@@ -122,6 +125,8 @@ def _build_path_detail(path, units) -> "PathDetailOut":
                 video_youtube_id=u.video_youtube_id,
                 video_duration_seconds=u.video_duration_seconds,
                 concept_category=u.concept_category,
+                has_concept_quiz=u.has_concept_quiz,
+                has_coding_exercise=u.has_coding_exercise,
                 order_index=u.unit.order_index,
                 status=u.unit.status,
                 completed_at=u.unit.completed_at.isoformat() if u.unit.completed_at else None,

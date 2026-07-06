@@ -28,9 +28,6 @@ import { UnitStatusIcon, statusLabel } from "./unit-status-icon";
 
 type Tab = "concept" | "coding" | "quiz";
 
-/** 課程介紹單元（影片 1-3）沒有程式碼可寫，隱藏程式實作題 tab。 */
-const INTRO_CATEGORY = "課程介紹";
-
 interface Props {
   unit: Unit;
   pathTitle: string;
@@ -62,9 +59,14 @@ export function UnitContent({
 }: Props) {
   const [tab, setTab] = useState<Tab>("concept");
 
-  const isIntroUnit = unit.concept_category === INTRO_CATEGORY;
-  const tabs = isIntroUnit ? TABS.filter((t) => t.key !== "coding") : TABS;
-  // 防呆：若切到被隱藏的 tab（例如從一般單元導航到課程介紹單元），退回概念說明
+  // 6-3c：資料驅動隱藏 tab——無 batch 題的 tab 直接不顯示
+  // （安裝教學片無可測驗概念 → 觀念題消失；課程介紹片無程式題 → 程式實作題消失）
+  const tabs = TABS.filter(
+    (t) =>
+      (t.key !== "coding" || unit.has_coding_exercise) &&
+      (t.key !== "quiz" || unit.has_concept_quiz),
+  );
+  // 防呆：若切到被隱藏的 tab（例如從一般單元導航到只有概念說明的單元），退回概念說明
   const activeTab = tabs.some((t) => t.key === tab) ? tab : "concept";
 
   return (
@@ -115,7 +117,7 @@ export function UnitContent({
 
       <div className="min-h-[240px]">
         {activeTab === "concept" && <ConceptTab unit={unit} />}
-        {activeTab === "coding" && !isIntroUnit && (
+        {activeTab === "coding" && (
           <ExercisesTab key="coding" conceptTag={unit.concept_tag} />
         )}
         {activeTab === "quiz" && (

@@ -47,6 +47,9 @@ export interface Unit {
   video_duration_seconds: number | null;
   // U2c：課程介紹單元隱藏範例程式 tab
   concept_category: string | null;
+  // 6-3c：資料驅動 tab 顯示——無 batch MC → 隱藏觀念題；無 batch coding → 隱藏程式實作題
+  has_concept_quiz: boolean;
+  has_coding_exercise: boolean;
   order_index: number;
   status: UnitStatus;
   completed_at: string | null;

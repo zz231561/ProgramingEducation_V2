@@ -18,6 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.errors import AppError
 from models.concept import Concept
 from models.learning import LearningPath, LearningUnit, LearningUnitStatus
+from models.quiz import Question, QuestionSource, QuestionType
 from services.learning.generator import generate_learning_path
 
 DEFAULT_PATH_TITLE = "C++ 完整課程"
@@ -53,6 +54,10 @@ class UnitWithConcept:
     video_duration_seconds: int | None
     # U2c：前端依「課程介紹」分類隱藏範例程式 tab
     concept_category: str | None
+    # 6-3c：前端依此隱藏對應 tab——無可測驗概念（如安裝教學片）→ 隱藏觀念題 tab；
+    # 無 batch coding → 隱藏程式實作題 tab（資料驅動，取代硬編 category 判斷）
+    has_concept_quiz: bool = False
+    has_coding_exercise: bool = False
 
 
 async def _get_owned_path(
@@ -136,6 +141,7 @@ async def get_path_with_units(
             )
         ).all()
     )
+    mc_tags, coding_tags = await _batch_question_coverage(db)
     units = [
         UnitWithConcept(
             unit=unit,
@@ -145,10 +151,39 @@ async def get_path_with_units(
             video_youtube_id=concept.video_youtube_id,
             video_duration_seconds=concept.video_duration_seconds,
             concept_category=concept.category,
+            has_concept_quiz=concept.tag in mc_tags,
+            has_coding_exercise=concept.tag in coding_tags,
         )
         for unit, concept in rows
     ]
     return path, units
+
+
+async def _batch_question_coverage(
+    db: AsyncSession,
+) -> tuple[set[str], set[str]]:
+    """回傳 (有 batch MC 的 concept tags, 有 batch coding 的 concept tags)。
+
+    單查詢撈全部 validated batch 題的 (type, concept_tags)，Python 端聚合成兩個 set；
+    前端據此隱藏無題的 tab（無可測驗概念 → 觀念題 tab 消失）。
+    """
+    rows = (
+        await db.execute(
+            select(Question.type, Question.concept_tags).where(
+                Question.validated.is_(True),
+                Question.source == QuestionSource.BATCH.value,
+            )
+        )
+    ).all()
+    mc_tags: set[str] = set()
+    coding_tags: set[str] = set()
+    for qtype, tags in rows:
+        target = mc_tags if qtype == QuestionType.MULTIPLE_CHOICE.value else (
+            coding_tags if qtype == QuestionType.CODING.value else None
+        )
+        if target is not None:
+            target.update(tags or [])
+    return mc_tags, coding_tags
 
 
 async def delete_path(db: AsyncSession, path_id: UUID, user_id: UUID) -> None:

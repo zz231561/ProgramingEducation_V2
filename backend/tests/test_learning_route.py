@@ -217,6 +217,44 @@ async def test_get_path_returns_units_in_order(client: AsyncClient):
     assert body["units"][1]["video_duration_seconds"] is None
     # U2c：concept category 直通（前端據此隱藏課程介紹單元的範例 tab）
     assert body["units"][0]["concept_category"] == "基礎"
+    # 6-3c：無 batch 題 → 兩 tab flag 皆 False（資料驅動隱藏 tab）
+    assert body["units"][0]["has_concept_quiz"] is False
+    assert body["units"][0]["has_coding_exercise"] is False
+
+
+async def test_unit_tab_flags_reflect_batch_questions(client: AsyncClient):
+    """有 batch MC → has_concept_quiz=True；有 batch coding → has_coding_exercise=True。"""
+    from models.quiz import Question, QuestionSource
+
+    await _ensure_user(OWNER_PAYLOAD, client)
+    await _seed_concepts([{"tag": "with-quiz"}, {"tag": "no-quiz"}])
+    async with TestSessionFactory() as db:
+        db.add(Question(
+            type="multiple_choice", concept_tags=["with-quiz"], bloom_level=3,
+            difficulty=2, content={"stem": "x", "options": ["a", "b"], "answer_index": 0},
+            explanation="", source=QuestionSource.BATCH.value, validated=True,
+        ))
+        db.add(Question(
+            type="coding", concept_tags=["with-quiz"], bloom_level=3, difficulty=2,
+            content={"stem": "impl", "starter_code": ""}, explanation="",
+            source=QuestionSource.BATCH.value, validated=True,
+        ))
+        await db.commit()
+    token = encrypt_test_token(OWNER_PAYLOAD)
+
+    created = await client.post(
+        "/learning/paths", json={"title": "P"},
+        cookies={"authjs.session-token": token},
+    )
+    resp = await client.get(
+        f"/learning/paths/{created.json()['id']}",
+        cookies={"authjs.session-token": token},
+    )
+    units = {u["concept_tag"]: u for u in resp.json()["units"]}
+    assert units["with-quiz"]["has_concept_quiz"] is True
+    assert units["with-quiz"]["has_coding_exercise"] is True
+    assert units["no-quiz"]["has_concept_quiz"] is False
+    assert units["no-quiz"]["has_coding_exercise"] is False
 
 
 async def test_get_path_other_user_returns_404(client: AsyncClient):

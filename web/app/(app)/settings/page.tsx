@@ -1,6 +1,7 @@
 import { Settings } from "lucide-react";
 
 import { DevToolsSection } from "@/components/settings/dev-tools-section";
+import { IdentityCard } from "@/components/settings/identity-card";
 
 export default function SettingsPage() {
   return (
@@ -9,9 +10,9 @@ export default function SettingsPage() {
         <Settings className="size-5 text-text-secondary" />
         <h1 className="text-xl font-medium text-text-primary">設定</h1>
       </div>
-      <p className="mt-2 text-sm text-text-secondary">
-        個人設定將在後續任務中實作。
-      </p>
+      <div className="mt-6">
+        <IdentityCard />
+      </div>
       <DevToolsSection />
     </div>
   );

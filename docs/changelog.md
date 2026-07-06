@@ -1,5 +1,19 @@
 # 變更日誌
 
+## [2026-07-07] — feat(auth)：5-1d-3/4 身分選擇 onboarding + 設定重置卡（前端，待 UI 驗收）
+
+### Added
+- **Onboarding 三段 gate**（`onboarding-gate.tsx`，原 profile-gate 改名）：① 未選身分 → `RolePicker`（教師/學生兩卡）② 學生未填 profile → `ProfileSetupForm` ③ 放行；選完身分後 gate 重新評估
+- **Settings 身分重置卡**（`identity-card.tsx`，全使用者可見）：顯示目前身分 + 切換鈕；二段確認 + 明確警告「全部資料將永久清空」；成功後 `window.location` 導回 `/` 重走 onboarding
+- **data layer** `lib/identity.ts`：`selectRole`
+- DEV 身分切換卡（devSetRole，不清資料的測試用切換）與此並存互補
+
+### Verified（自動）
+- tsc / eslint 0 problem（沿用 dashboard 的 async setState disable）/ build 通過；元件皆 < 150 行
+- **待使用者 UI 驗收**（既有帳號 role_selected=false → 下次登入先見身分選擇頁）
+
+---
+
 ## [2026-07-07] — feat(auth)：5-1d-1/2 身分自選 + 切換全清（後端）
 
 ### Added

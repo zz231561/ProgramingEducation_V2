@@ -57,8 +57,8 @@
 - 5-1d 身分自選 onboarding + 身分重置（2026-07-07 決策：production 自選教師/學生；單一身分；設定頁可切換身分＝全資料重置 + 警告）
   - [x] 5-1d-1 users 加 `role_selected` 布林 migration（`n0c1d2e3f4a5`，server_default false）+ `/users/me`·`/auth/me` 回傳（可逆驗證）
   - [x] 5-1d-2 後端 `POST /users/role` 自選/切換身分（`services/identity.py`）：首選只設定、已選過再改＝全清（reset_user_data + profile + class_members + 教師 classes）；admin 不可自選 422；5 route tests
-  - [ ] 5-1d-3 前端 onboarding 身分選擇頁（gate 第一步，先於 profile）
-  - [ ] 5-1d-4 Settings 身分重置卡（二段確認 + 全清警告）
+  - [ ] 5-1d-3 前端 onboarding 身分選擇頁（`RolePicker` + `OnboardingGate` 三段：選身分→學生填 profile→放行）— **程式碼完成，待 UI 驗收**
+  - [ ] 5-1d-4 Settings 身分重置卡（`identity-card.tsx`，二段確認 + 全清警告 + 成功後導回 onboarding）— **程式碼完成，待 UI 驗收**
 > ⚠ 提權風險已知悉：自選教師＝任何人可看全班 PII；使用者評估後接受（單一教授小課程情境）
 
 ### 5-2 行為資料收集（Module 9）

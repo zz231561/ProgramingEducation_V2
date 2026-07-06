@@ -240,6 +240,39 @@ async def test_intro_category_skips_coding():
 
 
 @pytest.mark.asyncio
+async def test_coding_uses_strong_model():
+    """coding 用強模型（validate 組）生成、MC 用生成組——提高 coding 通過率。"""
+    from core.config import settings
+
+    concept = await _seed_concept()
+    with patch(
+        "services.quiz.batch_generator.generate_question",
+        new=AsyncMock(side_effect=AppError(502, "LLM_ERROR", "stop early")),
+    ) as mock_gen:
+        async with TestSessionFactory() as db:
+            concept_db = (
+                await db.execute(select(Concept).where(Concept.id == concept.id))
+            ).scalar_one()
+            # 只放 1 個知識點；MC 先跑（失敗即 abort），驗 MC 用預設模型
+            with patch(
+                "services.quiz.batch_generator.extract_knowledge_points",
+                new=AsyncMock(return_value=["點一"]),
+            ), patch(
+                "services.quiz.batch_generator.get_chunks_by_video_order",
+                new=AsyncMock(return_value=[]),
+            ):
+                await generate_questions_for_concept(db, concept_db)
+
+    # generate_question(db, concept, question_type, ...) — question_type 為 args[2]
+    models_by_type = {
+        call.args[2]: call.kwargs.get("model")
+        for call in mock_gen.call_args_list
+    }
+    assert models_by_type[QuestionType.MULTIPLE_CHOICE] is None  # 預設生成組
+    assert models_by_type[QuestionType.CODING] == settings.llm_model_validate  # 強模型
+
+
+@pytest.mark.asyncio
 async def test_point_meaningful_false_rejects_question():
     """審查 point_meaningful=False（考操作細節）→ 該題不入庫。"""
     concept = await _seed_concept()

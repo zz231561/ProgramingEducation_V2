@@ -20,6 +20,7 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.config import settings
 from core.errors import AppError
 from models.concept import Concept
 from models.quiz import Question, QuestionSource, QuestionType
@@ -68,12 +69,14 @@ async def _generate_one_validated(
     difficulty: int,
     bloom_level: int,
     knowledge_point: str | None = None,
+    model: str | None = None,
 ) -> QuestionAttempt:
     """單題完整流程：generate + validate（retry max 2 次）。
 
     validated=True → Question 已 commit；validated=False → 已 rollback，不污染 DB。
     rollback / commit 後 ORM attr 會 expire，下次 access 觸發 async lazy reload；
     每次 IO 後都 `db.refresh(concept)` 確保 attrs 仍可同步存取。
+    `model` 覆蓋生成模型（coding 用強模型提高通過率）。
     """
     last_issues: list[str] = []
     for attempt in range(1, MAX_VALIDATE_RETRIES + 1):
@@ -87,6 +90,7 @@ async def _generate_one_validated(
                 video_order=concept.video_order,
                 knowledge_point=knowledge_point,
                 source=QuestionSource.BATCH,
+                model=model,
             )
         except AppError as e:
             await db.rollback()
@@ -140,8 +144,9 @@ async def generate_questions_for_concept(
 ) -> ConceptBatchResult:
     """為單一 concept 生成知識點題組：每知識點 1 題 MC + （非 intro）1 題 coding。
 
-    skip_existing=True 時：已有 batch MC 題組 → 跳過 MC；已有 validated coding
-    （任何 source）→ 跳過 coding。不向上拋例外（除 NO_VIDEO_ORDER 防呆）。
+    skip_existing=True 時：已有 batch MC 題組 → 跳過 MC；已有 batch coding → 跳過
+    coding。coding 用強模型（validate 組 gpt-5.4）生成以提高通過率。
+    不向上拋例外（除 NO_VIDEO_ORDER 防呆）。
     """
     if concept.video_order is None:
         raise AppError(
@@ -181,12 +186,18 @@ async def generate_questions_for_concept(
             result.attempts.append(attempt)
 
     # --- coding（每單元固定 1 題；課程介紹 0 題）---
+    # coding 用強模型（gpt-5.4）生成：cascade 弱生成通過率極低，改強生成 + 強審查
     if concept.category != INTRO_CATEGORY and not (
-        skip_existing and await _has_validated_coding(db, concept.tag)
+        skip_existing and await _has_batch_coding(db, concept.tag)
     ):
         result.requested += 1
         attempt = await _generate_one_validated(
-            db, concept, QuestionType.CODING, difficulty, bloom_level
+            db,
+            concept,
+            QuestionType.CODING,
+            difficulty,
+            bloom_level,
+            model=settings.llm_model_validate,
         )
         result.attempts.append(attempt)
 
@@ -225,10 +236,11 @@ async def _has_batch_mc(db: AsyncSession, concept_tag: str) -> bool:
     )
 
 
-async def _has_validated_coding(db: AsyncSession, concept_tag: str) -> bool:
-    """該概念是否已有 validated coding 題（任何 source）——有就不重生，省成本。"""
+async def _has_batch_coding(db: AsyncSession, concept_tag: str) -> bool:
+    """該概念是否已有 batch coding 題——LEARN 只讀 batch，故以 batch 為準判斷重生。"""
     return any(
         q.type == QuestionType.CODING.value
+        and q.source == QuestionSource.BATCH.value
         for q in await _validated_questions_for(db, concept_tag)
     )
 

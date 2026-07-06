@@ -204,12 +204,14 @@ async def generate_question(
     video_order: int | None = None,
     knowledge_point: str | None = None,
     source: QuestionSource = QuestionSource.GENERATED,
+    model: str | None = None,
 ) -> Question:
     """為單一 concept 生成題目並寫入 DB（caller commit）。
 
     `video_order` 提供時走 6-3a grounded mode（影片字幕 + grounding prompt 規則）；
     None 時走原 semantic RAG（學生現生題 backward compat）。
     `knowledge_point`（6-3c）提供時題目聚焦該知識點，並記錄於 content 供覆蓋追溯。
+    `model`（6-3c coding 強模型）提供時覆蓋生成模型；None → 預設生成組模型。
     回傳已 db.add、未 commit、validated=False 的 Question。
     """
     client = _get_client()
@@ -237,7 +239,9 @@ async def generate_question(
                 {"role": "user", "content": user_prompt},
             ],
             **chat_model_kwargs(
-                model=settings.llm_model_generate, temperature=0.7, max_tokens=900
+                model=model or settings.llm_model_generate,
+                temperature=0.7,
+                max_tokens=900,
             ),
         )
     except Exception as e:

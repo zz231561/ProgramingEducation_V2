@@ -14,6 +14,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.errors import AppError
 from models.classroom import ClassMember, Classroom
+from models.student_profile import StudentProfile
+from models.user import User
 
 INVITE_CODE_LENGTH = 6
 _INVITE_CODE_CEIL = 10**INVITE_CODE_LENGTH
@@ -87,3 +89,42 @@ async def _get_owned_classroom(
     if classroom is None or classroom.teacher_id != teacher_id:
         raise AppError(404, "CLASS_NOT_FOUND", "班級不存在")
     return classroom
+
+
+async def join_class(
+    db: AsyncSession, *, user_id: uuid.UUID, invite_code: str
+) -> Classroom:
+    """學生以邀請碼加入班級（idempotent）；未填 profile 先擋下引導填寫。"""
+    classroom = await db.scalar(
+        select(Classroom).where(Classroom.invite_code == invite_code)
+    )
+    if classroom is None or not classroom.is_active:
+        raise AppError(404, "CLASS_NOT_FOUND", "邀請碼無效或班級已停用")
+
+    # profile gate：未完成身分資料則引導填寫（呼應首次登入強制引導）
+    if await db.get(StudentProfile, user_id) is None:
+        raise AppError(409, "PROFILE_REQUIRED", "請先完成個人身分資料再加入班級")
+
+    existing = await db.get(
+        ClassMember, {"class_id": classroom.id, "user_id": user_id}
+    )
+    if existing is None:
+        db.add(ClassMember(class_id=classroom.id, user_id=user_id))
+        await db.commit()
+    return classroom
+
+
+async def list_members(
+    db: AsyncSession, *, class_id: uuid.UUID, teacher_id: uuid.UUID
+) -> list[tuple[User, StudentProfile | None]]:
+    """教師查看班級名冊（僅擁有者）；回 (User, Profile) 依加入時間排序。"""
+    await _get_owned_classroom(db, class_id, teacher_id)
+    stmt = (
+        select(User, StudentProfile)
+        .join(ClassMember, ClassMember.user_id == User.id)
+        .outerjoin(StudentProfile, StudentProfile.user_id == User.id)
+        .where(ClassMember.class_id == class_id)
+        .order_by(ClassMember.joined_at)
+    )
+    rows = (await db.execute(stmt)).all()
+    return [(row[0], row[1]) for row in rows]

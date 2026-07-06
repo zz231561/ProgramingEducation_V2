@@ -31,6 +31,7 @@ from api.routes.diagnosis import router as diagnosis_router
 from api.routes.health import router as health_router
 from api.routes.learning import router as learning_router
 from api.routes.learning_units import router as learning_units_router
+from api.routes.profile import router as profile_router
 from api.routes.quiz import router as quiz_router
 from api.routes.quiz_feedback import router as quiz_feedback_router
 from api.routes.quiz_questions import router as quiz_questions_router
@@ -77,6 +78,7 @@ app.include_router(code_router)
 app.include_router(chat_router)
 app.include_router(concepts_router)
 app.include_router(classes_router)
+app.include_router(profile_router)
 app.include_router(diagnosis_router)
 app.include_router(dashboard_router)
 app.include_router(dev_router)

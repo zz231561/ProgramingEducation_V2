@@ -1,5 +1,19 @@
 # 變更日誌
 
+## [2026-07-07] — feat(teacher)：5-1b-3 加入班級 + 學生 profile API
+
+### Added
+- **學生 profile**（`api/routes/profile.py` + `services/student_profile.py`）：
+  - `POST /profile` upsert（school/department/student_id/real_name）；`GET /profile`（未填回 404 PROFILE_NOT_FOUND 供前端引導）；email 一律取自 users，不由前端提交
+- **加入班級**（`POST /classes/join`）：以 6 位邀請碼入班，idempotent（重複加入不重複建 row）；**profile gate**——未填身分資料回 409 PROFILE_REQUIRED；邀請碼無效 / 班級停用回 404
+- **教師名冊**（`GET /classes/{id}/members`）：回全班 profile + email，依加入時間排序；僅班級擁有者可看（他人 404、學生 403）
+- `services/classroom.py` 加 `join_class` / `list_members`；註冊 `profile_router`
+
+### Tests
+- +13 route tests（profile upsert/404/422、join 409/200/idempotent/404×2/422、members 名冊/他人 404/學生 403）；後端全量 **667 passed**
+
+---
+
 ## [2026-07-07] — feat(teacher)：5-1b-2 班級 CRUD API
 
 ### Added

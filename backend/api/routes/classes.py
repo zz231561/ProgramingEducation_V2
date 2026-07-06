@@ -13,12 +13,15 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from api.deps import get_db, require_roles
+from api.deps import get_current_db_user, get_db, require_roles
 from models.classroom import Classroom
+from models.student_profile import StudentProfile
 from models.user import User, UserRole
 from services.classroom import (
     create_classroom,
+    join_class,
     list_classrooms,
+    list_members,
     update_classroom,
 )
 
@@ -37,6 +40,30 @@ class CreateClassRequest(BaseModel):
 class PatchClassRequest(BaseModel):
     name: str | None = Field(default=None, min_length=1, max_length=100)
     is_active: bool | None = None
+
+
+class JoinClassRequest(BaseModel):
+    invite_code: str = Field(..., min_length=6, max_length=6, pattern=r"^\d{6}$")
+
+
+class MemberOut(BaseModel):
+    user_id: uuid.UUID
+    email: str
+    real_name: str | None
+    school: str | None
+    department: str | None
+    student_id: str | None
+
+    @classmethod
+    def from_row(cls, user: User, profile: StudentProfile | None) -> "MemberOut":
+        return cls(
+            user_id=user.id,
+            email=user.email,
+            real_name=profile.real_name if profile else None,
+            school=profile.school if profile else None,
+            department=profile.department if profile else None,
+            student_id=profile.student_id if profile else None,
+        )
 
 
 class ClassOut(BaseModel):
@@ -96,3 +123,25 @@ async def patch(
         is_active=body.is_active,
     )
     return ClassOut.from_model(classroom)
+
+
+@router.post("/join", response_model=ClassOut, status_code=200)
+async def join(
+    body: JoinClassRequest,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_db_user),
+) -> ClassOut:
+    """學生以邀請碼加入班級（idempotent）；未填 profile 回 409 PROFILE_REQUIRED。"""
+    classroom = await join_class(db, user_id=user.id, invite_code=body.invite_code)
+    return ClassOut.from_model(classroom)
+
+
+@router.get("/{class_id}/members", response_model=list[MemberOut])
+async def members(
+    class_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    teacher: User = Depends(_teacher),
+) -> list[MemberOut]:
+    """教師查看班級名冊（僅擁有者，否則 404）。"""
+    rows = await list_members(db, class_id=class_id, teacher_id=teacher.id)
+    return [MemberOut.from_row(u, p) for u, p in rows]

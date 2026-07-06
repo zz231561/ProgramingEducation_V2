@@ -33,6 +33,7 @@ logger = logging.getLogger(__name__)
 BLOOM_LEVEL = int(BloomLevel.APPLY)
 MAX_VALIDATE_RETRIES = 2
 REUSE_FRACTION = 0.3  # 題庫重用上限（其餘現生，保新鮮）
+MAX_CONCURRENT_GEN = 6  # 並行生成上限（避免 OpenAI 帳戶層 rate limit）
 
 
 def _is_bank_reusable(plan: QuestionPlan) -> bool:
@@ -111,9 +112,15 @@ async def build_weakness_set(
         ordered_ids.append(None)
         gen_slots.append((len(ordered_ids) - 1, plan))
 
-    # 缺口並行生成（各自獨立 session）
+    # 缺口並行生成（各自獨立 session；semaphore 限制併發避免 OpenAI rate limit）
+    sem = asyncio.Semaphore(MAX_CONCURRENT_GEN)
+
+    async def _bounded(plan: QuestionPlan) -> UUID | None:
+        async with sem:
+            return await _generate_one(plan)
+
     gen_results = await asyncio.gather(
-        *(_generate_one(plan) for _, plan in gen_slots),
+        *(_bounded(plan) for _, plan in gen_slots),
         return_exceptions=True,
     )
     for (idx, _plan), result in zip(gen_slots, gen_results):

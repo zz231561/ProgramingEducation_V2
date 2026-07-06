@@ -26,6 +26,7 @@ from services.quiz.select import (
     select_weak_concepts,
 )
 from services.quiz.validate import ValidationReport, validate_question
+from services.quiz.weakness_set import build_weakness_set
 
 __all__ = [
     "CENTRALITY_BONUS",
@@ -36,6 +37,7 @@ __all__ = [
     "UnitQuestionItem",
     "WEAK_THRESHOLD",
     "ValidationReport",
+    "build_weakness_set",
     "list_unit_question_set",
     "generate_for_student",
     "generate_hint",

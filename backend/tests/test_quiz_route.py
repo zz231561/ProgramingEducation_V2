@@ -520,3 +520,55 @@ async def test_unit_set_empty_when_no_batch_questions(client: AsyncClient):
     )
     assert resp.status_code == 200
     assert resp.json()["total"] == 0
+
+
+# === 6-3d /quiz/weakness-set ===
+
+
+async def test_weakness_set_requires_auth(client: AsyncClient):
+    resp = await client.post("/quiz/weakness-set?count=10")
+    assert resp.status_code == 401
+
+
+async def test_weakness_set_invalid_count_422(client: AsyncClient):
+    token = encrypt_test_token(STUDENT_PAYLOAD)
+    resp = await client.post(
+        "/quiz/weakness-set?count=7",
+        cookies={"authjs.session-token": token},
+    )
+    assert resp.status_code == 422
+    assert resp.json()["error"] == "VALIDATION_ERROR"
+
+
+async def test_weakness_set_no_weakness_flag(client: AsyncClient):
+    """build 回空（無弱項）→ no_weakness=True。"""
+    token = encrypt_test_token(STUDENT_PAYLOAD)
+    with patch(
+        "api.routes.quiz.build_weakness_set", new=AsyncMock(return_value=[])
+    ):
+        resp = await client.post(
+            "/quiz/weakness-set?count=10",
+            cookies={"authjs.session-token": token},
+        )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["no_weakness"] is True
+    assert body["total"] == 0
+
+
+async def test_weakness_set_returns_masked_questions(client: AsyncClient):
+    """build 回題組 → 200 + 題目（答案已 mask）。"""
+    q = await _seed_batch_question("syntax-basic")
+    token = encrypt_test_token(STUDENT_PAYLOAD)
+    with patch(
+        "api.routes.quiz.build_weakness_set", new=AsyncMock(return_value=[q])
+    ):
+        resp = await client.post(
+            "/quiz/weakness-set?count=10",
+            cookies={"authjs.session-token": token},
+        )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["total"] == 1
+    assert body["no_weakness"] is False
+    assert "answer_index" not in body["questions"][0]["content"]

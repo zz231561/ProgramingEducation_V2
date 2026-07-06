@@ -13,6 +13,7 @@ from core.rate_limit import rate_limit
 from models.quiz import Question, QuestionType, StudentAnswer
 from models.user import User
 from services.quiz import (
+    build_weakness_set,
     generate_for_student,
     generate_hint,
     list_history,
@@ -90,6 +91,15 @@ class UnitSetResponse(BaseModel):
     items: list[UnitQuestionItemOut]
     total: int
     answered: int
+
+
+class WeaknessSetResponse(BaseModel):
+    """6-3d 弱項綜合測驗組：一次生成整組題（已 mask 答案）。"""
+
+    questions: list[QuestionForStudentOut]
+    total: int
+    # 無弱項（cold-start / 已全數掌握）→ empty=True，前端提示先去 LEARN 練習
+    no_weakness: bool
 
 
 class SubmitRequest(BaseModel):
@@ -193,6 +203,31 @@ async def unit_set(
         ],
         total=len(items),
         answered=answered,
+    )
+
+
+@router.post(
+    "/weakness-set",
+    response_model=WeaknessSetResponse,
+    dependencies=[Depends(rate_limit("llm"))],
+)
+async def weakness_set(
+    count: int = Query(default=10),
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_db_user),
+) -> WeaknessSetResponse:
+    """6-3d：一次生成弱項綜合測驗組（10 或 25 題）。
+
+    題庫優先重用 ≤30%，缺口並行現生（單/綜合 MC 依掌握度自適應 + 1-2 題綜合 coding）。
+    無弱項 → no_weakness=True，前端提示先去 LEARN 練習。
+    """
+    if count not in (10, 25):
+        raise AppError(422, "VALIDATION_ERROR", "count 僅支援 10 或 25")
+    questions = await build_weakness_set(db, user.id, count)
+    return WeaknessSetResponse(
+        questions=[QuestionForStudentOut.from_question(q) for q in questions],
+        total=len(questions),
+        no_weakness=len(questions) == 0,
     )
 
 

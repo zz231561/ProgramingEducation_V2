@@ -47,6 +47,11 @@
     - (b) 教授/助教手動填寫（品質高，工時大）— Phase 6-4 抽查階段視需要補充
   - **決策**：先 (a) MVP，Phase 6-4 自行抽查後決定是否人工校對（2026-07-04 修訂：教授抽查已移除）
 
+- [ ] **題庫 coding 題 validate 通過率偏低 + v17/v41 掛零**（2026-07-06 實機批次觀察）
+  - **現況**：首輪 17 個失敗中 13 個為 coding 題 `VALIDATION_RETRY_EXHAUSTED`（cascade gpt-5-mini 生成 + gpt-5.4 審查）；補跑後仍有 v17 cpp-17-incr-decr / v41 cpp-41-extern-vars 兩輪全滅（0 題）、v11/v53/v61 各缺 1 題
+  - **影響**：該 5 個 concept 的 Learn 練習 tab / Quiz 題庫覆蓋不足，fallback 現生（可用但較慢）
+  - **如何處理**：6-4b 檢視 validate 失敗 reason 分佈，調整 coding 題 generate prompt（如 expected_output 格式規則）後對缺題 concept 局部重跑
+
 ### Learn 頁面視覺化升級
 - [ ] **3-1c 卡片版 ≠ ui-wireframes.md 期望的「節點+箭頭」graph 版** → **併入 roadmap K5 一併評估（2026-07-04）**
   - **影響**：與知識圖譜頁 (`/knowledge`) 風格不統一；無法直觀顯示 PREREQUISITE 依賴的分支（K1a 後已是多對多 DAG，分支資訊更豐富）

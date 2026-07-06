@@ -1,5 +1,18 @@
 # 變更日誌
 
+## [2026-07-06] — feat(content)：第 5 批實機批次——6-2b content 62 部 + 6-3a-3 題庫 138 題
+
+### Fixed（實機才暴露的兩個 bug）
+- **gpt-5 世代參數不相容**：全系列拒收 `max_tokens`（須 `max_completion_tokens`）；`gpt-5-mini` reasoning 系拒收自訂 temperature 且預設把預算燒在內部推理回空內容（實測 `reasoning_effort="minimal"` → 0 reasoning tokens 正常輸出）。新增 `core/llm_params.py` 相容層純函式 `chat_model_kwargs()`，13 個呼叫點統一切換；gpt-5.4 系 / gpt-4o 行為不變；+5 tests
+- **quiz batch `MissingGreenlet`**：validate 失敗的 rollback 會 expire session 內全部 concept（不只當前），下一輪迴圈屬性存取觸發同步 lazy-load 崩潰；`generate_all` 每輪 `db.refresh(concept)`；+1 回歸測試（未修復狀態精準重現）；後端全量 **614 passed**
+
+### Added（實機批次結果）
+- **6-2b content 批次（gpt-5.4）**：62/62 成功入 `unit_content_staging`（pending）；僅 v05 語法規則、v62 static 成員標 `needs_more_source`；抽查品質良好（v08 grounded markdown + 11 citations + 3 範例）
+- **6-3a-3 題庫批次（gpt-5-mini 生成 + gpt-5.4 審查 cascade）**：62 concept 首輪 42 滿額 / 15 partial / 2 全滅 + 缺題 15 部補跑一輪 → 題庫 **138 題 validated**（MC + coding 約各半）；57/62 concept 滿額 2+ 題；v17/v41 兩輪全滅 + v11/v53/v61 各缺 1 題記 tech-debt 待 6-4b prompt 調整
+- 費用實測遠低於預估（單 concept content 約 15-20 秒 × 2 call，總計約 $3-5，餘額充足）
+
+---
+
 ## [2026-07-06] — feat(llm)：6-M1 分組模型環境變數（任務導向路由落地）
 
 ### Added

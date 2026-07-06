@@ -7,14 +7,13 @@ import { useSession, signOut } from "next-auth/react";
 import {
   MessageSquare,
   ChevronDown,
-  Bell,
   Settings,
-  Home,
   LogOut,
   School,
 } from "lucide-react";
 
 import { api } from "@/lib/api";
+import { ROLE_CHANGE_EVENT } from "@/lib/dev-mode";
 
 interface GlobalNavProps {
   chatOpen: boolean;
@@ -103,18 +102,24 @@ function AvatarMenu() {
   const [isTeacher, setIsTeacher] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  /* 取得角色以決定是否顯示教師入口（失敗視為非教師） */
+  /* 取得角色以決定是否顯示教師入口（失敗視為非教師）；
+     訂閱 ROLE_CHANGE_EVENT 讓 DEV 身分切換後即時更新，無需重整。 */
   useEffect(() => {
     let cancelled = false;
-    api<{ role: string }>("/users/me")
-      .then((me) => {
-        if (!cancelled) setIsTeacher(me.role === "teacher");
-      })
-      .catch(() => {
-        /* 靜默：非教師不顯示入口 */
-      });
+    const refresh = () => {
+      api<{ role: string }>("/users/me")
+        .then((me) => {
+          if (!cancelled) setIsTeacher(me.role === "teacher");
+        })
+        .catch(() => {
+          /* 靜默：非教師不顯示入口 */
+        });
+    };
+    refresh();
+    window.addEventListener(ROLE_CHANGE_EVENT, refresh);
     return () => {
       cancelled = true;
+      window.removeEventListener(ROLE_CHANGE_EVENT, refresh);
     };
   }, []);
 
@@ -183,8 +188,6 @@ function AvatarMenu() {
               onClick={() => setOpen(false)}
             />
           )}
-          <MenuLink href="/overview" icon={Home} label="學習總覽" onClick={() => setOpen(false)} />
-          <MenuLink href="/notifications" icon={Bell} label="通知" onClick={() => setOpen(false)} />
           <MenuLink href="/settings" icon={Settings} label="設定" onClick={() => setOpen(false)} />
 
           <div className="my-1 border-t border-border-muted" />

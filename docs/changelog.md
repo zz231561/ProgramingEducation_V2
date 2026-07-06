@@ -1,5 +1,18 @@
 # 變更日誌
 
+## [2026-07-07] — fix(nav)：身分切換即時更新選單 + 精簡 avatar 選單
+
+### Fixed
+- **DEV 身分切換後選單需重整才更新**：`devSetRole` 成功後廣播 `ROLE_CHANGE_EVENT`（比照 GHOST_UNLOCK 模式）；`global-nav` avatar 選單訂閱該事件重抓 `/users/me`，教師入口即時出現/消失，無需重整
+
+### Changed
+- **精簡 avatar 下拉選單**（使用者評估）：移除「學習總覽 `/overview`」（空殼、與已實作 Dashboard tab 語義重疊）與「通知 `/notifications`」（空殼、無後端通知機制）兩個連入空頁的項目；選單留 班級管理（教師）/ 設定 / 登出。頁面檔保留（`/overview` 仍被 mobile-nav 引用），僅自此選單移除；連帶清除 orphan 的 Home/Bell import
+
+### Verified
+- 5-1c-1 教師班級管理頁 **UI 驗收通過**（使用者確認）；tsc / eslint 0 errors / build 全綠
+
+---
+
 ## [2026-07-07] — fix(auth)：/users/me 端點修 role 取得（NextAuth 路由碰撞）
 
 ### Fixed

@@ -67,11 +67,22 @@ export function devSetMastery(
   });
 }
 
-/** 切換 student ⇄ teacher 身分（真改 DB role）。 */
+/** 角色變更事件 — 讓導覽列等訂閱者即時更新（無需重整）。 */
+export const ROLE_CHANGE_EVENT = "dev-role-change";
+
+/** 切換 student ⇄ teacher 身分（真改 DB role）；成功後廣播 ROLE_CHANGE_EVENT。 */
 export function devSetRole(
   role: "student" | "teacher",
 ): Promise<{ role: string }> {
-  return api("/dev/role", { method: "PUT", body: JSON.stringify({ role }) });
+  return api<{ role: string }>("/dev/role", {
+    method: "PUT",
+    body: JSON.stringify({ role }),
+  }).then((res) => {
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent(ROLE_CHANGE_EVENT));
+    }
+    return res;
+  });
 }
 
 /** 注入指定 concept 連續答錯 N 次，回傳診斷摘要（DEV-8）。 */

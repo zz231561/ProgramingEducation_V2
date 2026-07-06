@@ -1,5 +1,17 @@
 # 變更日誌
 
+## [2026-07-07] — feat(teacher)：5-1c-3 右上角導覽顯示學生身分（待 UI 驗收）
+
+### Added
+- **avatar 選單顯示自填身分**（`global-nav.tsx`）：學生登入後右上角優先顯示 profile `real_name`（退回 Google 名）；avatar 旁加真名（sm+ 顯示、truncate）；下拉標頭加「校名 · 系所」+「學號」+ email
+- profile 隨 `/users/me` 一併取得（role=student 才抓 `/profile`，404 視為未填）；訂閱 `ROLE_CHANGE_EVENT`，DEV 身分切換即時更新
+
+### Verified（自動）
+- tsc / eslint 0 errors（僅既有 img warning）/ build 通過
+- **待使用者 UI 驗收**（學生右上角應顯示真名 + 校系）
+
+---
+
 ## [2026-07-07] — feat(teacher)：5-1c-2 學生 profile 表單 + 首次登入 gate（待 UI 驗收）
 
 ### Added

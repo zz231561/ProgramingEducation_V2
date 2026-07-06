@@ -14,6 +14,7 @@ import {
 
 import { api } from "@/lib/api";
 import { ROLE_CHANGE_EVENT } from "@/lib/dev-mode";
+import { getMyProfile, StudentProfile } from "@/lib/profile";
 
 interface GlobalNavProps {
   chatOpen: boolean;
@@ -100,19 +101,29 @@ function AvatarMenu() {
   const { data: session } = useSession();
   const [open, setOpen] = useState(false);
   const [isTeacher, setIsTeacher] = useState(false);
+  const [profile, setProfile] = useState<StudentProfile | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  /* 取得角色以決定是否顯示教師入口（失敗視為非教師）；
+  /* 取得角色（決定教師入口）與學生 profile（右上角顯示身分）；
      訂閱 ROLE_CHANGE_EVENT 讓 DEV 身分切換後即時更新，無需重整。 */
   useEffect(() => {
     let cancelled = false;
     const refresh = () => {
       api<{ role: string }>("/users/me")
         .then((me) => {
-          if (!cancelled) setIsTeacher(me.role === "teacher");
+          if (cancelled) return;
+          setIsTeacher(me.role === "teacher");
+          if (me.role === "student") {
+            getMyProfile().then(
+              (p) => !cancelled && setProfile(p),
+              () => !cancelled && setProfile(null), // 未填（404）等一律視為無 profile
+            );
+          } else {
+            setProfile(null);
+          }
         })
         .catch(() => {
-          /* 靜默：非教師不顯示入口 */
+          /* 靜默：取不到角色時不顯示教師入口 */
         });
     };
     refresh();
@@ -142,14 +153,15 @@ function AvatarMenu() {
     };
   }, [open]);
 
-  const name = session?.user?.name ?? "使用者";
+  /* 學生優先顯示自填真名，否則退回 Google 顯示名 */
+  const displayName = profile?.real_name ?? session?.user?.name ?? "使用者";
   const email = session?.user?.email ?? "";
 
   return (
     <div ref={containerRef} className="relative">
       <button
         onClick={() => setOpen((v) => !v)}
-        className="flex h-8 items-center gap-1 rounded-md px-1.5 text-text-secondary hover:text-text-primary hover:bg-surface-2 transition-colors"
+        className="flex h-8 items-center gap-1.5 rounded-md px-1.5 text-text-secondary hover:text-text-primary hover:bg-surface-2 transition-colors"
         aria-label="使用者選單"
         aria-expanded={open}
       >
@@ -162,9 +174,12 @@ function AvatarMenu() {
           />
         ) : (
           <div className="flex size-6 items-center justify-center rounded-full border border-border-default bg-surface-1 text-[10px]">
-            {name[0] ?? "U"}
+            {displayName[0] ?? "U"}
           </div>
         )}
+        <span className="hidden max-w-[7rem] truncate text-sm sm:inline">
+          {displayName}
+        </span>
         <ChevronDown className={`size-3 transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
 
@@ -173,9 +188,21 @@ function AvatarMenu() {
           className="absolute right-0 top-full mt-1 w-56 rounded-md border border-border-default bg-surface-1 py-1 shadow-modal z-50"
           role="menu"
         >
-          {/* User info header */}
+          {/* User info header — 學生顯示自填身分（真名 + 校系 + 學號） */}
           <div className="px-3 py-2 border-b border-border-muted">
-            <div className="text-sm font-medium text-text-primary truncate">{name}</div>
+            <div className="text-sm font-medium text-text-primary truncate">
+              {displayName}
+            </div>
+            {profile && (
+              <div className="text-xs text-text-secondary truncate">
+                {profile.school} · {profile.department}
+              </div>
+            )}
+            {profile?.student_id && (
+              <div className="text-xs text-text-muted truncate">
+                學號 {profile.student_id}
+              </div>
+            )}
             {email && <div className="text-xs text-text-muted truncate">{email}</div>}
           </div>
 

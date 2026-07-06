@@ -44,7 +44,7 @@
 > **資料策略（2026-07-06 修訂）**：5-1 / 5-2 / 5-5 無真實學生資料依賴，**前移至 Phase 7 部署前開發**（5-2 收集機制必須先上線才有資料累積；5-5b 用 DEV-E 假學生 seeder 開發）；**5-3 / 5-4 延後至全案最後**——等 Phase 7 上線累積真實行為資料後才做（原「合成資料先寫」註記作廢）。
 
 ### 5-1 班級管理
-- [ ] 5-1a classes + class_members 表 migration
+- [x] 5-1a classes + class_members 表 migration（`l8a9b0c1d2e3` + `models/classroom.py`；up/down 實跑可逆驗證）
 - [ ] 5-1b 班級 CRUD API（建立/邀請碼/加入/移除）
 - [ ] 5-1c 教師 Dashboard 頁面骨架 + 班級管理 UI
 

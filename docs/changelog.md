@@ -1,5 +1,20 @@
 # 變更日誌
 
+## [2026-07-07] — feat(teacher)：5-1a 班級資料表 migration
+
+### Added（Phase 5 教師端起步）
+- **classes / class_members 表**（migration `l8a9b0c1d2e3` + `models/classroom.py`）：對齊 db-schema.md §Module 8
+  - `classes`：teacher_id(FK users, CASCADE) + invite_code(String12, unique+index) + is_active + created_at
+  - `class_members`：複合主鍵 (class_id, user_id)，兩 FK 皆 ON DELETE CASCADE，天然去重
+  - invite_code 產生與碰撞重試留待 5-1b（API 層），migration 只保證唯一性
+- Model 註冊至 `models/__init__.py`（`Classroom` / `ClassMember`）
+
+### Verified
+- `alembic upgrade head` → 表/約束/FK 正確；`downgrade -1` 表全清可逆；re-upgrade 成功
+- 既有取樣測試 156 passed（測試 metadata 建表流程未受影響）
+
+---
+
 ## [2026-07-06] — feat(quiz)：6-3d QUIZ 弱項綜合測驗組 + 程式題強模型 + 題庫淨化
 
 ### Added（6-3d 弱項綜合測驗組）

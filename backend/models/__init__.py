@@ -1,6 +1,7 @@
 """SQLAlchemy Models — 所有 model 需在此匯入以供 Alembic 偵測。"""
 
 from models.chat import ChatMessage, ChatSession
+from models.classroom import ClassMember, Classroom
 from models.concept import Concept, ConceptEdge, EdgeType
 from models.learning import LearningPath, LearningUnit, LearningUnitStatus
 from models.mastery import StudentMastery
@@ -18,6 +19,8 @@ from models.user import User
 __all__ = [
     "ChatMessage",
     "ChatSession",
+    "ClassMember",
+    "Classroom",
     "ComprehensionType",
     "Concept",
     "ConceptEdge",

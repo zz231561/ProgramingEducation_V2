@@ -18,6 +18,7 @@ class UserResponse(BaseModel):
     name: str
     avatar_url: str | None
     role: str
+    role_selected: bool
 
     model_config = {"from_attributes": True}
 
@@ -30,6 +31,7 @@ def build_user_response(user: User) -> UserResponse:
         name=user.name,
         avatar_url=user.avatar_url,
         role=user.role.value,
+        role_selected=user.role_selected,
     )
 
 

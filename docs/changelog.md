@@ -1,5 +1,19 @@
 # 變更日誌
 
+## [2026-07-07] — feat(auth)：5-1d-1/2 身分自選 + 切換全清（後端）
+
+### Added
+- **`users.role_selected`**（migration `n0c1d2e3f4a5`，server_default false）：區分「onboarding 已主動選身分」vs 首登預設；`/users/me`·`/auth/me` 回傳；既有帳號下次登入將被引導選身分
+- **`POST /users/role`**（`services/identity.py`）：自選 student/teacher（admin 不可自選 → 422）；**首次選擇只設定不清資料；已選過再改＝重置**——全清 mastery/progress/quiz/chat（reuse `reset_user_data`）+ profile + 班級成員關係 + 教師擁有的 classes（顯式先刪成員）；回傳 `did_reset`
+
+### Decision（2026-07-07）
+- Production 身分：**onboarding 自選教師/學生**（提權風險已知悉、使用者接受，單一教授小課程情境）；**單一身分**；設定頁可切換身分＝**全資料重置 + 警告**
+
+### Tests
+- +5 route tests（首選不清 / role_selected 反映 / 切換清 profile / admin 422 / 未登入 401）；修 `test_user_table_columns` 加欄位；後端全量 **674 passed**
+
+---
+
 ## [2026-07-07] — feat(teacher)：5-1c-3 右上角導覽顯示學生身分（待 UI 驗收）
 
 ### Added

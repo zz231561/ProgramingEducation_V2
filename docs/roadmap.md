@@ -52,8 +52,14 @@
 - 5-1c 教師 Dashboard + 學生 profile UI（前端）
   - [x] 5-1c-1 教師班級管理頁（`/teacher`：建班/邀請碼複製/名冊展開/停用；role gate + avatar 選單教師入口）— **UI 驗收通過**（含修 `/users/me` 路由碰撞 + 身分切換即時更新選單 + 精簡選單移除空殼學習總覽/通知）
   - [x] 5-1c-2 學生 profile 表單 + 首次登入 gate（`ProfileGate` 包 AppShell：student 未填 → 全屏填寫頁；教師放行；fail-open）— **UI 驗收通過**
-  - [ ] 5-1c-3 右上角導覽顯示學生身分（avatar 選單真名 + 校系 + 學號；隨 role 切換即時更新）— **程式碼完成，待 UI 驗收**
+  - [x] 5-1c-3 右上角導覽顯示學生身分（avatar 選單真名 + 校系 + 學號；隨 role 切換即時更新）— **UI 驗收通過**（5-1c 全數完成）
 > 決策（2026-07-07）：profile 存 student_profiles 獨立表；首次登入強制引導（僅 role=student）；學號不做唯一約束；邀請碼 6 位數字
+- 5-1d 身分自選 onboarding + 身分重置（2026-07-07 決策：production 自選教師/學生；單一身分；設定頁可切換身分＝全資料重置 + 警告）
+  - [x] 5-1d-1 users 加 `role_selected` 布林 migration（`n0c1d2e3f4a5`，server_default false）+ `/users/me`·`/auth/me` 回傳（可逆驗證）
+  - [x] 5-1d-2 後端 `POST /users/role` 自選/切換身分（`services/identity.py`）：首選只設定、已選過再改＝全清（reset_user_data + profile + class_members + 教師 classes）；admin 不可自選 422；5 route tests
+  - [ ] 5-1d-3 前端 onboarding 身分選擇頁（gate 第一步，先於 profile）
+  - [ ] 5-1d-4 Settings 身分重置卡（二段確認 + 全清警告）
+> ⚠ 提權風險已知悉：自選教師＝任何人可看全班 PII；使用者評估後接受（單一教授小課程情境）
 
 ### 5-2 行為資料收集（Module 9）
 > **OSS**：✅ Tier 2 採用 ProgSnap2 EventType schema + StudyChat dialogue act 分類 schema

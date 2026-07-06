@@ -4,7 +4,7 @@ import enum
 import uuid
 from datetime import datetime
 
-from sqlalchemy import String, Enum, DateTime, func
+from sqlalchemy import Boolean, String, Enum, DateTime, false, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from core.database import Base
@@ -39,6 +39,12 @@ class User(Base):
         # 而非預設的 enum.name（"STUDENT"）— 與 alembic migration 建的 ENUM 對齊。
         Enum(UserRole, name="user_role", values_callable=lambda x: [e.value for e in x]),
         default=UserRole.STUDENT,
+    )
+    # 使用者是否已在 onboarding 主動選擇身分（False = 首登預設，需引導選擇）
+    role_selected: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False,
+        server_default=false(),
     )
     google_id: Mapped[str] = mapped_column(
         String(50),

@@ -13,7 +13,7 @@ def test_user_model_in_metadata():
 def test_user_table_columns():
     """users 表應包含所有必要欄位。"""
     columns = {c.name for c in User.__table__.columns}
-    expected = {"id", "email", "name", "avatar_url", "role", "google_id", "created_at", "last_login_at"}
+    expected = {"id", "email", "name", "avatar_url", "role", "role_selected", "google_id", "created_at", "last_login_at"}
     assert expected == columns
 
 

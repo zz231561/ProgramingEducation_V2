@@ -1,5 +1,26 @@
 # 變更日誌
 
+## [2026-07-06] — feat(quiz)：6-3d QUIZ 弱項綜合測驗組 + 程式題強模型 + 題庫淨化
+
+### Added（6-3d 弱項綜合測驗組）
+- **多概念綜合出題**：`generate_question` 加 `extra_concepts`——system prompt 要求綜合測驗目標 + 相關概念（需綜合運用才可解），`concept_tags` 記錄全部概念
+- **藍圖 + 節點選擇**（`weakness_set_plan.py`，不呼叫 LLM）：`compute_blueprint` 依題數 + 整體掌握度算配額（掌握度低→偏單節點；回升→提高綜合題比例）；`mastery_snapshot` 以 effective confidence 分弱項/已掌握；`plan_questions` 單節點 MC / 綜合 MC（弱項+前置）/ coding（弱項+已掌握鷹架）
+- **組裝**（`weakness_set.py`）：題庫優先重用 ≤30% + 缺口並行生成（`asyncio.gather` + semaphore 6 併發，各自獨立 session，coding 用強模型）
+- **端點** `POST /quiz/weakness-set?count=10|25`：回傳整組（mask 答案）+ `no_weakness` 旗標
+- **前端** QUIZ 頁改弱項測驗：選 10/25 → 一次生成（動畫進度）→ 逐題作答（重用 MC/coding/hint/result）→ 總結；無弱項提示先去 LEARN；DEV 深連結 `?question=` 仍走舊 runner
+- **文獻標注** references.md §5.1：Bjork 交錯/適欲難度、Vygotsky ZPD/鷹架、CAT content balancing、概念圖 GNN+RL 多跳
+
+### Changed / Fixed（題庫品質）
+- **程式題改強模型**（gpt-5.4 生成+審查）：cascade 弱生成幾乎全滅，改強模型後 LEARN 程式題覆蓋 2 → 57 部（v20/v53 仍生不出，資料驅動 tab 隱藏優雅處理）
+- **審查加「考點有意義」面向**：擋考操作細節/瑣碎資訊（左上右下等）的題；複審舊 generated MC 刪 15 題不合格（答案錯 + 考點瑣碎）
+- **LEARN 資料驅動 tab 隱藏**：`has_concept_quiz`/`has_coding_exercise` 依 batch 題存在與否決定；無可測驗概念的單元（DevC++ 安裝片）不顯示觀念題 tab
+- **6-3c 知識點題庫實機生成**：batch 436 MC（覆蓋 61/62 片）+ 57 coding
+
+### Tests
+- +30（multi-concept、blueprint/plan、orchestration、endpoint、tab flags、knowledge points）；後端全量 **647 passed**；前端 tsc/eslint/build 全綠
+
+---
+
 ## [2026-07-06] — feat(quiz)：6-3c 知識點驅動題庫 + LEARN 整組作答 + 審查加「考點有意義」
 
 ### Added（6-3c）

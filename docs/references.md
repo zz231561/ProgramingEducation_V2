@@ -142,9 +142,9 @@
 | PRIMM (Sentance & Waite, 2017) | Predict-Run-Investigate-Modify-Make 五階段 |
 | Desirable difficulties (Bjork & Bjork, 1994-2020) | 策略性摩擦提升長期記憶 |
 
-### 5.1 K6 熟練度演算法關鍵文獻（📌 論文引用標注，2026-07-06）
+### 5.1 教學演算法關鍵文獻（📌 論文引用標注，2026-07-06）
 
-> K6a / K6b / K6c 與 U2b 的實作理論依據。論文撰寫時直接引用本清單。
+> K6a/b/c、U2b、6-M、6-3c/6-3d 的實作理論依據。論文撰寫時直接引用本清單。
 
 | 主題 | 文獻 | 在本系統的對應 |
 |------|------|----------------|
@@ -157,6 +157,10 @@
 | Open Learner Model | Bull & Kay (2007/2016) SMILI 框架；[OLM 與 SRL 系統性回顧 (Computers & Education, 2020)](https://www.sciencedirect.com/science/article/abs/pii/S0360131520300774)；[OLM 知識監控實證 (RPTEL 2020)](https://telrp.springeropen.com/articles/10.1186/s41039-020-00137-5) | K6c 事件級透明化、不給逐筆帳本（避免分數導向 / gaming / 損失厭惡） |
 | 生成式學習 | Fiorella & Mayer (2015), *Learning as a Generative Activity* — 自我生成摘要 > 提供現成摘要；Sweller 冗餘效應（CLT） | U2b 移除 LEARN 摘要 tab 的依據 |
 | LLM 成本-品質路由 | [FrugalGPT (Chen, Zaharia & Zou, 2023, arXiv:2305.05176)](https://arxiv.org/abs/2305.05176) — LLM cascade：低成本模型先答、強模型把關，成本大幅下降品質持平；[RouteLLM (Ong et al., 2024, arXiv:2406.18665)](https://arxiv.org/abs/2406.18665) — query 導向模型路由 | 6-M 任務導向模型選型：`gpt-5-mini` 生成 + `gpt-5.4` 審查的 cascade 設計；分組環境變數路由（6-M1） |
+| 交錯練習 / 適欲難度 | Bjork & Bjork (2011), *Making things hard on yourself, but in a good way: desirable difficulties*；Rohrer, Dedrick & Stershic (2015), *Interleaved practice improves mathematics learning*, JEP:General | 6-3d 綜合題「弱項 + 已掌握節點」混合出題；程式題 1弱+2已掌握（交錯須在基礎穩固後、要挑戰不壓垮） |
+| 近側發展區 / 鷹架 | Vygotsky (1978), *Mind in Society: ZPD*；Wood, Bruner & Ross (1976), *The role of tutoring in problem solving*（scaffolding） | 6-3d 程式題以已掌握節點當鷹架、弱項當延伸點，落在 ZPD |
+| 適性測驗內容平衡 | [CAT content balancing (Assessment Systems)](https://assess.com/computerized-adaptive-testing/)；[短測驗屬性覆蓋平衡 (PMC7059599)](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7059599/) | 6-3d 固定 10/25 題依掌握度自適應配額（單/綜合/程式）；6-3c 知識點覆蓋 |
+| 概念圖適性評測 / 多跳 | [概念圖感知題目序列化 GNN+RL (FHSS 2025)](http://fhssjournal.org/index.php/ojs/article/view/326)；[KG-RAG 自適應家教 (arXiv:2311.17696)](https://arxiv.org/abs/2311.17696) | 6-3d 綜合題用 prerequisite closure 取相連概念做多跳題；6-3c 知識點驅動題量 |
 
 ---
 

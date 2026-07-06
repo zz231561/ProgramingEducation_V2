@@ -103,7 +103,7 @@
   - [x] 6-3a-3 實機 LLM 全跑（2026-07-06 ✅）：62 concept 題庫批次 + 補跑 → 138 題 validated（詳見 changelog；v17/v41 掛零 + 3 concept 缺 1 題記 tech-debt 待 6-4b）
 - [x] 6-3b ExercisesTab 改造：從「按需現生」→「優先讀題庫，題庫不足才現生」(GET /quiz/from-bank + ApiRequestError 404 QUESTION_BANK_EMPTY fallback；6 bank service tests + 5 route integration tests；前端 Loading 文案分「查找題庫題目 (< 1 秒)」/「AI 正在生成 (5-15 秒)」兩階段)
 - [x] 6-3c 知識點驅動題量（2026-07-06 晚間程式碼完成）：知識點萃取 service + 每點 1 MC + coding 固定 1 題（intro 0）+ `QuestionSource.BATCH` 分流（migration `k7f8a9b0c1d2`）+ `GET /quiz/unit-set` LEARN 整組作答 + validate 加 `point_meaningful` 面向 + generate「考點有意義」規則 + LEARN 前端整組逐題（`concept-quiz-tab.tsx`，不呼叫 LLM）+ `rereview_questions.py`；627 tests；**實機複審 + 批次生成待跑**
-- [ ] 6-3d QUIZ 弱項綜合測驗組（2026-07-06 晚間定案；文獻/GitHub 調研 → references.md §5.1 待補標注）：
+- [x] 6-3d QUIZ 弱項綜合測驗組（2026-07-06 完成，程式碼 + 實機題庫；文獻標注 references.md §5.1）：multi-concept generate + blueprint/plan（掌握度自適應）+ 題庫優先≤30%並行組裝 + `POST /quiz/weakness-set?count=10|25` + 前端 10/25 選擇逐題作答；程式題強模型 + 審查加考點有意義 + 舊 MC 複審刪 15 + LEARN 資料驅動 tab 隱藏。原始需求規格 ↓
   - **需求**：QUIZ 弱項模式從「單節點、一題一題現生」→「一次生成整組 10 或 25 題」，含單節點題 + 綜合相連節點（多跳）題
   - **決策（使用者三問定案）**：
     1. 題型比例 = **依掌握度自適應**（整體掌握度低 → 偏單節點精準補強；掌握度回升 → 自動提高綜合題比例）

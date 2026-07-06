@@ -37,7 +37,8 @@ class QuestionType(str, enum.Enum):
 class QuestionSource(str, enum.Enum):
     """題目來源。"""
 
-    GENERATED = "generated"  # LLM 生成
+    GENERATED = "generated"  # LLM 即時生成（QUIZ 弱項現生）
+    BATCH = "batch"          # 6-3c 知識點批次預生成（LEARN 單元題組）
     IMPORTED = "imported"    # 教師匯入
     LEETCODE = "leetcode"    # 第三方題庫匯入
 
@@ -81,7 +82,7 @@ class Question(Base):
             name="ck_questions_type_enum",
         ),
         CheckConstraint(
-            "source IN ('generated', 'imported', 'leetcode')",
+            "source IN ('generated', 'batch', 'imported', 'leetcode')",
             name="ck_questions_source_enum",
         ),
         CheckConstraint("bloom_level BETWEEN 1 AND 6", name="ck_questions_bloom_range"),

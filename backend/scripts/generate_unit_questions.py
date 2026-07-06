@@ -1,15 +1,17 @@
-"""Phase 6-3a-2 CLI：批次生成 grounded 練習題 → questions 表（validated=True 才入庫）。
+"""6-3c CLI：知識點驅動批次生成 → questions 表（source='batch'，validated=True 才入庫）。
+
+題量依影片知識量：每部影片 LLM 萃取 3-8 個重要知識點 → 每點 1 題觀念選擇題；
+非課程介紹單元另加 1 題 coding。
 
 用法：
     cd backend
-    .venv/bin/python -m scripts.generate_unit_questions              # 全部 62 concept × 2 題
+    .venv/bin/python -m scripts.generate_unit_questions              # 全部 62 concept
     .venv/bin/python -m scripts.generate_unit_questions --only 47    # 單一 video
-    .venv/bin/python -m scripts.generate_unit_questions --force      # 連已有題的 concept 也重生
+    .venv/bin/python -m scripts.generate_unit_questions --force      # 連已有 batch 題組也重生
     .venv/bin/python -m scripts.generate_unit_questions --dry-run    # 列出將處理 concept
 
-成本估計：62 concept × 2 題 × 2 LLM call（generate + validate）× ~2-4k token
-≈ 250-500k token，gpt-4o ~$5-15 USD（依 validate retry 次數）。
-建議先 `--only` 抽 1-2 部驗證輸出品質再全跑。
+skip_existing（預設）：已有 batch MC 題組 → 跳過 MC；已有 validated coding → 跳過 coding。
+成本估計：62 concept × (知識點萃取 1 + 每題 generate+validate) ≈ $4-8 USD。
 """
 
 from __future__ import annotations
@@ -29,11 +31,13 @@ from services.quiz.batch_generator import (
 def _print_summary(results: list[ConceptBatchResult]) -> int:
     """印出批次摘要 + failed / partial 明細；回傳 exit code（任一 concept 全失敗 → != 0）。"""
     total_concepts = len(results)
-    skipped = sum(1 for r in results if r.error == "SKIPPED_HAS_ENOUGH")
+    # requested=0 且無 error → 全部 skip（既有題組已足）
+    skipped = sum(1 for r in results if r.error is None and r.requested == 0)
+    concept_failed = sum(1 for r in results if r.error is not None)
     full_success = sum(
         1
         for r in results
-        if r.error is None and r.validated_count == r.requested
+        if r.error is None and r.requested > 0 and r.validated_count == r.requested
     )
     partial = sum(
         1
@@ -47,18 +51,22 @@ def _print_summary(results: list[ConceptBatchResult]) -> int:
     )
     total_questions = sum(r.validated_count for r in results)
 
-    print("\n=== Phase 6-3a-2 batch generation summary ===")
+    print("\n=== 6-3c batch generation summary ===")
     print(f"  concepts: {total_concepts}")
     print(f"  full success: {full_success}")
     print(f"  partial (some questions failed): {partial}")
     print(f"  all-failed: {all_failed}")
-    print(f"  skipped (already has enough): {skipped}")
+    print(f"  concept-level error (e.g. knowledge points): {concept_failed}")
+    print(f"  skipped (already has batch set): {skipped}")
     print(f"  total validated questions inserted: {total_questions}")
 
-    if partial or all_failed:
+    if partial or all_failed or concept_failed:
         print("\nFailed / partial details:")
         for r in results:
-            if r.error or r.validated_count >= r.requested:
+            if r.error:
+                print(f"  v{r.video_order:02d} {r.concept_tag}: {r.error}")
+                continue
+            if r.requested == 0 or r.validated_count >= r.requested:
                 continue
             print(f"  v{r.video_order:02d} {r.concept_tag} ({r.validated_count}/{r.requested}):")
             for a in r.attempts:
@@ -67,7 +75,7 @@ def _print_summary(results: list[ConceptBatchResult]) -> int:
                 err = a.error or "; ".join(a.issues) or "unknown"
                 print(f"    - {a.question_type}: {err}")
 
-    return 1 if all_failed else 0
+    return 1 if (all_failed or concept_failed) else 0
 
 
 async def _dry_run(only: int | None) -> int:
@@ -83,9 +91,11 @@ async def _run(only: int | None, force: bool) -> int:
     async with async_session() as db:
         results = await generate_all(db, only=only, skip_existing=not force)
     for r in results:
-        if r.error == "SKIPPED_HAS_ENOUGH":
+        if r.error:
+            marker = "❌"
+        elif r.requested == 0:
             marker = "⏭️ "
-        elif r.validated_count == r.requested and r.requested > 0:
+        elif r.validated_count == r.requested:
             marker = "✅"
         elif r.validated_count > 0:
             marker = "⚠"

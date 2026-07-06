@@ -81,6 +81,34 @@ export async function getQuestionById(questionId: string): Promise<Question> {
   return api<Question>(`/quiz/questions/${questionId}`);
 }
 
+/** 6-3c：LEARN 單元題組單題（含該學生作答狀態）。 */
+export interface UnitQuestionItem {
+  question: Question;
+  is_answered: boolean;
+  is_correct: boolean;
+}
+
+/** 6-3c：LEARN 單元題組回應。 */
+export interface UnitSetResponse {
+  concept_tag: string;
+  items: UnitQuestionItem[];
+  total: number;
+  answered: number;
+}
+
+/**
+ * 6-3c：取某概念的預生成題組（source='batch'）+ 作答進度。
+ * LEARN 逐題作答用；不呼叫 LLM。QUIZ 弱項現生題不列入。
+ */
+export async function getUnitQuestionSet(
+  conceptTag: string,
+  questionType?: QuestionType,
+): Promise<UnitSetResponse> {
+  const params = new URLSearchParams({ concept_tag: conceptTag });
+  if (questionType) params.set("question_type", questionType);
+  return api<UnitSetResponse>(`/quiz/unit-set?${params.toString()}`);
+}
+
 // === 3-2a 作答提交 ===
 
 /** 學生作答 payload — 形狀依 question.type 決定。 */

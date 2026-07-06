@@ -16,6 +16,7 @@ from services.quiz import (
     generate_for_student,
     generate_hint,
     list_history,
+    list_unit_question_set,
     pick_random_validated_question,
     pick_target_concept,
     submit_answer,
@@ -72,6 +73,23 @@ class QuestionForStudentOut(BaseModel):
             difficulty=q.difficulty,
             content=_mask_content_for_student(q.type, q.content or {}),
         )
+
+
+class UnitQuestionItemOut(BaseModel):
+    """單元題組單題（已 mask 答案）+ 該學生作答狀態。"""
+
+    question: QuestionForStudentOut
+    is_answered: bool
+    is_correct: bool
+
+
+class UnitSetResponse(BaseModel):
+    """LEARN 單元題組：全部預生成題 + 進度。"""
+
+    concept_tag: str
+    items: list[UnitQuestionItemOut]
+    total: int
+    answered: int
 
 
 class SubmitRequest(BaseModel):
@@ -145,6 +163,37 @@ async def from_bank(
             f"題庫尚無針對 {tag} 的可用題目（未答過且 validated）",
         )
     return QuestionForStudentOut.from_question(question)
+
+
+@router.get("/unit-set", response_model=UnitSetResponse)
+async def unit_set(
+    concept_tag: str = Query(min_length=1, max_length=50),
+    question_type: str | None = Query(default=None, max_length=20),
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_db_user),
+) -> UnitSetResponse:
+    """6-3c：LEARN 單元題組——回傳該概念全部預生成題（source='batch'）+ 作答進度。
+
+    前端逐題作答已未答的題；全部答過 → 顯示「已完成」+ 可重新作答（不呼叫 LLM）。
+    QUIZ 弱項現生題（source='generated'）不列入此題組。
+    """
+    items = await list_unit_question_set(
+        db, concept_tag=concept_tag, answered_by=user.id, question_type=question_type
+    )
+    answered = sum(1 for it in items if it.is_answered)
+    return UnitSetResponse(
+        concept_tag=concept_tag,
+        items=[
+            UnitQuestionItemOut(
+                question=QuestionForStudentOut.from_question(it.question),
+                is_answered=it.is_answered,
+                is_correct=it.is_correct,
+            )
+            for it in items
+        ],
+        total=len(items),
+        answered=answered,
+    )
 
 
 @router.post(

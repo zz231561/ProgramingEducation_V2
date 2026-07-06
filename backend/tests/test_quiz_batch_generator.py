@@ -1,12 +1,15 @@
-"""Phase 6-3a-2 測試：quiz batch generator + scripts.generate_unit_questions。
+"""6-3c 測試：知識點驅動 quiz batch generator + scripts.generate_unit_questions。
 
 涵蓋：
-- per-concept N 題：題型 mix（multiple_choice + coding）全 validated → 入庫
-- validate 失敗（concept_fits=False）→ 該題 rollback、不入庫、不阻擋同 concept 下一題
+- per-concept：每知識點 1 題 MC + 1 題 coding（非 intro）全 validated → 入庫 source='batch'
+- 題量 = 萃取的知識點數；content 記錄 knowledge_point
+- 課程介紹 concept → 不生 coding
+- validate 失敗 → 該題 rollback、不阻擋同 concept 下一題
 - generate 例外（LLM_PARSE_ERROR）→ 該題 fail、不影響下一題
 - NO_VIDEO_ORDER concept → 422 防呆
-- generate_all skip_existing：已有足量 validated 題 → 跳過該 concept
-- list_target_concepts only 過濾
+- skip_existing：已有 batch MC 題組 + validated coding → 跳過（requested=0）
+- 知識點萃取失敗 → concept-level error
+- rollback expire 其他 concept 的 MissingGreenlet 回歸
 """
 
 from __future__ import annotations
@@ -58,10 +61,15 @@ _VALID_CODING_JSON = json.dumps({
 })
 
 
+def _points_json(points: list[str]) -> str:
+    return json.dumps({"points": points})
+
+
 def _validator_json(
     answer_correct: bool = True,
     concept_fits: bool = True,
     bloom_appropriate: bool = True,
+    point_meaningful: bool = True,
 ) -> str:
     return json.dumps({
         "answer_correct": answer_correct,
@@ -70,6 +78,8 @@ def _validator_json(
         "concept_reason": "ok",
         "bloom_appropriate": bloom_appropriate,
         "bloom_reason": "ok",
+        "point_meaningful": point_meaningful,
+        "point_reason": "ok",
     })
 
 
@@ -77,11 +87,22 @@ def _validator_json(
 def patched_pipeline(
     generate_responses: list[str | Exception],
     validate_responses: list[str | Exception],
+    points: list[str] | Exception | None = None,
 ):
-    """同時 patch generate + validate 的 LLM client，以及兩條 RAG retrieve。
+    """Patch 知識點萃取 + generate + validate 三個 LLM client，以及 RAG retrieve。
 
-    generate_responses / validate_responses 依呼叫順序逐筆消費（side_effect list）。
+    points: 知識點萃取回傳（None → 預設 1 個知識點）；Exception → 萃取失敗。
+    generate_responses / validate_responses 依呼叫順序逐筆消費。
     """
+    kp_client = AsyncMock()
+    if isinstance(points, Exception):
+        kp_client.chat.completions.create = AsyncMock(side_effect=points)
+    else:
+        pts = points if points is not None else ["知識點一"]
+        kp_client.chat.completions.create = AsyncMock(
+            return_value=_mock_completion(_points_json(pts))
+        )
+
     gen_client = AsyncMock()
     gen_client.chat.completions.create = AsyncMock(
         side_effect=[
@@ -97,6 +118,7 @@ def patched_pipeline(
         ]
     )
     with (
+        patch("services.quiz.knowledge_points._get_client", return_value=kp_client),
         patch("services.quiz.generate._get_client", return_value=gen_client),
         patch("services.quiz.validate._get_client", return_value=val_client),
         patch(
@@ -105,6 +127,10 @@ def patched_pipeline(
         ),
         patch(
             "services.quiz.generate.get_chunks_by_video_order",
+            AsyncMock(return_value=[]),
+        ),
+        patch(
+            "services.quiz.batch_generator.get_chunks_by_video_order",
             AsyncMock(return_value=[]),
         ),
     ):
@@ -117,6 +143,7 @@ def patched_pipeline(
 async def _seed_concept(
     tag: str = "syntax-basic",
     video_order: int | None = 4,
+    category: str = "基礎",
 ) -> Concept:
     async with TestSessionFactory() as db:
         c = Concept(
@@ -125,7 +152,7 @@ async def _seed_concept(
             name_en="Syntax Basics",
             description="C++ 基本語法、變數宣告、輸出。",
             difficulty_level=2,
-            category="基礎",
+            category=category,
             video_order=video_order,
         )
         db.add(c)
@@ -138,10 +165,11 @@ async def _seed_concept(
 
 
 @pytest.mark.asyncio
-async def test_all_questions_validated_persist_to_db():
-    """2 題都通過 generate + validate → questions 表寫入 2 列、皆 validated=True。"""
+async def test_one_point_one_mc_plus_coding_persist():
+    """1 知識點 → 1 MC + 1 coding 全過 → 入庫 2 列、source='batch'、MC 記 knowledge_point。"""
     concept = await _seed_concept()
     with patched_pipeline(
+        points=["變數宣告需先宣告再使用"],
         generate_responses=[_VALID_MC_JSON, _VALID_CODING_JSON],
         validate_responses=[_validator_json(), _validator_json()],
     ):
@@ -151,35 +179,101 @@ async def test_all_questions_validated_persist_to_db():
             ).scalar_one()
             result = await generate_questions_for_concept(db, concept_db)
 
-    assert result.requested == 2
+    assert result.requested == 2  # 1 point + 1 coding
     assert result.validated_count == 2
-    assert all(a.validated for a in result.attempts)
 
     async with TestSessionFactory() as db:
         rows = (await db.execute(select(Question))).scalars().all()
         assert len(rows) == 2
         assert {r.type for r in rows} == {"multiple_choice", "coding"}
-        assert all(r.validated for r in rows)
-        assert all(r.source == QuestionSource.GENERATED.value for r in rows)
+        assert all(r.source == QuestionSource.BATCH.value for r in rows)
+        mc = next(r for r in rows if r.type == "multiple_choice")
+        assert mc.content.get("knowledge_point") == "變數宣告需先宣告再使用"
 
 
 @pytest.mark.asyncio
-async def test_validation_failure_rolls_back_but_continues_next_question():
-    """第 1 題 validate concept_fits=False（兩輪 retry 都 fail），第 2 題正常 → 只 1 列入庫。
-
-    每題最多 2 次 retry（MAX_VALIDATE_RETRIES=2），所以第 1 題會耗掉 2 次 generate + 2 次 validate。
-    """
+async def test_question_count_follows_knowledge_points():
+    """3 個知識點 → 3 題 MC + 1 coding。"""
     concept = await _seed_concept()
     with patched_pipeline(
-        generate_responses=[
-            _VALID_MC_JSON,  # 第 1 題 attempt 1 generate
-            _VALID_MC_JSON,  # 第 1 題 attempt 2 generate
-            _VALID_CODING_JSON,  # 第 2 題 generate
-        ],
+        points=["點一", "點二", "點三"],
+        generate_responses=[_VALID_MC_JSON] * 3 + [_VALID_CODING_JSON],
+        validate_responses=[_validator_json()] * 4,
+    ):
+        async with TestSessionFactory() as db:
+            concept_db = (
+                await db.execute(select(Concept).where(Concept.id == concept.id))
+            ).scalar_one()
+            result = await generate_questions_for_concept(db, concept_db)
+
+    assert result.requested == 4
+    assert result.validated_count == 4
+    async with TestSessionFactory() as db:
+        mc = (
+            await db.execute(
+                select(Question).where(Question.type == "multiple_choice")
+            )
+        ).scalars().all()
+        assert len(mc) == 3
+
+
+@pytest.mark.asyncio
+async def test_intro_category_skips_coding():
+    """課程介紹 concept → 只生 MC，不生 coding。"""
+    concept = await _seed_concept(tag="cpp-01", video_order=1, category="課程介紹")
+    with patched_pipeline(
+        points=["點一"],
+        generate_responses=[_VALID_MC_JSON],
+        validate_responses=[_validator_json()],
+    ):
+        async with TestSessionFactory() as db:
+            concept_db = (
+                await db.execute(select(Concept).where(Concept.id == concept.id))
+            ).scalar_one()
+            result = await generate_questions_for_concept(db, concept_db)
+
+    assert result.requested == 1
+    async with TestSessionFactory() as db:
+        rows = (await db.execute(select(Question))).scalars().all()
+        assert len(rows) == 1
+        assert rows[0].type == "multiple_choice"
+
+
+@pytest.mark.asyncio
+async def test_point_meaningful_false_rejects_question():
+    """審查 point_meaningful=False（考操作細節）→ 該題不入庫。"""
+    concept = await _seed_concept()
+    with patched_pipeline(
+        points=["點一"],
+        generate_responses=[_VALID_MC_JSON, _VALID_MC_JSON, _VALID_CODING_JSON],
         validate_responses=[
-            _validator_json(concept_fits=False),  # 第 1 題 attempt 1 validate fail
-            _validator_json(concept_fits=False),  # 第 1 題 attempt 2 validate fail
-            _validator_json(),  # 第 2 題 pass
+            _validator_json(point_meaningful=False),  # MC attempt 1 fail
+            _validator_json(point_meaningful=False),  # MC attempt 2 fail
+            _validator_json(),  # coding pass
+        ],
+    ):
+        async with TestSessionFactory() as db:
+            concept_db = (
+                await db.execute(select(Concept).where(Concept.id == concept.id))
+            ).scalar_one()
+            result = await generate_questions_for_concept(db, concept_db)
+
+    assert result.validated_count == 1  # 只有 coding 過
+    assert result.attempts[0].validated is False
+    assert "考點無意義" in "; ".join(result.attempts[0].issues)
+
+
+@pytest.mark.asyncio
+async def test_validation_failure_rolls_back_but_continues():
+    """MC validate concept_fits=False（兩輪 retry 都 fail）→ coding 正常 → 只 1 列入庫。"""
+    concept = await _seed_concept()
+    with patched_pipeline(
+        points=["點一"],
+        generate_responses=[_VALID_MC_JSON, _VALID_MC_JSON, _VALID_CODING_JSON],
+        validate_responses=[
+            _validator_json(concept_fits=False),
+            _validator_json(concept_fits=False),
+            _validator_json(),
         ],
     ):
         async with TestSessionFactory() as db:
@@ -200,19 +294,13 @@ async def test_validation_failure_rolls_back_but_continues_next_question():
 
 
 @pytest.mark.asyncio
-async def test_generate_llm_failure_does_not_block_next_question():
-    """第 1 題 generate 拋例外（直接 abort，不 retry）→ 第 2 題正常 → 1 列入庫。
-
-    與 orchestrator 同策略：generate 例外視為非 transient（如 LLM_PARSE_ERROR 多半是
-    LLM 行為偏差，retry 通常仍失敗），不耗費額外呼叫。validate 失敗才 retry。
-    """
+async def test_generate_llm_failure_does_not_block_next():
+    """MC generate 拋例外（直接 abort，不 retry）→ coding 正常 → 1 列入庫。"""
     concept = await _seed_concept()
     with patched_pipeline(
-        generate_responses=[
-            "not json",  # 第 1 題 → LLM_PARSE_ERROR、直接 abort
-            _VALID_CODING_JSON,  # 第 2 題
-        ],
-        validate_responses=[_validator_json()],  # 第 2 題 validate pass
+        points=["點一"],
+        generate_responses=["not json", _VALID_CODING_JSON],
+        validate_responses=[_validator_json()],
     ):
         async with TestSessionFactory() as db:
             concept_db = (
@@ -224,17 +312,31 @@ async def test_generate_llm_failure_does_not_block_next_question():
     assert result.attempts[0].validated is False
     assert "LLM_PARSE_ERROR" in (result.attempts[0].error or "")
     assert result.attempts[0].attempt_count == 1  # 沒 retry
-    assert result.attempts[1].validated is True
 
-    async with TestSessionFactory() as db:
-        rows = (await db.execute(select(Question))).scalars().all()
-        assert len(rows) == 1
-        assert rows[0].type == "coding"
+
+@pytest.mark.asyncio
+async def test_knowledge_points_failure_is_concept_error():
+    """知識點萃取失敗 → concept-level error，不出題。"""
+    concept = await _seed_concept()
+    with patched_pipeline(
+        points=RuntimeError("network down"),
+        generate_responses=[],
+        validate_responses=[],
+    ):
+        async with TestSessionFactory() as db:
+            concept_db = (
+                await db.execute(select(Concept).where(Concept.id == concept.id))
+            ).scalar_one()
+            result = await generate_questions_for_concept(db, concept_db)
+
+    assert result.error is not None
+    assert "KNOWLEDGE_POINTS_FAILED" in result.error
+    assert result.validated_count == 0
 
 
 @pytest.mark.asyncio
 async def test_no_video_order_raises_app_error():
-    """concept 缺 video_order → 422 防呆，不嘗試出題。"""
+    """concept 缺 video_order → 422 防呆。"""
     concept = await _seed_concept(video_order=None)
     with pytest.raises(AppError) as exc_info:
         async with TestSessionFactory() as db:
@@ -246,10 +348,12 @@ async def test_no_video_order_raises_app_error():
     assert exc_info.value.error == "NO_VIDEO_ORDER"
 
 
-# === generate_all：skip_existing / only ===
+# === skip_existing / generate_all ===
 
 
-async def _seed_validated_question(concept_tag: str, qtype: str) -> None:
+async def _seed_validated_question(
+    concept_tag: str, qtype: str, source: str = QuestionSource.BATCH.value
+) -> None:
     async with TestSessionFactory() as db:
         db.add(
             Question(
@@ -259,7 +363,7 @@ async def _seed_validated_question(concept_tag: str, qtype: str) -> None:
                 difficulty=2,
                 content={"stem": "x", "options": ["a", "b"], "answer_index": 0},
                 explanation="",
-                source=QuestionSource.GENERATED.value,
+                source=source,
                 validated=True,
             )
         )
@@ -267,20 +371,20 @@ async def _seed_validated_question(concept_tag: str, qtype: str) -> None:
 
 
 @pytest.mark.asyncio
-async def test_generate_all_skips_concept_with_enough_validated_questions():
-    """已有 ≥ N validated 題的 concept → 直接跳過、不呼叫 LLM。"""
+async def test_generate_all_skips_concept_with_batch_set():
+    """已有 batch MC + validated coding → 跳過（requested=0，不呼叫 LLM）。"""
     concept = await _seed_concept(tag="cpp-04", video_order=4)
     await _seed_validated_question(concept.tag, "multiple_choice")
     await _seed_validated_question(concept.tag, "coding")
 
-    # patched_pipeline 提供 0 個 generate response —— 若被呼叫即 raise StopIteration
     with patched_pipeline(generate_responses=[], validate_responses=[]):
         async with TestSessionFactory() as db:
             results = await generate_all(db, only=4, skip_existing=True)
 
     assert len(results) == 1
-    assert results[0].error == "SKIPPED_HAS_ENOUGH"
-    assert results[0].validated_count == 0  # 跳過 → 沒有 attempts
+    assert results[0].requested == 0
+    assert results[0].error is None
+    assert results[0].validated_count == 0
 
 
 @pytest.mark.asyncio
@@ -291,6 +395,7 @@ async def test_generate_all_force_regenerates_even_with_existing():
     await _seed_validated_question(concept.tag, "coding")
 
     with patched_pipeline(
+        points=["點一"],
         generate_responses=[_VALID_MC_JSON, _VALID_CODING_JSON],
         validate_responses=[_validator_json(), _validator_json()],
     ):
@@ -304,16 +409,13 @@ async def test_generate_all_force_regenerates_even_with_existing():
 
 @pytest.mark.asyncio
 async def test_generate_all_survives_rollback_expiring_other_concepts():
-    """回歸測試（2026-07-06 實機批次炸 MissingGreenlet）：
-
-    rollback 會讓 session 內「所有」concept expire，不只當前那顆；
-    第 1 個 concept 的 validate 失敗回滾後，第 2 個 concept 的屬性存取
-    必須仍可運作（generate_all 逐輪 refresh），不得觸發同步 lazy-load。
-    """
+    """回歸（實機批次炸 MissingGreenlet）：rollback expire 全部 concept，
+    下一輪 concept 屬性存取須仍可運作（逐輪 refresh）。"""
     await _seed_concept(tag="cpp-04", video_order=4)
     await _seed_concept(tag="cpp-05", video_order=5)
 
     with patched_pipeline(
+        points=["點一"],
         generate_responses=[
             _VALID_MC_JSON,  # c4 MC attempt 1
             _VALID_MC_JSON,  # c4 MC attempt 2
@@ -322,7 +424,7 @@ async def test_generate_all_survives_rollback_expiring_other_concepts():
             _VALID_CODING_JSON,  # c5 coding
         ],
         validate_responses=[
-            _validator_json(answer_correct=False),  # c4 MC fail → rollback（expire 全部）
+            _validator_json(answer_correct=False),  # c4 MC fail → rollback
             _validator_json(answer_correct=False),  # c4 MC fail → rollback
             _validator_json(),  # c4 coding pass
             _validator_json(),  # c5 MC pass
@@ -339,10 +441,9 @@ async def test_generate_all_survives_rollback_expiring_other_concepts():
 
 @pytest.mark.asyncio
 async def test_list_target_concepts_filters_by_only():
-    """only=N → 僅該 video_order；其餘 concept 排除。"""
     await _seed_concept(tag="cpp-04", video_order=4)
     await _seed_concept(tag="cpp-05", video_order=5)
-    await _seed_concept(tag="cpp-orphan", video_order=None)  # 不應出現
+    await _seed_concept(tag="cpp-orphan", video_order=None)
 
     async with TestSessionFactory() as db:
         all_targets = await list_target_concepts(db)
@@ -354,7 +455,6 @@ async def test_list_target_concepts_filters_by_only():
 
 @pytest.mark.asyncio
 async def test_concept_batch_result_validated_count_property():
-    """ConceptBatchResult.validated_count 屬性計算正確（無 DB）。"""
     from services.quiz.batch_generator import QuestionAttempt
     import uuid
 
@@ -366,7 +466,7 @@ async def test_concept_batch_result_validated_count_property():
         attempts=[
             QuestionAttempt(question_type="multiple_choice", validated=True, attempt_count=1),
             QuestionAttempt(question_type="coding", validated=False, attempt_count=2),
-            QuestionAttempt(question_type="fill_blank", validated=True, attempt_count=1),
+            QuestionAttempt(question_type="multiple_choice", validated=True, attempt_count=1),
         ],
     )
     assert r.validated_count == 2

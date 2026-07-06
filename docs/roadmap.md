@@ -102,7 +102,7 @@
   - [x] 6-3a-2 批次 script + service：`services/quiz/batch_generator.py`（per-concept 跑 N 題 × generate+validate × MAX_VALIDATE_RETRIES=2）+ CLI `scripts/generate_unit_questions.py`（--only / --force / --dry-run）+ 8 mock+DB tests（488 全綠）；預設題型 mix multiple_choice + coding；validate fail 自動 retry，generate fail 直接 abort 與 orchestrator 一致
   - [x] 6-3a-3 實機 LLM 全跑（2026-07-06 ✅）：62 concept 題庫批次 + 補跑 → 138 題 validated（詳見 changelog；v17/v41 掛零 + 3 concept 缺 1 題記 tech-debt 待 6-4b）
 - [x] 6-3b ExercisesTab 改造：從「按需現生」→「優先讀題庫，題庫不足才現生」(GET /quiz/from-bank + ApiRequestError 404 QUESTION_BANK_EMPTY fallback；6 bank service tests + 5 route integration tests；前端 Loading 文案分「查找題庫題目 (< 1 秒)」/「AI 正在生成 (5-15 秒)」兩階段)
-- [ ] 6-3c 知識點驅動題量（2026-07-06 晚間定案，接 U2g 之後）：批次前置「知識點萃取」步驟——LLM（gpt-5.4-mini）讀該影片全部 transcript chunks → 列 3-8 個重要知識點 → 每知識點 1 題觀念選擇題（題目 JSON 記錄對應知識點，可追溯覆蓋率）；程式實作題每單元固定 1 題（v01-03 課程介紹 0 題）；**既有 138 題保留只補缺**；預估成本 $3-6
+- [x] 6-3c 知識點驅動題量（2026-07-06 晚間程式碼完成）：知識點萃取 service + 每點 1 MC + coding 固定 1 題（intro 0）+ `QuestionSource.BATCH` 分流（migration `k7f8a9b0c1d2`）+ `GET /quiz/unit-set` LEARN 整組作答 + validate 加 `point_meaningful` 面向 + generate「考點有意義」規則 + LEARN 前端整組逐題（`concept-quiz-tab.tsx`，不呼叫 LLM）+ `rereview_questions.py`；627 tests；**實機複審 + 批次生成待跑**
 
 ### 6-4 內容品管（2026-07-06 晚間再修訂：正式抽查移除，改由使用者實際操作回饋）
 - ~~6-4a 自行抽查~~ → **移除（2026-07-06 晚間使用者決策）**：staging 62 部已全量 approve + promote（`scripts/promote_unit_content.py`，promote 時剝除 summary/code_examples 殘留 key）；品質問題由使用者實際操作時回饋

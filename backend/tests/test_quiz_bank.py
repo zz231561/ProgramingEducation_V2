@@ -19,7 +19,10 @@ from sqlalchemy import select
 from models.concept import Concept
 from models.quiz import Question, QuestionSource, StudentAnswer
 from models.user import User
-from services.quiz.bank import pick_random_validated_question
+from services.quiz.bank import (
+    list_unit_question_set,
+    pick_random_validated_question,
+)
 from tests.helpers import TestSessionFactory
 
 
@@ -27,6 +30,7 @@ def _make_question(
     concept_tags: list[str],
     validated: bool,
     qtype: str = "multiple_choice",
+    source: str = QuestionSource.GENERATED.value,
 ) -> Question:
     return Question(
         type=qtype,
@@ -35,7 +39,7 @@ def _make_question(
         difficulty=2,
         content={"stem": "x", "options": ["a", "b"], "answer_index": 0},
         explanation="",
-        source=QuestionSource.GENERATED.value,
+        source=source,
         validated=validated,
     )
 
@@ -183,3 +187,79 @@ async def test_exclude_answered_by_filters_answered_questions():
             db, "syntax-basic", exclude_answered_by=user_b_id
         )
         assert q is not None
+
+
+# === list_unit_question_set（6-3c LEARN 單元題組）===
+
+
+@pytest.mark.asyncio
+async def test_unit_set_only_lists_batch_source():
+    """LEARN 題組只列 source='batch'；QUIZ 弱項現生題（generated）不列入。"""
+    async with TestSessionFactory() as db:
+        user = User(google_id=f"g-{uuid.uuid4()}", email="s@set.test", name="S")
+        db.add(user)
+        db.add(_make_question(["syntax-basic"], validated=True,
+                              source=QuestionSource.BATCH.value))
+        db.add(_make_question(["syntax-basic"], validated=True,
+                              source=QuestionSource.GENERATED.value))
+        await db.flush()
+        uid = user.id
+        await db.commit()
+
+    async with TestSessionFactory() as db:
+        items = await list_unit_question_set(db, "syntax-basic", answered_by=uid)
+        assert len(items) == 1
+        assert items[0].question.source == QuestionSource.BATCH.value
+
+
+@pytest.mark.asyncio
+async def test_unit_set_reports_answered_status():
+    """已答過的題標 is_answered=True 並帶最後一次對錯；未答為 False。"""
+    async with TestSessionFactory() as db:
+        user = User(google_id=f"g-{uuid.uuid4()}", email="s2@set.test", name="S2")
+        answered = _make_question(["syntax-basic"], validated=True,
+                                  source=QuestionSource.BATCH.value)
+        unanswered = _make_question(["syntax-basic"], validated=True,
+                                    source=QuestionSource.BATCH.value)
+        db.add_all([user, answered, unanswered])
+        await db.flush()
+        db.add(
+            StudentAnswer(
+                user_id=user.id,
+                question_id=answered.id,
+                answer={"selected_index": 0},
+                is_correct=True,
+            )
+        )
+        uid, answered_id = user.id, answered.id
+        await db.commit()
+
+    async with TestSessionFactory() as db:
+        items = await list_unit_question_set(db, "syntax-basic", answered_by=uid)
+        by_id = {it.question.id: it for it in items}
+        assert by_id[answered_id].is_answered is True
+        assert by_id[answered_id].is_correct is True
+        other = next(it for qid, it in by_id.items() if qid != answered_id)
+        assert other.is_answered is False
+
+
+@pytest.mark.asyncio
+async def test_unit_set_filters_by_question_type():
+    """question_type 過濾：只回該題型（LEARN 觀念題 tab 只要 MC）。"""
+    async with TestSessionFactory() as db:
+        user = User(google_id=f"g-{uuid.uuid4()}", email="s3@set.test", name="S3")
+        db.add(user)
+        db.add(_make_question(["syntax-basic"], validated=True,
+                              qtype="multiple_choice", source=QuestionSource.BATCH.value))
+        db.add(_make_question(["syntax-basic"], validated=True,
+                              qtype="coding", source=QuestionSource.BATCH.value))
+        await db.flush()
+        uid = user.id
+        await db.commit()
+
+    async with TestSessionFactory() as db:
+        items = await list_unit_question_set(
+            db, "syntax-basic", answered_by=uid, question_type="multiple_choice"
+        )
+        assert len(items) == 1
+        assert items[0].question.type == "multiple_choice"

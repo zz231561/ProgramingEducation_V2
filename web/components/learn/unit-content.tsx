@@ -20,6 +20,7 @@ import { ArrowLeft } from "lucide-react";
 
 import { Unit } from "@/lib/learning";
 
+import { ConceptQuizTab } from "./concept-quiz-tab";
 import { ConceptTab } from "./concept-tab";
 import { ExercisesTab } from "./exercises-tab";
 import { ActionButton, NavButton } from "./unit-action-bar";
@@ -115,20 +116,10 @@ export function UnitContent({
       <div className="min-h-[240px]">
         {activeTab === "concept" && <ConceptTab unit={unit} />}
         {activeTab === "coding" && !isIntroUnit && (
-          <ExercisesTab
-            key="coding"
-            category="coding"
-            conceptTag={unit.concept_tag}
-            conceptNameZh={unit.concept_name_zh}
-          />
+          <ExercisesTab key="coding" conceptTag={unit.concept_tag} />
         )}
         {activeTab === "quiz" && (
-          <ExercisesTab
-            key="quiz"
-            category="multiple_choice"
-            conceptTag={unit.concept_tag}
-            conceptNameZh={unit.concept_name_zh}
-          />
+          <ConceptQuizTab key="quiz" conceptTag={unit.concept_tag} />
         )}
       </div>
 

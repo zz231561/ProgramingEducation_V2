@@ -1,5 +1,26 @@
 # 變更日誌
 
+## [2026-07-06] — feat(quiz)：6-3c 知識點驅動題庫 + LEARN 整組作答 + 審查加「考點有意義」
+
+### Added（6-3c）
+- **知識點萃取**（`services/quiz/knowledge_points.py`）：LLM（分析組 gpt-5.4-mini）讀該影片全部字幕 → 萃取 3-8 個重要知識點，明確排除操作細節（安裝步驟 / 介面位置 / 左上右下等畫面資訊）
+- **題量依知識量**：批次改為每知識點 1 題觀念選擇題（`content.knowledge_point` 記錄對應點供覆蓋追溯）+ 每單元固定 1 題 coding（課程介紹單元 0 題）
+- **題目來源分流**：新增 `QuestionSource.BATCH`（migration `k7f8a9b0c1d2`）——LEARN 單元題組只列 batch 預生成題；QUIZ 弱項現生題（`generated`）不列入
+- **LEARN 整組作答 API**：`GET /quiz/unit-set`（`list_unit_question_set`）回傳某概念全部 batch 題 + 該生作答進度（answered/total）
+- **`GET /quiz/generate` 加 knowledge_point / source 參數**；generate prompt 加「考點必須有意義」規則
+
+### Changed
+- **審查（validate）新增第 4 面向 `point_meaningful`**（使用者回饋）：題目若考操作細節 / 瑣碎資訊（左上角右下角等）→ 不通過；四面向全 AND 才 validated
+- **LEARN 前端**：觀念題改整組逐題作答（`concept-quiz-tab.tsx`，答完顯示「已完成」+ 可重新作答）；程式題改讀預生成 batch 題（`exercises-tab.tsx`）；**LEARN 完全不呼叫 LLM**（AI 現生只在 QUIZ 弱項模式）；刪除 `exercises-mc-panel.tsx`、精簡 views
+
+### Scripts
+- `scripts/generate_unit_questions.py` 改知識點驅動摘要；新增 `scripts/rereview_questions.py`（以新標準複審既有題庫，刪除不合格題）
+
+### Tests
+- +19（knowledge_points 5、batch generator 重寫、unit-set bank 3 + route 4）；後端全量 **627 passed**；前端 tsc/eslint/build 全綠
+
+---
+
 ## [2026-07-06] — feat(learn)：U2g tab 重構 + 範例程式移除 + 62 部內容全量上線
 
 ### Changed（U2g）

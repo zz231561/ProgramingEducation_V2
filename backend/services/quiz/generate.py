@@ -92,6 +92,7 @@ def _build_system_prompt(
     difficulty: int,
     bloom_level: int,
     grounded: bool = False,
+    knowledge_point: str | None = None,
 ) -> str:
     schema_hint = {
         QuestionType.MULTIPLE_CHOICE: (
@@ -109,6 +110,12 @@ def _build_system_prompt(
     }[question_type]
 
     grounding_block = _GROUNDING_RULES if grounded else ""
+    focus_block = (
+        f"\n【本題聚焦知識點】\n{knowledge_point}\n"
+        "題目必須直接測驗此知識點的理解，不可偏題。\n"
+        if knowledge_point
+        else ""
+    )
 
     return f"""\
 你是 C++ 程式教學題目生成助手。為以下概念生成**一題**測驗題。
@@ -134,7 +141,9 @@ def _build_system_prompt(
 - 不可洩漏完整解答程式碼（coding 題的 starter_code 限骨架 + TODO）
 - 選擇題：每個選項 < 30 字、誘答合理（不可有明顯錯選項）
 - explanation 解釋為何正解（2-3 句）
-{grounding_block}"""
+- **考點必須有意義**：測驗概念理解、語法規則或程式行為；嚴禁考操作細節
+  （軟體安裝步驟、介面按鈕位置、「左上角/右下角」等畫面資訊）或無關緊要的瑣碎資訊
+{focus_block}{grounding_block}"""
 
 
 def _build_user_prompt(rag_chunks: list[Any], grounded: bool = False) -> str:
@@ -193,11 +202,14 @@ async def generate_question(
     difficulty: int,
     bloom_level: int,
     video_order: int | None = None,
+    knowledge_point: str | None = None,
+    source: QuestionSource = QuestionSource.GENERATED,
 ) -> Question:
     """為單一 concept 生成題目並寫入 DB（caller commit）。
 
     `video_order` 提供時走 6-3a grounded mode（影片字幕 + grounding prompt 規則）；
     None 時走原 semantic RAG（學生現生題 backward compat）。
+    `knowledge_point`（6-3c）提供時題目聚焦該知識點，並記錄於 content 供覆蓋追溯。
     回傳已 db.add、未 commit、validated=False 的 Question。
     """
     client = _get_client()
@@ -208,7 +220,12 @@ async def generate_question(
         rag_chunks = await _fetch_rag_chunks_for_concept(concept)
 
     system_prompt = _build_system_prompt(
-        concept, question_type, difficulty, bloom_level, grounded=grounded
+        concept,
+        question_type,
+        difficulty,
+        bloom_level,
+        grounded=grounded,
+        knowledge_point=knowledge_point,
     )
     user_prompt = _build_user_prompt(rag_chunks, grounded=grounded)
 
@@ -244,14 +261,19 @@ async def generate_question(
             f"AI 回傳內容不符 {question_type.value} schema：{e.errors()[0]['msg']}",
         ) from e
 
+    content = content_obj.model_dump()
+    if knowledge_point:
+        # 6-3c：記錄本題對應的知識點（LEARN 題組覆蓋率追溯；前端不顯示）
+        content["knowledge_point"] = knowledge_point
+
     question = Question(
         type=question_type.value,
         concept_tags=[concept.tag],
         bloom_level=bloom_level,
         difficulty=difficulty,
-        content=content_obj.model_dump(),
+        content=content,
         explanation=explanation,
-        source=QuestionSource.GENERATED.value,
+        source=source.value,
         validated=False,
     )
     db.add(question)

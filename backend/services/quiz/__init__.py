@@ -1,6 +1,10 @@
 """智慧出題 service — 2-4 Phase（Select / Generate / Validate / Grade / Orchestrate / Hint / Feedback）。"""
 
-from services.quiz.bank import pick_random_validated_question
+from services.quiz.bank import (
+    UnitQuestionItem,
+    list_unit_question_set,
+    pick_random_validated_question,
+)
 from services.quiz.feedback import (
     ConceptMasteryItem,
     QuizFeedbackResult,
@@ -29,8 +33,10 @@ __all__ = [
     "HintResult",
     "QuizFeedbackResult",
     "RecommendedUnit",
+    "UnitQuestionItem",
     "WEAK_THRESHOLD",
     "ValidationReport",
+    "list_unit_question_set",
     "generate_for_student",
     "generate_hint",
     "generate_question",

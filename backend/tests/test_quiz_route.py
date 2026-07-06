@@ -445,3 +445,78 @@ async def test_from_bank_only_returns_matching_tag(client: AsyncClient):
     )
     assert resp.status_code == 404
     assert resp.json()["error"] == "QUESTION_BANK_EMPTY"
+
+
+# === 6-3c /quiz/unit-set（LEARN 單元題組）===
+
+
+async def _seed_batch_question(concept_tag: str, qtype: str = "multiple_choice") -> Question:
+    async with TestSessionFactory() as db:
+        q = Question(
+            type=qtype,
+            concept_tags=[concept_tag],
+            bloom_level=3,
+            difficulty=2,
+            content={"stem": "批次題", "options": ["A", "B"], "answer_index": 0},
+            explanation="",
+            source=QuestionSource.BATCH.value,
+            validated=True,
+        )
+        db.add(q)
+        await db.commit()
+        await db.refresh(q)
+        return q
+
+
+async def test_unit_set_requires_auth(client: AsyncClient):
+    resp = await client.get("/quiz/unit-set?concept_tag=syntax-basic")
+    assert resp.status_code == 401
+
+
+async def test_unit_set_lists_batch_questions_with_progress(client: AsyncClient):
+    """回傳該概念 batch 題組（答案已 mask）+ 進度；generated 題不列入。"""
+    await _seed_batch_question("syntax-basic")
+    await _seed_validated_bank_question("syntax-basic")  # source=generated，不應列入
+    token = encrypt_test_token(STUDENT_PAYLOAD)
+
+    resp = await client.get(
+        "/quiz/unit-set?concept_tag=syntax-basic",
+        cookies={"authjs.session-token": token},
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["total"] == 1
+    assert body["answered"] == 0
+    assert body["items"][0]["is_answered"] is False
+    assert "answer_index" not in body["items"][0]["question"]["content"]
+
+
+async def test_unit_set_marks_answered_after_submit(client: AsyncClient):
+    """作答後該題 is_answered=True、answered 進度 +1。"""
+    q = await _seed_batch_question("syntax-basic")
+    token = encrypt_test_token(STUDENT_PAYLOAD)
+
+    await client.post(
+        "/quiz/submit",
+        json={"question_id": str(q.id), "answer": {"selected_index": 0}},
+        cookies={"authjs.session-token": token},
+    )
+    resp = await client.get(
+        "/quiz/unit-set?concept_tag=syntax-basic",
+        cookies={"authjs.session-token": token},
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["answered"] == 1
+    assert body["items"][0]["is_answered"] is True
+
+
+async def test_unit_set_empty_when_no_batch_questions(client: AsyncClient):
+    """無 batch 題 → total=0（前端顯示尚無題目，不呼叫 LLM）。"""
+    token = encrypt_test_token(STUDENT_PAYLOAD)
+    resp = await client.get(
+        "/quiz/unit-set?concept_tag=syntax-basic",
+        cookies={"authjs.session-token": token},
+    )
+    assert resp.status_code == 200
+    assert resp.json()["total"] == 0

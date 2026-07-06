@@ -20,18 +20,16 @@ export function CodingPanel({
   phase,
   reflection,
   onStartReflect,
-  onReset,
 }: {
   question: Question;
   phase: CodingPhase;
   reflection: Reflection | null;
   onStartReflect: () => void;
-  onReset: () => void;
 }) {
   const content = question.content as { stem: string; starter_code?: string };
   return (
     <div className="space-y-3">
-      <QuestionHeader question={question} onReset={onReset} />
+      <QuestionHeader question={question} />
 
       <div className="rounded-md border border-border-default bg-surface-1 p-4">
         <p className="whitespace-pre-wrap text-sm leading-relaxed text-text-primary">

@@ -1,76 +1,60 @@
 "use client";
 
 /**
- * 練習題 tab — 6-3b 題庫優先：先 /quiz/from-bank（< 1s）→ 404 QUESTION_BANK_EMPTY
- * 時 fallback /quiz/generate（LLM 5-15s）。Loading 文案分兩階段提示使用者為何等待。
+ * 程式實作題 tab（6-3c）— 取單元預生成 coding 題（source='batch'），
+ * 讀題 → 反思 gating → Workspace 作答。LEARN 完全不呼叫 LLM。
  *
- * U2g（2026-07-06 晚間）：題型由 caller（unit-content tab）指定——
- * - category="coding"（程式實作題 tab）→ 讀題 → 反思 gating → Workspace 作答
- * - category="multiple_choice"（觀念題 tab）→ 直接作答 + 立即回饋，不進反思
+ * 觀念題 tab 見 concept-quiz-tab.tsx（整組逐題）；QUIZ 弱項現生題不列入。
  */
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { Loader2 } from "lucide-react";
 
 import { ReflectionFlow } from "@/components/reflection/reflection-flow";
 import { ApiRequestError } from "@/lib/api";
-import { Question, generateQuestion, getQuestionFromBank } from "@/lib/quiz";
+import { Question, getUnitQuestionSet } from "@/lib/quiz";
 import { Reflection } from "@/lib/reflection";
 
 import { CodingPanel, CodingPhase } from "./exercises-coding-panel";
-import { McPanel } from "./exercises-mc-panel";
-import { ExerciseCategory, IdleView, LoadingView } from "./exercises-tab-views";
 
 interface Props {
-  category: ExerciseCategory;
   conceptTag: string;
-  conceptNameZh: string;
 }
 
-type Phase = "idle" | "loading-bank" | "loading-generate" | "question" | "reflecting" | "done";
+type Phase = "loading" | "empty" | "error" | "question" | "reflecting" | "done";
 
-export function ExercisesTab({ category, conceptTag, conceptNameZh }: Props) {
-  const [phase, setPhase] = useState<Phase>("idle");
+export function ExercisesTab({ conceptTag }: Props) {
+  const [phase, setPhase] = useState<Phase>("loading");
   const [question, setQuestion] = useState<Question | null>(null);
   const [reflection, setReflection] = useState<Reflection | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const startExercise = useCallback(async () => {
-    setError(null);
-    setQuestion(null);
-    setReflection(null);
-    setPhase("loading-bank");
-    try {
-      const fromBank = await getQuestionFromBank(conceptTag, category);
-      setQuestion(fromBank);
-      setPhase("question");
-      return;
-    } catch (e) {
-      const bankEmpty =
-        e instanceof ApiRequestError &&
-        e.status === 404 &&
-        e.body.error === "QUESTION_BANK_EMPTY";
-      if (!bankEmpty) {
-        setPhase("idle");
-        setError(humanizeError(e));
-        return;
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const set = await getUnitQuestionSet(conceptTag, "coding");
+        if (cancelled) return;
+        if (set.total === 0) {
+          setPhase("empty");
+          return;
+        }
+        setQuestion(set.items[0].question);
+        setPhase("question");
+      } catch (e) {
+        if (cancelled) return;
+        setPhase("error");
+        setError(
+          e instanceof ApiRequestError
+            ? e.body.message || "載入題目失敗。"
+            : "載入題目失敗。",
+        );
       }
-      // 題庫無該題型可用題 → fallback 走 /quiz/generate
-    }
-
-    setPhase("loading-generate");
-    try {
-      const generated = await generateQuestion({
-        type: category,
-        bloom_level: 3,
-        concept_tag: conceptTag,
-      });
-      setQuestion(generated);
-      setPhase("question");
-    } catch (e) {
-      setPhase("idle");
-      setError(humanizeError(e));
-    }
-  }, [conceptTag, category]);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [conceptTag]);
 
   const handleApproveReflection = useCallback((r: Reflection) => {
     setReflection(r);
@@ -78,46 +62,46 @@ export function ExercisesTab({ category, conceptTag, conceptNameZh }: Props) {
   }, []);
 
   const closeReflectionModal = useCallback(() => {
-    if (phase === "reflecting") setPhase("question");
-  }, [phase]);
-
-  const reset = useCallback(() => {
-    setQuestion(null);
-    setReflection(null);
-    setPhase("idle");
-    setError(null);
+    setPhase((p) => (p === "reflecting" ? "question" : p));
   }, []);
 
-  const isCoding = question?.type === "coding";
-  const showPanel =
-    (phase === "question" || phase === "reflecting" || phase === "done") && question;
   const stem = (question?.content as { stem?: string } | undefined)?.stem ?? null;
+
+  if (phase === "loading") {
+    return (
+      <div className="flex flex-col items-center gap-3 py-12 text-text-secondary">
+        <Loader2 className="size-6 animate-spin" />
+        <p className="text-sm">載入題目...</p>
+      </div>
+    );
+  }
+
+  if (phase === "empty") {
+    return (
+      <p className="rounded-md border border-border-default bg-surface-1 px-4 py-8 text-center text-sm text-text-secondary">
+        本單元尚無程式實作題。
+      </p>
+    );
+  }
+
+  if (phase === "error") {
+    return (
+      <div className="rounded-md border-l-2 border-accent-red bg-surface-2 px-3 py-2 text-xs text-accent-red">
+        {error}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
-      {phase === "idle" && (
-        <IdleView
-          category={category}
-          conceptNameZh={conceptNameZh}
-          onStart={startExercise}
-          error={error}
+      {question && (
+        <CodingPanel
+          question={question}
+          phase={phase as CodingPhase}
+          reflection={reflection}
+          onStartReflect={() => setPhase("reflecting")}
         />
       )}
-      {phase === "loading-bank" && <LoadingView source="bank" />}
-      {phase === "loading-generate" && <LoadingView source="generate" />}
-      {showPanel &&
-        (isCoding ? (
-          <CodingPanel
-            question={question}
-            phase={phase as CodingPhase}
-            reflection={reflection}
-            onStartReflect={() => setPhase("reflecting")}
-            onReset={reset}
-          />
-        ) : (
-          <McPanel question={question} onNext={startExercise} onReset={reset} />
-        ))}
-      {/* 反思 gating 僅程式實作題；MC 直接作答 */}
       <ReflectionFlow
         open={phase === "reflecting"}
         sourceType="quiz"
@@ -128,21 +112,4 @@ export function ExercisesTab({ category, conceptTag, conceptNameZh }: Props) {
       />
     </div>
   );
-}
-
-function humanizeError(e: unknown): string {
-  if (e instanceof ApiRequestError) {
-    if (e.status === 404 && e.body.error === "CONCEPT_NOT_FOUND") {
-      return "本單元的概念尚未在後端註冊（請聯絡管理員）。";
-    }
-    if (e.status === 503 && e.body.error === "QUIZ_VALIDATION_RETRY_EXHAUSTED") {
-      return "AI 生成題目連續審查未通過，請再試一次。";
-    }
-    if (e.status === 503 && e.body.error === "QUIZ_UNAVAILABLE") {
-      return "題庫尚未初始化。";
-    }
-    if (e.status === 401) return "請先登入。";
-    return e.body.message || "生成題目失敗。";
-  }
-  return e instanceof Error ? e.message : "未知錯誤";
 }

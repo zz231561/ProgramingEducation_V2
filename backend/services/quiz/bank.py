@@ -11,12 +11,13 @@
 from __future__ import annotations
 
 import random
+from dataclasses import dataclass
 from uuid import UUID
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from models.quiz import Question, StudentAnswer
+from models.quiz import Question, QuestionSource, StudentAnswer
 
 
 async def pick_random_validated_question(
@@ -56,3 +57,53 @@ async def pick_random_validated_question(
         return None
 
     return random.choice(candidates)
+
+
+@dataclass(frozen=True)
+class UnitQuestionItem:
+    """單元題組中的一題 + 該學生作答狀態。"""
+
+    question: Question
+    is_answered: bool
+    is_correct: bool
+
+
+async def list_unit_question_set(
+    db: AsyncSession,
+    concept_tag: str,
+    answered_by: UUID,
+    question_type: str | None = None,
+) -> list[UnitQuestionItem]:
+    """取某概念「預生成題組」全部題 + 該學生作答狀態（LEARN 逐題作答用）。
+
+    只列 source='batch' 的題（QUIZ 弱項現生題 source='generated' 不進單元題組）。
+    依 created_at 排序保持穩定順序；每題附 is_answered / is_correct（取最後一次作答）。
+    """
+    stmt = select(Question).where(
+        Question.validated.is_(True),
+        Question.source == QuestionSource.BATCH.value,
+    )
+    if question_type is not None:
+        stmt = stmt.where(Question.type == question_type)
+    stmt = stmt.order_by(Question.created_at)
+    rows = (await db.execute(stmt)).scalars().all()
+    questions = [q for q in rows if concept_tag in (q.concept_tags or [])]
+
+    # 該學生對這些題的最後一次作答結果
+    answers = (
+        await db.execute(
+            select(StudentAnswer.question_id, StudentAnswer.is_correct)
+            .where(StudentAnswer.user_id == answered_by)
+            .order_by(StudentAnswer.answered_at)
+        )
+    ).all()
+    last_correct: dict[UUID, bool] = {qid: correct for qid, correct in answers}
+
+    return [
+        UnitQuestionItem(
+            question=q,
+            is_answered=q.id in last_correct,
+            is_correct=last_correct.get(q.id, False),
+        )
+        for q in questions
+    ]

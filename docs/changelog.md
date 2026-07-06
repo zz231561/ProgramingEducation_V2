@@ -1,5 +1,20 @@
 # 變更日誌
 
+## [2026-07-07] — feat(teacher)：5-1b-2 班級 CRUD API
+
+### Added
+- **班級 CRUD**（`api/routes/classes.py` + `services/classroom.py`）：
+  - `POST /classes` 建班 → 產 6 位數字邀請碼（`secrets.randbelow` + DB unique 把關 + 碰撞重試 10 次）
+  - `GET /classes` 列出教師自己的班級（outerjoin 算成員數、建立時間新到舊）
+  - `PATCH /classes/{id}` 改名 / 停用（`is_active`）
+- **授權**：全端點 `require_roles(UserRole.TEACHER)`（沿用既有依賴，非新建）；他人班級一律 404（不洩漏存在性）
+- 註冊 `classes_router` 至 main.py
+
+### Tests
+- +7 route tests（6 位數碼 / 學生 403 / 空名 422 / 僅列自己班 / 停用改名 / 他人班 404 / 碼唯一）；後端全量 **654 passed**
+
+---
+
 ## [2026-07-07] — feat(teacher)：5-1b-1 學生身分 profile 表 + 需求擴充決策
 
 ### Added

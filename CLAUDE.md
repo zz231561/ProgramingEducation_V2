@@ -52,7 +52,7 @@
 - **🎯 Phase 6-U 學生端修正**（2026-07-06 session 定案）：U1a/b/c ✅（第 1 批）/ U2b/c ✅（第 2 批）/ U2a/d ✅（第 4 批，含重複曝光消除）/ U2e Workspace 程式碼存檔（第 8 批）/ U2f 範例程式（第 6 批）
 - **執行順序 10 批已定案**（2026-07-06；晚間修訂 U2f→U2g）：①~⑥ ✅（U2g 含全量 promote 完成）→ ⑥' 6-3c 知識點驅動題庫（觀念題=選擇題，不做簡答；程式題固定 1 題、intro 0 題；138 題保留補缺）→ ⑦ 教師端 → ⑧ U2e+監控 → ⑨ Phase 7 → ⑩ 5-3/5-4；**下一步：6-3c**（LEARN/citation 品質問題由使用者操作回饋 → 6-4b）
 - **DEV 開發者模式 ✅ 全數完成**（2026-07-05；拆解見 roadmap DEV 節）：後端 gating（`DEV_MODE_ENABLED`+`DEV_MODE_EMAILS`、`require_dev_user`）+ rate limit 豁免 + Settings 六卡（身分切換 / 幽靈解鎖 / 熟練度編輯 / K3 診斷模擬 / 題庫檢視 `/quiz?question=` 深連結 / 分類重置）+ EDF Debug 面板（chat `debug_sink`，dev 才附）；+33 tests；**UI 驗收待使用者**；DEV-E 假學生 seeder 留 Phase 5
-- **🎯 Phase 5 教師端 進行中**（批次 ⑦）：5-1a ✅ 班級表 + 5-1b-1 ✅ student_profiles 表（學生補填校名/系所/學號/姓名，首次登入 gate）；**下一步 5-1b-2** 班級 CRUD API（6 位數字邀請碼）→ 5-1b-3 加入班級+profile API → 5-1c Dashboard/表單 UI → 5-2 行為收集 → DEV-E seeder → 5-5 作業指派
+- **🎯 Phase 5 教師端 進行中**（批次 ⑦）：5-1a ✅ 班級表 + 5-1b-1 ✅ student_profiles 表 + 5-1b-2 ✅ 班級 CRUD API（`/classes`，6 位數字碼 + TEACHER gating + 成員數）；**下一步 5-1b-3** 加入班級 API（驗碼入班 + profile gating）+ profile 提交/查詢 + 教師名冊 → 5-1c Dashboard/表單 UI → 5-2 行為收集 → DEV-E seeder → 5-5 作業指派
 - **Phase 7 上線實測**：須 Phase 6 至少 6-1 + 6-2 完成 + Zeabur + VPS 就緒
 
 ## 文件索引

@@ -18,6 +18,7 @@ from core.errors import (
 )
 from api.routes.auth import router as auth_router
 from api.routes.chat import router as chat_router
+from api.routes.classes import router as classes_router
 from api.routes.code import router as code_router
 from api.routes.comprehension import router as comprehension_router
 from api.routes.comprehension_trigger import router as comprehension_trigger_router
@@ -75,6 +76,7 @@ app.include_router(auth_router)
 app.include_router(code_router)
 app.include_router(chat_router)
 app.include_router(concepts_router)
+app.include_router(classes_router)
 app.include_router(diagnosis_router)
 app.include_router(dashboard_router)
 app.include_router(dev_router)

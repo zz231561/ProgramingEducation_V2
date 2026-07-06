@@ -47,7 +47,7 @@
 - [x] 5-1a classes + class_members 表 migration（`l8a9b0c1d2e3` + `models/classroom.py`；up/down 實跑可逆驗證）
 - 5-1b 班級 + 學生身分 API（2026-07-07 需求擴充：學生補填校名/系所/學號/姓名 → 教師名冊 + 學生右上角顯示）
   - [x] 5-1b-1 student_profiles 表 migration（`m9b0c1d2e3f4` + `models/student_profile.py`；1:1 user_id PK / 學號不 unique / up-down 可逆驗證）
-  - [ ] 5-1b-2 班級 CRUD API（建班 + 6 位數字邀請碼產生/碰撞重試 + 教師列出/停用）
+  - [x] 5-1b-2 班級 CRUD API（`POST/GET/PATCH /classes`；6 位數字碼 secrets 產生+碰撞重試；require_roles(TEACHER)；他人班級 404；含成員數；7 route tests）
   - [ ] 5-1b-3 加入班級 API（驗碼入班 + profile gating）+ 學生 profile 提交/查詢 API + 教師看名冊 API
 - [ ] 5-1c 教師 Dashboard 骨架 + 班級管理 UI + 學生 profile 表單（首次登入 gate）+ 右上角顯示身分
 > 決策（2026-07-07）：profile 存 student_profiles 獨立表；首次登入強制引導（僅 role=student）；學號不做唯一約束；邀請碼 6 位數字

@@ -2,9 +2,11 @@
 
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from api.deps import get_current_db_user, User
+from api.deps import get_current_db_user, get_db, User
 from core.rate_limit import rate_limit
+from services.analytics import log_execution
 from services.judge0 import submit_and_poll, ExecutionResult, CPP_LANGUAGE_ID
 
 router = APIRouter(prefix="/code", tags=["code"])
@@ -25,11 +27,15 @@ class ExecuteRequest(BaseModel):
 )
 async def execute_code(
     body: ExecuteRequest,
-    _user: User = Depends(get_current_db_user),
+    user: User = Depends(get_current_db_user),
+    db: AsyncSession = Depends(get_db),
 ) -> ExecutionResult:
     """提交程式碼至 Judge0 執行，回傳 stdout/stderr/compile_output。"""
-    return await submit_and_poll(
+    result = await submit_and_poll(
         source_code=body.code,
         stdin=body.stdin,
         language_id=body.language_id,
     )
+    # 行為事件記錄（best-effort，不擋回應）
+    await log_execution(db, user_id=user.id, result=result, code=body.code)
+    return result

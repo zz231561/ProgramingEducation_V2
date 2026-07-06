@@ -10,6 +10,8 @@ from api.deps import get_current_db_user, get_db, User
 from core.dev_mode import is_dev_email
 from core.errors import AppError
 from core.rate_limit import rate_limit
+from models.coding_event import CodingEventType
+from services.analytics import log_coding_event
 from services.chat import interact, list_sessions, get_session_messages, delete_session
 
 router = APIRouter(prefix="/chat", tags=["chat"])
@@ -103,6 +105,19 @@ async def chat_interact(
         reflection_id=body.reflection_id,
         debug_sink=debug_sink,
     )
+
+    # 學生明確要求提示（hint_level>0）時記錄 hint_request 事件（best-effort）
+    if body.hint_level > 0:
+        evidence = ai_msg.evidence if isinstance(ai_msg.evidence, dict) else {}
+        await log_coding_event(
+            db,
+            user_id=user.id,
+            event_type=CodingEventType.HINT_REQUEST,
+            session_id=session.id,
+            hint_level=body.hint_level,
+            concept_tags=evidence.get("concept_tags"),
+            code_snapshot=body.code,
+        )
 
     return InteractResponse(
         debug=debug_sink,

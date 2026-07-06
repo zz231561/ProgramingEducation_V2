@@ -64,7 +64,7 @@
 ### 5-2 行為資料收集（Module 9）
 > **OSS**：✅ Tier 2 採用 ProgSnap2 EventType schema + StudyChat dialogue act 分類 schema
 - [x] 5-2a coding_events 表 migration（`o1d2e3f4a5b6` + `models/coding_event.py`；ProgSnap2 EventType 6 值 String+CHECK；id=EventID/user_id=SubjectID；concept_tags/execution_result/event_metadata 用 JSON；(user_id,created_at) 索引；up/down 可逆驗證）
-- [ ] 5-2b 後端 event logging service（從 Judge0 + EDF 現有流程擷取資料）
+- [x] 5-2b event logging service（`services/analytics/events.py`）：`log_execution` 從 Judge0 分類 success/compile_error/runtime_error + `log_coding_event` best-effort（失敗吞例外+warning）；掛 `/code/execute`（執行結果）+ chat interact（hint_level>0 記 hint_request）；6 tests
 - [ ] 5-2c chat_messages 擴充 dialogue_act 欄位（**採用 StudyChat schema**：asking_hint/clarification_request/debugging/off_topic/acknowledgment/verification）
 - [ ] 5-2d 行為指標聚合 service（編譯頻率/成功率/修復時間/hint 分布等）
 

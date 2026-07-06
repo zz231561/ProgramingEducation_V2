@@ -1,5 +1,19 @@
 # 變更日誌
 
+## [2026-07-07] — feat(analytics)：5-2b event logging service
+
+### Added
+- **event logging service**（`services/analytics/events.py`）：
+  - `classify_execution`：Judge0 status → success / compile_error / runtime_error
+  - `log_coding_event`：best-effort 寫 coding_events（失敗吞例外 + `logger.warning` + rollback，不擋主流程；code_snapshot 截斷 10k）
+  - `log_execution`：從一次執行摘要結果（status/exit_code/time/memory/has_stderr）並寫入
+- **掛鉤**：`/code/execute` 每次執行記錄結果事件；`chat interact` 當 `hint_level>0` 記 hint_request（帶 evidence concept_tags）
+
+### Tests
+- +6（classify 三態 / log_execution 寫入 / route 記 success / route 記 compile_error）；後端全量 **680 passed**
+
+---
+
 ## [2026-07-07] — feat(analytics)：5-2a coding_events 表（ProgSnap2）
 
 ### Added

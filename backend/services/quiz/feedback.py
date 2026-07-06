@@ -21,6 +21,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.config import settings
+from core.llm_params import chat_model_kwargs
 from core.errors import AppError
 from models.concept import Concept
 from models.learning import LearningPath, LearningUnit, LearningUnitStatus
@@ -189,7 +190,6 @@ async def _llm_suggestion(
 
     try:
         response = await client.chat.completions.create(
-            model=settings.LLM_MODEL,
             response_format={"type": "json_object"},
             messages=[
                 {
@@ -200,8 +200,9 @@ async def _llm_suggestion(
                 },
                 {"role": "user", "content": "請回傳 JSON。"},
             ],
-            temperature=0.4,
-            max_tokens=200,
+            **chat_model_kwargs(
+                model=settings.LLM_MODEL, temperature=0.4, max_tokens=200
+            ),
         )
     except Exception:
         return fallback, True

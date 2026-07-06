@@ -25,6 +25,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.config import settings
+from core.llm_params import chat_model_kwargs
 from core.errors import AppError
 from models.quiz import ComprehensionType, Question, QuestionType, StudentAnswer
 from services.comprehension.crud import _get_owned_answer
@@ -94,14 +95,14 @@ async def _call_llm_json(
         return None
     try:
         response = await client.chat.completions.create(
-            model=model,
             response_format={"type": "json_object"},
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": "請回傳 JSON。"},
             ],
-            temperature=temperature,
-            max_tokens=max_tokens,
+            **chat_model_kwargs(
+                model=model, temperature=temperature, max_tokens=max_tokens
+            ),
         )
     except Exception:
         return None

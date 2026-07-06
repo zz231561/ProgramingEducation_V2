@@ -20,6 +20,7 @@ from openai import AsyncOpenAI
 from pydantic import BaseModel, Field, ValidationError
 
 from core.config import settings
+from core.llm_params import chat_model_kwargs
 from models.quiz import Question
 from models.reflection import Reflection, ReflectionSourceType
 
@@ -142,14 +143,14 @@ async def evaluate_reflection(
 
     try:
         response = await client.chat.completions.create(
-            model=settings.LLM_MODEL,
             response_format={"type": "json_object"},
             messages=[
                 {"role": "system", "content": _build_prompt(reflection, question)},
                 {"role": "user", "content": "請評分並回傳 JSON。"},
             ],
-            temperature=0.3,
-            max_tokens=400,
+            **chat_model_kwargs(
+                model=settings.LLM_MODEL, temperature=0.3, max_tokens=400
+            ),
         )
     except Exception:
         return _empty_evaluation()

@@ -20,6 +20,7 @@ from typing import Any
 from openai import AsyncOpenAI
 
 from core.config import settings
+from core.llm_params import chat_model_kwargs
 from models.quiz import Question, QuestionType
 
 _client: AsyncOpenAI | None = None
@@ -132,14 +133,14 @@ async def generate_hint(
 
     try:
         response = await client.chat.completions.create(
-            model=settings.llm_model_generate,
             response_format={"type": "json_object"},
             messages=[
                 {"role": "system", "content": _build_prompt(question, hint_level, student_attempt)},
                 {"role": "user", "content": "請給提示並回傳 JSON。"},
             ],
-            temperature=0.4,
-            max_tokens=200,
+            **chat_model_kwargs(
+                model=settings.llm_model_generate, temperature=0.4, max_tokens=200
+            ),
         )
     except Exception:
         return HintResult(

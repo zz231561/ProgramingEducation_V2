@@ -21,6 +21,7 @@ from pydantic import BaseModel, Field, ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.config import settings
+from core.llm_params import chat_model_kwargs
 from core.errors import AppError
 from models.quiz import Question
 
@@ -119,14 +120,14 @@ async def validate_question(
 
     try:
         response = await client.chat.completions.create(
-            model=settings.llm_model_validate,
             response_format={"type": "json_object"},
             messages=[
                 {"role": "system", "content": _build_prompt(question)},
                 {"role": "user", "content": "請審查並回傳 JSON。"},
             ],
-            temperature=0.2,
-            max_tokens=500,
+            **chat_model_kwargs(
+                model=settings.llm_model_validate, temperature=0.2, max_tokens=500
+            ),
         )
     except Exception as e:
         raise AppError(502, "LLM_ERROR", f"AI 服務暫時不可用：{e}") from e

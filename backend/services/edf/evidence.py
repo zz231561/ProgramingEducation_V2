@@ -9,6 +9,7 @@ from openai import AsyncOpenAI
 from pydantic import ValidationError
 
 from core.config import settings
+from core.llm_params import chat_model_kwargs
 from core.errors import AppError
 from .models import EvidenceResult, CONCEPT_TAGS
 from services.security.sanitizer import wrap_student_code
@@ -94,14 +95,14 @@ async def analyze_evidence(
 
     try:
         response = await client.chat.completions.create(
-            model=settings.LLM_MODEL,
             response_format={"type": "json_object"},
             messages=[
                 {"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "user", "content": user_prompt},
             ],
-            temperature=0.2,
-            max_tokens=500,
+            **chat_model_kwargs(
+                model=settings.LLM_MODEL, temperature=0.2, max_tokens=500
+            ),
         )
     except Exception as e:
         raise AppError(502, "LLM_ERROR", f"AI 服務暫時不可用：{e}") from e

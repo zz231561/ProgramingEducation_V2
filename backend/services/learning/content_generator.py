@@ -22,6 +22,7 @@ from openai import AsyncOpenAI
 from pydantic import BaseModel, Field, ValidationError
 
 from core.config import settings
+from core.llm_params import chat_model_kwargs
 from core.errors import AppError
 from models.concept import Concept
 from services.rag.retrieve import RetrievedChunk
@@ -158,13 +159,12 @@ async def _call_llm_json(system: str, user: str, output_model: type) -> BaseMode
     client = _get_client()
     try:
         resp = await client.chat.completions.create(
-            model=settings.llm_model_content,
             messages=[
                 {"role": "system", "content": system},
                 {"role": "user", "content": user},
             ],
             response_format={"type": "json_object"},
-            temperature=0.3,
+            **chat_model_kwargs(model=settings.llm_model_content, temperature=0.3),
         )
     except Exception as e:
         raise AppError(503, "LLM_UNAVAILABLE", f"OpenAI 失敗：{e}") from e

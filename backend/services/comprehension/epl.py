@@ -19,6 +19,7 @@ from openai import AsyncOpenAI
 from pydantic import BaseModel, Field, ValidationError
 
 from core.config import settings
+from core.llm_params import chat_model_kwargs
 from models.quiz import Question, StudentAnswer
 from services.comprehension.epl_prompts import (
     build_generate_prompt,
@@ -84,14 +85,14 @@ async def generate_epl_prompt(
 
     try:
         response = await client.chat.completions.create(
-            model=settings.llm_model_generate,
             response_format={"type": "json_object"},
             messages=[
                 {"role": "system", "content": build_generate_prompt(question, student_answer)},
                 {"role": "user", "content": "請出題並回傳 JSON。"},
             ],
-            temperature=0.4,
-            max_tokens=120,
+            **chat_model_kwargs(
+                model=settings.llm_model_generate, temperature=0.4, max_tokens=120
+            ),
         )
     except Exception:
         return EplGenerationResult(prompt=None)
@@ -121,7 +122,6 @@ async def grade_epl_answer(
 
     try:
         response = await client.chat.completions.create(
-            model=settings.LLM_MODEL,
             response_format={"type": "json_object"},
             messages=[
                 {
@@ -130,8 +130,9 @@ async def grade_epl_answer(
                 },
                 {"role": "user", "content": "請評分並回傳 JSON。"},
             ],
-            temperature=0.2,
-            max_tokens=300,
+            **chat_model_kwargs(
+                model=settings.LLM_MODEL, temperature=0.2, max_tokens=300
+            ),
         )
     except Exception:
         return _GRADE_FALLBACK

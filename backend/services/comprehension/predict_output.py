@@ -22,6 +22,7 @@ from openai import AsyncOpenAI
 from pydantic import BaseModel, Field, ValidationError
 
 from core.config import settings
+from core.llm_params import chat_model_kwargs
 from models.quiz import Question
 from services.comprehension.predict_output_prompts import (
     build_generate_prompt,
@@ -97,14 +98,14 @@ async def generate_predict_test(
 
     try:
         response = await client.chat.completions.create(
-            model=settings.llm_model_generate,
             response_format={"type": "json_object"},
             messages=[
                 {"role": "system", "content": build_generate_prompt(question, student_code)},
                 {"role": "user", "content": "請出測資並回傳 JSON。"},
             ],
-            temperature=0.4,
-            max_tokens=400,
+            **chat_model_kwargs(
+                model=settings.llm_model_generate, temperature=0.4, max_tokens=400
+            ),
         )
     except Exception:
         return PredictGenerationResult(test_input=None, expected_output=None)
@@ -139,7 +140,6 @@ async def _semantic_match(
 
     try:
         response = await client.chat.completions.create(
-            model=settings.LLM_MODEL,
             response_format={"type": "json_object"},
             messages=[
                 {
@@ -150,8 +150,9 @@ async def _semantic_match(
                 },
                 {"role": "user", "content": "請判斷並回傳 JSON。"},
             ],
-            temperature=0.1,
-            max_tokens=200,
+            **chat_model_kwargs(
+                model=settings.LLM_MODEL, temperature=0.1, max_tokens=200
+            ),
         )
     except Exception:
         return None, None

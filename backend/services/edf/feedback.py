@@ -11,6 +11,7 @@ import re
 from openai import AsyncOpenAI
 
 from core.config import settings
+from core.llm_params import chat_model_kwargs
 from core.errors import AppError
 from services.edf.rag_integration import fetch_rag_chunks_safe
 from services.rag import RetrievedChunk
@@ -178,10 +179,10 @@ async def generate_feedback(
 
     try:
         response = await client.chat.completions.create(
-            model=settings.LLM_MODEL,
             messages=messages,
-            temperature=0.7,
-            max_tokens=600,
+            **chat_model_kwargs(
+                model=settings.LLM_MODEL, temperature=0.7, max_tokens=600
+            ),
         )
     except Exception as e:
         raise AppError(502, "LLM_ERROR", f"AI 服務暫時不可用：{e}") from e

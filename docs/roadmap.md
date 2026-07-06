@@ -51,7 +51,7 @@
   - [x] 5-1b-3 加入班級 + profile API：`GET/POST /profile`（upsert，email 來自 users）+ `POST /classes/join`（驗碼入班 idempotent + 未填 profile 回 409 PROFILE_REQUIRED + 停用/無效碼 404）+ `GET /classes/{id}/members` 教師名冊（僅擁有者）；13 route tests
 - 5-1c 教師 Dashboard + 學生 profile UI（前端）
   - [x] 5-1c-1 教師班級管理頁（`/teacher`：建班/邀請碼複製/名冊展開/停用；role gate + avatar 選單教師入口）— **UI 驗收通過**（含修 `/users/me` 路由碰撞 + 身分切換即時更新選單 + 精簡選單移除空殼學習總覽/通知）
-  - [ ] 5-1c-2 學生 profile 表單 + 首次登入 gate（role=student 未填擋到填寫頁）
+  - [ ] 5-1c-2 學生 profile 表單 + 首次登入 gate（`ProfileGate` 包 AppShell：student 未填 → 全屏填寫頁；教師放行；fail-open）— **程式碼完成，待 UI 驗收**
   - [ ] 5-1c-3 右上角導覽顯示學生身分（real_name + 校系）
 > 決策（2026-07-07）：profile 存 student_profiles 獨立表；首次登入強制引導（僅 role=student）；學號不做唯一約束；邀請碼 6 位數字
 

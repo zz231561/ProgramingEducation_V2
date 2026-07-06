@@ -1,5 +1,18 @@
 # 變更日誌
 
+## [2026-07-07] — feat(teacher)：5-1c-2 學生 profile 表單 + 首次登入 gate（待 UI 驗收）
+
+### Added
+- **首次登入 gate**（`components/onboarding/profile-gate.tsx`）：包在 `(app)/layout.tsx` 的 AppShell 外層；role=student 且 `GET /profile` 回 404 → 全屏擋在填寫頁；教師/admin 直接放行；非 404 錯誤 fail-open（不因後端暫時性問題鎖住使用者）
+- **profile 表單**（`profile-setup-form.tsx`）：姓名/學號/學校/系所四欄 + email 唯讀顯示（登入帳號）；送出 `POST /profile` 成功後即時放行（onComplete，無需重整）；login 風格全屏卡片
+- **data layer** `lib/profile.ts`：getMyProfile / submitProfile
+
+### Verified（自動）
+- tsc / eslint 0 問題 / `next build` 通過；元件皆 < 150 行
+- **待使用者 UI 驗收**（切換為學生身分 + 未填 profile → 應被擋到填寫頁）
+
+---
+
 ## [2026-07-07] — fix(nav)：身分切換即時更新選單 + 精簡 avatar 選單
 
 ### Fixed

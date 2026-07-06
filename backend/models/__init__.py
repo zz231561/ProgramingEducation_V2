@@ -13,6 +13,7 @@ from models.quiz import (
     StudentAnswer,
 )
 from models.reflection import Reflection, ReflectionSourceType
+from models.student_profile import StudentProfile
 from models.unit_content_staging import StagingStatus, UnitContentStaging
 from models.user import User
 
@@ -36,6 +37,7 @@ __all__ = [
     "StagingStatus",
     "StudentAnswer",
     "StudentMastery",
+    "StudentProfile",
     "UnitContentStaging",
     "User",
 ]

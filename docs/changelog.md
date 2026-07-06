@@ -1,5 +1,17 @@
 # 變更日誌
 
+## [2026-07-07] — feat(teacher)：5-1b-1 學生身分 profile 表 + 需求擴充決策
+
+### Added
+- **student_profiles 表**（migration `m9b0c1d2e3f4` + `models/student_profile.py`）：學生首次登入補填 school / department / student_id / real_name；`user_id` 當 PK（1:1 天然去重）；email 沿用 users
+- **需求擴充決策**（AskUserQuestion 三裁決）：① profile 存獨立表（非 users 加欄位）② 首次登入強制引導填寫（僅 role=student，gate 由前端執行）③ 學號不做唯一約束（跨校撞號）；邀請碼定為 6 位數字
+- 5-1b 拆為 5-1b-1（本次）/ 5-1b-2 班級 CRUD / 5-1b-3 加入班級+profile API
+
+### Verified
+- migration up/down 可逆實跑；欄位/PK/FK 正確；model 匯入 OK；db-schema.md §Module 8 同步
+
+---
+
 ## [2026-07-07] — feat(teacher)：5-1a 班級資料表 migration
 
 ### Added（Phase 5 教師端起步）

@@ -188,6 +188,16 @@ class_members
 ├── user_id (FK → users, ON DELETE CASCADE)
 ├── joined_at
 └── PRIMARY KEY (class_id, user_id)
+
+student_profiles                              -- 學生首次登入補填身分（Google 名非真名）
+├── user_id (UUID, PK, FK → users, ON DELETE CASCADE)  -- 1:1，天然去重
+├── school            -- 校名
+├── department        -- 系所
+├── student_id (varchar)  -- 學號（不設 unique：跨校可能撞號）
+├── real_name         -- 姓名
+├── created_at
+└── updated_at (onupdate)
+-- email 沿用 users.email，不重複；僅 role=student 需填，gating 由前端首次登入執行
 ```
 
 ## Module 9: 學習行為分析

@@ -102,12 +102,13 @@
   - [x] 6-3a-2 批次 script + service：`services/quiz/batch_generator.py`（per-concept 跑 N 題 × generate+validate × MAX_VALIDATE_RETRIES=2）+ CLI `scripts/generate_unit_questions.py`（--only / --force / --dry-run）+ 8 mock+DB tests（488 全綠）；預設題型 mix multiple_choice + coding；validate fail 自動 retry，generate fail 直接 abort 與 orchestrator 一致
   - [x] 6-3a-3 實機 LLM 全跑（2026-07-06 ✅）：62 concept 題庫批次 + 補跑 → 138 題 validated（詳見 changelog；v17/v41 掛零 + 3 concept 缺 1 題記 tech-debt 待 6-4b）
 - [x] 6-3b ExercisesTab 改造：從「按需現生」→「優先讀題庫，題庫不足才現生」(GET /quiz/from-bank + ApiRequestError 404 QUESTION_BANK_EMPTY fallback；6 bank service tests + 5 route integration tests；前端 Loading 文案分「查找題庫題目 (< 1 秒)」/「AI 正在生成 (5-15 秒)」兩階段)
+- [ ] 6-3c 知識點驅動題量（2026-07-06 晚間定案，接 U2g 之後）：批次前置「知識點萃取」步驟——LLM（gpt-5.4-mini）讀該影片全部 transcript chunks → 列 3-8 個重要知識點 → 每知識點 1 題觀念選擇題（題目 JSON 記錄對應知識點，可追溯覆蓋率）；程式實作題每單元固定 1 題（v01-03 課程介紹 0 題）；**既有 138 題保留只補缺**；預估成本 $3-6
 
 ### 6-4 內容品管（2026-07-04 修訂：移除教授抽查，改為自行品管）
 - [ ] 6-4a 自行抽查 5-10 個 unit 全部 tab 品質：核心檢查「LLM 生成內容是否真的反映該 video timestamp 處的教法」（點 citation 跳到影片時間點對照）；不脫離 C++ 教學情境；程式碼可編譯（**6-2b 62 部實機批次已於 2026-07-06 跑完：62/62 成功入 staging（pending），v05/v62 needs_more_source；抽查通過後 promote**）
 - [ ] **6-4a-deferred-ui 必驗（grounded 資料就緒後立即跑，不可跳過）**：批次跑完取得至少 1 個 promoted unit 後，重新驗收以下「6-2 系列因無資料而延後驗收」的 UI 狀態
   - **6-2c grounded path**：概念說明 tab 的 grounded markdown 渲染 + 內嵌 citation 點擊跳轉是否真的 `player.seekTo`（之前只驗了 pending fallback path）
-  - **6-2d grounded path（含卡片 + Workspace 轉場）**：範例 tab 卡片列表（title / code / explanation / citation 標籤）+ 「在 Workspace 開啟」按鈕 → Workspace `<CodeEditor initialValue>` 是否載入範例程式碼 + 重整 / 再 navigate 後不重複覆蓋（一次性消費）
+  - ~~**6-2d grounded path（含卡片 + Workspace 轉場）**~~ → **已作廢（2026-07-06 晚間 U2g 決策：範例程式全面移除，無需驗收）**
   - ~~**6-2e grounded path**：摘要 tab 的 grounded 三狀態渲染~~ → **已作廢（2026-07-06 U2b 決策：LEARN 摘要 tab 直接移除，無需驗收）**
 - [ ] 6-4b 依自查結果調整 6-2a prompt template 並針對問題 unit 局部重跑；對品質太差的 unit 評估升級到 Whisper 重 transcribe（B 方案）作為 source
 
@@ -206,7 +207,11 @@
 - [x] U2c 拔除課程介紹範例：後端 `concept_category` 直通 UnitOut；前端課程介紹單元隱藏範例 tab；批次生成對 intro concept 跳過 examples LLM call（不標 needs_more_source）
 - [x] U2d QUIZ tab 題庫優先：`GET /quiz/from-bank` 支援省略 concept_tag（弱項模式，複用 pick_target_concept）+ question_type 過濾；QuizRunner 兩階段 loading + 404 fallback 現生；**練習題重複曝光 tech-debt 一併消除**（bank 一律排除該生已答過的題，Learn/Quiz 兩入口同時生效；全答過 → fallback 現生新題入庫，題庫自然成長）
 - [ ] U2e Workspace 程式碼存檔：編輯器內容目前重整即消失（僅 chat 快照 / 作答記錄入 DB）；新增自動存檔或「我的程式碼」功能
-- [ ] U2f 範例程式製作（2026-07-06 順序定案：排第 6 批，教師端 Phase 5 之前）
+- ~~U2f 範例程式製作~~ → **作廢（2026-07-06 晚間決策：範例程式全面移除，見 U2g）**
+- [ ] U2g LEARN tab 重構 + 移除範例程式（2026-07-06 晚間定案，遞補原第 6 批）：
+  - tab 改為「概念說明 / 程式實作題 / 觀念題」；練習題兩面板（本日已拆 CodingPanel / McPanel）升級為獨立 tab；觀念題＝選擇題（**不做簡答題型**，使用者定案）
+  - 課程介紹單元（v01-03）隱藏「程式實作題」tab（無程式碼可寫）
+  - 範例程式全面移除：`examples-tab.tsx` 刪除 + U2c intro 隱藏邏輯消失 + 生成管線 skip examples LLM call（同 U2b 手法，2 section → 1 section）+ 6-2d deferred-ui 驗收作廢；staging 既有 examples 資料留存無害，promote 不帶入
 
 ---
 
@@ -255,4 +260,4 @@
 - **LEARN 摘要移除**（2026-07-06 確認）：摘要 tab 直接移除（U2b）；依據＝提供現成摘要的被動學習效益低（Fiorella & Mayer 2015 生成式學習）+ 冗餘效應增加外在認知負荷
 - **反思計畫粒度**（2026-07-06 確認）：現行即為「每題一份」（Quiz 與 Learn 練習皆以 `sourceType="quiz"` + question id 建立），符合預期不需改；Workspace 顯示 gating 問題列 U1c
 - **LLM 模型選型 v2**（2026-07-06 確認）：放棄單一 GPT-4o，改任務導向路由（詳見 6-M 節選型表）；cascade 設計 = `gpt-5-mini` 生成 + `gpt-5.4` 審查；Unit content 批次用 `gpt-5.4`（教科書品質優先）；對話/分析組 `gpt-5.4-mini` 起步、K4d 實測後定案；文獻依據 FrugalGPT / RouteLLM（references.md §5.1）；論文記錄實驗當下確切模型版本
-- **實作執行順序**（2026-07-06 session 定案，共 10 批）：① U1a/b/c bug 修正 → ② U2b 移除摘要 + U2c 拔 1-3 範例 → ③ knowledge-graph.tsx 拆分（已核可）+ K6a/b/c → ④ U2d 題庫優先 + U2a QUIZ 美化 + 練習題重複曝光 → ⑤ 6-M1 模型分組 + 6-3a-3/6-4a 實機批次 + deferred-ui + K4d 調參（需 OpenAI 儲值 $10；key 已在 backend/.env） → ⑥ U2f 範例程式 → ⑦ 教師端 5-1 → 5-2 → DEV-E → 5-5 → ⑧ U2e Workspace 存檔 + 7-2a/b/c 監控程式碼 → ⑨ Phase 7 部署實測 → ⑩ 5-3/5-4 行為分析（待真實資料）；真人驗收（K1d/K5d/K4d 語氣）改使用者 session 後自測
+- **實作執行順序**（2026-07-06 session 定案，共 10 批）：① U1a/b/c bug 修正 → ② U2b 移除摘要 + U2c 拔 1-3 範例 → ③ knowledge-graph.tsx 拆分（已核可）+ K6a/b/c → ④ U2d 題庫優先 + U2a QUIZ 美化 + 練習題重複曝光 → ⑤ 6-M1 模型分組 + 6-3a-3/6-4a 實機批次 + deferred-ui + K4d 調參（需 OpenAI 儲值 $10；key 已在 backend/.env） → ⑥ ~~U2f 範例程式~~ **改 U2g tab 重構+移除範例** → ⑥' 6-3c 知識點驅動題庫 → ⑦ 教師端 5-1 → 5-2 → DEV-E → 5-5 → ⑧ U2e Workspace 存檔 + 7-2a/b/c 監控程式碼 → ⑨ Phase 7 部署實測 → ⑩ 5-3/5-4 行為分析（待真實資料）；真人驗收（K1d/K5d/K4d 語氣）改使用者 session 後自測（2026-07-06 晚間修訂：U2f 作廢、新增 U2g/6-3c、簡答題型不做）

@@ -49,7 +49,7 @@
   - K6 ✅熟練度演算法 v2（2026-07-06 第 3 批）：K6a 訊號分級 BKT 參數（quiz 強/chat 弱證據）+ K6b 遺忘曲線惰性衰減（`services/mastery/decay.py`，floor 0.25 + 半衰期隨練習成長）+ K6c 事件級透明化（effective/raw confidence + due_for_review 提示）；**論文關鍵文獻標注 references.md §5.1**
   - **下一步（K 系列）**：**K5d 真人驗收**（學生能否從圖讀懂進度與弱項；含 K1d UI 抽查）→ K4d 真人驗收（可與 6-4a 實機批次合併）
 - **🎯 Phase 6-U 學生端修正**（2026-07-06 session 定案）：U1a/b/c ✅（第 1 批）/ U2b/c ✅（第 2 批）/ U2a/d ✅（第 4 批，含重複曝光消除）/ U2e Workspace 程式碼存檔（第 8 批）/ U2f 範例程式（第 6 批）
-- **執行順序 10 批已定案**（2026-07-06，詳見 roadmap 已確認決策）：①~④ ✅ + ⑤ 6-M1/批次 ✅（剩 6-4a 抽查 + deferred-ui + K4d 使用者驗收）→ ⑥ U2f → ⑦ 教師端 → ⑧ U2e+監控 → ⑨ Phase 7 → ⑩ 5-3/5-4；真人驗收改使用者自測；**下一步：6-4a 抽查（使用者對照影片驗 citation）→ promote → deferred-ui**
+- **執行順序 10 批已定案**（2026-07-06；晚間修訂 U2f→U2g）：①~④ ✅ + ⑤ 6-M1/批次 ✅（剩 6-4a 抽查 + 6-2c citation 驗收 + K4d）→ ⑥ U2g tab 重構+移除範例程式 → ⑥' 6-3c 知識點驅動題庫（觀念題=選擇題，不做簡答；程式題固定 1 題、intro 0 題；138 題保留補缺）→ ⑦ 教師端 → ⑧ U2e+監控 → ⑨ Phase 7 → ⑩ 5-3/5-4；**下一步：U2g**（6-4a 抽查可隨時穿插，抽查過即 promote）
 - **DEV 開發者模式 ✅ 全數完成**（2026-07-05；拆解見 roadmap DEV 節）：後端 gating（`DEV_MODE_ENABLED`+`DEV_MODE_EMAILS`、`require_dev_user`）+ rate limit 豁免 + Settings 六卡（身分切換 / 幽靈解鎖 / 熟練度編輯 / K3 診斷模擬 / 題庫檢視 `/quiz?question=` 深連結 / 分類重置）+ EDF Debug 面板（chat `debug_sink`，dev 才附）；+33 tests；**UI 驗收待使用者**；DEV-E 假學生 seeder 留 Phase 5
 - **Phase 5 ⇄ Phase 6 平行**：教師端可隨時插入並行
 - **Phase 7 上線實測**：須 Phase 6 至少 6-1 + 6-2 完成 + Zeabur + VPS 就緒

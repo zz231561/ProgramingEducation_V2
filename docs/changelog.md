@@ -1,5 +1,19 @@
 # 變更日誌
 
+## [2026-07-07] — feat(teacher)：5-1c-1 教師班級管理頁（前端，待 UI 驗收）
+
+### Added
+- **`/teacher` 班級管理頁**（`app/(app)/teacher/page.tsx`）：role gate（`/auth/me`，非教師顯示無權限）
+- **元件**（`components/teacher/`）：`class-manager`（列表+建立狀態）/ `create-class-form`（建班，綠色 btn-primary）/ `class-card`（邀請碼 + 複製 + 成員數 + 停用/啟用 + 名冊展開）/ `class-roster`（lazy 載名冊表格：姓名/學號/系所/校名/email）
+- **data layer** `lib/classroom.ts`：listClasses / createClass / updateClass / getClassMembers
+- **導覽入口**：avatar 下拉選單加教師專屬「班級管理」連結（`/auth/me` role 判定，非教師不顯示）
+
+### Verified（自動）
+- tsc 無誤 / eslint 0 errors（僅既有 img warning）/ `next build` 通過（`/teacher` route 產出）；元件皆 < 150 行
+- **待使用者 UI 驗收**（可用 DEV 身分切換為教師測試）
+
+---
+
 ## [2026-07-07] — feat(teacher)：5-1b-3 加入班級 + 學生 profile API
 
 ### Added

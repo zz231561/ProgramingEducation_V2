@@ -11,7 +11,10 @@ import {
   Settings,
   Home,
   LogOut,
+  School,
 } from "lucide-react";
+
+import { api } from "@/lib/api";
 
 interface GlobalNavProps {
   chatOpen: boolean;
@@ -97,7 +100,23 @@ export function GlobalNav({ chatOpen, onToggleChat }: GlobalNavProps) {
 function AvatarMenu() {
   const { data: session } = useSession();
   const [open, setOpen] = useState(false);
+  const [isTeacher, setIsTeacher] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  /* 取得角色以決定是否顯示教師入口（失敗視為非教師） */
+  useEffect(() => {
+    let cancelled = false;
+    api<{ role: string }>("/auth/me")
+      .then((me) => {
+        if (!cancelled) setIsTeacher(me.role === "teacher");
+      })
+      .catch(() => {
+        /* 靜默：非教師不顯示入口 */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   /* click outside 關閉 */
   useEffect(() => {
@@ -156,6 +175,14 @@ function AvatarMenu() {
           </div>
 
           {/* Menu items */}
+          {isTeacher && (
+            <MenuLink
+              href="/teacher"
+              icon={School}
+              label="班級管理"
+              onClick={() => setOpen(false)}
+            />
+          )}
           <MenuLink href="/overview" icon={Home} label="學習總覽" onClick={() => setOpen(false)} />
           <MenuLink href="/notifications" icon={Bell} label="通知" onClick={() => setOpen(false)} />
           <MenuLink href="/settings" icon={Settings} label="設定" onClick={() => setOpen(false)} />

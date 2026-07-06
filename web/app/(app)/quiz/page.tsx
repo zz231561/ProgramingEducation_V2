@@ -1,10 +1,10 @@
 "use client";
 
 /**
- * Quiz 頁面（roadmap 3-2a）— 純測驗場景。
+ * Quiz 頁面 — 弱項綜合測驗場景（6-3d）。
  *
- * 流程委託給 QuizRunner 元件（idle / loading / question / result）。
- * 計時器 / 提示系統 / 完整 EDF 回饋屬 3-2b/c。
+ * 一般進入 → 弱項綜合測驗組（選 10/25 一次生成、逐題作答）；
+ * DEV 深連結 `?question=<id>` → 舊 QuizRunner 單題檢視（分派見 QuizEntry）。
  *
  * 設計分工：
  * - 本頁 = 純測驗（無反思）
@@ -13,15 +13,15 @@
 
 import { Suspense } from "react";
 
-import { QuizRunner } from "@/components/quiz/quiz-runner";
+import { QuizEntry } from "@/components/quiz/quiz-entry";
 
 export default function QuizPage() {
   return (
     <div className="h-full overflow-y-auto px-6 py-10">
       <div className="mx-auto w-full max-w-3xl">
-        {/* Suspense：QuizRunner 內用 useSearchParams（DEV-9 深連結）需要 CSR 邊界 */}
+        {/* Suspense：QuizEntry 內用 useSearchParams（DEV-9 深連結）需要 CSR 邊界 */}
         <Suspense fallback={null}>
-          <QuizRunner />
+          <QuizEntry />
         </Suspense>
       </div>
     </div>

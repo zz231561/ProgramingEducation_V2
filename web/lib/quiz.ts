@@ -109,6 +109,24 @@ export async function getUnitQuestionSet(
   return api<UnitSetResponse>(`/quiz/unit-set?${params.toString()}`);
 }
 
+/** 6-3d：弱項綜合測驗組回應。 */
+export interface WeaknessSetResponse {
+  questions: Question[];
+  total: number;
+  /** 無弱項（cold-start / 已全數掌握）→ true，前端提示先去 LEARN 練習 */
+  no_weakness: boolean;
+}
+
+/**
+ * 6-3d：一次生成弱項綜合測驗組（10 或 25 題）。
+ * 題庫優先重用 + 缺口並行現生；單/綜合 MC 依掌握度自適應 + 1-2 綜合 coding。
+ */
+export async function getWeaknessSet(count: 10 | 25): Promise<WeaknessSetResponse> {
+  return api<WeaknessSetResponse>(`/quiz/weakness-set?count=${count}`, {
+    method: "POST",
+  });
+}
+
 // === 3-2a 作答提交 ===
 
 /** 學生作答 payload — 形狀依 question.type 決定。 */

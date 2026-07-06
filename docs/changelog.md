@@ -1,5 +1,18 @@
 # 變更日誌
 
+## [2026-07-06] — fix(learn)：練習題題型分類 + 反思僅限程式題 + 反思視窗置頂題目
+
+### Fixed
+- **反思誤套非程式題**：題庫混題型後（6-3a-3），LEARN 練習 tab 抽到選擇題仍被強制進反思流程（反思設計僅適用「先想解題思路再寫程式」的情境）；現改題型分類入口
+- **反思視窗看不到題目**：學生填反思需關窗回看題目；`ReflectionFlow` 加 `questionStem` prop，題幹固定顯示於視窗頂部（獨立捲動區，不隨表單捲動）
+
+### Changed
+- **練習題入口改題型卡**（`exercises-tab-views.tsx`）：「程式實作題」（讀題 → 反思 gating → Workspace）/「觀念選擇題」（直接作答 + 立即對錯回饋，重用 Quiz 頁 `MCQuestion` + `submitAnswer`，答題驅動 BKT）；from-bank / generate 均帶 `question_type` 過濾
+- 檔案拆分守規：`exercises-tab.tsx` 233 → 148 行；新增 `exercises-coding-panel.tsx`（原 QuestionPanel + 反思摘要搬出）與 `exercises-mc-panel.tsx`（MC 作答 + 結果）
+- 驗證：`tsc --noEmit` + eslint + `next build` 全綠
+
+---
+
 ## [2026-07-06] — feat(content)：第 5 批實機批次——6-2b content 62 部 + 6-3a-3 題庫 138 題
 
 ### Fixed（實機才暴露的兩個 bug）

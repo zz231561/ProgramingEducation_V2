@@ -42,6 +42,8 @@ export interface ReflectionFlowProps {
   open: boolean;
   sourceType: ReflectionSourceType;
   sourceId: string | null;
+  /** 題目題幹 — 提供時固定顯示於視窗頂部，學生反思時不需關窗回看題目 */
+  questionStem?: string | null;
   onApprove: (reflection: Reflection) => void;
   onClose: () => void;
 }
@@ -67,6 +69,7 @@ export function ReflectionFlow(props: ReflectionFlowProps) {
 function ReflectionFlowContent({
   sourceType,
   sourceId,
+  questionStem,
   onApprove,
   onClose,
 }: Omit<ReflectionFlowProps, "open">) {
@@ -136,6 +139,14 @@ function ReflectionFlowContent({
   return (
     <>
       <FlowHeader stage={stage} onClose={onClose} />
+      {questionStem && (
+        <div className="max-h-[22vh] overflow-y-auto border-b border-border-default bg-surface-2 px-5 py-3">
+          <p className="mb-1 text-xs font-medium text-text-muted">題目</p>
+          <p className="whitespace-pre-wrap text-xs leading-relaxed text-text-secondary">
+            {questionStem}
+          </p>
+        </div>
+      )}
       <div className="max-h-[60vh] overflow-y-auto px-5 py-4">
         <FlowBody
           stage={stage}

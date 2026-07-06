@@ -303,6 +303,41 @@ async def test_generate_all_force_regenerates_even_with_existing():
 
 
 @pytest.mark.asyncio
+async def test_generate_all_survives_rollback_expiring_other_concepts():
+    """回歸測試（2026-07-06 實機批次炸 MissingGreenlet）：
+
+    rollback 會讓 session 內「所有」concept expire，不只當前那顆；
+    第 1 個 concept 的 validate 失敗回滾後，第 2 個 concept 的屬性存取
+    必須仍可運作（generate_all 逐輪 refresh），不得觸發同步 lazy-load。
+    """
+    await _seed_concept(tag="cpp-04", video_order=4)
+    await _seed_concept(tag="cpp-05", video_order=5)
+
+    with patched_pipeline(
+        generate_responses=[
+            _VALID_MC_JSON,  # c4 MC attempt 1
+            _VALID_MC_JSON,  # c4 MC attempt 2
+            _VALID_CODING_JSON,  # c4 coding
+            _VALID_MC_JSON,  # c5 MC
+            _VALID_CODING_JSON,  # c5 coding
+        ],
+        validate_responses=[
+            _validator_json(answer_correct=False),  # c4 MC fail → rollback（expire 全部）
+            _validator_json(answer_correct=False),  # c4 MC fail → rollback
+            _validator_json(),  # c4 coding pass
+            _validator_json(),  # c5 MC pass
+            _validator_json(),  # c5 coding pass
+        ],
+    ):
+        async with TestSessionFactory() as db:
+            results = await generate_all(db, skip_existing=True)
+
+    assert len(results) == 2
+    assert results[0].validated_count == 1  # MC 耗盡 retry、coding 過
+    assert results[1].validated_count == 2
+
+
+@pytest.mark.asyncio
 async def test_list_target_concepts_filters_by_only():
     """only=N → 僅該 video_order；其餘 concept 排除。"""
     await _seed_concept(tag="cpp-04", video_order=4)

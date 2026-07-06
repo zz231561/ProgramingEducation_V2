@@ -202,6 +202,9 @@ async def generate_all(
 
     results: list[ConceptBatchResult] = []
     for concept in concepts:
+        # rollback 會讓 session 內「所有」物件 expire（不只當前處理的 concept），
+        # 前一輪的失敗回滾會使本輪 concept 屬性存取觸發同步 lazy-load（MissingGreenlet）
+        await db.refresh(concept)
         if skip_existing:
             existing = await _count_validated_questions(db, concept.tag)
             if existing >= target_per_concept:

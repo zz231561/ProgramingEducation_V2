@@ -3,12 +3,11 @@
 /**
  * 學習單元內容頁（roadmap 3-1d）— tab 切換 + 上下單元導航 + 完成按鈕。
  *
- * tab 內容：
+ * tab 內容（U2g 2026-07-06 晚間重構）：
  * - 概念說明：YT IFrame player + grounded markdown + citation 跳轉（6-2c，元件移至 concept-tab.tsx）
- * - 範例程式：grounded code examples + 「在 Workspace 開啟」（6-2d，元件移至 examples-tab.tsx）
- *   ※ U2c：「課程介紹」分類單元（video 1-3）無程式內容，不顯示此 tab
- * - 練習題：3-1e 整合 placeholder
- * ※ 摘要 tab 已於 U2b（2026-07-06 決策）移除：提供現成摘要屬被動學習、效益低
+ * - 程式實作題：讀題 → 反思 → Workspace 作答；「課程介紹」單元（video 1-3）隱藏
+ * - 觀念題：選擇題直接作答 + 即時回饋
+ * ※ 摘要 tab（U2b）與範例程式 tab（U2g）已移除
  *
  * 設計原則：
  * - 元件純 prop-driven（status / 導航 / 完成 callback）
@@ -22,14 +21,13 @@ import { ArrowLeft } from "lucide-react";
 import { Unit } from "@/lib/learning";
 
 import { ConceptTab } from "./concept-tab";
-import { ExamplesTab } from "./examples-tab";
 import { ExercisesTab } from "./exercises-tab";
 import { ActionButton, NavButton } from "./unit-action-bar";
 import { UnitStatusIcon, statusLabel } from "./unit-status-icon";
 
-type Tab = "concept" | "examples" | "exercises";
+type Tab = "concept" | "coding" | "quiz";
 
-/** U2c：課程介紹單元（影片 1-3）沒有可教的程式範例。 */
+/** 課程介紹單元（影片 1-3）沒有程式碼可寫，隱藏程式實作題 tab。 */
 const INTRO_CATEGORY = "課程介紹";
 
 interface Props {
@@ -46,8 +44,8 @@ interface Props {
 
 const TABS: { key: Tab; label: string }[] = [
   { key: "concept", label: "概念說明" },
-  { key: "examples", label: "範例程式" },
-  { key: "exercises", label: "練習題" },
+  { key: "coding", label: "程式實作題" },
+  { key: "quiz", label: "觀念題" },
 ];
 
 export function UnitContent({
@@ -64,7 +62,7 @@ export function UnitContent({
   const [tab, setTab] = useState<Tab>("concept");
 
   const isIntroUnit = unit.concept_category === INTRO_CATEGORY;
-  const tabs = isIntroUnit ? TABS.filter((t) => t.key !== "examples") : TABS;
+  const tabs = isIntroUnit ? TABS.filter((t) => t.key !== "coding") : TABS;
   // 防呆：若切到被隱藏的 tab（例如從一般單元導航到課程介紹單元），退回概念說明
   const activeTab = tabs.some((t) => t.key === tab) ? tab : "concept";
 
@@ -116,9 +114,18 @@ export function UnitContent({
 
       <div className="min-h-[240px]">
         {activeTab === "concept" && <ConceptTab unit={unit} />}
-        {activeTab === "examples" && !isIntroUnit && <ExamplesTab unit={unit} />}
-        {activeTab === "exercises" && (
+        {activeTab === "coding" && !isIntroUnit && (
           <ExercisesTab
+            key="coding"
+            category="coding"
+            conceptTag={unit.concept_tag}
+            conceptNameZh={unit.concept_name_zh}
+          />
+        )}
+        {activeTab === "quiz" && (
+          <ExercisesTab
+            key="quiz"
+            category="multiple_choice"
             conceptTag={unit.concept_tag}
             conceptNameZh={unit.concept_name_zh}
           />

@@ -4,9 +4,9 @@
  * 練習題 tab — 6-3b 題庫優先：先 /quiz/from-bank（< 1s）→ 404 QUESTION_BANK_EMPTY
  * 時 fallback /quiz/generate（LLM 5-15s）。Loading 文案分兩階段提示使用者為何等待。
  *
- * 題型分類（2026-07-06）：
- * - 程式實作題 → 讀題 → 反思 gating → Workspace 作答（CodingPanel）
- * - 觀念選擇題 → 直接作答 + 立即回饋，不進反思（McPanel）
+ * U2g（2026-07-06 晚間）：題型由 caller（unit-content tab）指定——
+ * - category="coding"（程式實作題 tab）→ 讀題 → 反思 gating → Workspace 作答
+ * - category="multiple_choice"（觀念題 tab）→ 直接作答 + 立即回饋，不進反思
  */
 
 import { useCallback, useState } from "react";
@@ -21,58 +21,56 @@ import { McPanel } from "./exercises-mc-panel";
 import { ExerciseCategory, IdleView, LoadingView } from "./exercises-tab-views";
 
 interface Props {
+  category: ExerciseCategory;
   conceptTag: string;
   conceptNameZh: string;
 }
 
 type Phase = "idle" | "loading-bank" | "loading-generate" | "question" | "reflecting" | "done";
 
-export function ExercisesTab({ conceptTag, conceptNameZh }: Props) {
+export function ExercisesTab({ category, conceptTag, conceptNameZh }: Props) {
   const [phase, setPhase] = useState<Phase>("idle");
   const [question, setQuestion] = useState<Question | null>(null);
   const [reflection, setReflection] = useState<Reflection | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const startExercise = useCallback(
-    async (category: ExerciseCategory) => {
-      setError(null);
-      setQuestion(null);
-      setReflection(null);
-      setPhase("loading-bank");
-      try {
-        const fromBank = await getQuestionFromBank(conceptTag, category);
-        setQuestion(fromBank);
-        setPhase("question");
-        return;
-      } catch (e) {
-        const bankEmpty =
-          e instanceof ApiRequestError &&
-          e.status === 404 &&
-          e.body.error === "QUESTION_BANK_EMPTY";
-        if (!bankEmpty) {
-          setPhase("idle");
-          setError(humanizeError(e));
-          return;
-        }
-        // 題庫無該題型可用題 → fallback 走 /quiz/generate
-      }
-
-      setPhase("loading-generate");
-      try {
-        const generated = await generateQuestion({
-          type: category,
-          bloom_level: 3,
-          concept_tag: conceptTag,
-        });
-        setQuestion(generated);
-        setPhase("question");
-      } catch (e) {
+  const startExercise = useCallback(async () => {
+    setError(null);
+    setQuestion(null);
+    setReflection(null);
+    setPhase("loading-bank");
+    try {
+      const fromBank = await getQuestionFromBank(conceptTag, category);
+      setQuestion(fromBank);
+      setPhase("question");
+      return;
+    } catch (e) {
+      const bankEmpty =
+        e instanceof ApiRequestError &&
+        e.status === 404 &&
+        e.body.error === "QUESTION_BANK_EMPTY";
+      if (!bankEmpty) {
         setPhase("idle");
         setError(humanizeError(e));
+        return;
       }
-    },
-    [conceptTag],
-  );
+      // 題庫無該題型可用題 → fallback 走 /quiz/generate
+    }
+
+    setPhase("loading-generate");
+    try {
+      const generated = await generateQuestion({
+        type: category,
+        bloom_level: 3,
+        concept_tag: conceptTag,
+      });
+      setQuestion(generated);
+      setPhase("question");
+    } catch (e) {
+      setPhase("idle");
+      setError(humanizeError(e));
+    }
+  }, [conceptTag, category]);
 
   const handleApproveReflection = useCallback((r: Reflection) => {
     setReflection(r);
@@ -98,7 +96,12 @@ export function ExercisesTab({ conceptTag, conceptNameZh }: Props) {
   return (
     <div className="space-y-4">
       {phase === "idle" && (
-        <IdleView conceptNameZh={conceptNameZh} onStart={startExercise} error={error} />
+        <IdleView
+          category={category}
+          conceptNameZh={conceptNameZh}
+          onStart={startExercise}
+          error={error}
+        />
       )}
       {phase === "loading-bank" && <LoadingView source="bank" />}
       {phase === "loading-generate" && <LoadingView source="generate" />}
@@ -112,11 +115,7 @@ export function ExercisesTab({ conceptTag, conceptNameZh }: Props) {
             onReset={reset}
           />
         ) : (
-          <McPanel
-            question={question}
-            onNext={() => startExercise("multiple_choice")}
-            onReset={reset}
-          />
+          <McPanel question={question} onNext={startExercise} onReset={reset} />
         ))}
       {/* 反思 gating 僅程式實作題；MC 直接作答 */}
       <ReflectionFlow

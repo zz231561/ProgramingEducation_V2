@@ -1,9 +1,8 @@
 """Phase 6-2a: Grounded LLM content generation for learning_units (NotebookLM mode).
 
-2 content sections per unit（U2b 2026-07-06：summary section 已移除——提供現成摘要
-屬被動學習效益低，前端摘要 tab 同步移除，批次生成省 1/3 LLM calls）：
+1 content section per unit（U2b 移除 summary；U2g 2026-07-06 晚間移除 code_examples——
+範例程式介面整個下架，批次生成僅剩 1 LLM call）：
   - concept_explanation：概念說明（Markdown，含 [mm:ss] citation）
-  - code_examples：程式範例（1-3 個，必須源自字幕；課程介紹單元跳過，見 U2c）
 
 Grounding rules（prompt + Pydantic 雙重把關）：
   1. 只能基於提供的 transcript_chunks 生成；嚴禁引入字幕未提及的概念
@@ -58,28 +57,10 @@ class ConceptExplanation(BaseModel):
     citations: list[Citation] = Field(default_factory=list)
 
 
-class CodeExample(BaseModel):
-    """單一程式範例。"""
-
-    title: str
-    code: str
-    explanation: str = Field(max_length=200)
-    citation: Citation | None = None
-
-
-class CodeExamples(BaseModel):
-    """範例 tab 內容。"""
-
-    needs_more_source: bool = False
-    reason: str = ""
-    examples: list[CodeExample] = Field(default_factory=list, max_length=3)
-
-
 class UnitContent(BaseModel):
-    """單一 learning_unit 的完整 content（2 section 聚合）。"""
+    """單一 learning_unit 的完整 content（U2g 起僅概念說明一個 section）。"""
 
     concept_explanation: ConceptExplanation
-    code_examples: CodeExamples
 
 
 # === Prompt templates ===
@@ -108,24 +89,6 @@ _CONCEPT_TASK = """\
 撰寫指引：
 - markdown 依影片實際教學脈絡組織，至少 2 個 citation
 - transcript 太短 / 偏離主題 → needs_more_source=true
-"""
-
-
-_EXAMPLES_TASK = """\
-【任務】生成「程式範例」段落，回傳 JSON：
-{
-  "needs_more_source": bool,
-  "reason": "若 true 簡短說明缺什麼",
-  "examples": [
-    {"title": "範例標題", "code": "完整 C++ 程式碼", "explanation": "< 200 字",
-     "citation": {"timestamp": "mm:ss", "text_excerpt": "..."}}
-  ]
-}
-
-撰寫指引：
-- 1-3 個範例（0 個 → needs_more_source=true）
-- 範例必須與字幕中提到的程式碼或情境一致；不發明字幕未提到的程式碼
-- 字幕只是純概念講解、無程式碼例子 → needs_more_source=true
 """
 
 
@@ -184,28 +147,12 @@ async def generate_concept_explanation(
     return await _call_llm_json(_PREAMBLE, user, ConceptExplanation)
 
 
-async def generate_code_examples(
-    concept: Concept, chunks: list[RetrievedChunk],
-) -> CodeExamples:
-    user = _build_context_block(concept, chunks) + "\n" + _EXAMPLES_TASK
-    return await _call_llm_json(_PREAMBLE, user, CodeExamples)
-
-
-# U2c：課程介紹影片（video 1-3）無程式範例可教，批次生成跳過 examples LLM call
-INTRO_CATEGORY = "課程介紹"
-
-
 async def generate_unit_content(
     concept: Concept, chunks: list[RetrievedChunk],
 ) -> UnitContent:
-    """Orchestrator：依序生 2 section（caller 控制 chunks 來源）。
+    """Orchestrator：生成概念說明（caller 控制 chunks 來源）。
 
-    課程介紹單元（U2c）：code_examples 直接回空（前端也不顯示範例 tab），
-    不標 needs_more_source 以免 6-4 抽查誤判為待補內容。
+    U2g：code_examples section 已移除（範例程式介面下架），僅剩 1 LLM call。
     """
     explanation = await generate_concept_explanation(concept, chunks)
-    if concept.category == INTRO_CATEGORY:
-        examples = CodeExamples()
-    else:
-        examples = await generate_code_examples(concept, chunks)
-    return UnitContent(concept_explanation=explanation, code_examples=examples)
+    return UnitContent(concept_explanation=explanation)

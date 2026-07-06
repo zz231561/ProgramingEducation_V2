@@ -28,29 +28,12 @@ export interface ConceptExplanation {
   citations: Citation[];
 }
 
-/**
- * 6-2a `code_examples` section — 1-3 個程式範例，每個附 optional citation。
- */
-export interface CodeExample {
-  title: string;
-  code: string;
-  explanation: string;
-  citation: Citation | null;
-}
-
-export interface CodeExamples {
-  needs_more_source: boolean;
-  reason: string;
-  examples: CodeExample[];
-}
-
 export interface UnitContent {
-  // 舊形狀（3-1d）；U2b 已移除摘要 tab — content JSON 內殘留的 summary 欄位直接忽略
+  // 舊形狀（3-1d）；U2b/U2g 已移除摘要與範例 tab — content JSON 內殘留欄位直接忽略
   examples?: string[];
   exercise_question_ids?: string[];
   // 6-2a/b 新 grounded 形狀（promote 後 staging → learning_units.content）
   concept_explanation?: ConceptExplanation;
-  code_examples?: CodeExamples;
 }
 
 export interface Unit {

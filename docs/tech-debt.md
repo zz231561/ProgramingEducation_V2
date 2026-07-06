@@ -40,12 +40,10 @@
   - **進度**：6-1a/b 已完成；6-1b+/c/d/e/f 進行中
   - **如何處理**：fetcher 已寫好（`backend/scripts/fetch_playlist_metadata.py`）；接下來擴充 EXPECTED 1-62、加 video 1-3 migration、PATCH script 寫入 DB、字幕 RAG ingest
   - **格式**：CSV，欄位 `video_order, youtube_id, duration_seconds, title_zh`，已產出於 `data/teaching_content/videos.csv`
-- [ ] **學習單元 content 為空骨架**（`{summary: "", examples: [], exercise_question_ids: []}`）→ **正式追蹤於 roadmap Phase 6-2 / 6-3 / 6-4**
-  - **影響**：3-1d 學習單元頁的「範例程式」「摘要」tab 無實質內容
-  - **如何處理**：兩種策略可選 —
-    - (a) LLM 依 concept name + difficulty 自動生成 summary + examples（成本低）— Phase 6-2 採此策略
-    - (b) 教授/助教手動填寫（品質高，工時大）— Phase 6-4 抽查階段視需要補充
-  - **決策**：先 (a) MVP，Phase 6-4 自行抽查後決定是否人工校對（2026-07-04 修訂：教授抽查已移除）
+- [ ] **lazy-seed 新使用者的 unit content 仍是空骨架**（2026-07-06 U2g promote 後遺留）
+  - **現況**：62 部 grounded 概念說明已 promote 至「既有」learning_units；但 `generator.py` seed 新 user 路徑時仍寫 `_empty_unit_content()` 空骨架，不讀 staging
+  - **影響**：promote 之後才註冊的新帳號（如 DEV 身分切換的 ghost user）概念說明 tab 會落到 pending fallback
+  - **如何處理**：`generate_learning_path` seed 時 join `unit_content_staging`（status=approved）帶入 content；或 unit 查詢時 fallback 讀 staging
 
 - [ ] **題庫 coding 題 validate 通過率偏低 + v17/v41 掛零**（2026-07-06 實機批次觀察）
   - **現況**：首輪 17 個失敗中 13 個為 coding 題 `VALIDATION_RETRY_EXHAUSTED`（cascade gpt-5-mini 生成 + gpt-5.4 審查）；補跑後仍有 v17 cpp-17-incr-decr / v41 cpp-41-extern-vars 兩輪全滅（0 題）、v11/v53/v61 各缺 1 題

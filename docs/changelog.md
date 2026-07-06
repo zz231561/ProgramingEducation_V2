@@ -1,5 +1,21 @@
 # 變更日誌
 
+## [2026-07-06] — feat(learn)：U2g tab 重構 + 範例程式移除 + 62 部內容全量上線
+
+### Changed（U2g）
+- **LEARN 單元 tab 改為「概念說明 / 程式實作題 / 觀念題」**：練習題兩面板升為獨立 tab（`ExercisesTab` 加 `category` prop 由 tab 指定題型）；課程介紹單元（v01-03）隱藏程式實作題 tab；移除練習題/Quiz 入口的「優先從題庫取題」開發者導向提示字樣
+- **內容上線流程改使用者回饋制**（使用者決策）：6-4a 正式抽查移除；新增 `scripts/promote_unit_content.py` 全量 approve + promote **62 concepts → learning_units**（promote 時剝除 summary/code_examples 殘留 key）；品質問題待實際操作回饋（6-4b 局部重跑）
+
+### Removed（範例程式全面下架）
+- **前端**：`examples-tab.tsx`、`lib/pending-workspace-code.ts`（6-2d Workspace 轉場機制）、workspace page `initialCode` 消費、`learning.ts` CodeExample(s) 型別
+- **管線**：`content_generator.py` CodeExample(s) model / `_EXAMPLES_TASK` prompt / `generate_code_examples()` / U2c intro 分支全移除（1 section = 1 LLM call）；`batch_generator` notes/聚合同步簡化
+
+### Tests
+- content/batch generator 測試改 1 section（-4 例）；後端全量 **611 passed**；前端 tsc + eslint + `next build` 全綠
+- 遺留 tech-debt：lazy-seed 新使用者仍空骨架（generator 不讀 staging），既有帳號不受影響
+
+---
+
 ## [2026-07-06] — docs(planning)：U2g/6-3c 定案——LEARN tab 重構、範例程式移除、知識點驅動題量
 
 ### Added（與使用者討論定案，4 項決策）

@@ -101,7 +101,6 @@ export function IdleView({
           <Play className="size-4" />
           開始 Quiz
         </button>
-        <p className="text-xs text-text-muted">優先從題庫取題，通常一秒內開始</p>
       </div>
 
       {error && (

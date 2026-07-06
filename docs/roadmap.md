@@ -104,13 +104,10 @@
 - [x] 6-3b ExercisesTab 改造：從「按需現生」→「優先讀題庫，題庫不足才現生」(GET /quiz/from-bank + ApiRequestError 404 QUESTION_BANK_EMPTY fallback；6 bank service tests + 5 route integration tests；前端 Loading 文案分「查找題庫題目 (< 1 秒)」/「AI 正在生成 (5-15 秒)」兩階段)
 - [ ] 6-3c 知識點驅動題量（2026-07-06 晚間定案，接 U2g 之後）：批次前置「知識點萃取」步驟——LLM（gpt-5.4-mini）讀該影片全部 transcript chunks → 列 3-8 個重要知識點 → 每知識點 1 題觀念選擇題（題目 JSON 記錄對應知識點，可追溯覆蓋率）；程式實作題每單元固定 1 題（v01-03 課程介紹 0 題）；**既有 138 題保留只補缺**；預估成本 $3-6
 
-### 6-4 內容品管（2026-07-04 修訂：移除教授抽查，改為自行品管）
-- [ ] 6-4a 自行抽查 5-10 個 unit 全部 tab 品質：核心檢查「LLM 生成內容是否真的反映該 video timestamp 處的教法」（點 citation 跳到影片時間點對照）；不脫離 C++ 教學情境；程式碼可編譯（**6-2b 62 部實機批次已於 2026-07-06 跑完：62/62 成功入 staging（pending），v05/v62 needs_more_source；抽查通過後 promote**）
-- [ ] **6-4a-deferred-ui 必驗（grounded 資料就緒後立即跑，不可跳過）**：批次跑完取得至少 1 個 promoted unit 後，重新驗收以下「6-2 系列因無資料而延後驗收」的 UI 狀態
-  - **6-2c grounded path**：概念說明 tab 的 grounded markdown 渲染 + 內嵌 citation 點擊跳轉是否真的 `player.seekTo`（之前只驗了 pending fallback path）
-  - ~~**6-2d grounded path（含卡片 + Workspace 轉場）**~~ → **已作廢（2026-07-06 晚間 U2g 決策：範例程式全面移除，無需驗收）**
-  - ~~**6-2e grounded path**：摘要 tab 的 grounded 三狀態渲染~~ → **已作廢（2026-07-06 U2b 決策：LEARN 摘要 tab 直接移除，無需驗收）**
-- [ ] 6-4b 依自查結果調整 6-2a prompt template 並針對問題 unit 局部重跑；對品質太差的 unit 評估升級到 Whisper 重 transcribe（B 方案）作為 source
+### 6-4 內容品管（2026-07-06 晚間再修訂：正式抽查移除，改由使用者實際操作回饋）
+- ~~6-4a 自行抽查~~ → **移除（2026-07-06 晚間使用者決策）**：staging 62 部已全量 approve + promote（`scripts/promote_unit_content.py`，promote 時剝除 summary/code_examples 殘留 key）；品質問題由使用者實際操作時回饋
+- ~~6-4a-deferred-ui~~ → 6-2d/6-2e 已作廢；**6-2c citation 跳轉**（grounded markdown + `player.seekTo`）併入使用者實際操作驗證
+- [ ] 6-4b 依使用者操作回饋調整 6-2a prompt template 並針對問題 unit 局部重跑；對品質太差的 unit 評估升級到 Whisper 重 transcribe（B 方案）作為 source；**含題庫缺題補生**（v17/v41 掛零等，見 tech-debt）
 
 > ⚠ 原 6-5（Coddy 對話品質）與 6-6（知識圖譜優化）已於 2026-07-04 依功能規格書**整併至 Phase 6-K**（6-5 → K4；6-6 → K1 + K5），原 sub-task 內容完整保留於對應 K 項。
 
@@ -208,10 +205,7 @@
 - [x] U2d QUIZ tab 題庫優先：`GET /quiz/from-bank` 支援省略 concept_tag（弱項模式，複用 pick_target_concept）+ question_type 過濾；QuizRunner 兩階段 loading + 404 fallback 現生；**練習題重複曝光 tech-debt 一併消除**（bank 一律排除該生已答過的題，Learn/Quiz 兩入口同時生效；全答過 → fallback 現生新題入庫，題庫自然成長）
 - [ ] U2e Workspace 程式碼存檔：編輯器內容目前重整即消失（僅 chat 快照 / 作答記錄入 DB）；新增自動存檔或「我的程式碼」功能
 - ~~U2f 範例程式製作~~ → **作廢（2026-07-06 晚間決策：範例程式全面移除，見 U2g）**
-- [ ] U2g LEARN tab 重構 + 移除範例程式（2026-07-06 晚間定案，遞補原第 6 批）：
-  - tab 改為「概念說明 / 程式實作題 / 觀念題」；練習題兩面板（本日已拆 CodingPanel / McPanel）升級為獨立 tab；觀念題＝選擇題（**不做簡答題型**，使用者定案）
-  - 課程介紹單元（v01-03）隱藏「程式實作題」tab（無程式碼可寫）
-  - 範例程式全面移除：`examples-tab.tsx` 刪除 + U2c intro 隱藏邏輯消失 + 生成管線 skip examples LLM call（同 U2b 手法，2 section → 1 section）+ 6-2d deferred-ui 驗收作廢；staging 既有 examples 資料留存無害，promote 不帶入
+- [x] U2g LEARN tab 重構 + 移除範例程式（2026-07-06 晚間完成）：tab 改「概念說明 / 程式實作題 / 觀念題」+ intro 隱藏程式題 + examples 管線/前端全移除 + 全量 promote + 移除題庫提示字樣（詳見 changelog）
 
 ---
 

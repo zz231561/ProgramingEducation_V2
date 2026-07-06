@@ -34,11 +34,7 @@ from services.learning.batch_generator import (
     generate_for_concept,
     list_target_concepts,
 )
-from services.learning.content_generator import (
-    CodeExamples,
-    ConceptExplanation,
-    UnitContent,
-)
+from services.learning.content_generator import ConceptExplanation, UnitContent
 from services.learning.unit_content_promote import promote_concept
 from services.rag.retrieve import RetrievedChunk
 from tests.helpers import TestSessionFactory
@@ -55,17 +51,13 @@ def _good_unit_content() -> UnitContent:
             markdown="說明 [00:01]。",
             citations=[],
         ),
-        code_examples=CodeExamples(needs_more_source=False, reason="", examples=[]),
     )
 
 
-def _partial_needs_more_unit_content() -> UnitContent:
+def _needs_more_unit_content() -> UnitContent:
     return UnitContent(
         concept_explanation=ConceptExplanation(
-            needs_more_source=False, reason="", markdown="x", citations=[],
-        ),
-        code_examples=CodeExamples(
-            needs_more_source=True, reason="字幕無程式碼", examples=[],
+            needs_more_source=True, reason="字幕過短無實質內容", markdown="", citations=[],
         ),
     )
 
@@ -150,17 +142,15 @@ async def _seed_user_path_unit(concept_id: uuid.UUID) -> tuple[uuid.UUID, uuid.U
 # === pure helpers ===
 
 
-def test_aggregate_needs_more_source_any_section():
+def test_aggregate_needs_more_source():
     assert _aggregate_needs_more_source(_good_unit_content()) is False
-    assert _aggregate_needs_more_source(_partial_needs_more_unit_content()) is True
+    assert _aggregate_needs_more_source(_needs_more_unit_content()) is True
 
 
-def test_flatten_notes_only_failing_sections():
-    notes = _flatten_notes(_partial_needs_more_unit_content())
-    assert "examples" in notes
-    assert "字幕無程式碼" in notes
-    assert "concept" not in notes
-    assert "summary" not in notes
+def test_flatten_notes_reports_concept_reason():
+    notes = _flatten_notes(_needs_more_unit_content())
+    assert "concept" in notes
+    assert "字幕過短" in notes
 
 
 def test_flatten_notes_empty_when_all_good():
@@ -288,10 +278,10 @@ async def test_generate_for_concept_no_video_order_raises_422():
 
 
 @pytest.mark.asyncio
-async def test_generate_partial_needs_more_source_aggregated_to_row():
+async def test_generate_needs_more_source_aggregated_to_row():
     cid = await _seed_concept(tag="cpp-49")
     with patched_chunks(_fake_chunks()), patched_generate(
-        [_partial_needs_more_unit_content()]
+        [_needs_more_unit_content()]
     ):
         async with TestSessionFactory() as db:
             concept = (
@@ -308,7 +298,7 @@ async def test_generate_partial_needs_more_source_aggregated_to_row():
             )
         ).scalar_one()
     assert row.needs_more_source is True
-    assert "字幕無程式碼" in row.notes
+    assert "字幕過短" in row.notes
 
 
 @pytest.mark.asyncio

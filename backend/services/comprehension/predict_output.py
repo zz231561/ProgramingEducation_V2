@@ -97,7 +97,7 @@ async def generate_predict_test(
 
     try:
         response = await client.chat.completions.create(
-            model=settings.LLM_MODEL,
+            model=settings.llm_model_generate,
             response_format={"type": "json_object"},
             messages=[
                 {"role": "system", "content": build_generate_prompt(question, student_code)},

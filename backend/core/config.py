@@ -31,8 +31,29 @@ class Settings(BaseSettings):
 
     # === OpenAI ===
     OPENAI_API_KEY: str = ""
+    # 6-M 任務導向模型路由（2026-07-06 定案，roadmap 6-M 選型表）：
+    # LLM_MODEL = 預設（對話組 EDF Feedback + 分析組 Evidence / Reflection / Comprehension 評分）
+    # 分組變數未設定時一律 fallback LLM_MODEL，行為與單一模型時代相同
     LLM_MODEL: str = "gpt-4o"
+    # 生成組：Quiz generate / Hint / Comprehension 出題
+    LLM_MODEL_GENERATE: str = ""
+    # 審查組：Quiz validate——cascade 強把關端
+    LLM_MODEL_VALIDATE: str = ""
+    # 內容組：6-2b unit content 批次（教科書本體，品質優先）
+    LLM_MODEL_CONTENT: str = ""
     EMBEDDING_MODEL: str = "text-embedding-3-small"
+
+    @property
+    def llm_model_generate(self) -> str:
+        return self.LLM_MODEL_GENERATE or self.LLM_MODEL
+
+    @property
+    def llm_model_validate(self) -> str:
+        return self.LLM_MODEL_VALIDATE or self.LLM_MODEL
+
+    @property
+    def llm_model_content(self) -> str:
+        return self.LLM_MODEL_CONTENT or self.LLM_MODEL
 
     # === Judge0 ===
     JUDGE0_API_URL: str = "https://judge0-ce.p.rapidapi.com"

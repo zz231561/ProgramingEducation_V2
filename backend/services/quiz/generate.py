@@ -213,7 +213,7 @@ async def generate_question(
 
     try:
         response = await client.chat.completions.create(
-            model=settings.LLM_MODEL,
+            model=settings.llm_model_generate,
             response_format={"type": "json_object"},
             messages=[
                 {"role": "system", "content": system_prompt},

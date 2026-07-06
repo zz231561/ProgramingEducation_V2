@@ -121,7 +121,7 @@ async def _upsert_staging(
                 needs_more_source=needs_more,
                 notes=notes,
                 attempt_count=attempt_count,
-                model_used=settings.LLM_MODEL,
+                model_used=settings.llm_model_content,
             )
         )
     else:
@@ -130,7 +130,7 @@ async def _upsert_staging(
         existing.needs_more_source = needs_more
         existing.notes = notes
         existing.attempt_count = attempt_count
-        existing.model_used = settings.LLM_MODEL
+        existing.model_used = settings.llm_model_content
         existing.generated_at = datetime.now(timezone.utc)
         existing.reviewed_at = None
     await db.commit()

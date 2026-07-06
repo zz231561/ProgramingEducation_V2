@@ -119,7 +119,7 @@ async def validate_question(
 
     try:
         response = await client.chat.completions.create(
-            model=settings.LLM_MODEL,
+            model=settings.llm_model_validate,
             response_format={"type": "json_object"},
             messages=[
                 {"role": "system", "content": _build_prompt(question)},

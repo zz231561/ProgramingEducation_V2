@@ -58,9 +58,12 @@ NEXTAUTH_URL=https://your-domain.com
 JUDGE0_API_URL=https://judge0-ce.p.rapidapi.com
 JUDGE0_API_KEY=xxx  # 自架不需要
 
-# 可選
+# 可選 — 6-M 任務導向模型路由（分組變數未設定時 fallback LLM_MODEL）
 EMBEDDING_MODEL=text-embedding-3-small
-LLM_MODEL=gpt-4o
+LLM_MODEL=gpt-5.4-mini        # 預設：對話組（EDF Feedback）+ 分析組（Evidence/Reflection/Comprehension 評分）
+LLM_MODEL_GENERATE=gpt-5-mini # 生成組：Quiz generate / Hint / Comprehension 出題
+LLM_MODEL_VALIDATE=gpt-5.4    # 審查組：Quiz validate（cascade 強把關端）
+LLM_MODEL_CONTENT=gpt-5.4     # 內容組：Unit content 批次
 RATE_LIMIT_PER_MINUTE=10
 LOG_LEVEL=INFO
 ```

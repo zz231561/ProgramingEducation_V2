@@ -132,7 +132,7 @@ async def generate_hint(
 
     try:
         response = await client.chat.completions.create(
-            model=settings.LLM_MODEL,
+            model=settings.llm_model_generate,
             response_format={"type": "json_object"},
             messages=[
                 {"role": "system", "content": _build_prompt(question, hint_level, student_attempt)},

@@ -83,15 +83,18 @@ _GRADE_FAIL = VariationGradeResult(passed=False, feedback=None)
 
 
 async def _call_llm_json(
-    system_prompt: str, max_tokens: int, temperature: float
+    system_prompt: str, max_tokens: int, temperature: float, model: str
 ) -> dict[str, Any] | None:
-    """共用 LLM 呼叫 + JSON parse；任何失敗回 None。"""
+    """共用 LLM 呼叫 + JSON parse；任何失敗回 None。
+
+    model 由 caller 指定：出題走生成組、評分走預設分析組（6-M 路由）。
+    """
     client = _get_client()
     if client is None:
         return None
     try:
         response = await client.chat.completions.create(
-            model=settings.LLM_MODEL,
+            model=model,
             response_format={"type": "json_object"},
             messages=[
                 {"role": "system", "content": system_prompt},
@@ -119,6 +122,7 @@ async def generate_variation(
         build_generate_prompt(question, student_code),
         max_tokens=800,
         temperature=0.5,
+        model=settings.llm_model_generate,
     )
     if data is None:
         return _GEN_FAIL
@@ -145,6 +149,7 @@ async def grade_variation(
         build_grade_prompt(variation_stem, test_cases, concept_focus, student_code),
         max_tokens=300,
         temperature=0.1,
+        model=settings.LLM_MODEL,
     )
     if data is None:
         return _GRADE_FAIL

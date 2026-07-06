@@ -117,7 +117,7 @@
 > **背景**：原論文規格指定 GPT-4o（2024 舊世代）；2026-07-06 定案改為「依任務特性路由模型」（cascade 設計：弱模型生成 + 強模型審查）。**📌 論文關鍵技術**：FrugalGPT（Chen et al. 2023）、RouteLLM（Ong et al. 2024），引用見 `references.md` §5.1；論文實驗章節記錄實驗當下確切模型版本。
 > **選型表**：對話組（EDF Feedback）+ 分析組（Evidence / Reflection / Comprehension 評分）= `gpt-5.4-mini`（K4d 實測不足再升 5.4）｜生成組（Quiz generate / Hint / Comprehension 出題）= `gpt-5-mini`｜審查組（Quiz validate）= `gpt-5.4`｜Unit content 6-2b 批次 = `gpt-5.4`（教科書本體，品質優先）｜Embedding 維持 `text-embedding-3-small`（861 chunks 已入庫不重嵌）。
 > **費用**：一次性批次 ≈ $6.6（content $4 + 題庫生成 $1 + 審查 $1.6）；儲值 $10；上線後即時互動估 $35-40/月（100 學生）。不採 OpenAI Batch API（省 <$1.5 不值得改寫非同步流程）。
-- [ ] 6-M1 分組模型環境變數：`LLM_MODEL_GENERATE` / `LLM_MODEL_VALIDATE` / `LLM_MODEL_CONTENT`（皆 fallback `LLM_MODEL`）+ 各模組 model 參照切換；**不抽共用 client**（tech-debt 既有決策）；未設定時行為不變，測試零影響
+- [x] 6-M1 分組模型環境變數（2026-07-06 ✅）：config 三組變數 + fallback property + 11 個呼叫點切換 + .env 套用選型表；608 tests 全綠
 
 ### 6-R 健壯性強化（2026-07-04 架構審查新增，同日完成）✅
 > 背景：上線前架構審查發現三個系統性缺口：可觀測性為零（500 不留痕）、安全規範未落地（rate limit / token exp 只在文件）、外部依賴網路例外未馴服。全部本機完成 + 測試驗證（後端 513 tests 全綠，+14 新測試）。

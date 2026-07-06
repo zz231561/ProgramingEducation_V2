@@ -158,7 +158,7 @@ async def _call_llm_json(system: str, user: str, output_model: type) -> BaseMode
     client = _get_client()
     try:
         resp = await client.chat.completions.create(
-            model=settings.LLM_MODEL,
+            model=settings.llm_model_content,
             messages=[
                 {"role": "system", "content": system},
                 {"role": "user", "content": user},

@@ -1,5 +1,18 @@
 # 變更日誌
 
+## [2026-07-06] — feat(llm)：6-M1 分組模型環境變數（任務導向路由落地）
+
+### Added
+- **`core/config.py` 三組模型變數**：`LLM_MODEL_GENERATE` / `LLM_MODEL_VALIDATE` / `LLM_MODEL_CONTENT`，各配 lowercase fallback property（未設定 → `LLM_MODEL`，單一模型時代行為不變）；不抽共用 client（tech-debt 既有決策）
+- **呼叫點切換**（依 6-M 選型表分流）：生成組 `llm_model_generate` = quiz/generate、quiz/hint、comprehension 出題（epl / predict_output / variation generate）；審查組 `llm_model_validate` = quiz/validate；內容組 `llm_model_content` = learning/content_generator（batch_generator `model_used` 記錄同步）；對話 + 分析組維持 `LLM_MODEL` 預設（edf/feedback、edf/evidence、reflection/evaluate、quiz/feedback、comprehension 評分）
+- **variation `_call_llm_json` 加 `model` 參數**：出題與評分共用 helper，由 caller 分流
+- **.env 套用選型**：`LLM_MODEL=gpt-5.4-mini`、`GENERATE=gpt-5-mini`、`VALIDATE=gpt-5.4`、`CONTENT=gpt-5.4`；`.env.example` 同步
+
+### Tests
+- 新增 `test_llm_model_routing.py` ×3（fallback / 全覆寫 / 部分覆寫）；後端全量 **608 passed**
+
+---
+
 ## [2026-07-06] — feat(quiz)：第 4 批 U2d 題庫優先 + U2a 美化 + 重複曝光消除
 
 ### Added（U2d）

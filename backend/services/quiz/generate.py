@@ -93,6 +93,7 @@ def _build_system_prompt(
     bloom_level: int,
     grounded: bool = False,
     knowledge_point: str | None = None,
+    extra_concepts: list[Concept] | None = None,
 ) -> str:
     schema_hint = {
         QuestionType.MULTIPLE_CHOICE: (
@@ -116,6 +117,18 @@ def _build_system_prompt(
         if knowledge_point
         else ""
     )
+    # 6-3d 綜合題：要求同時運用目標概念與相關概念，而非各自獨立可解
+    combine_block = ""
+    if extra_concepts:
+        related = "、".join(
+            f"{c.name_zh}（{c.tag}）" for c in extra_concepts
+        )
+        combine_block = (
+            f"\n【綜合概念】本題須「同時」測驗目標概念與以下相關概念的關聯運用：\n"
+            f"{related}\n"
+            "情境要自然整合，需綜合運用這些概念才能作答；"
+            "不可只是把多個獨立小題拼在一起。\n"
+        )
 
     return f"""\
 你是 C++ 程式教學題目生成助手。為以下概念生成**一題**測驗題。
@@ -125,7 +138,7 @@ def _build_system_prompt(
 - 名稱：{concept.name_zh} / {concept.name_en}
 - 分類：{concept.category}
 - 描述：{concept.description}
-
+{combine_block}
 題目參數：
 - 題型：{question_type.value}
 - 難度：{difficulty}/5（1=最簡單，5=最進階）
@@ -205,6 +218,7 @@ async def generate_question(
     knowledge_point: str | None = None,
     source: QuestionSource = QuestionSource.GENERATED,
     model: str | None = None,
+    extra_concepts: list[Concept] | None = None,
 ) -> Question:
     """為單一 concept 生成題目並寫入 DB（caller commit）。
 
@@ -212,6 +226,8 @@ async def generate_question(
     None 時走原 semantic RAG（學生現生題 backward compat）。
     `knowledge_point`（6-3c）提供時題目聚焦該知識點，並記錄於 content 供覆蓋追溯。
     `model`（6-3c coding 強模型）提供時覆蓋生成模型；None → 預設生成組模型。
+    `extra_concepts`（6-3d 綜合題）提供時題目綜合測驗目標 + 相關概念；
+    concept_tags 記錄全部概念（去重保序）。
     回傳已 db.add、未 commit、validated=False 的 Question。
     """
     client = _get_client()
@@ -228,6 +244,7 @@ async def generate_question(
         bloom_level,
         grounded=grounded,
         knowledge_point=knowledge_point,
+        extra_concepts=extra_concepts,
     )
     user_prompt = _build_user_prompt(rag_chunks, grounded=grounded)
 
@@ -270,9 +287,15 @@ async def generate_question(
         # 6-3c：記錄本題對應的知識點（LEARN 題組覆蓋率追溯；前端不顯示）
         content["knowledge_point"] = knowledge_point
 
+    # 6-3d 綜合題：concept_tags 含目標 + 相關概念（去重保序）
+    tags = [concept.tag]
+    for c in extra_concepts or []:
+        if c.tag not in tags:
+            tags.append(c.tag)
+
     question = Question(
         type=question_type.value,
-        concept_tags=[concept.tag],
+        concept_tags=tags,
         bloom_level=bloom_level,
         difficulty=difficulty,
         content=content,

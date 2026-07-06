@@ -356,3 +356,55 @@ async def test_grounded_retrieve_failure_does_not_block_generation():
             await db.commit()
             await db.refresh(q)
     assert q.type == "multiple_choice"
+
+
+# === 6-3d 綜合題（extra_concepts）===
+
+
+@pytest.mark.asyncio
+async def test_extra_concepts_multi_tag_and_combine_prompt():
+    """extra_concepts：concept_tags 含全部概念、system prompt 有綜合概念指示。"""
+    concept = await _seed_concept()  # pointer-arithmetic
+    async with TestSessionFactory() as db:
+        related = Concept(
+            tag="arrays-strings",
+            name_zh="陣列與字串",
+            name_en="Arrays and Strings",
+            description="陣列宣告與存取。",
+            difficulty_level=2,
+            category="基礎",
+        )
+        db.add(related)
+        await db.commit()
+        await db.refresh(related)
+
+    with patched_llm(_VALID_MC_JSON) as (client_mock, _rag, _grounded):
+        async with TestSessionFactory() as db:
+            q = await generate_question(
+                db, concept, QuestionType.MULTIPLE_CHOICE, 3, 3,
+                extra_concepts=[related],
+            )
+            await db.commit()
+            await db.refresh(q)
+
+    assert set(q.concept_tags) == {"pointer-arithmetic", "arrays-strings"}
+    system_msg = client_mock.chat.completions.create.await_args.kwargs["messages"][0]
+    assert "綜合概念" in system_msg["content"]
+    assert "陣列與字串" in system_msg["content"]
+
+
+@pytest.mark.asyncio
+async def test_no_extra_concepts_single_tag_no_combine_block():
+    """無 extra_concepts：concept_tags 只有目標、prompt 不含綜合概念區塊。"""
+    concept = await _seed_concept()
+    with patched_llm(_VALID_MC_JSON) as (client_mock, _rag, _grounded):
+        async with TestSessionFactory() as db:
+            q = await generate_question(
+                db, concept, QuestionType.MULTIPLE_CHOICE, 3, 3
+            )
+            await db.commit()
+            await db.refresh(q)
+
+    assert q.concept_tags == ["pointer-arithmetic"]
+    system_msg = client_mock.chat.completions.create.await_args.kwargs["messages"][0]
+    assert "綜合概念" not in system_msg["content"]

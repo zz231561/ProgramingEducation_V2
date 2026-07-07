@@ -16,6 +16,7 @@ from core.errors import (
     unhandled_error_handler,
     validation_error_handler,
 )
+from api.routes.assignment_submissions import router as assignment_submissions_router
 from api.routes.assignments import (
     attachments_router,
     router as assignments_router,
@@ -84,6 +85,8 @@ app.include_router(code_router)
 app.include_router(chat_router)
 app.include_router(concepts_router)
 app.include_router(classes_router)
+# submissions router 先註冊：/assignments/mine 需優先於 /assignments/{id}
+app.include_router(assignment_submissions_router)
 app.include_router(assignments_router)
 app.include_router(attachments_router)
 app.include_router(profile_router)

@@ -171,7 +171,18 @@ GET    /attachments/{id}          -- 下載（授權：作業附件=教師或班
                                   --   一律 Content-Disposition: attachment（防 inline XSS）
 DELETE /attachments/{id}          -- 教師刪除作業附件（204）
 ```
-> 5-5b（待做）：學生作業列表/繳交 API + 教師交件檢視（評分/評語）。
+# 繳交（5-5b）
+```
+# 學生（班級成員）
+GET    /assignments/mine                    -- 我所屬班級 active 作業 + 我的繳交狀態
+GET    /assignments/mine/{id}               -- 詳情：教師附件 + 我的繳交 + 我的繳交附件
+PUT    /assignments/{id}/submission         -- { text } upsert（重繳覆蓋）→ SubmissionOut
+POST   /submissions/{sid}/attachments       -- multipart 繳交附件（本人）
+# 教師（作業擁有者）
+GET    /assignments/{id}/submissions        -- 班級名冊 × 交/未交狀態
+PATCH  /submissions/{sid}/grade             -- { score?, feedback } 評分 + 評語
+```
+> 附件下載/刪除沿用 `GET/DELETE /attachments/{id}`（作業附件=教師或班級成員；繳交附件=本人或該作業教師）。
 
 ```
 # 教師題庫檢視（5-6c，require_roles TEACHER）

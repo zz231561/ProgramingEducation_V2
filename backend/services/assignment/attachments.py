@@ -48,6 +48,24 @@ def validate_upload(filename: str, size: int) -> None:
         raise AppError(413, "FILE_TOO_LARGE", "檔案超過 10MB 上限")
 
 
+def build_attachment(
+    *,
+    owner_type: str,
+    owner_id: uuid.UUID,
+    filename: str,
+    content_type: str,
+    content: bytes,
+    uploaded_by: uuid.UUID,
+) -> Attachment:
+    """驗證後建構 Attachment（未 commit）；作業/繳交附件共用。"""
+    validate_upload(filename, len(content))
+    return Attachment(
+        owner_type=owner_type, owner_id=owner_id, filename=_safe_name(filename),
+        content_type=(content_type or "application/octet-stream")[:100],
+        size_bytes=len(content), content=content, uploaded_by=uploaded_by,
+    )
+
+
 async def add_assignment_attachment(
     db: AsyncSession,
     *,
@@ -61,12 +79,10 @@ async def add_assignment_attachment(
     a = await db.get(Assignment, assignment_id)
     if a is None or a.teacher_id != teacher_id:
         raise AppError(404, "ASSIGNMENT_NOT_FOUND", "作業不存在")
-    validate_upload(filename, len(content))
-    att = Attachment(
+    att = build_attachment(
         owner_type=AttachmentOwner.ASSIGNMENT.value, owner_id=assignment_id,
-        filename=_safe_name(filename),
-        content_type=(content_type or "application/octet-stream")[:100],
-        size_bytes=len(content), content=content, uploaded_by=teacher_id,
+        filename=filename, content_type=content_type, content=content,
+        uploaded_by=teacher_id,
     )
     db.add(att)
     await db.commit()
@@ -128,16 +144,21 @@ async def _authorize_access(
 
 
 async def delete_attachment(
-    db: AsyncSession, *, teacher_id: uuid.UUID, attachment_id: uuid.UUID
+    db: AsyncSession, *, user_id: uuid.UUID, attachment_id: uuid.UUID
 ) -> None:
-    """教師刪除自己作業的附件（5-5a-2 僅開放作業附件）。"""
+    """刪除附件——作業附件限該作業教師；繳交附件限繳交本人（5-5b）。"""
     att = await db.get(Attachment, attachment_id)
     if att is None:
         raise AppError(404, "ATTACHMENT_NOT_FOUND", "附件不存在")
-    if att.owner_type != AttachmentOwner.ASSIGNMENT.value:
+    if att.owner_type == AttachmentOwner.ASSIGNMENT.value:
+        a = await db.get(Assignment, att.owner_id)
+        if a is None or a.teacher_id != user_id:
+            raise AppError(404, "ATTACHMENT_NOT_FOUND", "附件不存在")
+    elif att.owner_type == AttachmentOwner.SUBMISSION.value:
+        sub = await db.get(AssignmentSubmission, att.owner_id)
+        if sub is None or sub.student_id != user_id:
+            raise AppError(404, "ATTACHMENT_NOT_FOUND", "附件不存在")
+    else:
         raise AppError(403, "FORBIDDEN", "無權刪除此附件")
-    a = await db.get(Assignment, att.owner_id)
-    if a is None or a.teacher_id != teacher_id:
-        raise AppError(404, "ATTACHMENT_NOT_FOUND", "附件不存在")
     await db.delete(att)
     await db.commit()

@@ -1,5 +1,24 @@
 # 變更日誌
 
+## [2026-07-08] — feat(assignment)：5-5b 作業繳交後端（學生繳交 + 教師評分）
+
+### Added
+- **繳交 service**（`services/assignment/submissions.py`）+ **route**（`api/routes/assignment_submissions.py`）：
+  - 學生：`GET /assignments/mine`（所屬班級 active 作業 + 我的繳交狀態）+ `GET /assignments/mine/{id}`（詳情含教師附件 + 我的繳交 + 我的附件）+ `PUT /assignments/{id}/submission`（文字 upsert，重繳覆蓋）+ `POST /submissions/{sid}/attachments`（繳交附件上傳）
+  - 教師：`GET /assignments/{id}/submissions`（班級名冊 × 交/未交狀態）+ `PATCH /submissions/{sid}/grade`（score + feedback + graded_at）
+  - 授權：學生限自己所屬班級 active 作業與自己的繳交；教師限自己作業
+  - submissions router 先於 assignments router 註冊（`/assignments/mine` 優先於 `/assignments/{id}`）
+### Changed
+- `delete_attachment` 通用化：作業附件限該作業教師、**繳交附件限繳交本人**（`DELETE /attachments/{id}` 改 `get_current_db_user`）；`build_attachment` 共用 builder（作業/繳交附件）
+
+### Tests
+- +8（學生看到班級作業 / 非成員 404 / 繳交 upsert 覆蓋 / 繳交附件上傳+下載+刪除 / 教師列名冊×狀態 / 教師評分 / 學生不可評分 403）；後端全量 **727 passed**
+
+### Note
+- 前端 5-5b-3（學生 UI + Dashboard 卡片）/ 5-5b-4（教師交件檢視 UI）待做
+
+---
+
 ## [2026-07-08] — feat(teacher)：5-6b Learn 教師全開 + 5-6c 單元題庫檢視
 
 ### Added

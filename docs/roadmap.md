@@ -93,8 +93,7 @@
   - [x] 5-6b Learn 教師權限全開（`ghostUnlock = useGhostUnlock() || role==="teacher"`，複用 DEV-4 幽靈解鎖鏈路讓教師點閱全部 locked 單元）— 待 UI 驗收
   - [x] 5-6c Learn 單元頁題庫檢視（`GET /quiz/bank?tag=` teacher-gated 回完整 content+解析；`TeacherQuestionBank` 元件 + unit-content 教師專屬「題庫」tab；解答預設隱藏 + 顯示/隱藏切換 + 正解綠框；6 route tests）— 待 UI 驗收
 - 5-5b 學生繳交 + 教師交件檢視
-  - [ ] 5-5b-1 學生作業列表/詳情 API（我所屬班級 active 作業 + 我的繳交狀態 + 教師附件下載）
-  - [ ] 5-5b-2 學生繳交 API（文字 + 檔案 upsert，截止前可重繳覆蓋；逾期軟提示）
+  - [x] 5-5b-1/2 後端（`services/assignment/submissions.py` + `api/routes/assignment_submissions.py`）：學生 `GET /assignments/mine`（+`/mine/{id}` 詳情含教師/繳交附件）+ `PUT /assignments/{id}/submission`（upsert 重繳覆蓋）+ `POST /submissions/{sid}/attachments`；教師 `GET /assignments/{id}/submissions`（名冊×狀態）+ `PATCH /submissions/{sid}/grade`（評分+評語）；attachment delete 通用化（作業限教師/繳交限本人）；8 tests
   - [ ] 5-5b-3 學生作業 UI（作業 tab 頁 + Dashboard 待辦卡片 + 繳交表單）
   - [ ] 5-5b-4 教師交件檢視 UI（學生 × 交/未交狀態 + 檢視文字/下載附件 + 評分 + 評語）
 

@@ -220,6 +220,7 @@ async def download_attachment(
 async def remove_attachment(
     attachment_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    teacher: User = Depends(_teacher),
+    user: User = Depends(get_current_db_user),
 ) -> None:
-    await delete_attachment(db, teacher_id=teacher.id, attachment_id=attachment_id)
+    # 授權在 service：作業附件限該作業教師、繳交附件限繳交本人
+    await delete_attachment(db, user_id=user.id, attachment_id=attachment_id)

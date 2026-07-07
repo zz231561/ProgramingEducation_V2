@@ -1,5 +1,23 @@
 # 變更日誌
 
+## [2026-07-07] — feat(teacher)：5-5a-2 教師作業 CRUD + 附件 API
+
+### Added
+- **作業 CRUD API**（`api/routes/assignments.py` + `services/assignment/crud.py`）：require_roles(TEACHER) + 擁有權（他人 404）
+  - `POST/GET/GET{id}/PATCH{id}/DELETE{id} /assignments`；list 支援 `?class_id=` 過濾
+  - **PATCH 可編輯 due_at**（截止時間）：用 `model_fields_set` 區分「未提供（保留）」與「明確 null（清除）」——UNSET 哨兵
+  - DELETE 顯式清理多型附件 + 繳交（無 FK cascade）
+- **附件 API**（`services/assignment/attachments.py`）：檔案存 bytea
+  - `POST /assignments/{id}/attachments`（multipart 上傳，教師）+ `GET /attachments/{id}`（下載）+ `DELETE /attachments/{id}`
+  - **安全**：副檔名白名單（word/pdf/pptx/程式碼/文字/zip）+ 單檔 ≤ 10MB（讀 MAX+1 偵測超標）+ 檔名去路徑；下載一律 `Content-Disposition: attachment`（防 inline XSS）+ 授權（作業附件＝教師或班級成員；繳交附件＝本人或該作業教師）
+  - 上傳掛 `rate_limit("upload", 20)`
+- 新依賴 `python-multipart`（pyproject）；main.py 註冊 assignments + attachments 兩 router
+
+### Tests
+- +15（CRUD 授權 / due_at 編輯+清除+保留 / 上傳白名單+空檔+超標 / 下載授權：教師/成員/非成員 403 / 刪附件）；後端全量 **717 passed**；ruff 綠
+
+---
+
 ## [2026-07-07] — feat(teacher)：5-5a-1 作業 3 表 migration + models
 
 ### Added

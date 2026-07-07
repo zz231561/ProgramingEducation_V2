@@ -16,6 +16,10 @@ from core.errors import (
     unhandled_error_handler,
     validation_error_handler,
 )
+from api.routes.assignments import (
+    attachments_router,
+    router as assignments_router,
+)
 from api.routes.auth import router as auth_router
 from api.routes.chat import router as chat_router
 from api.routes.classes import router as classes_router
@@ -80,6 +84,8 @@ app.include_router(code_router)
 app.include_router(chat_router)
 app.include_router(concepts_router)
 app.include_router(classes_router)
+app.include_router(assignments_router)
+app.include_router(attachments_router)
 app.include_router(profile_router)
 app.include_router(diagnosis_router)
 app.include_router(dashboard_router)

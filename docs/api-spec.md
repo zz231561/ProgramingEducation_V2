@@ -154,6 +154,25 @@ GET    /api/analytics/student/{user_id}/summary  -- 個人行為摘要
   }
 ```
 
+## Assignments（作業指派，5-5 TronClass 式文件繳交）
+
+```
+# 教師（require_roles TEACHER + 擁有權，他人 404）
+POST   /assignments               -- { class_id, title, description?, due_at? } → AssignmentOut
+GET    /assignments?class_id=     -- 列出教師自己的作業（可選班級過濾）
+GET    /assignments/{id}          -- 單一作業
+PATCH  /assignments/{id}          -- { title?, description?, due_at?, is_active? } 編輯；
+                                  --   due_at 明確傳 null = 清除截止；省略 = 保留
+DELETE /assignments/{id}          -- 刪除作業 + 繳交 + 附件（204）
+
+# 附件（bytea 儲存；白名單 word/pdf/pptx/程式碼/txt/zip；單檔 ≤ 10MB）
+POST   /assignments/{id}/attachments  -- multipart file（教師）→ AttachmentOut；rate_limit upload 20/min
+GET    /attachments/{id}          -- 下載（授權：作業附件=教師或班級成員；繳交附件=本人或該作業教師）
+                                  --   一律 Content-Disposition: attachment（防 inline XSS）
+DELETE /attachments/{id}          -- 教師刪除作業附件（204）
+```
+> 5-5b（待做）：學生作業列表/繳交 API + 教師交件檢視（評分/評語）。
+
 ## Health
 
 ```

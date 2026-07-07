@@ -86,7 +86,7 @@
 > ⚠ 原 5-5b「精熟度熱力圖 + 常見錯誤統計」與文件繳交無關 → 回歸 **5-4 行為分析視覺化**（本就在那）；5-5b 重定義為「學生繳交 + 教師交件檢視」。
 - 5-5a 作業建立 + 附件（教師端）
   - [x] 5-5a-1 3 表 migration `q3f4a5b6c7d8` + models（assignments / assignment_submissions / attachments 多型 bytea；單檔 CHECK ≤ 10MB；submission UNIQUE(assignment,student)；up/down 可逆驗證）
-  - [ ] 5-5a-2 教師作業 CRUD + 附件上傳/下載 API（require_roles(TEACHER) + 擁有權；型別白名單 + 10MB 限制）
+  - [x] 5-5a-2 教師作業 CRUD + 附件上傳/下載 API（`services/assignment/` + `api/routes/assignments.py`：CRUD 擁有權 404 + PATCH 可編輯/清除 due_at；附件 bytea 上傳白名單+10MB+下載授權+Content-Disposition attachment；python-multipart；15 tests）
   - [ ] 5-5a-3 教師作業 UI（「作業」tab + 建立表單 + 拖曳上傳 + 作業列表）
 - 5-5b 學生繳交 + 教師交件檢視
   - [ ] 5-5b-1 學生作業列表/詳情 API（我所屬班級 active 作業 + 我的繳交狀態 + 教師附件下載）

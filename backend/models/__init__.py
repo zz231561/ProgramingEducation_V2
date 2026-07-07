@@ -1,5 +1,11 @@
 """SQLAlchemy Models — 所有 model 需在此匯入以供 Alembic 偵測。"""
 
+from models.assignment import (
+    Assignment,
+    AssignmentSubmission,
+    Attachment,
+    AttachmentOwner,
+)
 from models.chat import ChatMessage, ChatSession
 from models.classroom import ClassMember, Classroom
 from models.coding_event import CodingEvent, CodingEventType
@@ -19,6 +25,10 @@ from models.unit_content_staging import StagingStatus, UnitContentStaging
 from models.user import User
 
 __all__ = [
+    "Assignment",
+    "AssignmentSubmission",
+    "Attachment",
+    "AttachmentOwner",
     "ChatMessage",
     "ChatSession",
     "ClassMember",

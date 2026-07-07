@@ -1,5 +1,20 @@
 # 變更日誌
 
+## [2026-07-07] — feat(teacher)：5-5a-1 作業 3 表 migration + models
+
+### Added
+- **作業指派 schema**（migration `q3f4a5b6c7d8` + `models/assignment.py`）：TronClass 式文件繳交
+  - `assignments`：教師建立、指派整班（title/description/due_at/is_active）
+  - `assignment_submissions`：學生繳交（text/score/feedback/graded_at）；UNIQUE(assignment_id, student_id) 每生每作業一份重繳覆蓋；score CHECK >= 0
+  - `attachments`：多型附件（owner_type assignment/submission）檔案內容存 **bytea**（Zeabur 容器 fs ephemeral）；單檔 CHECK ≤ 10MB（`MAX_ATTACHMENT_BYTES`）
+  - db-schema.md §Module 8 同步 3 表
+- **設計決策（2026-07-07 使用者定案）**：作業＝文件繳交非題庫 quiz；指派整班；檔案存 Postgres；教師可評分+評語；學生雙入口（作業 tab + Dashboard 卡片）；**原 5-5b 熱力圖/錯誤統計改隸 5-4**（與文件繳交無關）
+
+### Verified
+- migration up/down/up 可逆（Postgres 實跑）；models 匯入；後端全量 **702 passed**（schema 步驟，API/UI 測試隨 5-5a-2 起補）
+
+---
+
 ## [2026-07-07] — feat(dev)：DEV-E 假學生資料 seeder
 
 ### Added

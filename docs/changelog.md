@@ -1,5 +1,22 @@
 # 變更日誌
 
+## [2026-07-07] — feat(dev)：DEV-E 假學生資料 seeder
+
+### Added
+- **假學生 seeder**（`services/dev_seed/` package + CLI `scripts/seed_fake_students.py`）：供教師端 / 行為分析本機開發
+  - 三行為原型（主動 / 被動 / 掙扎）塑形資料，讓 5-2d 聚合與 5-3 群聚分析有可跑樣本
+  - 每位學生：profile + 班級成員 + coding_events（成功/錯誤/hint）+ chat_messages（含 dialogue_act）+ student_mastery（confidence 依原型 gauss 抖動）
+  - 可辨識 email 後綴 `@seed.dev`；一律先 purge 舊 seed 學生（顯式刪子表跨 SQLite/PG 一致）→ 可重現、不撞號
+  - demo 教師 `seed-teacher@seed.dev` + demo 班級 get-or-create（reuse，purge 不動）；`--class-id` 可併入既有班級
+  - seeded Random（`seed` 參數）保證可重現
+  - **拆分**：`generators.py`（純 builder，130 行）+ `seeder.py`（編排，158 行）避免單檔逾 250 行門檻
+- CLI 實機驗證：對 Postgres dev DB 生成 6 位（原型 2/2/2 均衡）
+
+### Tests
+- +4（seed 建學生+資料 / 可重現冪等 / purge 保留教師班級 / 與 5-2d 聚合整合）；後端全量 **702 passed**
+
+---
+
 ## [2026-07-07] — feat(analytics)：5-2d 行為指標聚合 service
 
 ### Added

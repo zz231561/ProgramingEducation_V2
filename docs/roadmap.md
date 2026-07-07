@@ -206,7 +206,7 @@
 - [x] DEV-7 EDF Debug 面板（追加 A）：interact `debug_sink` 收集 evidence/strategy/RAG 分數/kgraph（dev 才附、僅當輪不持久化）+ AI 訊息下摺疊面板
 - [x] DEV-8 K3 診斷模擬器（追加 C）：`POST /dev/simulate-failures` 注入連錯 N 次（stub 題可重用）→ 回診斷摘要 + 圖譜補救連結
 - [x] DEV-9 題庫檢視器（追加 D）：`GET /dev/questions?tag=` 列題（validate 狀態）+ `/quiz?question=<id>` 深連結直接作答
-- [ ] DEV-E 假學生資料 seeder（延後至 Phase 5 教師端開工時）
+- [x] DEV-E 假學生資料 seeder（`services/dev_seed/` + CLI `scripts/seed_fake_students.py`：三行為原型塑形 profile+成員+events+chat dialogue_act+mastery；`@seed.dev` 可辨識、一律 purge 可重現；demo 教師/班級 get-or-create；4 tests + CLI 實機驗證）
 
 ---
 

@@ -1,5 +1,25 @@
 # 變更日誌
 
+## [2026-07-07] — feat(analytics)：5-2c chat_messages dialogue_act 欄位（StudyChat schema）
+
+### Added
+- **`chat_messages.dialogue_act` 欄位**（migration `p2e3f4a5b6c7` + `models/chat.py` `DialogueAct` enum）：學生訊息對話行為分類
+  - String(24) + CHECK（非 PG ENUM，比照 coding_events.event_type）；nullable，既有列不回填
+  - 合法值＝StudyChat 6 類：asking_hint / clarification_request / debugging / off_topic / acknowledgment / verification（CC-BY-4.0）
+- **啟發式分類器**（`services/analytics/dialogue.py` `classify_dialogue_act`）：純函式、零 LLM 呼叫（比照 5-2b `classify_execution`）
+  - 優先序：明確 hint 請求（hint_level>0）> 簡短致謝 > 求證 > 除錯（附執行錯誤）> 文字求助 > 澄清提問；訊號不足回 None
+  - `off_topic` 無可靠啟發式訊號暫不主動判定（保留合法值供未來 StudyChat 語料訓練分類器 / 人工標註）
+- **掛鉤**：`chat interact` 於 fail-safe commit 前分類並隨 user message 一併持久化（僅用 LLM 呼叫前既有訊號）
+- db-schema.md §Module 9 dialogue_act 註記同步（補齊 clarification_request / verification）
+
+### Tests
+- +11（分類器 10 單元含優先序 / interact 寫入驗證）；後端全量 **691 passed**
+
+### Verified
+- migration up/down/up 可逆（Postgres 實跑）
+
+---
+
 ## [2026-07-07] — feat(analytics)：5-2b event logging service
 
 ### Added

@@ -218,9 +218,9 @@ coding_events
 ```
 > 實作對映（5-2a）：id=EventID、user_id=SubjectID（ProgSnap2 五欄主鍵）；migration `o1d2e3f4a5b6` + `models/coding_event.py`
 
-> `chat_messages` 表擴充欄位（Phase 5-2c）：
-> - `dialogue_act (enum: asking_hint/clarification/debugging/off_topic/acknowledgment, nullable)`
-> - 用於分類學生與 AI Tutor 的互動類型
+> `chat_messages` 表擴充欄位（Phase 5-2c ✅ migration `p2e3f4a5b6c7`）：
+> - `dialogue_act (String(24)+CHECK, nullable)`：StudyChat 6 值 asking_hint/clarification_request/debugging/off_topic/acknowledgment/verification
+> - 啟發式 `classify_dialogue_act` 於 chat interact 分類（純函式零 LLM）；訊號不足留 NULL；僅 user 訊息填值
 
 ```
 behavior_aggregates                         -- 預聚合表，定期計算避免即時查詢壓力

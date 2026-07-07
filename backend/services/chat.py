@@ -9,6 +9,7 @@ from sqlalchemy.orm import selectinload
 
 from models.chat import ChatSession, ChatMessage, MessageRole
 from models.reflection import Reflection
+from services.analytics import classify_dialogue_act
 from services.edf.evidence import analyze_evidence
 from services.edf.decision import decide_strategy
 from services.edf.feedback import generate_feedback
@@ -99,6 +100,9 @@ async def interact(
     history_rows = (await db.execute(history_stmt)).scalars().all()
     chat_history = [{"role": m.role.value, "content": m.content} for m in history_rows]
 
+    # 對話行為分類（5-2c）— 啟發式，僅用 LLM 呼叫前既有訊號，隨 user message 一併持久化
+    dialogue_act = classify_dialogue_act(question, hint_level, execution_result)
+
     # Fail-safe 持久化：user message 在 LLM 呼叫前先 commit。
     # OpenAI 偶發失敗是常態，不可讓學生打的問題隨 rollback 蒸發。
     user_msg = ChatMessage(
@@ -107,6 +111,7 @@ async def interact(
         content=question,
         code_snapshot=code,
         execution_result=execution_result,
+        dialogue_act=dialogue_act,
     )
     db.add(user_msg)
     if not history_rows:

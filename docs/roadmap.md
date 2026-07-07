@@ -87,7 +87,7 @@
 - 5-5a 作業建立 + 附件（教師端）
   - [x] 5-5a-1 3 表 migration `q3f4a5b6c7d8` + models（assignments / assignment_submissions / attachments 多型 bytea；單檔 CHECK ≤ 10MB；submission UNIQUE(assignment,student)；up/down 可逆驗證）
   - [x] 5-5a-2 教師作業 CRUD + 附件上傳/下載 API（`services/assignment/` + `api/routes/assignments.py`：CRUD 擁有權 404 + PATCH 可編輯/清除 due_at；附件 bytea 上傳白名單+10MB+下載授權+Content-Disposition attachment；python-multipart；15 tests）
-  - [ ] 5-5a-3 教師作業 UI（「作業」tab + 建立表單 + 拖曳上傳 + 作業列表）
+  - [ ] 5-5a-3 教師作業 UI（`/teacher` 加「班級管理/作業」分頁 + 建立表單含截止時間 + 拖曳上傳 + 作業卡編輯/停用/刪除 + 附件懶載入下載/續傳；`GET /assignments/{id}` 補 attachments）— **程式碼完成（tsc/eslint/build 綠），待使用者 UI 驗收**
 - 5-5b 學生繳交 + 教師交件檢視
   - [ ] 5-5b-1 學生作業列表/詳情 API（我所屬班級 active 作業 + 我的繳交狀態 + 教師附件下載）
   - [ ] 5-5b-2 學生繳交 API（文字 + 檔案 upsert，截止前可重繳覆蓋；逾期軟提示）

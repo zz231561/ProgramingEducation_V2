@@ -15,7 +15,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.deps import get_current_db_user, get_db, require_roles
 from core.rate_limit import rate_limit
-from models.assignment import MAX_ATTACHMENT_BYTES, Assignment, Attachment
+from models.assignment import (
+    MAX_ATTACHMENT_BYTES,
+    Assignment,
+    Attachment,
+    AttachmentOwner,
+)
 from models.user import User, UserRole
 from services.assignment import (
     UNSET,
@@ -26,6 +31,7 @@ from services.assignment import (
     get_assignment,
     get_attachment_for_download,
     list_assignments,
+    list_attachment_meta,
     update_assignment,
 )
 
@@ -66,6 +72,14 @@ class AttachmentOut(BaseModel):
             size_bytes=a.size_bytes, created_at=a.created_at.isoformat(),
         )
 
+    @classmethod
+    def from_row(cls, row) -> "AttachmentOut":
+        """由 list_attachment_meta 的精簡欄位 tuple 建構。"""
+        return cls(
+            id=row.id, filename=row.filename, content_type=row.content_type,
+            size_bytes=row.size_bytes, created_at=row.created_at.isoformat(),
+        )
+
 
 class AssignmentOut(BaseModel):
     id: uuid.UUID
@@ -85,6 +99,10 @@ class AssignmentOut(BaseModel):
             is_active=a.is_active, created_at=a.created_at.isoformat(),
             updated_at=a.updated_at.isoformat(),
         )
+
+
+class AssignmentDetailOut(AssignmentOut):
+    attachments: list[AttachmentOut]
 
 
 # === Assignment CRUD（教師）===
@@ -113,14 +131,20 @@ async def list_own(
     return [AssignmentOut.from_model(a) for a in rows]
 
 
-@router.get("/{assignment_id}", response_model=AssignmentOut)
+@router.get("/{assignment_id}", response_model=AssignmentDetailOut)
 async def get_one(
     assignment_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
     teacher: User = Depends(_teacher),
-) -> AssignmentOut:
+) -> AssignmentDetailOut:
     a = await get_assignment(db, teacher_id=teacher.id, assignment_id=assignment_id)
-    return AssignmentOut.from_model(a)
+    rows = await list_attachment_meta(
+        db, owner_type=AttachmentOwner.ASSIGNMENT.value, owner_id=a.id
+    )
+    base = AssignmentOut.from_model(a)
+    return AssignmentDetailOut(
+        **base.model_dump(), attachments=[AttachmentOut.from_row(r) for r in rows]
+    )
 
 
 @router.patch("/{assignment_id}", response_model=AssignmentOut)

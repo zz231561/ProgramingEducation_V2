@@ -32,10 +32,14 @@ export async function api<T = unknown>(
 ): Promise<T> {
   const url = path.startsWith("/") ? `/api${path}` : `/api/${path}`;
 
+  // FormData（檔案上傳）交由瀏覽器自帶 multipart boundary，不可覆寫 Content-Type
+  const isForm =
+    typeof FormData !== "undefined" && options?.body instanceof FormData;
+
   const res = await fetch(url, {
     ...options,
     headers: {
-      "Content-Type": "application/json",
+      ...(isForm ? {} : { "Content-Type": "application/json" }),
       ...options?.headers,
     },
   });

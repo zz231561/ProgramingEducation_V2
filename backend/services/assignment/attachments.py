@@ -6,6 +6,7 @@
 
 import uuid
 
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.errors import AppError
@@ -71,6 +72,21 @@ async def add_assignment_attachment(
     await db.commit()
     await db.refresh(att)
     return att
+
+
+async def list_attachment_meta(
+    db: AsyncSession, *, owner_type: str, owner_id: uuid.UUID
+) -> list:
+    """列出某 owner 的附件中繼資料（不載入 content bytes，避免載大 blob）。"""
+    stmt = (
+        select(
+            Attachment.id, Attachment.filename, Attachment.content_type,
+            Attachment.size_bytes, Attachment.created_at,
+        )
+        .where(Attachment.owner_type == owner_type, Attachment.owner_id == owner_id)
+        .order_by(Attachment.created_at)
+    )
+    return list((await db.execute(stmt)).all())
 
 
 async def get_attachment_for_download(

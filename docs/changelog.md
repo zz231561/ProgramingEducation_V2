@@ -1,5 +1,22 @@
 # 變更日誌
 
+## [2026-07-07] — feat(teacher)：5-5a-3 教師作業 UI（程式碼完成，待 UI 驗收）
+
+### Added
+- **教師作業管理 UI**（`web/components/teacher/assignment-*.tsx` + `/teacher` 加分頁）：
+  - `/teacher` 頁改「教師中心」+ 分頁切換「班級管理 / 作業」（active tab 沿用 #F78166 底線）
+  - 建立作業：選班級 + 標題/內容/**截止時間**（datetime-local）+ **拖曳上傳**附件（`FileDropzone`，前端型別/10MB 即時驗證）→ 建立後依序上傳
+  - 作業卡：顯示標題/內容/截止時間/停用徽章；**編輯**（含清除截止時間）、停用/啟用、刪除、展開附件面板（懶載入下載/刪除/續傳）
+  - 元件拆分保持 < 150 行：fields / edit-form / dropzone / attachments / card / manager
+- **API 層**：`web/lib/assignments.ts`（wrappers + `validateFile` + 下載 URL）；`api()` 支援 FormData（不覆寫 Content-Type，讓瀏覽器帶 multipart boundary）
+- **後端補強**（UI 依賴）：`GET /assignments/{id}` 改回 `AssignmentDetailOut` 含 `attachments`（`list_attachment_meta` 只取中繼欄位不載 bytes）；+1 test
+
+### Verified
+- 後端全量 **718 passed**；web `tsc --noEmit` + eslint 綠 + `next build` 成功
+- ⚠ UI 視覺/操作待使用者驗收（截止時間編輯、拖曳上傳、下載）
+
+---
+
 ## [2026-07-07] — feat(teacher)：5-5a-2 教師作業 CRUD + 附件 API
 
 ### Added

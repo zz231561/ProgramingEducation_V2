@@ -10,13 +10,21 @@
 import { useEffect, useState } from "react";
 import { Loader2, School } from "lucide-react";
 
+import { AssignmentManager } from "@/components/teacher/assignment-manager";
 import { ClassManager } from "@/components/teacher/class-manager";
 import { api } from "@/lib/api";
 
 type Gate = "loading" | "allowed" | "denied";
+type Tab = "classes" | "assignments";
+
+const TABS: { key: Tab; label: string }[] = [
+  { key: "classes", label: "班級管理" },
+  { key: "assignments", label: "作業" },
+];
 
 export default function TeacherPage() {
   const [gate, setGate] = useState<Gate>("loading");
+  const [tab, setTab] = useState<Tab>("classes");
 
   useEffect(() => {
     let cancelled = false;
@@ -37,7 +45,7 @@ export default function TeacherPage() {
     <div className="mx-auto h-full max-w-3xl overflow-y-auto px-6 py-8">
       <div className="flex items-center gap-2">
         <School className="size-5 text-text-secondary" />
-        <h1 className="text-xl font-medium text-text-primary">班級管理</h1>
+        <h1 className="text-xl font-medium text-text-primary">教師中心</h1>
       </div>
 
       {gate === "loading" && (
@@ -53,7 +61,26 @@ export default function TeacherPage() {
         </p>
       )}
 
-      {gate === "allowed" && <ClassManager />}
+      {gate === "allowed" && (
+        <>
+          <div className="mt-4 flex gap-1 border-b border-border-default">
+            {TABS.map((t) => (
+              <button
+                key={t.key}
+                onClick={() => setTab(t.key)}
+                className={`-mb-px border-b-2 px-3 py-2 text-sm transition-colors ${
+                  tab === t.key
+                    ? "border-[#F78166] text-text-primary"
+                    : "border-transparent text-text-secondary hover:text-text-primary"
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+          {tab === "classes" ? <ClassManager /> : <AssignmentManager />}
+        </>
+      )}
     </div>
   );
 }

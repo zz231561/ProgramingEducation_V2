@@ -8,6 +8,7 @@ from services.assignment.attachments import (
     add_assignment_attachment,
     delete_attachment,
     get_attachment_for_download,
+    list_attachment_meta,
     validate_upload,
 )
 from services.assignment.crud import (
@@ -29,6 +30,7 @@ __all__ = [
     "get_assignment",
     "get_attachment_for_download",
     "list_assignments",
+    "list_attachment_meta",
     "update_assignment",
     "validate_upload",
 ]

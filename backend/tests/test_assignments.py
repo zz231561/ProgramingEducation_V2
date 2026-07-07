@@ -215,6 +215,17 @@ async def test_upload_valid_and_download(client: AsyncClient):
     assert "attachment" in dl.headers["content-disposition"]
 
 
+async def test_detail_lists_attachments(client: AsyncClient):
+    t = await _as_teacher(client, TEACHER)
+    cid = await _make_class(client, t)
+    aid = await _make_assignment(client, t, cid)
+    await _upload(client, t, aid, "a.pdf", b"data", "application/pdf")
+    await _upload(client, t, aid, "b.txt", b"hello", "text/plain")
+    detail = (await client.get(f"/assignments/{aid}", cookies=t)).json()
+    names = {a["filename"] for a in detail["attachments"]}
+    assert names == {"a.pdf", "b.txt"}
+
+
 async def test_upload_bad_type_rejected(client: AsyncClient):
     t = await _as_teacher(client, TEACHER)
     cid = await _make_class(client, t)

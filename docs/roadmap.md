@@ -66,7 +66,7 @@
 - [x] 5-2a coding_events 表 migration（`o1d2e3f4a5b6` + `models/coding_event.py`；ProgSnap2 EventType 6 值 String+CHECK；id=EventID/user_id=SubjectID；concept_tags/execution_result/event_metadata 用 JSON；(user_id,created_at) 索引；up/down 可逆驗證）
 - [x] 5-2b event logging service（`services/analytics/events.py`）：`log_execution` 從 Judge0 分類 success/compile_error/runtime_error + `log_coding_event` best-effort（失敗吞例外+warning）；掛 `/code/execute`（執行結果）+ chat interact（hint_level>0 記 hint_request）；6 tests
 - [x] 5-2c chat_messages 擴充 dialogue_act 欄位（migration `p2e3f4a5b6c7`；String+CHECK 6 值 StudyChat schema；啟發式 `classify_dialogue_act` 純函式掛 interact，訊號不足留 NULL；11 tests）
-- [ ] 5-2d 行為指標聚合 service（編譯頻率/成功率/修復時間/hint 分布等）
+- [x] 5-2d 行為指標聚合 service（`services/analytics/aggregate.py` `aggregate_user_behavior`：執行次數/成功率/修復時間配對/hint 分布/dialogue_act 分布 + 時間窗；compute-on-read 不建預聚合表；7 tests）
 
 ### 5-3 行為分析演算法（Module 9）
 > **OSS**：✅ Tier 1 pyBKT + `prefixspan`（sequential pattern mining，**取代 AGPL 的 PM4Py**）

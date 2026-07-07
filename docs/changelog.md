@@ -1,5 +1,21 @@
 # 變更日誌
 
+## [2026-07-07] — feat(analytics)：5-2d 行為指標聚合 service
+
+### Added
+- **行為指標聚合 service**（`services/analytics/aggregate.py` `aggregate_user_behavior` + `BehaviorMetrics` dataclass）：
+  - 從 coding_events + chat_messages 計算單一使用者指標：execution_count / success_count / success_rate / hint_request_count / avg_fix_duration_seconds / hint_distribution / dialogue_act_distribution
+  - **修復時間**：時序配對「首次未解錯誤 → 下一次成功」的間隔平均（無配對回 None）
+  - **dialogue_act 分布**：DB group_by（chat_messages join session；比照 6-R8 func.count），NULL 不計入
+  - 支援 `since`/`until` 時間窗過濾
+- **設計決策**：compute-on-read，**不建 `behavior_aggregates` 預聚合表 / 不排程**——初期 < 100 人查詢壓力低；預聚合屬效能優化，留待 5-3/5-4 有真實資料 + 查詢壓力再評估
+- **範圍取捨**：concept_error_counts / active_seconds 暫不計（現有事件資料無乾淨來源，避免臆測）；API 端點屬 5-3d（延後至真實資料）
+
+### Tests
+- +7（空使用者 / 成功率 / 修復時間配對 / 無前置錯誤 / hint 分布 / dialogue_act 分布 / 時間窗過濾）；後端全量 **698 passed**
+
+---
+
 ## [2026-07-07] — feat(analytics)：5-2c chat_messages dialogue_act 欄位（StudyChat schema）
 
 ### Added

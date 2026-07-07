@@ -222,8 +222,10 @@ coding_events
 > - `dialogue_act (String(24)+CHECK, nullable)`：StudyChat 6 值 asking_hint/clarification_request/debugging/off_topic/acknowledgment/verification
 > - 啟發式 `classify_dialogue_act` 於 chat interact 分類（純函式零 LLM）；訊號不足留 NULL；僅 user 訊息填值
 
+> ⚠ 5-2d（2026-07-07）採 **compute-on-read**：`services/analytics/aggregate.py` 直接從 coding_events + chat_messages 即時計算，**未建下方 `behavior_aggregates` 表**（< 100 人查詢壓力低）。此表為預聚合效能優化的未來規劃，待 5-3/5-4 真實資料 + 查詢壓力再評估。concept_error_counts / active_seconds 現階段未計。
+
 ```
-behavior_aggregates                         -- 預聚合表，定期計算避免即時查詢壓力
+behavior_aggregates                         -- 預聚合表（未建；未來效能優化用），定期計算避免即時查詢壓力
 ├── id (UUID, PK)
 ├── user_id (FK → users, ON DELETE CASCADE)
 ├── period_start (date) ★ index

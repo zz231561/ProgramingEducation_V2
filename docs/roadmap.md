@@ -87,7 +87,11 @@
 - 5-5a 作業建立 + 附件（教師端）
   - [x] 5-5a-1 3 表 migration `q3f4a5b6c7d8` + models（assignments / assignment_submissions / attachments 多型 bytea；單檔 CHECK ≤ 10MB；submission UNIQUE(assignment,student)；up/down 可逆驗證）
   - [x] 5-5a-2 教師作業 CRUD + 附件上傳/下載 API（`services/assignment/` + `api/routes/assignments.py`：CRUD 擁有權 404 + PATCH 可編輯/清除 due_at；附件 bytea 上傳白名單+10MB+下載授權+Content-Disposition attachment；python-multipart；15 tests）
-  - [ ] 5-5a-3 教師作業 UI（`/teacher` 加「班級管理/作業」分頁 + 建立表單含截止時間 + 拖曳上傳 + 作業卡編輯/停用/刪除 + 附件懶載入下載/續傳；`GET /assignments/{id}` 補 attachments）— **程式碼完成（tsc/eslint/build 綠），待使用者 UI 驗收**
+  - [x] 5-5a-3 教師作業 UI（建立表單含截止時間 + 拖曳上傳 + 作業卡編輯/停用/刪除 + 附件懶載入下載/續傳；`GET /assignments/{id}` 補 attachments）— **UI 驗收通過**（導航位置另見 5-6）
+- 5-6 教師端導航與教材檢視（2026-07-08 使用者回饋：班級/作業移入導航、師生導航分流、Learn 全開、題庫檢視）
+  - [ ] 5-6a 角色化導航（教師＝班級|作業|Workspace|Learn，移除 Quiz/Knowledge；班級/作業移出 avatar 選單進頂部導航；`useRole` hook；教師登入預設落地班級管理；`/teacher` 拆 layout gate + 班級/作業兩 route）— 待 UI 驗收
+  - [ ] 5-6b Learn 教師權限全開（教師瀏覽全部單元不受鎖定限制）
+  - [ ] 5-6c Learn 單元頁題庫檢視（教師可看該單元題目 + 解答，解答預設隱藏 + 一鍵切換，避免示範露答案）
 - 5-5b 學生繳交 + 教師交件檢視
   - [ ] 5-5b-1 學生作業列表/詳情 API（我所屬班級 active 作業 + 我的繳交狀態 + 教師附件下載）
   - [ ] 5-5b-2 學生繳交 API（文字 + 檔案 upsert，截止前可重繳覆蓋；逾期軟提示）

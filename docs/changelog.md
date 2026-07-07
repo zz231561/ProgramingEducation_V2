@@ -1,5 +1,25 @@
 # 變更日誌
 
+## [2026-07-08] — feat(teacher)：5-6a 角色化導航
+
+### Changed
+- **師生導航分流**（`components/layout/global-nav.tsx` + `lib/use-role.ts`）：
+  - 教師頂部導航＝`班級 | 作業 | Workspace | Learn`（移除 Quiz/Knowledge）；學生維持原 5 頁籤
+  - `班級管理`/`作業`從右上角 avatar 選單**移入頂部導航**（avatar 只留設定/登出）
+  - 新 `useRole` hook（fetch /users/me role + 訂閱 ROLE_CHANGE_EVENT 即時更新）；role 未定前不渲染頁籤避免閃現
+  - `/teacher` 是 `/teacher/assignments` 前綴 → active tab 精確比對
+- **教師預設落地班級管理**：login callbackUrl `/workspace`→`/`；`app/(app)/page.tsx` 改 client 端依角色分流（教師→/teacher，其餘→/workspace）
+- **`/teacher` 路由拆分**：`layout.tsx`（角色 gate 一次）+ `page.tsx`（班級）+ `assignments/page.tsx`（作業）；移除原頁內分頁切換
+
+### Verified
+- web `tsc` 綠 + eslint 綠（僅既有 img 警告）+ `next build` 成功（/teacher、/teacher/assignments 皆註冊）
+- ⚠ UI 操作待使用者驗收
+
+### Note
+- 5-5a-3 教師作業 UI **UI 驗收通過**（本次回饋為導航位置調整，功能不變）
+
+---
+
 ## [2026-07-07] — feat(teacher)：5-5a-3 教師作業 UI（程式碼完成，待 UI 驗收）
 
 ### Added

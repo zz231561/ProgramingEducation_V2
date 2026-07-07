@@ -4,17 +4,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useSession, signOut } from "next-auth/react";
-import {
-  MessageSquare,
-  ChevronDown,
-  Settings,
-  LogOut,
-  School,
-} from "lucide-react";
+import { MessageSquare, ChevronDown, Settings, LogOut } from "lucide-react";
 
-import { api } from "@/lib/api";
-import { ROLE_CHANGE_EVENT } from "@/lib/dev-mode";
 import { getMyProfile, StudentProfile } from "@/lib/profile";
+import { Role, useRole } from "@/lib/use-role";
 
 interface GlobalNavProps {
   chatOpen: boolean;
@@ -26,14 +19,28 @@ interface NavTab {
   href: string;
 }
 
-/* design-plan §2.5：5 個頂部頁籤 */
-const NAV_TABS: NavTab[] = [
+/* 學生頂部頁籤（design-plan §2.5） */
+const STUDENT_TABS: NavTab[] = [
   { label: "Workspace", href: "/workspace" },
   { label: "Learn", href: "/learn" },
   { label: "Quiz", href: "/quiz" },
   { label: "Knowledge", href: "/knowledge" },
   { label: "Dashboard", href: "/dashboard" },
 ];
+
+/* 教師頂部頁籤：班級 + 作業 + 示範用 Workspace + 教材 Learn（不含 Quiz/Knowledge） */
+const TEACHER_TABS: NavTab[] = [
+  { label: "班級", href: "/teacher" },
+  { label: "作業", href: "/teacher/assignments" },
+  { label: "Workspace", href: "/workspace" },
+  { label: "Learn", href: "/learn" },
+];
+
+/** /teacher 是 /teacher/assignments 的前綴，故 /teacher 需精確比對避免兩籤同亮。 */
+function isTabActive(href: string, pathname: string): boolean {
+  if (href === "/teacher") return pathname === "/teacher";
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
 
 /**
  * 頂部全域導覽（design-plan §2.5）：
@@ -44,38 +51,41 @@ const NAV_TABS: NavTab[] = [
  */
 export function GlobalNav({ chatOpen, onToggleChat }: GlobalNavProps) {
   const pathname = usePathname();
+  const role = useRole();
+  const tabs = role === "teacher" ? TEACHER_TABS : STUDENT_TABS;
 
   return (
     <nav className="flex h-12 shrink-0 items-center gap-1 border-b border-border-muted bg-bg-canvas px-3 body-ui">
       {/* Logo — 純文字（design-plan §0.3 R8.2 禁 emoji 字） */}
       <Link
-        href="/workspace"
+        href={role === "teacher" ? "/teacher" : "/workspace"}
         className="flex h-full items-center pr-3 text-sm font-semibold text-text-primary hover:text-text-secondary transition-colors"
       >
         Codedge
       </Link>
 
-      {/* 5 個頁籤 */}
+      {/* 角色化頁籤（role 未定前不渲染，避免教師閃現學生頁籤） */}
       <div className="flex h-full items-center">
-        {NAV_TABS.map((tab) => {
-          const active = pathname.startsWith(tab.href);
-          return (
-            <Link
-              key={tab.href}
-              href={tab.href}
-              className={`relative flex h-full items-center px-3 text-sm transition-colors ${
-                active
-                  ? "text-text-primary"
-                  : "text-text-muted hover:text-text-secondary"
-              }`}
-            >
-              {tab.label}
-              {active && (
-                <span className="absolute inset-x-3 bottom-0 h-0.5 bg-[#F78166]" />
-              )}
-            </Link>
-          );
-        })}
+        {role !== null &&
+          tabs.map((tab) => {
+            const active = isTabActive(tab.href, pathname);
+            return (
+              <Link
+                key={tab.href}
+                href={tab.href}
+                className={`relative flex h-full items-center px-3 text-sm transition-colors ${
+                  active
+                    ? "text-text-primary"
+                    : "text-text-muted hover:text-text-secondary"
+                }`}
+              >
+                {tab.label}
+                {active && (
+                  <span className="absolute inset-x-3 bottom-0 h-0.5 bg-[#F78166]" />
+                )}
+              </Link>
+            );
+          })}
       </div>
 
       <div className="flex-1" />
@@ -92,47 +102,29 @@ export function GlobalNav({ chatOpen, onToggleChat }: GlobalNavProps) {
         </button>
       )}
 
-      <AvatarMenu />
+      <AvatarMenu role={role} />
     </nav>
   );
 }
 
-function AvatarMenu() {
+function AvatarMenu({ role }: { role: Role | null }) {
   const { data: session } = useSession();
   const [open, setOpen] = useState(false);
-  const [isTeacher, setIsTeacher] = useState(false);
   const [profile, setProfile] = useState<StudentProfile | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  /* 取得角色（決定教師入口）與學生 profile（右上角顯示身分）；
-     訂閱 ROLE_CHANGE_EVENT 讓 DEV 身分切換後即時更新，無需重整。 */
+  /* 學生 profile（右上角顯示真實身分）；教師/未知角色不 fetch，顯示端另以 role gate。 */
   useEffect(() => {
+    if (role !== "student") return;
     let cancelled = false;
-    const refresh = () => {
-      api<{ role: string }>("/users/me")
-        .then((me) => {
-          if (cancelled) return;
-          setIsTeacher(me.role === "teacher");
-          if (me.role === "student") {
-            getMyProfile().then(
-              (p) => !cancelled && setProfile(p),
-              () => !cancelled && setProfile(null), // 未填（404）等一律視為無 profile
-            );
-          } else {
-            setProfile(null);
-          }
-        })
-        .catch(() => {
-          /* 靜默：取不到角色時不顯示教師入口 */
-        });
-    };
-    refresh();
-    window.addEventListener(ROLE_CHANGE_EVENT, refresh);
+    getMyProfile().then(
+      (p) => !cancelled && setProfile(p),
+      () => !cancelled && setProfile(null), // 未填（404）等一律視為無 profile
+    );
     return () => {
       cancelled = true;
-      window.removeEventListener(ROLE_CHANGE_EVENT, refresh);
     };
-  }, []);
+  }, [role]);
 
   /* click outside 關閉 */
   useEffect(() => {
@@ -153,8 +145,10 @@ function AvatarMenu() {
     };
   }, [open]);
 
-  /* 學生優先顯示自填真名，否則退回 Google 顯示名 */
-  const displayName = profile?.real_name ?? session?.user?.name ?? "使用者";
+  /* 學生優先顯示自填真名，否則退回 Google 顯示名；教師只用 Google 名 */
+  const studentProfile = role === "student" ? profile : null;
+  const displayName =
+    studentProfile?.real_name ?? session?.user?.name ?? "使用者";
   const email = session?.user?.email ?? "";
 
   return (
@@ -193,28 +187,20 @@ function AvatarMenu() {
             <div className="text-sm font-medium text-text-primary truncate">
               {displayName}
             </div>
-            {profile && (
+            {studentProfile && (
               <div className="text-xs text-text-secondary truncate">
-                {profile.school} · {profile.department}
+                {studentProfile.school} · {studentProfile.department}
               </div>
             )}
-            {profile?.student_id && (
+            {studentProfile?.student_id && (
               <div className="text-xs text-text-muted truncate">
-                學號 {profile.student_id}
+                學號 {studentProfile.student_id}
               </div>
             )}
             {email && <div className="text-xs text-text-muted truncate">{email}</div>}
           </div>
 
-          {/* Menu items */}
-          {isTeacher && (
-            <MenuLink
-              href="/teacher"
-              icon={School}
-              label="班級管理"
-              onClick={() => setOpen(false)}
-            />
-          )}
+          {/* Menu items（教師的班級/作業已移至頂部導航） */}
           <MenuLink href="/settings" icon={Settings} label="設定" onClick={() => setOpen(false)} />
 
           <div className="my-1 border-t border-border-muted" />

@@ -21,6 +21,7 @@ import { PathDetailView } from "@/components/learn/path-detail";
 import { UnitContent } from "@/components/learn/unit-content";
 import { useGhostUnlock } from "@/hooks/use-dev-mode";
 import { ApiRequestError } from "@/lib/api";
+import { useRole } from "@/lib/use-role";
 import {
   PathDetail,
   Unit,
@@ -37,7 +38,9 @@ type View =
 
 export default function LearnPage() {
   const [view, setView] = useState<View>({ mode: "loading" });
-  const ghostUnlock = useGhostUnlock();
+  // 5-6b：教師瀏覽全部單元不受鎖定限制（等同自動幽靈解鎖）；DEV 帳號沿用手動開關
+  const role = useRole();
+  const ghostUnlock = useGhostUnlock() || role === "teacher";
 
   const loadDefault = useCallback(async () => {
     setView({ mode: "loading" });

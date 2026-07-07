@@ -19,14 +19,16 @@ import { useState } from "react";
 import { ArrowLeft } from "lucide-react";
 
 import { Unit } from "@/lib/learning";
+import { useRole } from "@/lib/use-role";
 
 import { ConceptQuizTab } from "./concept-quiz-tab";
 import { ConceptTab } from "./concept-tab";
 import { ExercisesTab } from "./exercises-tab";
+import { TeacherQuestionBank } from "./teacher-question-bank";
 import { ActionButton, NavButton } from "./unit-action-bar";
 import { UnitStatusIcon, statusLabel } from "./unit-status-icon";
 
-type Tab = "concept" | "coding" | "quiz";
+type Tab = "concept" | "coding" | "quiz" | "bank";
 
 interface Props {
   unit: Unit;
@@ -58,6 +60,7 @@ export function UnitContent({
   busy,
 }: Props) {
   const [tab, setTab] = useState<Tab>("concept");
+  const role = useRole();
 
   // 6-3c：資料驅動隱藏 tab——無 batch 題的 tab 直接不顯示
   // （安裝教學片無可測驗概念 → 觀念題消失；課程介紹片無程式題 → 程式實作題消失）
@@ -66,6 +69,8 @@ export function UnitContent({
       (t.key !== "coding" || unit.has_coding_exercise) &&
       (t.key !== "quiz" || unit.has_concept_quiz),
   );
+  // 5-6c：教師專屬「題庫」tab（看該單元題目 + 解答，解答預設隱藏）
+  if (role === "teacher") tabs.push({ key: "bank", label: "題庫（教師）" });
   // 防呆：若切到被隱藏的 tab（例如從一般單元導航到只有概念說明的單元），退回概念說明
   const activeTab = tabs.some((t) => t.key === tab) ? tab : "concept";
 
@@ -122,6 +127,9 @@ export function UnitContent({
         )}
         {activeTab === "quiz" && (
           <ConceptQuizTab key="quiz" conceptTag={unit.concept_tag} />
+        )}
+        {activeTab === "bank" && (
+          <TeacherQuestionBank key="bank" conceptTag={unit.concept_tag} />
         )}
       </div>
 

@@ -1,5 +1,20 @@
 # 變更日誌
 
+## [2026-07-08] — feat(teacher)：5-6b Learn 教師全開 + 5-6c 單元題庫檢視
+
+### Added
+- **5-6c 教師題庫檢視**：
+  - 後端 `GET /quiz/bank?tag=`（`require_roles(TEACHER)`）回完整 content（含正解 answer_index）+ 解析，僅 validated；複用 `list_questions_by_tag`；+2 tests（教師看得到正解 / 學生 403）
+  - 前端 `TeacherQuestionBank` 元件 + `unit-content` 教師專屬「題庫（教師）」tab：列該單元 concept 題目，**解答預設隱藏 + 顯示/隱藏一鍵切換**（避免示範露答案），正解以綠框標示 + 解析
+### Changed
+- **5-6b Learn 教師權限全開**：`learn/page.tsx` `ghostUnlock = useGhostUnlock() || role==="teacher"`——複用 DEV-4 幽靈解鎖鏈路，教師可點閱全部 locked 單元（後端 `get_default_path` 本就 lazy-seed 全 59 單元）
+
+### Verified
+- 後端全量 **720 passed**；web tsc/eslint 綠 + `next build` 成功
+- ⚠ UI 操作待使用者驗收
+
+---
+
 ## [2026-07-08] — feat(teacher)：5-6a 角色化導航
 
 ### Changed

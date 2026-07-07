@@ -90,8 +90,8 @@
   - [x] 5-5a-3 教師作業 UI（建立表單含截止時間 + 拖曳上傳 + 作業卡編輯/停用/刪除 + 附件懶載入下載/續傳；`GET /assignments/{id}` 補 attachments）— **UI 驗收通過**（導航位置另見 5-6）
 - 5-6 教師端導航與教材檢視（2026-07-08 使用者回饋：班級/作業移入導航、師生導航分流、Learn 全開、題庫檢視）
   - [ ] 5-6a 角色化導航（教師＝班級|作業|Workspace|Learn，移除 Quiz/Knowledge；班級/作業移出 avatar 選單進頂部導航；`useRole` hook；教師登入預設落地班級管理；`/teacher` 拆 layout gate + 班級/作業兩 route）— 待 UI 驗收
-  - [ ] 5-6b Learn 教師權限全開（教師瀏覽全部單元不受鎖定限制）
-  - [ ] 5-6c Learn 單元頁題庫檢視（教師可看該單元題目 + 解答，解答預設隱藏 + 一鍵切換，避免示範露答案）
+  - [x] 5-6b Learn 教師權限全開（`ghostUnlock = useGhostUnlock() || role==="teacher"`，複用 DEV-4 幽靈解鎖鏈路讓教師點閱全部 locked 單元）— 待 UI 驗收
+  - [x] 5-6c Learn 單元頁題庫檢視（`GET /quiz/bank?tag=` teacher-gated 回完整 content+解析；`TeacherQuestionBank` 元件 + unit-content 教師專屬「題庫」tab；解答預設隱藏 + 顯示/隱藏切換 + 正解綠框；6 route tests）— 待 UI 驗收
 - 5-5b 學生繳交 + 教師交件檢視
   - [ ] 5-5b-1 學生作業列表/詳情 API（我所屬班級 active 作業 + 我的繳交狀態 + 教師附件下載）
   - [ ] 5-5b-2 學生繳交 API（文字 + 檔案 upsert，截止前可重繳覆蓋；逾期軟提示）

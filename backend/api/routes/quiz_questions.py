@@ -7,17 +7,55 @@
 
 import uuid
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
+from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from api.deps import get_current_db_user, get_db
+from api.deps import get_current_db_user, get_db, require_roles
 from api.routes.quiz import QuestionForStudentOut
 from core.errors import AppError
 from models.quiz import Question
-from models.user import User
+from models.user import User, UserRole
+from services.dev_quiz_tools import list_questions_by_tag
 
 router = APIRouter(prefix="/quiz", tags=["quiz"])
+
+
+class TeacherQuestionOut(BaseModel):
+    """教師題庫檢視——含完整 content（正解）與解析。"""
+
+    id: uuid.UUID
+    type: str
+    bloom_level: int
+    difficulty: int
+    content: dict
+    explanation: str
+
+
+class TeacherQuestionsOut(BaseModel):
+    questions: list[TeacherQuestionOut]
+
+
+@router.get("/bank", response_model=TeacherQuestionsOut)
+async def teacher_question_bank(
+    tag: str = Query(min_length=1),
+    db: AsyncSession = Depends(get_db),
+    _teacher: User = Depends(require_roles(UserRole.TEACHER)),
+) -> TeacherQuestionsOut:
+    """教師檢視某 concept 的題庫（含正解 + 解析，僅 validated；5-6c）。"""
+    questions = await list_questions_by_tag(db, tag)
+    return TeacherQuestionsOut(
+        questions=[
+            TeacherQuestionOut(
+                id=q.id, type=q.type, bloom_level=q.bloom_level,
+                difficulty=q.difficulty, content=q.content or {},
+                explanation=q.explanation or "",
+            )
+            for q in questions
+            if q.validated
+        ]
+    )
 
 
 @router.get("/questions/{question_id}", response_model=QuestionForStudentOut)

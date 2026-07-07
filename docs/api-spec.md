@@ -173,6 +173,11 @@ DELETE /attachments/{id}          -- 教師刪除作業附件（204）
 ```
 > 5-5b（待做）：學生作業列表/繳交 API + 教師交件檢視（評分/評語）。
 
+```
+# 教師題庫檢視（5-6c，require_roles TEACHER）
+GET    /quiz/bank?tag=<concept_tag>   -- 該 concept 的 validated 題目，含完整 content（正解）+ explanation
+```
+
 ## Health
 
 ```

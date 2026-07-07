@@ -188,6 +188,7 @@ function UnitView({
         onStart={() => transition("in_progress")}
         onComplete={() => transition("completed")}
         busy={busy}
+        ghostUnlock={ghostUnlock}
       />
       {error && (
         <div className="mx-auto mt-4 max-w-3xl rounded-md border-l-2 border-accent-red bg-surface-2 px-3 py-2 text-xs text-accent-red">

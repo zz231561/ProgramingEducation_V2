@@ -75,6 +75,9 @@ function UnitRow({
   ghostUnlock?: boolean;
 }) {
   const clickable = unit.status !== "locked" || ghostUnlock === true;
+  // 全開瀏覽（教師/DEV）時，locked 以「可學習」呈現，避免顯示鎖頭與「未解鎖」誤導
+  const displayStatus =
+    ghostUnlock && unit.status === "locked" ? "available" : unit.status;
   return (
     <li
       role={clickable ? "button" : undefined}
@@ -89,7 +92,7 @@ function UnitRow({
           : "opacity-60"
       }`}
     >
-      <UnitStatusIcon status={unit.status} className="mt-0.5 size-4" />
+      <UnitStatusIcon status={displayStatus} className="mt-0.5 size-4" />
       <div className="min-w-0 flex-1">
         <div className="flex items-baseline gap-2">
           <span className="font-mono text-xs text-text-muted">
@@ -103,7 +106,7 @@ function UnitRow({
           </span>
         </div>
         <div className="mt-0.5 text-xs text-text-muted">
-          {unit.concept_tag} · {statusLabel(unit.status)}
+          {unit.concept_tag} · {statusLabel(displayStatus)}
         </div>
       </div>
     </li>

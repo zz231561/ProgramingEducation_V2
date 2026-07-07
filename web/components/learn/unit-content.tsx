@@ -40,6 +40,8 @@ interface Props {
   onStart: () => void;
   onComplete: () => void;
   busy: boolean;
+  /** 全開瀏覽（教師/DEV）：locked 單元標頭以「可學習」呈現，不顯示鎖頭。 */
+  ghostUnlock?: boolean;
 }
 
 const TABS: { key: Tab; label: string }[] = [
@@ -58,9 +60,12 @@ export function UnitContent({
   onStart,
   onComplete,
   busy,
+  ghostUnlock,
 }: Props) {
   const [tab, setTab] = useState<Tab>("concept");
   const role = useRole();
+  const displayStatus =
+    ghostUnlock && unit.status === "locked" ? "available" : unit.status;
 
   // 6-3c：資料驅動隱藏 tab——無 batch 題的 tab 直接不顯示
   // （安裝教學片無可測驗概念 → 觀念題消失；課程介紹片無程式題 → 程式實作題消失）
@@ -91,8 +96,8 @@ export function UnitContent({
             單元 {String(unit.order_index + 1).padStart(2, "0")} / {String(totalUnits).padStart(2, "0")}
           </span>
           <span>·</span>
-          <UnitStatusIcon status={unit.status} className="size-3.5" />
-          <span>{statusLabel(unit.status)}</span>
+          <UnitStatusIcon status={displayStatus} className="size-3.5" />
+          <span>{statusLabel(displayStatus)}</span>
         </div>
         <h1 className="text-2xl font-medium text-text-primary">
           {unit.concept_name_zh}

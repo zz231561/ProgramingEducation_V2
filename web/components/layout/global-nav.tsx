@@ -19,10 +19,11 @@ interface NavTab {
   href: string;
 }
 
-/* 學生頂部頁籤（design-plan §2.5） */
+/* 學生頂部頁籤（design-plan §2.5；5-5b 加「作業」） */
 const STUDENT_TABS: NavTab[] = [
   { label: "Workspace", href: "/workspace" },
   { label: "Learn", href: "/learn" },
+  { label: "作業", href: "/assignments" },
   { label: "Quiz", href: "/quiz" },
   { label: "Knowledge", href: "/knowledge" },
   { label: "Dashboard", href: "/dashboard" },

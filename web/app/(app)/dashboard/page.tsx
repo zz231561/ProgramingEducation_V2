@@ -12,6 +12,7 @@ import { Loader2 } from "lucide-react";
 
 import { ActivityTimeline } from "@/components/dashboard/activity-timeline";
 import { MasteryBreakdown } from "@/components/dashboard/mastery-breakdown";
+import { PendingAssignmentsCard } from "@/components/dashboard/pending-assignments-card";
 import { StatsCards } from "@/components/dashboard/stats-cards";
 import { TodaySuggestionCard } from "@/components/dashboard/today-suggestion";
 import { ApiRequestError } from "@/lib/api";
@@ -71,6 +72,7 @@ export default function DashboardPage() {
         </header>
 
         <StatsCards stats={view.stats} />
+        <PendingAssignmentsCard />
         <TodaySuggestionCard suggestion={view.stats.today_suggestion} />
         <ActivityTimeline />
         <MasteryBreakdown />

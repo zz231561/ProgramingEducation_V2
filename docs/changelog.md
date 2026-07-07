@@ -1,5 +1,20 @@
 # 變更日誌
 
+## [2026-07-08] — feat(assignment)：5-5b-3 學生作業 UI + Dashboard 待辦卡片
+
+### Added
+- **學生導航加「作業」tab** → `/assignments`（`STUDENT_TABS`）
+- **學生作業頁**（`components/assignments/`）：列表（標題/截止/繳交狀態徽章/逾期）→ 詳情（教師說明 + 下載教師附件 + 分數/評語 banner + 繳交表單）
+- **繳交表單**：文字 + 拖曳上傳（複用 `FileDropzone`）+ 刪除自己的繳交附件；重繳覆蓋（`更新繳交`）
+- **Dashboard「待辦作業」卡片**（`PendingAssignmentsCard`）：列未繳作業連往 `/assignments`；無作業不渲染
+- `lib/assignments.ts` 學生/教師交件 API wrappers + `lib/assignment-format.ts`（截止格式化 + 狀態徽章）
+
+### Verified
+- web tsc/eslint 綠 + `next build` 成功（/assignments 註冊）
+- ⚠ UI 操作待使用者驗收
+
+---
+
 ## [2026-07-08] — feat(assignment)：5-5b 作業繳交後端（學生繳交 + 教師評分）
 
 ### Added

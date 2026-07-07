@@ -115,3 +115,83 @@ export function deleteAttachment(attachmentId: string): Promise<void> {
 export function attachmentDownloadUrl(attachmentId: string): string {
   return `/api/attachments/${attachmentId}`;
 }
+
+// === 學生端（5-5b）===
+
+export interface Submission {
+  id: string;
+  text: string;
+  score: number | null;
+  feedback: string;
+  graded_at: string | null;
+  submitted_at: string;
+  updated_at: string;
+}
+
+export interface StudentAssignment {
+  id: string;
+  title: string;
+  description: string;
+  due_at: string | null;
+  submission: Submission | null;
+}
+
+export interface StudentAssignmentDetail extends StudentAssignment {
+  teacher_attachments: AttachmentInfo[];
+  submission_attachments: AttachmentInfo[];
+}
+
+/** 我所屬班級的 active 作業 + 我的繳交狀態。 */
+export function listMyAssignments(): Promise<StudentAssignment[]> {
+  return api<StudentAssignment[]>("/assignments/mine");
+}
+
+export function getMyAssignment(id: string): Promise<StudentAssignmentDetail> {
+  return api<StudentAssignmentDetail>(`/assignments/mine/${id}`);
+}
+
+/** 繳交/更新文字（重繳覆蓋）；回傳繳交本體（含 id 供上傳附件）。 */
+export function submitAssignment(id: string, text: string): Promise<Submission> {
+  return api<Submission>(`/assignments/${id}/submission`, {
+    method: "PUT",
+    body: JSON.stringify({ text }),
+  });
+}
+
+export function uploadSubmissionAttachment(
+  submissionId: string,
+  file: File,
+): Promise<AttachmentInfo> {
+  const form = new FormData();
+  form.append("file", file);
+  return api<AttachmentInfo>(`/submissions/${submissionId}/attachments`, {
+    method: "POST",
+    body: form,
+  });
+}
+
+// === 教師交件檢視（5-5b-4）===
+
+export interface SubmissionRow {
+  student_id: string;
+  real_name: string | null;
+  email: string;
+  submission: Submission | null;
+}
+
+export function listAssignmentSubmissions(
+  assignmentId: string,
+): Promise<SubmissionRow[]> {
+  return api<SubmissionRow[]>(`/assignments/${assignmentId}/submissions`);
+}
+
+export function gradeSubmission(
+  submissionId: string,
+  score: number | null,
+  feedback: string,
+): Promise<Submission> {
+  return api<Submission>(`/submissions/${submissionId}/grade`, {
+    method: "PATCH",
+    body: JSON.stringify({ score, feedback }),
+  });
+}

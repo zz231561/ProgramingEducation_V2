@@ -4,12 +4,13 @@
  * 學生作業頁主體（5-5b-3）— 作業列表 + 選取進入詳情/繳交。
  */
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 
 import { ApiRequestError } from "@/lib/api";
 import { formatDue, isOverdue, submissionBadge } from "@/lib/assignment-format";
 import { StudentAssignment, listMyAssignments } from "@/lib/assignments";
+import { JoinClassForm } from "@/components/classroom/join-class-form";
 
 import { StudentAssignmentDetailView } from "./student-assignment-detail";
 
@@ -18,7 +19,7 @@ export function StudentAssignments() {
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
 
-  useEffect(() => {
+  const load = useCallback(() => {
     let cancelled = false;
     listMyAssignments().then(
       (xs) => !cancelled && setItems(xs),
@@ -30,6 +31,8 @@ export function StudentAssignments() {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => load(), [load]);
 
   if (selected)
     return (
@@ -50,7 +53,14 @@ export function StudentAssignments() {
         </div>
       )}
       {items?.length === 0 && (
-        <p className="text-sm text-text-muted">目前沒有作業。</p>
+        <div className="rounded-md border border-border-default bg-surface-1 p-4">
+          <p className="text-sm text-text-muted">
+            目前沒有作業。若老師提供了班級邀請碼，可在此加入班級：
+          </p>
+          <div className="mt-3">
+            <JoinClassForm onJoined={load} />
+          </div>
+        </div>
       )}
       {items && items.length > 0 && (
         <ul className="space-y-2">

@@ -8,6 +8,7 @@
 
 import secrets
 import uuid
+from datetime import datetime
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -112,6 +113,21 @@ async def join_class(
         db.add(ClassMember(class_id=classroom.id, user_id=user_id))
         await db.commit()
     return classroom
+
+
+async def list_joined_classes(
+    db: AsyncSession, *, user_id: uuid.UUID
+) -> list[tuple[Classroom, str, datetime]]:
+    """學生已加入的班級（含教師名 + 加入時間），依加入時間排序。"""
+    stmt = (
+        select(Classroom, User.name, ClassMember.joined_at)
+        .join(ClassMember, ClassMember.class_id == Classroom.id)
+        .join(User, User.id == Classroom.teacher_id)
+        .where(ClassMember.user_id == user_id)
+        .order_by(ClassMember.joined_at)
+    )
+    rows = (await db.execute(stmt)).all()
+    return [(row[0], row[1], row[2]) for row in rows]
 
 
 async def list_members(

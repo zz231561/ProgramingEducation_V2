@@ -1,5 +1,22 @@
 # 變更日誌
 
+## [2026-07-12] — feat(classroom)：5-1c-4 學生加入班級 UI（補規劃缺口）
+
+### Added
+- **缺口背景**：`POST /classes/join` 後端（5-1b-3）一直存在，但前端從未排入輸入邀請碼的 UI，導致 5-5b 無法驗收
+- **共用表單**（`components/classroom/join-class-form.tsx`）：6 位數字碼即時過濾 + 驗證；404（無效/停用碼）與 409（未填 profile）錯誤訊息直出
+- **作業頁空狀態**：`/assignments` 無作業時顯示加入班級表單，加入成功即重載作業列表
+- **Settings「我的班級」卡**（`my-classes-card.tsx`，僅學生顯示）：列已加入班級（班名 + 教師名）+ 加入表單
+- 後端 `GET /classes/mine`（`list_joined_classes`）：學生列自己已加入班級；學生視角 schema 不含邀請碼/成員數
+
+### Tests
+- +2（未加入回空 / 加入後列出且不洩漏 invite_code）；後端全量 **730 passed**；web tsc 綠
+
+### Verified
+- ⚠ UI 操作待使用者驗收（解鎖 5-5b-3/4 驗收動線）
+
+---
+
 ## [2026-07-12] — feat(assignment)：5-5b-4 教師交件檢視 UI（評分+評語）
 
 ### Added

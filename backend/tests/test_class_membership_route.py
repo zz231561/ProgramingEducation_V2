@@ -177,6 +177,32 @@ async def test_join_bad_code_format_returns_422(client: AsyncClient):
     assert resp.status_code == 422
 
 
+# === mine 我的班級 ===
+
+async def test_mine_empty_before_join(client: AsyncClient):
+    resp = await client.get("/classes/mine", cookies=_student_cookies())
+    assert resp.status_code == 200
+    assert resp.json() == []
+
+
+async def test_mine_lists_joined_classes(client: AsyncClient):
+    t_cookies = await _as_teacher(client, TEACHER)
+    klass = await _make_class(client, t_cookies)
+    s_cookies = _student_cookies()
+    await client.post("/profile", json=_PROFILE, cookies=s_cookies)
+    await client.post(
+        "/classes/join",
+        json={"invite_code": klass["invite_code"]},
+        cookies=s_cookies,
+    )
+
+    rows = (await client.get("/classes/mine", cookies=s_cookies)).json()
+    assert len(rows) == 1
+    assert rows[0]["name"] == "班"
+    assert rows[0]["teacher_name"] == TEACHER["name"]
+    assert "invite_code" not in rows[0]  # 學生視角不洩漏邀請碼
+
+
 # === members 名冊 ===
 
 async def test_members_lists_student_profiles(client: AsyncClient):

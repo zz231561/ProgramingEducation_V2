@@ -53,6 +53,7 @@
   - [x] 5-1c-1 教師班級管理頁（`/teacher`：建班/邀請碼複製/名冊展開/停用；role gate + avatar 選單教師入口）— **UI 驗收通過**（含修 `/users/me` 路由碰撞 + 身分切換即時更新選單 + 精簡選單移除空殼學習總覽/通知）
   - [x] 5-1c-2 學生 profile 表單 + 首次登入 gate（`ProfileGate` 包 AppShell：student 未填 → 全屏填寫頁；教師放行；fail-open）— **UI 驗收通過**
   - [x] 5-1c-3 右上角導覽顯示學生身分（avatar 選單真名 + 校系 + 學號；隨 role 切換即時更新）— **UI 驗收通過**（5-1c 全數完成）
+  - [x] 5-1c-4 學生加入班級 UI（2026-07-12 補規劃缺口：後端 join API 一直存在但前端無入口）：共用 `JoinClassForm`（6 位碼驗證）掛作業頁空狀態 + Settings「我的班級」卡（僅學生，列已加入班級）；後端補 `GET /classes/mine`（學生視角不含邀請碼；+2 tests，730 passed）— 待 UI 驗收
 > 決策（2026-07-07）：profile 存 student_profiles 獨立表；首次登入強制引導（僅 role=student）；學號不做唯一約束；邀請碼 6 位數字
 - 5-1d 身分自選 onboarding + 身分重置（2026-07-07 決策：production 自選教師/學生；單一身分；設定頁可切換身分＝全資料重置 + 警告）
   - [x] 5-1d-1 users 加 `role_selected` 布林 migration（`n0c1d2e3f4a5`，server_default false）+ `/users/me`·`/auth/me` 回傳（可逆驗證）

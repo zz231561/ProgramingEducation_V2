@@ -21,6 +21,7 @@ from services.classroom import (
     create_classroom,
     join_class,
     list_classrooms,
+    list_joined_classes,
     list_members,
     update_classroom,
 )
@@ -66,6 +67,15 @@ class MemberOut(BaseModel):
         )
 
 
+class MyClassOut(BaseModel):
+    """學生視角的班級資訊（不含邀請碼/成員數等教師端欄位）。"""
+
+    id: uuid.UUID
+    name: str
+    teacher_name: str
+    joined_at: str
+
+
 class ClassOut(BaseModel):
     id: uuid.UUID
     name: str
@@ -106,6 +116,22 @@ async def list_own(
 ) -> list[ClassOut]:
     rows = await list_classrooms(db, teacher.id)
     return [ClassOut.from_model(c, count) for c, count in rows]
+
+
+@router.get("/mine", response_model=list[MyClassOut])
+async def list_mine(
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_db_user),
+) -> list[MyClassOut]:
+    """學生列出自己已加入的班級（依加入時間排序）。"""
+    rows = await list_joined_classes(db, user_id=user.id)
+    return [
+        MyClassOut(
+            id=c.id, name=c.name, teacher_name=teacher_name,
+            joined_at=joined_at.isoformat(),
+        )
+        for c, teacher_name, joined_at in rows
+    ]
 
 
 @router.patch("/{class_id}", response_model=ClassOut)

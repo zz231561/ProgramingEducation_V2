@@ -51,3 +51,25 @@ export function updateClass(
 export function getClassMembers(id: string): Promise<ClassMember[]> {
   return api<ClassMember[]>(`/classes/${id}/members`);
 }
+
+// === 學生端（加入班級 UI）===
+
+export interface MyClassInfo {
+  id: string;
+  name: string;
+  teacher_name: string;
+  joined_at: string;
+}
+
+/** 學生列出自己已加入的班級。 */
+export function listMyClasses(): Promise<MyClassInfo[]> {
+  return api<MyClassInfo[]>("/classes/mine");
+}
+
+/** 學生以 6 位邀請碼加入班級（idempotent；未填 profile 回 409）。 */
+export function joinClass(inviteCode: string): Promise<{ name: string }> {
+  return api<{ name: string }>("/classes/join", {
+    method: "POST",
+    body: JSON.stringify({ invite_code: inviteCode }),
+  });
+}

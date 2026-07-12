@@ -16,6 +16,10 @@
   - **若驗收失敗**：第一優先檢查 `web/lib/pending-workspace-code.ts` 的 `consumePendingWorkspaceCode()` 是否真的有 `removeItem`；其次檢查 `web/app/(app)/workspace/page.tsx` 是否用 `useState` lazy initializer（而非直接呼叫，會導致 re-render 多次 consume）
 
 ### 部署相關（待實測）
+- [ ] **judge0.py 不支援自架 authn header**（2026-07-12 server-plan 定案後產生）
+  - `services/judge0.py` `_build_headers()` 只會在有 `JUDGE0_API_KEY` 時帶 RapidAPI header（`X-RapidAPI-Key`）；自架 Judge0 的 authn 用 `X-Auth-Token`
+  - **影響**：切換自架 + 開 authn token 時，backend 會 401
+  - **如何處理**：Phase 7 部署前加 header 分支（依 URL 是否為 rapidapi 網域或加一個 `JUDGE0_AUTH_MODE` 變數）+ 單元測試；詳見 `docs/server-plan.md`
 - [ ] **Zeabur PREBUILT + source.type=IMAGE schema 未實測**
   - 4-1b 將 `zeabur.json` 的 postgres 從 marketplace `postgresql`（不含 pgvector）改為 `template: PREBUILT` + `source: {type: "IMAGE", image: "pgvector/pgvector:pg16"}`
   - 此 schema 細節依 Zeabur template.json 規範撰寫，但**未經實際部署驗證**

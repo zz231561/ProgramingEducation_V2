@@ -69,5 +69,5 @@
 - [changelog.md](docs/changelog.md) — 變更日誌（時間序）
 - [architecture.md](docs/architecture.md) / [modules.md](docs/modules.md) / [db-schema.md](docs/db-schema.md)
 - [ui-ux-spec.md](docs/ui-ux-spec.md) / [ui-wireframes.md](docs/ui-wireframes.md)（實作該頁時才讀）
-- [api-spec.md](docs/api-spec.md) / [deployment.md](docs/deployment.md)
+- [api-spec.md](docs/api-spec.md) / [deployment.md](docs/deployment.md) / [server-plan.md](docs/server-plan.md) — 伺服器規格與兩台拓撲（2026-07-12 定案）
 - [tech-debt.md](docs/tech-debt.md) / [references.md](docs/references.md)

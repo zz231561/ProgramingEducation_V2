@@ -1,5 +1,16 @@
 # 變更日誌
 
+## [2026-07-12] — docs：伺服器需求規劃定案（兩台拓撲，Judge0 自架取代 RapidAPI）
+
+### Added
+- **`docs/server-plan.md`**：伺服器 A（主機 4C8G，Zeabur 託管 PokerNote_V2 + 本專案 4 service）+ 伺服器 B（2C2G Ubuntu 22.04 專跑自架 Judge0，SSH docker-compose 直跑、不走 Zeabur dashboard）；容量假設（30–60 人課堂）、安全硬性要求（authn token + 防火牆鎖 A 機 IP）、租用後待辦
+- 決策背景：Judge0 RapidAPI 成本高（免費 50 次/天、付費訂閱制）且官方 pay-per-use（Sulu）已收攤 → 自架；Judge0 需 privileged + cgroup v1 → 獨立一台與主資料物理隔離
+
+### Changed
+- `docs/tech-debt.md` 新增：`judge0.py _build_headers()` 尚不支援自架 authn header（`X-Auth-Token`），Phase 7 部署前補
+
+---
+
 ## [2026-07-12] — fix(assignment)：5-5b UI 動線修訂（使用者回饋）
 
 ### Changed

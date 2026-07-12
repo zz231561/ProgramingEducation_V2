@@ -79,6 +79,7 @@ class SubmissionRowOut(BaseModel):
     real_name: str | None
     email: str
     submission: SubmissionOut | None
+    attachments: list[AttachmentOut]
 
 
 class SubmitIn(BaseModel):
@@ -170,8 +171,9 @@ async def assignment_submissions(
             real_name=p.real_name if p else None,
             email=u.email,
             submission=SubmissionOut.from_model(s) if s else None,
+            attachments=[AttachmentOut.from_row(r) for r in atts],
         )
-        for u, p, s in rows
+        for u, p, s, atts in rows
     ]
 
 

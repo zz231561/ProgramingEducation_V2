@@ -105,6 +105,29 @@ async def list_attachment_meta(
     return list((await db.execute(stmt)).all())
 
 
+async def list_attachment_meta_bulk(
+    db: AsyncSession, *, owner_type: str, owner_ids: list[uuid.UUID]
+) -> dict[uuid.UUID, list]:
+    """批次列出多個 owner 的附件中繼資料，回傳 owner_id → rows（不載入 content）。"""
+    if not owner_ids:
+        return {}
+    stmt = (
+        select(
+            Attachment.owner_id, Attachment.id, Attachment.filename,
+            Attachment.content_type, Attachment.size_bytes, Attachment.created_at,
+        )
+        .where(
+            Attachment.owner_type == owner_type,
+            Attachment.owner_id.in_(owner_ids),
+        )
+        .order_by(Attachment.created_at)
+    )
+    grouped: dict[uuid.UUID, list] = {}
+    for row in (await db.execute(stmt)).all():
+        grouped.setdefault(row.owner_id, []).append(row)
+    return grouped
+
+
 async def get_attachment_for_download(
     db: AsyncSession, *, user_id: uuid.UUID, attachment_id: uuid.UUID
 ) -> Attachment:

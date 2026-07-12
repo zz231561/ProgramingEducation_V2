@@ -20,7 +20,11 @@ from models.assignment import (
 from models.classroom import ClassMember
 from models.student_profile import StudentProfile
 from models.user import User
-from services.assignment.attachments import build_attachment, list_attachment_meta
+from services.assignment.attachments import (
+    build_attachment,
+    list_attachment_meta,
+    list_attachment_meta_bulk,
+)
 
 
 async def _assignment_for_member(
@@ -147,8 +151,11 @@ async def add_submission_attachment(
 
 async def list_assignment_submissions(
     db: AsyncSession, teacher_id: uuid.UUID, assignment_id: uuid.UUID
-) -> tuple[Assignment, list[tuple[User, StudentProfile | None, AssignmentSubmission | None]]]:
-    """教師交件檢視：班級名冊 × 繳交狀態（僅作業擁有者）。"""
+) -> tuple[
+    Assignment,
+    list[tuple[User, StudentProfile | None, AssignmentSubmission | None, list]],
+]:
+    """教師交件檢視：班級名冊 × 繳交狀態 + 繳交附件 meta（僅作業擁有者）。"""
     a = await db.get(Assignment, assignment_id)
     if a is None or a.teacher_id != teacher_id:
         raise AppError(404, "ASSIGNMENT_NOT_FOUND", "作業不存在")
@@ -171,7 +178,16 @@ async def list_assignment_submissions(
             )
         ).scalars()
     }
-    return a, [(u, p, subs.get(u.id)) for u, p in roster]
+    atts = await list_attachment_meta_bulk(
+        db,
+        owner_type=AttachmentOwner.SUBMISSION.value,
+        owner_ids=[s.id for s in subs.values()],
+    )
+    rows = []
+    for u, p in roster:
+        s = subs.get(u.id)
+        rows.append((u, p, s, atts.get(s.id, []) if s else []))
+    return a, rows
 
 
 async def grade_submission(

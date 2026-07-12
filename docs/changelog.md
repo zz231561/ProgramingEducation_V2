@@ -1,5 +1,21 @@
 # 變更日誌
 
+## [2026-07-12] — feat(assignment)：5-5b-4 教師交件檢視 UI（評分+評語）
+
+### Added
+- **交件檢視面板**（`components/teacher/submissions-panel.tsx`）：作業卡新增「交件」展開 → 名冊 × 繳交狀態列表 + 繳交率統計（已繳交 X / Y）
+- **學生交件列**（`submission-row.tsx`）：姓名/email + 狀態徽章（複用 `submissionBadge`）+ 繳交時間；展開檢視繳交文字 + 下載繳交附件
+- **評分表單**（`grade-form.tsx`）：分數（可留空=未評）+ 評語 → `PATCH /submissions/{sid}/grade`，儲存後即時回寫列表徽章
+- 後端 `GET /assignments/{id}/submissions` 回應加 `attachments`（繳交附件 meta）：`list_attachment_meta_bulk` 批次查詢（單 query 避免 N+1）
+
+### Tests
+- +1（教師列表含繳交附件 + 教師下載繳交附件授權）；後端全量 **728 passed**；web tsc 綠
+
+### Verified
+- ⚠ UI 操作待使用者驗收（可與 5-5b-3 學生端一併驗）
+
+---
+
 ## [2026-07-08] — feat(assignment)：5-5b-3 學生作業 UI + Dashboard 待辦卡片
 
 ### Added

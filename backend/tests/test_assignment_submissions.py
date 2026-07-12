@@ -136,6 +136,26 @@ async def test_teacher_lists_submissions_with_status(client: AsyncClient):
     assert rows[0]["submission"]["text"] == "done"
 
 
+async def test_teacher_list_includes_submission_attachments(client: AsyncClient):
+    t, s, _cid, aid = await _setup(client)
+    sid = (
+        await client.put(
+            f"/assignments/{aid}/submission", json={"text": "x"}, cookies=s
+        )
+    ).json()["id"]
+    await client.post(
+        f"/submissions/{sid}/attachments",
+        files={"file": ("hw.pdf", b"mydata", "application/pdf")},
+        cookies=s,
+    )
+    rows = (await client.get(f"/assignments/{aid}/submissions", cookies=t)).json()
+    assert rows[0]["attachments"][0]["filename"] == "hw.pdf"
+    # 教師可下載學生繳交附件
+    att_id = rows[0]["attachments"][0]["id"]
+    dl = await client.get(f"/attachments/{att_id}", cookies=t)
+    assert dl.status_code == 200 and dl.content == b"mydata"
+
+
 async def test_teacher_grades_submission(client: AsyncClient):
     t, s, _cid, aid = await _setup(client)
     sid = (

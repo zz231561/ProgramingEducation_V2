@@ -177,6 +177,7 @@ export interface SubmissionRow {
   real_name: string | null;
   email: string;
   submission: Submission | null;
+  attachments: AttachmentInfo[];
 }
 
 export function listAssignmentSubmissions(

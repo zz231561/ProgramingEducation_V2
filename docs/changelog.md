@@ -1,5 +1,17 @@
 # 變更日誌
 
+## [2026-07-12] — fix(assignment)：5-5b UI 動線修訂（使用者回饋）
+
+### Changed
+- **學生繳交表單**：「我的繳交」標題旁新增狀態徽章（未繳交/已繳交/已評分）+ 繳交時間；「繳交/更新繳交」按鈕邏輯保留
+- **教師交件動線**：移除作業卡「交件」展開鈕 → 作業卡標題區改為可點入口（hover 變 link 色），點擊進入全頁 `TeacherAssignmentDetail`（作業資訊 + 交件情況 + 批改），返回鈕回列表；編輯/停用/刪除/附件操作留在列表卡
+- `formatDateTime` 抽入 `lib/assignment-format.ts`（消除 assignment-card / submission-row / submission-form 三處重複）
+
+### Verified
+- web tsc + eslint 綠；⚠ UI 操作待使用者驗收
+
+---
+
 ## [2026-07-12] — feat(classroom)：5-1c-4 學生加入班級 UI（補規劃缺口）
 
 ### Added

@@ -7,7 +7,7 @@
 import { useState } from "react";
 import { ChevronDown, Download } from "lucide-react";
 
-import { submissionBadge } from "@/lib/assignment-format";
+import { formatDateTime, submissionBadge } from "@/lib/assignment-format";
 import {
   Submission,
   SubmissionRow,
@@ -15,13 +15,6 @@ import {
 } from "@/lib/assignments";
 
 import { GradeForm } from "./grade-form";
-
-function fmtSubmitted(iso: string): string {
-  return new Date(iso).toLocaleString("zh-TW", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  });
-}
 
 export function SubmissionRowItem({
   row,
@@ -51,7 +44,7 @@ export function SubmissionRowItem({
         </span>
         {sub && (
           <span className="text-xs text-text-muted">
-            {fmtSubmitted(sub.updated_at)}
+            {formatDateTime(sub.updated_at)}
           </span>
         )}
         <span className={`text-xs ${badge.className}`}>{badge.label}</span>

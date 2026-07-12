@@ -13,6 +13,7 @@ import { ClassInfo, listClasses } from "@/lib/classroom";
 
 import { AssignmentCard } from "./assignment-card";
 import { CreateAssignmentForm } from "./create-assignment-form";
+import { TeacherAssignmentDetail } from "./teacher-assignment-detail";
 
 type View =
   | { mode: "loading" }
@@ -21,6 +22,7 @@ type View =
 
 export function AssignmentManager() {
   const [view, setView] = useState<View>({ mode: "loading" });
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -61,6 +63,19 @@ export function AssignmentManager() {
       ? view.classes.find((c) => c.id === id)?.name
       : undefined;
 
+  const selected =
+    view.mode === "ready" && selectedId
+      ? view.assignments.find((a) => a.id === selectedId)
+      : undefined;
+  if (selected)
+    return (
+      <TeacherAssignmentDetail
+        assignment={selected}
+        className={nameOf(selected.class_id)}
+        onBack={() => setSelectedId(null)}
+      />
+    );
+
   return (
     <div className="mt-6 space-y-6">
       <div className="rounded-md border border-border-default bg-surface-1 p-4">
@@ -97,6 +112,7 @@ export function AssignmentManager() {
               key={a.id}
               assignment={a}
               className={nameOf(a.class_id)}
+              onOpen={setSelectedId}
               onUpdated={onUpdated}
               onDeleted={onDeleted}
             />

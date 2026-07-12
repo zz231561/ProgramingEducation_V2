@@ -9,6 +9,7 @@ import { Download, Loader2, Send, Trash2 } from "lucide-react";
 
 import { FileDropzone } from "@/components/teacher/file-dropzone";
 import { ApiRequestError } from "@/lib/api";
+import { formatDateTime, submissionBadge } from "@/lib/assignment-format";
 import {
   AttachmentInfo,
   Submission,
@@ -62,7 +63,17 @@ export function SubmissionForm({
 
   return (
     <div className="space-y-3 rounded-md border border-border-default bg-surface-1 p-4">
-      <h3 className="text-sm font-medium text-text-primary">我的繳交</h3>
+      <div className="flex flex-wrap items-center gap-2">
+        <h3 className="text-sm font-medium text-text-primary">我的繳交</h3>
+        <span className={`text-xs ${submissionBadge(submission).className}`}>
+          {submissionBadge(submission).label}
+        </span>
+        {submission && (
+          <span className="text-xs text-text-muted">
+            繳交於 {formatDateTime(submission.updated_at)}
+          </span>
+        )}
+      </div>
       <textarea
         value={text}
         onChange={(e) => setText(e.target.value)}

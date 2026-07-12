@@ -4,12 +4,15 @@
 
 import { Submission } from "./assignments";
 
-export function formatDue(iso: string | null): string {
-  if (!iso) return "無截止時間";
+export function formatDateTime(iso: string): string {
   return new Date(iso).toLocaleString("zh-TW", {
     dateStyle: "medium",
     timeStyle: "short",
   });
+}
+
+export function formatDue(iso: string | null): string {
+  return iso ? formatDateTime(iso) : "無截止時間";
 }
 
 export function isOverdue(iso: string | null): boolean {

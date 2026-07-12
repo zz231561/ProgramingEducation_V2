@@ -12,7 +12,6 @@ import { AssignmentInfo, deleteAssignment, updateAssignment } from "@/lib/assign
 
 import { AssignmentAttachments } from "./assignment-attachments";
 import { AssignmentEditForm } from "./assignment-edit-form";
-import { SubmissionsPanel } from "./submissions-panel";
 
 function fmtDue(iso: string | null): string {
   if (!iso) return "無截止時間";
@@ -26,17 +25,18 @@ const actionBtn =
 export function AssignmentCard({
   assignment,
   className,
+  onOpen,
   onUpdated,
   onDeleted,
 }: {
   assignment: AssignmentInfo;
   className?: string;
+  onOpen: (id: string) => void;
   onUpdated: (a: AssignmentInfo) => void;
   onDeleted: (id: string) => void;
 }) {
   const [editing, setEditing] = useState(false);
   const [showFiles, setShowFiles] = useState(false);
-  const [showSubs, setShowSubs] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -83,9 +83,14 @@ export function AssignmentCard({
   return (
     <div className="rounded-md border border-border-default bg-surface-1">
       <div className="flex flex-wrap items-start gap-x-4 gap-y-2 p-4">
-        <div className="min-w-0 flex-1">
+        <button
+          type="button"
+          onClick={() => onOpen(assignment.id)}
+          aria-label={`檢視「${assignment.title}」交件情況`}
+          className="group min-w-0 flex-1 text-left"
+        >
           <div className="flex items-center gap-2">
-            <h3 className="truncate text-sm font-medium text-text-primary">
+            <h3 className="truncate text-sm font-medium text-text-primary transition-colors group-hover:text-text-link">
               {assignment.title}
             </h3>
             {!assignment.is_active && (
@@ -106,19 +111,9 @@ export function AssignmentCard({
             <CalendarClock className="size-3.5" />
             {fmtDue(assignment.due_at)}
           </div>
-        </div>
+        </button>
 
         <div className="flex flex-wrap items-center gap-1.5">
-          <button
-            onClick={() => setShowSubs((v) => !v)}
-            aria-expanded={showSubs}
-            className={`flex items-center gap-1 ${actionBtn}`}
-          >
-            交件
-            <ChevronDown
-              className={`size-3.5 transition-transform ${showSubs ? "rotate-180" : ""}`}
-            />
-          </button>
           <button
             onClick={() => setShowFiles((v) => !v)}
             aria-expanded={showFiles}
@@ -152,12 +147,6 @@ export function AssignmentCard({
       {showFiles && (
         <div className="border-t border-border-muted">
           <AssignmentAttachments assignmentId={assignment.id} />
-        </div>
-      )}
-
-      {showSubs && (
-        <div className="border-t border-border-muted">
-          <SubmissionsPanel assignmentId={assignment.id} />
         </div>
       )}
     </div>

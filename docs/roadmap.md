@@ -53,7 +53,7 @@
   - [x] 5-1c-1 教師班級管理頁（`/teacher`：建班/邀請碼複製/名冊展開/停用；role gate + avatar 選單教師入口）— **UI 驗收通過**（含修 `/users/me` 路由碰撞 + 身分切換即時更新選單 + 精簡選單移除空殼學習總覽/通知）
   - [x] 5-1c-2 學生 profile 表單 + 首次登入 gate（`ProfileGate` 包 AppShell：student 未填 → 全屏填寫頁；教師放行；fail-open）— **UI 驗收通過**
   - [x] 5-1c-3 右上角導覽顯示學生身分（avatar 選單真名 + 校系 + 學號；隨 role 切換即時更新）— **UI 驗收通過**（5-1c 全數完成）
-  - [x] 5-1c-4 學生加入班級 UI（2026-07-12 補規劃缺口：後端 join API 一直存在但前端無入口）：共用 `JoinClassForm`（6 位碼驗證）掛作業頁空狀態 + Settings「我的班級」卡（僅學生，列已加入班級）；後端補 `GET /classes/mine`（學生視角不含邀請碼；+2 tests，730 passed）— 待 UI 驗收
+  - [x] 5-1c-4 學生加入班級 UI（2026-07-12 補規劃缺口：後端 join API 一直存在但前端無入口）：共用 `JoinClassForm`（6 位碼驗證）掛作業頁空狀態 + Settings「我的班級」卡（僅學生，列已加入班級）；後端補 `GET /classes/mine`（學生視角不含邀請碼；+2 tests，730 passed）— **UI 驗收通過**（2026-07-12）
 > 決策（2026-07-07）：profile 存 student_profiles 獨立表；首次登入強制引導（僅 role=student）；學號不做唯一約束；邀請碼 6 位數字
 - 5-1d 身分自選 onboarding + 身分重置（2026-07-07 決策：production 自選教師/學生；單一身分；設定頁可切換身分＝全資料重置 + 警告）
   - [x] 5-1d-1 users 加 `role_selected` 布林 migration（`n0c1d2e3f4a5`，server_default false）+ `/users/me`·`/auth/me` 回傳（可逆驗證）
@@ -90,13 +90,13 @@
   - [x] 5-5a-2 教師作業 CRUD + 附件上傳/下載 API（`services/assignment/` + `api/routes/assignments.py`：CRUD 擁有權 404 + PATCH 可編輯/清除 due_at；附件 bytea 上傳白名單+10MB+下載授權+Content-Disposition attachment；python-multipart；15 tests）
   - [x] 5-5a-3 教師作業 UI（建立表單含截止時間 + 拖曳上傳 + 作業卡編輯/停用/刪除 + 附件懶載入下載/續傳；`GET /assignments/{id}` 補 attachments）— **UI 驗收通過**（導航位置另見 5-6）
 - 5-6 教師端導航與教材檢視（2026-07-08 使用者回饋：班級/作業移入導航、師生導航分流、Learn 全開、題庫檢視）
-  - [ ] 5-6a 角色化導航（教師＝班級|作業|Workspace|Learn，移除 Quiz/Knowledge；班級/作業移出 avatar 選單進頂部導航；`useRole` hook；教師登入預設落地班級管理；`/teacher` 拆 layout gate + 班級/作業兩 route）— 待 UI 驗收
-  - [x] 5-6b Learn 教師權限全開（`ghostUnlock = useGhostUnlock() || role==="teacher"`，複用 DEV-4 幽靈解鎖鏈路讓教師點閱全部 locked 單元）— 待 UI 驗收
-  - [x] 5-6c Learn 單元頁題庫檢視（`GET /quiz/bank?tag=` teacher-gated 回完整 content+解析；`TeacherQuestionBank` 元件 + unit-content 教師專屬「題庫」tab；解答預設隱藏 + 顯示/隱藏切換 + 正解綠框；6 route tests）— 待 UI 驗收
+  - [x] 5-6a 角色化導航（教師＝班級|作業|Workspace|Learn，移除 Quiz/Knowledge；班級/作業移出 avatar 選單進頂部導航；`useRole` hook；教師登入預設落地班級管理；`/teacher` 拆 layout gate + 班級/作業兩 route）— **UI 驗收通過**（2026-07-12）
+  - [x] 5-6b Learn 教師權限全開（`ghostUnlock = useGhostUnlock() || role==="teacher"`，複用 DEV-4 幽靈解鎖鏈路讓教師點閱全部 locked 單元）— **UI 驗收通過**（2026-07-12）
+  - [x] 5-6c Learn 單元頁題庫檢視（`GET /quiz/bank?tag=` teacher-gated 回完整 content+解析；`TeacherQuestionBank` 元件 + unit-content 教師專屬「題庫」tab；解答預設隱藏 + 顯示/隱藏切換 + 正解綠框；6 route tests）— **UI 驗收通過**（2026-07-12）
 - 5-5b 學生繳交 + 教師交件檢視
   - [x] 5-5b-1/2 後端（`services/assignment/submissions.py` + `api/routes/assignment_submissions.py`）：學生 `GET /assignments/mine`（+`/mine/{id}` 詳情含教師/繳交附件）+ `PUT /assignments/{id}/submission`（upsert 重繳覆蓋）+ `POST /submissions/{sid}/attachments`；教師 `GET /assignments/{id}/submissions`（名冊×狀態）+ `PATCH /submissions/{sid}/grade`（評分+評語）；attachment delete 通用化（作業限教師/繳交限本人）；8 tests
-  - [x] 5-5b-3 學生作業 UI（學生導航加「作業」tab → `/assignments` 列表/詳情 + 繳交表單（文字+拖曳上傳+刪除繳交附件）+ 下載教師附件 + 顯示分數/評語 + 逾期軟提示；Dashboard「待辦作業」卡片）— 待 UI 驗收
-  - [x] 5-5b-4 教師交件檢視 UI（作業卡「交件」展開：名冊×狀態+繳交率 → 檢視文字/下載繳交附件 + 評分+評語即時回寫；後端 submissions 列表加繳交附件 meta；728 tests）— 待 UI 驗收
+  - [x] 5-5b-3 學生作業 UI（學生導航加「作業」tab → `/assignments` 列表/詳情 + 繳交表單（文字+拖曳上傳+刪除繳交附件）+ 下載教師附件 + 顯示分數/評語 + 逾期軟提示；Dashboard「待辦作業」卡片）— **UI 驗收通過**（2026-07-12，含繳交狀態徽章修訂）
+  - [x] 5-5b-4 教師交件檢視 UI（作業卡「交件」展開：名冊×狀態+繳交率 → 檢視文字/下載繳交附件 + 評分+評語即時回寫；後端 submissions 列表加繳交附件 meta；728 tests）— **UI 驗收通過**（2026-07-12，含可點卡片動線修訂）
 
 ---
 
@@ -128,7 +128,7 @@
   - [x] 6-3a-2 批次 script + service：`services/quiz/batch_generator.py`（per-concept 跑 N 題 × generate+validate × MAX_VALIDATE_RETRIES=2）+ CLI `scripts/generate_unit_questions.py`（--only / --force / --dry-run）+ 8 mock+DB tests（488 全綠）；預設題型 mix multiple_choice + coding；validate fail 自動 retry，generate fail 直接 abort 與 orchestrator 一致
   - [x] 6-3a-3 實機 LLM 全跑（2026-07-06 ✅）：62 concept 題庫批次 + 補跑 → 138 題 validated（詳見 changelog；v17/v41 掛零 + 3 concept 缺 1 題記 tech-debt 待 6-4b）
 - [x] 6-3b ExercisesTab 改造：從「按需現生」→「優先讀題庫，題庫不足才現生」(GET /quiz/from-bank + ApiRequestError 404 QUESTION_BANK_EMPTY fallback；6 bank service tests + 5 route integration tests；前端 Loading 文案分「查找題庫題目 (< 1 秒)」/「AI 正在生成 (5-15 秒)」兩階段)
-- [x] 6-3c 知識點驅動題量（2026-07-06 晚間程式碼完成）：知識點萃取 service + 每點 1 MC + coding 固定 1 題（intro 0）+ `QuestionSource.BATCH` 分流（migration `k7f8a9b0c1d2`）+ `GET /quiz/unit-set` LEARN 整組作答 + validate 加 `point_meaningful` 面向 + generate「考點有意義」規則 + LEARN 前端整組逐題（`concept-quiz-tab.tsx`，不呼叫 LLM）+ `rereview_questions.py`；627 tests；**實機複審 + 批次生成待跑**
+- [x] 6-3c 知識點驅動題量（2026-07-06 晚間程式碼完成）：知識點萃取 service + 每點 1 MC + coding 固定 1 題（intro 0）+ `QuestionSource.BATCH` 分流（migration `k7f8a9b0c1d2`）+ `GET /quiz/unit-set` LEARN 整組作答 + validate 加 `point_meaningful` 面向 + generate「考點有意義」規則 + LEARN 前端整組逐題（`concept-quiz-tab.tsx`，不呼叫 LLM）+ `rereview_questions.py`；627 tests；實機批次已跑 ✅（同日隨 6-3d：436 MC 覆蓋 61/62 片 + 57 coding + 舊題複審刪 15，見 changelog）
 - [x] 6-3d QUIZ 弱項綜合測驗組（2026-07-06 完成，程式碼 + 實機題庫；文獻標注 references.md §5.1）：multi-concept generate + blueprint/plan（掌握度自適應）+ 題庫優先≤30%並行組裝 + `POST /quiz/weakness-set?count=10|25` + 前端 10/25 選擇逐題作答；程式題強模型 + 審查加考點有意義 + 舊 MC 複審刪 15 + LEARN 資料驅動 tab 隱藏。原始需求規格 ↓
   - **需求**：QUIZ 弱項模式從「單節點、一題一題現生」→「一次生成整組 10 或 25 題」，含單節點題 + 綜合相連節點（多跳）題
   - **決策（使用者三問定案）**：

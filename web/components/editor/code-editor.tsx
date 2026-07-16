@@ -1,10 +1,10 @@
 "use client";
 
-import { useRef, useEffect, useCallback } from "react";
+import { useRef, useEffect } from "react";
 import { EditorState } from "@codemirror/state";
 import { EditorView, keymap, lineNumbers, highlightActiveLine, highlightActiveLineGutter } from "@codemirror/view";
 import { defaultKeymap, indentWithTab, history, historyKeymap } from "@codemirror/commands";
-import { syntaxHighlighting, defaultHighlightStyle, bracketMatching, indentOnInput, foldGutter } from "@codemirror/language";
+import { syntaxHighlighting, defaultHighlightStyle, bracketMatching, indentOnInput, foldGutter, indentUnit } from "@codemirror/language";
 import { cpp } from "@codemirror/lang-cpp";
 import { oneDark } from "@codemirror/theme-one-dark";
 
@@ -73,12 +73,12 @@ export function CodeEditor({ initialValue, value, onChange }: CodeEditorProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
 
-  const handleChange = useCallback(
-    (value: string) => {
-      onChange?.(value);
-    },
-    [onChange],
-  );
+  // onChange 走 ref：父層 callback identity 變動不得觸發編輯器重建
+  // （重建會重設游標到開頭，打字中斷）
+  const onChangeRef = useRef(onChange);
+  useEffect(() => {
+    onChangeRef.current = onChange;
+  });
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -94,13 +94,16 @@ export function CodeEditor({ initialValue, value, onChange }: CodeEditorProps) {
         bracketMatching(),
         indentOnInput(),
         syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
+        // Enter 自動縮排單位 = 4 空格（預設 2，會與 4 空格程式碼錯位，
+        // 導致換行後還要再按一次 Tab 才對齊）
+        indentUnit.of("    "),
         cpp(),
         oneDark,
         editorTheme,
         keymap.of([...defaultKeymap, ...historyKeymap, indentWithTab]),
         EditorView.updateListener.of((update) => {
           if (update.docChanged) {
-            handleChange(update.state.doc.toString());
+            onChangeRef.current?.(update.state.doc.toString());
           }
         }),
         EditorState.tabSize.of(4),
@@ -115,13 +118,13 @@ export function CodeEditor({ initialValue, value, onChange }: CodeEditorProps) {
     viewRef.current = view;
 
     // 初始化時通知父層目前的程式碼內容
-    handleChange(state.doc.toString());
+    onChangeRef.current?.(state.doc.toString());
 
     return () => {
       view.destroy();
       viewRef.current = null;
     };
-  }, [initialValue, handleChange]);
+  }, [initialValue]);
 
   // 外部 value 與編輯器現值不同時整段替換（updateListener 會再通知 onChange）
   useEffect(() => {

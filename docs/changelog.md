@@ -1,5 +1,20 @@
 # 變更日誌
 
+## [2026-07-16] — fix(workspace)：U2e 回饋修訂——側欄化 + 近實時存檔 + 游標跳行 + Enter 縮排
+
+### Fixed
+- **打字游標跳到第一行**：兩個根因——(1) CodeEditor 以父層 onChange 為重建依賴，父層 callback identity 每 render 變動 → 編輯器整個重建、游標重設；改 onChange 走 ref、重建僅依賴 `initialValue`。(2) 草稿還原 effect 以整個 autosave hook 物件為依賴 → 每 render 重抓草稿並覆寫存檔基準；改解構穩定 callback 為依賴
+- **Enter 換行不對齊上一行**：CodeMirror `indentUnit` 預設 2 空格與 4 空格程式碼錯位（換行後需再按 Tab）；加 `indentUnit.of("    ")` 統一 4 空格，並保留語法感知縮排（`{` 後自動加深）
+
+### Changed
+- **「我的程式碼」改左側欄**（`code-files-sidebar.tsx`，取代 Toolbar dropdown）：與反思計畫同側、可收合；**互斥切換**（開一個自動收另一個，`sidePanel` 單一狀態）；Toolbar 加 FolderOpen toggle
+- **近實時存檔**：停頓 0.4 秒即存；連續輸入不間斷時至多每 2 秒強制存一次（原為停止輸入 2 秒才存）
+
+### Verified
+- web tsc/eslint/build 全綠；⚠ UI 操作待使用者驗收
+
+---
+
 ## [2026-07-16] — feat(workspace)：U2e 程式碼存檔（DB 草稿自動存 + 我的程式碼多檔管理）
 
 ### Added

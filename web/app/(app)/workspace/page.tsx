@@ -10,7 +10,7 @@ import { CodeEditor } from "@/components/editor/code-editor";
 import { ReflectionSidebar } from "@/components/reflection/reflection-sidebar";
 import { Toolbar } from "@/components/workspace/toolbar";
 import { OutputPanel } from "@/components/workspace/output-panel";
-import { CodeFilesMenu } from "@/components/workspace/code-files-menu";
+import { CodeFilesSidebar } from "@/components/workspace/code-files-sidebar";
 import { useWorkspace } from "@/components/workspace/workspace-context";
 import { api } from "@/lib/api";
 import {
@@ -36,7 +36,8 @@ export default function WorkspacePage() {
   const [outputCollapsed, setOutputCollapsed] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
-  const [reflectionOpen, setReflectionOpen] = useState(false);
+  // 左側欄互斥：反思計畫 / 我的程式碼 同時只開一個
+  const [sidePanel, setSidePanel] = useState<"reflection" | "files" | null>(null);
   const [hasActiveReflection, setHasActiveReflection] = useState(false);
   // U2e 程式碼存檔：草稿還原（null=載入中）+ 受控內容 + 檔名
   const [draftCode, setDraftCode] = useState<string | null | undefined>(null);
@@ -44,10 +45,19 @@ export default function WorkspacePage() {
   const [fileName, setFileName] = useState("main.cpp");
   const codeRef = useRef("");
   const workspace = useWorkspace();
-  const autosave = useDraftAutosave();
+  // 解構出穩定 callback，避免以物件為 effect/useCallback 依賴造成重跑
+  const { status: saveStatus, schedule: scheduleSave, markSaved } =
+    useDraftAutosave();
 
   const toggleOutput = useCallback(() => setOutputCollapsed((v) => !v), []);
-  const toggleReflection = useCallback(() => setReflectionOpen((v) => !v), []);
+  const toggleReflection = useCallback(
+    () => setSidePanel((p) => (p === "reflection" ? null : "reflection")),
+    [],
+  );
+  const toggleFiles = useCallback(
+    () => setSidePanel((p) => (p === "files" ? null : "files")),
+    [],
+  );
 
   // 訂閱 sessionStorage 變化，控制 toolbar dot 與「初次自動展開」
   useEffect(() => {
@@ -70,7 +80,7 @@ export default function WorkspacePage() {
     getDraft().then(
       (d) => {
         if (cancelled) return;
-        autosave.markSaved(d.code);
+        markSaved(d.code);
         setDraftCode(d.code);
       },
       () => !cancelled && setDraftCode(undefined),
@@ -78,13 +88,13 @@ export default function WorkspacePage() {
     return () => {
       cancelled = true;
     };
-  }, [autosave]);
+  }, [markSaved]);
 
   // 進入 Workspace 時的反思 gating（U1c）：
   // 只有經「前往 Workspace」按鈕正確 handoff 的反思才顯示並自動展開；
   // 直接 navigate 進來的殘留反思會被 getHandedOffReflectionId 清除。
   useEffect(() => {
-    if (getHandedOffReflectionId()) setReflectionOpen(true);
+    if (getHandedOffReflectionId()) setSidePanel("reflection");
   }, []);
 
   const handleCodeChange = useCallback(
@@ -93,9 +103,9 @@ export default function WorkspacePage() {
       workspace.setCode(value);
       setIsDirty(true);
       setEditorValue(value);
-      autosave.schedule(value);
+      scheduleSave(value);
     },
-    [workspace, autosave],
+    [workspace, scheduleSave],
   );
 
   /** 載入命名檔案至編輯器（後續變更照常自動存入草稿）。 */
@@ -148,13 +158,12 @@ export default function WorkspacePage() {
         onRun={handleRun}
         isRunning={isRunning}
         isDirty={isDirty}
-        reflectionSidebarOpen={reflectionOpen}
+        reflectionSidebarOpen={sidePanel === "reflection"}
         onToggleReflectionSidebar={toggleReflection}
         hasActiveReflection={hasActiveReflection}
-        saveStatus={autosave.status}
-        actions={
-          <CodeFilesMenu getCode={() => codeRef.current} onLoad={handleLoadFile} />
-        }
+        saveStatus={saveStatus}
+        codeFilesSidebarOpen={sidePanel === "files"}
+        onToggleCodeFilesSidebar={toggleFiles}
       />
       {outputCollapsed ? (
         <>
@@ -191,14 +200,22 @@ export default function WorkspacePage() {
     return null;
   }
 
-  if (!reflectionOpen) {
+  if (sidePanel === null) {
     return editorAndOutput;
   }
 
   return (
     <PanelGroup orientation="horizontal" className="h-full">
       <Panel defaultSize="28%" minSize="20%" maxSize="40%">
-        <ReflectionSidebar onCollapse={toggleReflection} />
+        {sidePanel === "reflection" ? (
+          <ReflectionSidebar onCollapse={toggleReflection} />
+        ) : (
+          <CodeFilesSidebar
+            getCode={() => codeRef.current}
+            onLoad={handleLoadFile}
+            onCollapse={toggleFiles}
+          />
+        )}
       </Panel>
       <PanelResizeHandle className="relative flex w-1 items-center justify-center transition-colors before:absolute before:inset-y-0 before:w-px before:bg-border-default hover:before:bg-accent-blue data-[resize-handle-active]:before:bg-accent-blue" />
       <Panel minSize="40%">{editorAndOutput}</Panel>

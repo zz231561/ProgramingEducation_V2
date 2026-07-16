@@ -1,6 +1,6 @@
 "use client";
 
-import { ListChecks, Play } from "lucide-react";
+import { FolderOpen, ListChecks, Play } from "lucide-react";
 
 interface ToolbarProps {
   fileName?: string;
@@ -15,8 +15,9 @@ interface ToolbarProps {
   hasActiveReflection?: boolean;
   /** 草稿自動存檔狀態（U2e；無此 prop 則不顯示）。 */
   saveStatus?: "idle" | "saving" | "saved";
-  /** Run 左側的額外操作（U2e 我的程式碼選單）。 */
-  actions?: React.ReactNode;
+  /** 我的程式碼側邊欄是否展開（無此 prop 則不顯示 toggle 按鈕）。 */
+  codeFilesSidebarOpen?: boolean;
+  onToggleCodeFilesSidebar?: () => void;
 }
 
 /**
@@ -33,7 +34,8 @@ export function Toolbar({
   onToggleReflectionSidebar,
   hasActiveReflection = false,
   saveStatus,
-  actions,
+  codeFilesSidebarOpen,
+  onToggleCodeFilesSidebar,
 }: ToolbarProps) {
   return (
     <div className="flex h-10 shrink-0 items-center gap-2 border-b border-border-muted bg-bg-canvas px-3 body-ui">
@@ -51,6 +53,17 @@ export function Toolbar({
               aria-hidden
             />
           )}
+        </button>
+      )}
+
+      {onToggleCodeFilesSidebar && (
+        <button
+          onClick={onToggleCodeFilesSidebar}
+          aria-pressed={codeFilesSidebarOpen ?? false}
+          className="flex size-7 items-center justify-center rounded-md text-text-muted hover:bg-bg-subtle hover:text-text-primary aria-pressed:bg-bg-subtle aria-pressed:text-text-primary"
+          title={codeFilesSidebarOpen ? "收合我的程式碼" : "展開我的程式碼"}
+        >
+          <FolderOpen className="size-4" />
         </button>
       )}
 
@@ -77,8 +90,6 @@ export function Toolbar({
           {saveStatus === "saving" ? "儲存中…" : "已自動儲存"}
         </span>
       )}
-
-      {actions}
 
       <button
         onClick={onRun}

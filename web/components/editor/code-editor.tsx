@@ -54,6 +54,11 @@ int main() {
 interface CodeEditorProps {
   /** 初始程式碼 */
   initialValue?: string;
+  /**
+   * 外部受控內容（U2e）：變更且與編輯器現值不同時整段替換
+   * （載入檔案 / 還原草稿用）。使用者輸入回傳相同值時為 no-op。
+   */
+  value?: string;
   /** 程式碼變更回呼 */
   onChange?: (value: string) => void;
 }
@@ -64,7 +69,7 @@ interface CodeEditorProps {
  * - One Dark 主題（匹配 GitHub Dark Design Tokens）
  * - 行號、括號配對、自動縮排、歷史紀錄
  */
-export function CodeEditor({ initialValue, onChange }: CodeEditorProps) {
+export function CodeEditor({ initialValue, value, onChange }: CodeEditorProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
 
@@ -117,6 +122,18 @@ export function CodeEditor({ initialValue, onChange }: CodeEditorProps) {
       viewRef.current = null;
     };
   }, [initialValue, handleChange]);
+
+  // 外部 value 與編輯器現值不同時整段替換（updateListener 會再通知 onChange）
+  useEffect(() => {
+    const view = viewRef.current;
+    if (!view || value == null) return;
+    const current = view.state.doc.toString();
+    if (value !== current) {
+      view.dispatch({
+        changes: { from: 0, to: current.length, insert: value },
+      });
+    }
+  }, [value]);
 
   return (
     <div

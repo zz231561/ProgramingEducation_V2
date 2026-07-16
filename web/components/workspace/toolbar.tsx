@@ -13,6 +13,10 @@ interface ToolbarProps {
   onToggleReflectionSidebar?: () => void;
   /** 是否有 active reflection（用於在 toggle button 上顯示 dot 提示）。 */
   hasActiveReflection?: boolean;
+  /** 草稿自動存檔狀態（U2e；無此 prop 則不顯示）。 */
+  saveStatus?: "idle" | "saving" | "saved";
+  /** Run 左側的額外操作（U2e 我的程式碼選單）。 */
+  actions?: React.ReactNode;
 }
 
 /**
@@ -28,6 +32,8 @@ export function Toolbar({
   reflectionSidebarOpen,
   onToggleReflectionSidebar,
   hasActiveReflection = false,
+  saveStatus,
+  actions,
 }: ToolbarProps) {
   return (
     <div className="flex h-10 shrink-0 items-center gap-2 border-b border-border-muted bg-bg-canvas px-3 body-ui">
@@ -65,6 +71,14 @@ export function Toolbar({
       </span>
 
       <div className="flex-1" />
+
+      {saveStatus && saveStatus !== "idle" && (
+        <span className="text-xs text-text-muted" aria-live="polite">
+          {saveStatus === "saving" ? "儲存中…" : "已自動儲存"}
+        </span>
+      )}
+
+      {actions}
 
       <button
         onClick={onRun}

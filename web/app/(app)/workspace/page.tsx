@@ -10,6 +10,7 @@ import { CodeEditor } from "@/components/editor/code-editor";
 import { ReflectionSidebar } from "@/components/reflection/reflection-sidebar";
 import { Toolbar } from "@/components/workspace/toolbar";
 import { OutputPanel } from "@/components/workspace/output-panel";
+import { CodeFilesMenu } from "@/components/workspace/code-files-menu";
 import { useWorkspace } from "@/components/workspace/workspace-context";
 import { api } from "@/lib/api";
 import {
@@ -17,6 +18,8 @@ import {
   getActiveReflectionId,
   getHandedOffReflectionId,
 } from "@/lib/active-reflection";
+import { getDraft } from "@/lib/code-files";
+import { useDraftAutosave } from "@/lib/use-draft-autosave";
 
 /** 後端 /code/execute 回傳格式 */
 interface ExecuteResponse {
@@ -35,8 +38,13 @@ export default function WorkspacePage() {
   const [isDirty, setIsDirty] = useState(false);
   const [reflectionOpen, setReflectionOpen] = useState(false);
   const [hasActiveReflection, setHasActiveReflection] = useState(false);
+  // U2e 程式碼存檔：草稿還原（null=載入中）+ 受控內容 + 檔名
+  const [draftCode, setDraftCode] = useState<string | null | undefined>(null);
+  const [editorValue, setEditorValue] = useState<string | undefined>(undefined);
+  const [fileName, setFileName] = useState("main.cpp");
   const codeRef = useRef("");
   const workspace = useWorkspace();
+  const autosave = useDraftAutosave();
 
   const toggleOutput = useCallback(() => setOutputCollapsed((v) => !v), []);
   const toggleReflection = useCallback(() => setReflectionOpen((v) => !v), []);
@@ -56,6 +64,22 @@ export default function WorkspacePage() {
     };
   }, []);
 
+  // 進入 Workspace 先還原草稿（U2e）；404/失敗 fail-open 用預設範本
+  useEffect(() => {
+    let cancelled = false;
+    getDraft().then(
+      (d) => {
+        if (cancelled) return;
+        autosave.markSaved(d.code);
+        setDraftCode(d.code);
+      },
+      () => !cancelled && setDraftCode(undefined),
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [autosave]);
+
   // 進入 Workspace 時的反思 gating（U1c）：
   // 只有經「前往 Workspace」按鈕正確 handoff 的反思才顯示並自動展開；
   // 直接 navigate 進來的殘留反思會被 getHandedOffReflectionId 清除。
@@ -68,9 +92,17 @@ export default function WorkspacePage() {
       codeRef.current = value;
       workspace.setCode(value);
       setIsDirty(true);
+      setEditorValue(value);
+      autosave.schedule(value);
     },
-    [workspace],
+    [workspace, autosave],
   );
+
+  /** 載入命名檔案至編輯器（後續變更照常自動存入草稿）。 */
+  const handleLoadFile = useCallback((code: string, name: string) => {
+    setEditorValue(code);
+    setFileName(name);
+  }, []);
 
   const handleRun = useCallback(async () => {
     const code = codeRef.current;
@@ -112,17 +144,26 @@ export default function WorkspacePage() {
   const editorAndOutput = (
     <div className="flex h-full flex-col">
       <Toolbar
+        fileName={fileName}
         onRun={handleRun}
         isRunning={isRunning}
         isDirty={isDirty}
         reflectionSidebarOpen={reflectionOpen}
         onToggleReflectionSidebar={toggleReflection}
         hasActiveReflection={hasActiveReflection}
+        saveStatus={autosave.status}
+        actions={
+          <CodeFilesMenu getCode={() => codeRef.current} onLoad={handleLoadFile} />
+        }
       />
       {outputCollapsed ? (
         <>
           <div className="min-h-0 flex-1">
-            <CodeEditor onChange={handleCodeChange} />
+            <CodeEditor
+              initialValue={draftCode ?? undefined}
+              value={editorValue}
+              onChange={handleCodeChange}
+            />
           </div>
           <OutputPanel collapsed onToggleCollapse={toggleOutput} />
         </>
@@ -130,7 +171,11 @@ export default function WorkspacePage() {
         <PanelGroup orientation="vertical" className="min-h-0 flex-1">
           {/* react-resizable-panels v4：裸數字是 px，百分比必須用字串（U1b） */}
           <Panel defaultSize="70%" minSize="30%">
-            <CodeEditor onChange={handleCodeChange} />
+            <CodeEditor
+              initialValue={draftCode ?? undefined}
+              value={editorValue}
+              onChange={handleCodeChange}
+            />
           </Panel>
           <PanelResizeHandle className="relative flex h-1 items-center justify-center transition-colors before:absolute before:inset-x-0 before:h-px before:bg-border-default hover:before:bg-accent-blue data-[resize-handle-active]:before:bg-accent-blue" />
           <Panel defaultSize="30%" minSize="15%">
@@ -140,6 +185,11 @@ export default function WorkspacePage() {
       )}
     </div>
   );
+
+  // 草稿載入完成前不掛編輯器，避免先閃預設範本再被草稿覆蓋
+  if (draftCode === null) {
+    return null;
+  }
 
   if (!reflectionOpen) {
     return editorAndOutput;

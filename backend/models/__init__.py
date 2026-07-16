@@ -8,6 +8,7 @@ from models.assignment import (
 )
 from models.chat import ChatMessage, ChatSession
 from models.classroom import ClassMember, Classroom
+from models.code_file import CodeFile
 from models.coding_event import CodingEvent, CodingEventType
 from models.concept import Concept, ConceptEdge, EdgeType
 from models.learning import LearningPath, LearningUnit, LearningUnitStatus
@@ -33,6 +34,7 @@ __all__ = [
     "ChatSession",
     "ClassMember",
     "Classroom",
+    "CodeFile",
     "CodingEvent",
     "CodingEventType",
     "ComprehensionType",

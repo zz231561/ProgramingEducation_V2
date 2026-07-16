@@ -1,5 +1,25 @@
 # 變更日誌
 
+## [2026-07-16] — feat(workspace)：U2e 程式碼存檔（DB 草稿自動存 + 我的程式碼多檔管理）
+
+### Added
+- **`code_files` 表**（migration `r4a5b6c7d8e9`，up/down 可逆驗證）：單表兩用——草稿（name IS NULL，partial unique 每人一份）+ 命名檔案（UNIQUE(user_id,name) 同名覆蓋；上限 50；code CHECK ≤ 100k 字元）
+- **API**（`services/workspace_files.py` + `api/routes/code_files.py`）：`GET/PUT /code/draft`（還原/upsert）+ `GET/PUT /code/files`（列表 meta / 同名覆蓋儲存）+ `GET/DELETE /code/files/{id}`；一律限本人（他人 404）
+- **自動存檔**（`lib/use-draft-autosave.ts`）：停止輸入 2 秒 PUT 草稿 + Toolbar「儲存中…/已自動儲存」指示；beforeunload 與 SPA 卸載時 keepalive 搶救未存變更；內容未變不重複打 API
+- **進 Workspace 還原草稿**：載入完成前不掛編輯器（避免預設範本閃現）；404/失敗 fail-open 用預設範本
+- **Toolbar「我的程式碼」選單**（`code-files-menu.tsx`）：另存命名檔案（同名覆蓋）+ 列表（名稱+時間）載入/刪除；載入後 Toolbar 檔名同步
+
+### Changed
+- **CodeEditor 加受控 `value` prop**：外部值與現值不同時整段替換（載入檔案/還原草稿）；`initialValue` 行為不變（quiz 相容）。順帶修復 output 收合切換 remount 後編輯器內容重設的潛在 bug
+
+### Tests
+- +8（草稿 404/upsert/隔離、檔案存-列-載-刪、同名覆蓋、他人 404、空白檔名 422、上限 409）；後端全量 **738 passed**；web tsc/eslint/build 全綠
+
+### Verified
+- migration up/down/up 實跑可逆；dev server 熱載新路由（401 需登入）；⚠ UI 操作待使用者驗收
+
+---
+
 ## [2026-07-12] — docs：驗收狀態同步 + 修正 6-3c 過時註記
 
 ### Changed

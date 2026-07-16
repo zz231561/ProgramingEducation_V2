@@ -32,6 +32,23 @@ async def test_draft_upsert_and_restore(client: AsyncClient):
     assert got["code"] == "v2"
 
 
+async def test_draft_opened_name_roundtrip_and_keep(client: AsyncClient):
+    ck = _ck(USER_A)
+    # 帶 opened_name 儲存 → 讀回
+    r = await client.put(
+        "/code/draft", json={"code": "v1", "opened_name": "作業一"}, cookies=ck
+    )
+    assert r.json()["opened_name"] == "作業一"
+    # 省略 opened_name（自動存檔情境）→ 保留現值
+    r = await client.put("/code/draft", json={"code": "v2"}, cookies=ck)
+    assert r.json()["opened_name"] == "作業一"
+    # 帶 null → 清除（開新檔案）
+    r = await client.put(
+        "/code/draft", json={"code": "v3", "opened_name": None}, cookies=ck
+    )
+    assert r.json()["opened_name"] is None
+
+
 async def test_draft_is_per_user(client: AsyncClient):
     await client.put("/code/draft", json={"code": "mine"}, cookies=_ck(USER_A))
     resp = await client.get("/code/draft", cookies=_ck(USER_B))

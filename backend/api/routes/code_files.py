@@ -18,6 +18,7 @@ from core.errors import AppError
 from models.code_file import MAX_CODE_CHARS, CodeFile
 from models.user import User
 from services.workspace_files import (
+    KEEP_OPENED_NAME,
     delete_file,
     get_draft,
     get_file,
@@ -31,6 +32,8 @@ router = APIRouter(prefix="/code", tags=["code"])
 
 class DraftIn(BaseModel):
     code: str = Field(default="", max_length=MAX_CODE_CHARS)
+    # 省略 = 保留現值；帶 null = 清除（比照 assignments PATCH due_at 慣例）
+    opened_name: str | None = Field(default=None, max_length=100)
 
 
 class SaveFileIn(BaseModel):
@@ -61,7 +64,15 @@ class CodeFileOut(CodeFileMetaOut):
 
 class DraftOut(BaseModel):
     code: str
+    opened_name: str | None
     updated_at: str
+
+    @classmethod
+    def from_model(cls, d: CodeFile) -> "DraftOut":
+        return cls(
+            code=d.code, opened_name=d.opened_name,
+            updated_at=d.updated_at.isoformat(),
+        )
 
 
 @router.get("/draft", response_model=DraftOut)
@@ -72,7 +83,7 @@ async def read_draft(
     draft = await get_draft(db, user.id)
     if draft is None:
         raise AppError(404, "DRAFT_NOT_FOUND", "尚無草稿")
-    return DraftOut(code=draft.code, updated_at=draft.updated_at.isoformat())
+    return DraftOut.from_model(draft)
 
 
 @router.put("/draft", response_model=DraftOut)
@@ -81,8 +92,13 @@ async def write_draft(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_db_user),
 ) -> DraftOut:
-    draft = await save_draft(db, user.id, body.code)
-    return DraftOut(code=draft.code, updated_at=draft.updated_at.isoformat())
+    opened = (
+        body.opened_name
+        if "opened_name" in body.model_fields_set
+        else KEEP_OPENED_NAME
+    )
+    draft = await save_draft(db, user.id, body.code, opened)
+    return DraftOut.from_model(draft)
 
 
 @router.get("/files", response_model=list[CodeFileMetaOut])

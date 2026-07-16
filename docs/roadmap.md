@@ -237,7 +237,7 @@
 - [x] U2b 移除 LEARN 摘要：前端 tab + summary-tab.tsx 刪除；生成管線 Summary model / prompt / LLM call 移除（批次省 1/3 calls）；lazy-seed 骨架同步去 summary 欄位
 - [x] U2c 拔除課程介紹範例：後端 `concept_category` 直通 UnitOut；前端課程介紹單元隱藏範例 tab；批次生成對 intro concept 跳過 examples LLM call（不標 needs_more_source）
 - [x] U2d QUIZ tab 題庫優先：`GET /quiz/from-bank` 支援省略 concept_tag（弱項模式，複用 pick_target_concept）+ question_type 過濾；QuizRunner 兩階段 loading + 404 fallback 現生；**練習題重複曝光 tech-debt 一併消除**（bank 一律排除該生已答過的題，Learn/Quiz 兩入口同時生效；全答過 → fallback 現生新題入庫，題庫自然成長）
-- [x] U2e Workspace 程式碼存檔（2026-07-16，決策：DB「我的程式碼」多檔管理）：`code_files` 表（草稿 name NULL 每人一份 + 命名檔案同名覆蓋、上限 50）+ `/code/draft`·`/code/files` API + 前端自動存檔（停輸入 2 秒 + beforeunload/卸載 keepalive 搶救）+ 進頁還原草稿 + Toolbar「我的程式碼」選單（另存/載入/刪除）+ CodeEditor 受控 value（順修 output 收合 remount 掉碼潛在 bug）；+8 tests（738）；2026-07-16 回饋修訂：我的程式碼改左側欄（與反思互斥切換）+ 近實時存檔（0.4s/連續每 2s）+ 修游標跳行（editor 重建依賴）+ Enter 縮排 4 空格；同日再補 Ctrl/Cmd+S（已命名覆寫/未命名另存對話框檔名反白）+ 開新檔案（未存確認）+ 檔名關聯 — 待 UI 驗收
+- [x] U2e Workspace 程式碼存檔（2026-07-16，決策：DB「我的程式碼」多檔管理）：`code_files` 表（草稿 name NULL 每人一份 + 命名檔案同名覆蓋、上限 50）+ `/code/draft`·`/code/files` API + 前端自動存檔（停輸入 2 秒 + beforeunload/卸載 keepalive 搶救）+ 進頁還原草稿 + Toolbar「我的程式碼」選單（另存/載入/刪除）+ CodeEditor 受控 value（順修 output 收合 remount 掉碼潛在 bug）；+8 tests（738）；2026-07-16 回饋修訂：我的程式碼改左側欄（與反思互斥切換）+ 近實時存檔（0.4s/連續每 2s）+ 修游標跳行（editor 重建依賴）+ Enter 縮排 4 空格；同日再補 Ctrl/Cmd+S（已命名覆寫/未命名另存對話框檔名反白）+ 開新檔案（未存確認）+ 檔名關聯（`opened_name` 存草稿列，重整/再登入停留最後開啟檔案）+ page.tsx 拆分（use-run-code / use-draft-restore）— 待 UI 驗收
 - ~~U2f 範例程式製作~~ → **作廢（2026-07-06 晚間決策：範例程式全面移除，見 U2g）**
 - [x] U2g LEARN tab 重構 + 移除範例程式（2026-07-06 晚間完成）：tab 改「概念說明 / 程式實作題 / 觀念題」+ intro 隱藏程式題 + examples 管線/前端全移除 + 全量 promote + 移除題庫提示字樣（詳見 changelog）
 

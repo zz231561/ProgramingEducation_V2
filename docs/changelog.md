@@ -1,5 +1,18 @@
 # 變更日誌
 
+## [2026-07-16] — feat(workspace)：檔名關聯跨重整持久化 + page.tsx 拆分
+
+### Added
+- **重整/再登入停留在最後開啟的檔案**：`code_files` 草稿列加 `opened_name` 欄（migration `s5b6c7d8e9f0`，可逆驗證）；PUT /code/draft 省略欄位＝保留、帶 null＝清除（sentinel `KEEP_OPENED_NAME`，自動存檔不觸碰關聯）；載入/另存/開新檔即時持久化關聯；進頁還原內容+檔名；+1 test（739）
+
+### Changed
+- **page.tsx 拆分**（使用者核准；255 → 214 行）：抽出 `use-run-code.ts`（Judge0 執行 + isDirty）與 `use-draft-restore.ts`（草稿+檔名還原）；反思 handoff gating 改 lazy 初始值（消 react-compiler set-state-in-effect）；hook 回傳全面解構取用（消 preserve-manual-memoization）
+
+### Verified
+- 後端 739 passed；migration up/down/up 可逆；web tsc/eslint/build 全綠；⚠ UI 待使用者驗收
+
+---
+
 ## [2026-07-16] — feat(workspace)：U2e 快捷鍵修訂——Ctrl/Cmd+S 儲存 + 開新檔案（仿主流編輯器）
 
 ### Added

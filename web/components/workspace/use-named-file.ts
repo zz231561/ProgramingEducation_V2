@@ -8,7 +8,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { saveCodeFile } from "@/lib/code-files";
+import { saveCodeFile, saveDraft } from "@/lib/code-files";
 
 const SAVED_FLASH_MS = 1500;
 
@@ -44,18 +44,28 @@ export function useNamedFile({
     namedDirtyRef.current = true;
   }, []);
 
+  /** 由草稿還原檔名關聯（進頁時；不回寫伺服器）。 */
+  const restoreName = useCallback((name: string) => {
+    setCurrentName(name);
+    namedDirtyRef.current = false;
+  }, []);
+
   /** 從側欄載入檔案後呼叫。 */
   const markLoaded = useCallback((code: string, name: string) => {
     suppressRef.current = code;
     setCurrentName(name);
     namedDirtyRef.current = false;
+    // 持久化檔名關聯（重整/再登入後停留在此檔）；失敗不擋操作
+    void saveDraft(code, name).catch(() => {});
   }, []);
 
   const saveNamed = useCallback(
     async (name: string) => {
-      await saveCodeFile(name, getCode());
+      const code = getCode();
+      await saveCodeFile(name, code);
       setCurrentName(name);
       namedDirtyRef.current = false;
+      void saveDraft(code, name).catch(() => {}); // 持久化檔名關聯
       setRefreshToken((n) => n + 1);
       setSavedFlash(true);
       if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
@@ -92,6 +102,7 @@ export function useNamedFile({
     injectCode(defaultCode);
     setCurrentName(null);
     namedDirtyRef.current = false;
+    void saveDraft(defaultCode, null).catch(() => {}); // 清除檔名關聯
   }, [currentName, getCode, injectCode, defaultCode]);
 
   // Ctrl/Cmd+S 攔截（走 ref 讓 listener 只掛一次）
@@ -121,6 +132,7 @@ export function useNamedFile({
     refreshToken,
     markTyped,
     markLoaded,
+    restoreName,
     saveNamed,
     newFile,
   };

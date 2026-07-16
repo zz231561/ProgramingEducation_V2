@@ -24,14 +24,24 @@ async def get_draft(db: AsyncSession, user_id: uuid.UUID) -> CodeFile | None:
     ).scalar_one_or_none()
 
 
-async def save_draft(db: AsyncSession, user_id: uuid.UUID, code: str) -> CodeFile:
-    """upsert 草稿（每人一份）。"""
+KEEP_OPENED_NAME = object()  # sentinel：呼叫端未提供 opened_name 時保留現值
+
+
+async def save_draft(
+    db: AsyncSession,
+    user_id: uuid.UUID,
+    code: str,
+    opened_name: str | None | object = KEEP_OPENED_NAME,
+) -> CodeFile:
+    """upsert 草稿（每人一份）；opened_name 未提供時保留現值。"""
     draft = await get_draft(db, user_id)
     if draft is None:
         draft = CodeFile(user_id=user_id, code=code)
         db.add(draft)
     else:
         draft.code = code
+    if opened_name is not KEEP_OPENED_NAME:
+        draft.opened_name = opened_name  # type: ignore[assignment]
     await db.commit()
     await db.refresh(draft)
     return draft

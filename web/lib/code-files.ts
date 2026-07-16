@@ -6,6 +6,8 @@ import { api } from "./api";
 
 export interface CodeDraft {
   code: string;
+  /** 目前開啟的命名檔案（重整/再登入後還原檔名關聯） */
+  opened_name: string | null;
   updated_at: string;
 }
 
@@ -24,10 +26,16 @@ export function getDraft(): Promise<CodeDraft> {
   return api<CodeDraft>("/code/draft");
 }
 
-export function saveDraft(code: string): Promise<CodeDraft> {
+/** 儲存草稿；openedName 省略＝保留現有檔名關聯，傳 null＝清除。 */
+export function saveDraft(
+  code: string,
+  openedName?: string | null,
+): Promise<CodeDraft> {
+  const body: Record<string, unknown> = { code };
+  if (openedName !== undefined) body.opened_name = openedName;
   return api<CodeDraft>("/code/draft", {
     method: "PUT",
-    body: JSON.stringify({ code }),
+    body: JSON.stringify(body),
   });
 }
 

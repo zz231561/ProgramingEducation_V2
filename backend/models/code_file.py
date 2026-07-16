@@ -29,6 +29,8 @@ class CodeFile(Base):
     )
     name: Mapped[str | None] = mapped_column(String(100), default=None)
     code: Mapped[str] = mapped_column(Text, default="")
+    # 僅草稿列使用：記錄目前開啟的命名檔案（重整/再登入後還原檔名關聯）
+    opened_name: Mapped[str | None] = mapped_column(String(100), default=None)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

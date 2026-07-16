@@ -246,6 +246,7 @@ code_files                                    -- 單表兩用：草稿（name IS
 ├── user_id (FK → users, ON DELETE CASCADE)
 ├── name (varchar 100, nullable)             -- NULL = 自動草稿；有值 = 命名檔案（同名儲存＝覆蓋）
 ├── code (text, CHECK char_length <= 100000)
+├── opened_name (varchar 100, nullable)      -- 僅草稿列：最後開啟的命名檔案（重整還原關聯）
 ├── created_at
 ├── updated_at (onupdate)
 ├── UNIQUE (user_id, name) ★                 -- 命名檔案不重名

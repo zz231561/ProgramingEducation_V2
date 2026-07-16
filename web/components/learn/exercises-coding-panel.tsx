@@ -85,18 +85,15 @@ function ReflectionDoneSummary({
   fileName: string;
   starterCode?: string;
 }) {
-  const score = reflection.quality_score;
   // 帶反思 + 檔名 + 起手碼進 Workspace：自動開啟同名檔案並顯示反思計畫
+  // 不顯示品質分數（2026-07-16：避免對初學者造成壓力；分數仍入 DB 供研究）
   const handleGoWorkspace = () =>
     setActiveReflectionId(reflection.id, { fileName, starterCode });
   return (
     <div className="space-y-3 rounded-md border border-border-default bg-surface-1 p-4">
       <div className="flex items-center gap-2 text-sm text-accent-green">
         <CheckCircle2 className="size-4" />
-        <span>反思已記錄</span>
-        {score !== null && score !== undefined && (
-          <span className="text-text-muted">（品質分數 {Math.round(score * 100)}%）</span>
-        )}
+        <span>反思已記錄，準備動手吧！</span>
       </div>
       {reflection.followup_question && (
         <p className="rounded-md border-l-2 border-accent-blue bg-surface-2 px-3 py-2 text-xs text-text-secondary">

@@ -144,7 +144,6 @@ function ReflectionSummary({
   reflection: Reflection;
   starterCode?: string;
 }) {
-  const score = reflection.quality_score;
   const handleGoWorkspace = () =>
     setActiveReflectionId(reflection.id, {
       fileName: "程式實作題",
@@ -169,12 +168,6 @@ function ReflectionSummary({
           <span className="text-text-muted">預期概念：</span>
           {reflection.expected_concepts || "（空）"}
         </li>
-        {score !== null && (
-          <li>
-            <span className="text-text-muted">品質分數：</span>
-            <span className="font-mono">{Math.round(score * 100)}%</span>
-          </li>
-        )}
       </ul>
       <div className="mt-3 border-t border-border-default pt-3">
         <Link

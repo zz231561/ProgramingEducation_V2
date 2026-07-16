@@ -42,7 +42,6 @@ export interface FlowBodyProps {
   formValue: ReflectionFormValue;
   onFormChange: (v: ReflectionFormValue) => void;
   followupQuestion: string;
-  qualityScore: number | null;
   followupAnswer: string;
   onFollowupAnswerChange: (v: string) => void;
   error: string | null;
@@ -71,7 +70,6 @@ export function FlowBody(props: FlowBodyProps) {
     <>
       <ReflectionFollowup
         question={props.followupQuestion}
-        qualityScore={props.qualityScore}
         value={props.followupAnswer}
         onChange={props.onFollowupAnswerChange}
       />
@@ -84,7 +82,6 @@ export interface FlowFooterProps {
   stage: Stage;
   formValid: boolean;
   followupAnswerFilled: boolean;
-  canGiveUp: boolean;
   onSubmitInitial: () => void;
   onSubmitFollowup: () => void;
   onGiveUp: () => void;
@@ -94,7 +91,6 @@ export function FlowFooter({
   stage,
   formValid,
   followupAnswerFilled,
-  canGiveUp,
   onSubmitInitial,
   onSubmitFollowup,
   onGiveUp,
@@ -108,14 +104,15 @@ export function FlowFooter({
 
   return (
     <div className="flex items-center justify-end gap-2 border-t border-border-default bg-surface-2 px-5 py-3">
-      {stage === "followup" && canGiveUp && (
+      {/* 追問是引導不是門檻：隨時可直接開始作答 */}
+      {stage === "followup" && (
         <button
           type="button"
           onClick={onGiveUp}
           disabled={submitting}
           className="text-xs text-text-muted hover:text-text-secondary disabled:opacity-50"
         >
-          已盡力，直接看題
+          直接開始作答
         </button>
       )}
       <button

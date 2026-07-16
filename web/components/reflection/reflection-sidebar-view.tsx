@@ -16,13 +16,10 @@ interface ViewModeProps {
 }
 
 export function ReflectionSidebarView({ reflection, onEdit, onClear }: ViewModeProps) {
-  const score = reflection.quality_score;
   const steps = reflection.planned_steps.filter((s) => s.trim());
 
   return (
     <div className="space-y-4 p-4">
-      {score !== null && <QualityChip score={score} />}
-
       <Section label="問題理解">
         <p className="text-xs leading-5 text-text-primary">
           {reflection.problem_understanding || "（空）"}
@@ -92,18 +89,6 @@ function Section({ label, children }: { label: string; children: React.ReactNode
     <div>
       <p className="mb-1.5 text-xs font-medium text-text-secondary">{label}</p>
       {children}
-    </div>
-  );
-}
-
-function QualityChip({ score }: { score: number }) {
-  const pct = Math.round(score * 100);
-  const tone =
-    score < 0.4 ? "text-accent-red" : score < 0.6 ? "text-accent-orange" : "text-accent-green";
-  return (
-    <div className="flex items-center gap-1.5 text-xs text-text-secondary">
-      <span>反思品質</span>
-      <span className={`font-mono ${tone}`}>{pct}%</span>
     </div>
   );
 }

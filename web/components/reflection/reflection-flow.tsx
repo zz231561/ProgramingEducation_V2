@@ -3,11 +3,12 @@
 /**
  * Reflection Flow — 開題前反思 modal 容器（Phase 2-5c）。
  *
- * 狀態機：form → submitting → (approved | followup) → submitting → ...
+ * 狀態機：form → submitting → (approved | followup) → submitting → approved
  *
  * - LLM 失敗（quality_score=null）→ 視為通過，不擋學生流程
  * - 達門檻（followup_question=null）→ approved
- * - MAX_FOLLOWUP_ROUNDS 次仍未通過 → 提供「已盡力」放行（避免無限 loop）
+ * - 追問是引導不是門檻（2026-07-16 修訂）：追問階段隨時可「直接開始作答」跳過；
+ *   回答過一次追問後無論分數一律放行（self-explanation 的效益來自提示本身）
  *
  * 純受控 — open/close 由 caller 用 prop 管；onApprove 通知放行 + 回傳 reflection。
  */
@@ -35,8 +36,6 @@ import {
   Stage,
   humanizeReflectionError,
 } from "./reflection-flow-parts";
-
-const MAX_FOLLOWUP_ROUNDS = 2;
 
 export interface ReflectionFlowProps {
   open: boolean;
@@ -77,7 +76,6 @@ function ReflectionFlowContent({
   const [formValue, setFormValue] = useState<ReflectionFormValue>(EMPTY_REFLECTION_FORM);
   const [reflection, setReflection] = useState<Reflection | null>(null);
   const [followupAnswer, setFollowupAnswer] = useState("");
-  const [followupRound, setFollowupRound] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
   const handleResult = useCallback(
@@ -121,13 +119,15 @@ function ReflectionFlowContent({
       const result = await patchReflection(reflection.id, {
         followup_answer: followupAnswer.trim(),
       });
-      setFollowupRound((n) => n + 1);
-      handleResult(result);
+      // 回答過追問即放行（不再二輪）：追問目的是引發再思考，不是考試
+      setReflection(result);
+      setStage("approved");
+      onApprove(result);
     } catch (e) {
       setStage("followup");
       setError(humanizeReflectionError(e));
     }
-  }, [reflection, followupAnswer, handleResult]);
+  }, [reflection, followupAnswer, onApprove]);
 
   const giveUp = useCallback(() => {
     if (reflection) {
@@ -153,7 +153,6 @@ function ReflectionFlowContent({
           formValue={formValue}
           onFormChange={setFormValue}
           followupQuestion={reflection?.followup_question ?? ""}
-          qualityScore={reflection?.quality_score ?? null}
           followupAnswer={followupAnswer}
           onFollowupAnswerChange={setFollowupAnswer}
           error={error}
@@ -163,7 +162,6 @@ function ReflectionFlowContent({
         stage={stage}
         formValid={isReflectionFormValid(formValue)}
         followupAnswerFilled={followupAnswer.trim().length > 0}
-        canGiveUp={followupRound >= MAX_FOLLOWUP_ROUNDS - 1}
         onSubmitInitial={submitInitial}
         onSubmitFollowup={submitFollowup}
         onGiveUp={giveUp}

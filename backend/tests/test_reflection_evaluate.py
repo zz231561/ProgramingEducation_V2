@@ -37,12 +37,12 @@ def _make_reflection(
     )
 
 
-def _make_question() -> Question:
+def _make_question(bloom_level: int = 3) -> Question:
     return Question(
         id=uuid.uuid4(),
         type="multiple_choice",
         concept_tags=["syntax-basic"],
-        bloom_level=3,
+        bloom_level=bloom_level,
         difficulty=1,
         content={"stem": "宣告整數變數？", "options": ["int x;"], "answer_index": 0},
         explanation="",
@@ -134,6 +134,33 @@ async def test_evaluate_low_quality_blank_followup_normalized_to_none():
     ):
         result = await evaluate_reflection(_make_reflection(), _make_question())
     assert result.followup_question is None
+
+
+async def test_evaluate_threshold_adapts_to_bloom():
+    """Bloom 自適應：同一組分數（平均 0.42）低 Bloom 放行、高 Bloom 追問。"""
+    payload = json.dumps({
+        "understanding_score": 0.5,
+        "understanding_reason": "ok",
+        "plan_quality_score": 0.4,
+        "plan_quality_reason": "ok",
+        "concept_recall_score": 0.36,
+        "concept_recall_reason": "ok",
+        "followup_question": "追問",
+    })
+    # avg = 0.42：Bloom 1（門檻 0.4）→ 放行
+    _reset_client_cache()
+    with patch.object(
+        eval_module, "_get_client", return_value=_mock_client(payload)
+    ):
+        low = await evaluate_reflection(_make_reflection(), _make_question(1))
+    assert low.followup_question is None
+    # Bloom 5（門檻 0.55）→ 保留追問
+    _reset_client_cache()
+    with patch.object(
+        eval_module, "_get_client", return_value=_mock_client(payload)
+    ):
+        high = await evaluate_reflection(_make_reflection(), _make_question(5))
+    assert high.followup_question == "追問"
 
 
 # === 容錯 ===

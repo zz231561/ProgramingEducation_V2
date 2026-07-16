@@ -14,20 +14,22 @@ import {
   deleteCodeFile,
   getCodeFile,
   listCodeFiles,
-  saveCodeFile,
 } from "@/lib/code-files";
 
 export function CodeFilesSidebar({
-  getCode,
+  onSaveAs,
   onLoad,
   onCollapse,
+  refreshToken = 0,
 }: {
-  /** 取得編輯器目前內容（儲存時） */
-  getCode: () => string;
+  /** 以指定檔名儲存編輯器目前內容（與 Ctrl/Cmd+S 同一流程） */
+  onSaveAs: (name: string) => Promise<void>;
   /** 載入檔案內容至編輯器 */
   onLoad: (code: string, name: string) => void;
   /** 收合時呼叫（caller 控制 layout） */
   onCollapse: () => void;
+  /** 外部儲存成功時遞增，觸發列表重抓 */
+  refreshToken?: number;
 }) {
   const [files, setFiles] = useState<CodeFileMeta[] | null>(null);
   const [name, setName] = useState("");
@@ -43,7 +45,7 @@ export function CodeFilesSidebar({
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [refreshToken]);
 
   const run = async (fn: () => Promise<void>) => {
     setBusy(true);
@@ -59,12 +61,8 @@ export function CodeFilesSidebar({
 
   const save = () =>
     run(async () => {
-      const saved = await saveCodeFile(name.trim(), getCode());
+      await onSaveAs(name.trim()); // 成功後 refreshToken 遞增觸發重抓
       setName("");
-      setFiles((prev) => [
-        saved,
-        ...(prev ?? []).filter((f) => f.id !== saved.id),
-      ]);
     });
 
   const load = (f: CodeFileMeta) =>

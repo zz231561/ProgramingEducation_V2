@@ -6,11 +6,13 @@ import {
   Group as PanelGroup,
   Separator as PanelResizeHandle,
 } from "react-resizable-panels";
-import { CodeEditor } from "@/components/editor/code-editor";
+import { CodeEditor, DEFAULT_CODE } from "@/components/editor/code-editor";
 import { ReflectionSidebar } from "@/components/reflection/reflection-sidebar";
 import { Toolbar } from "@/components/workspace/toolbar";
 import { OutputPanel } from "@/components/workspace/output-panel";
 import { CodeFilesSidebar } from "@/components/workspace/code-files-sidebar";
+import { SaveAsDialog } from "@/components/workspace/save-as-dialog";
+import { useNamedFile } from "@/components/workspace/use-named-file";
 import { useWorkspace } from "@/components/workspace/workspace-context";
 import { api } from "@/lib/api";
 import {
@@ -39,15 +41,20 @@ export default function WorkspacePage() {
   // 左側欄互斥：反思計畫 / 我的程式碼 同時只開一個
   const [sidePanel, setSidePanel] = useState<"reflection" | "files" | null>(null);
   const [hasActiveReflection, setHasActiveReflection] = useState(false);
-  // U2e 程式碼存檔：草稿還原（null=載入中）+ 受控內容 + 檔名
+  // U2e 程式碼存檔：草稿還原（null=載入中）+ 受控內容
   const [draftCode, setDraftCode] = useState<string | null | undefined>(null);
   const [editorValue, setEditorValue] = useState<string | undefined>(undefined);
-  const [fileName, setFileName] = useState("main.cpp");
   const codeRef = useRef("");
   const workspace = useWorkspace();
   // 解構出穩定 callback，避免以物件為 effect/useCallback 依賴造成重跑
   const { status: saveStatus, schedule: scheduleSave, markSaved } =
     useDraftAutosave();
+  // 命名檔案（Ctrl/Cmd+S、另存、開新檔）
+  const file = useNamedFile({
+    getCode: () => codeRef.current,
+    injectCode: setEditorValue,
+    defaultCode: DEFAULT_CODE,
+  });
 
   const toggleOutput = useCallback(() => setOutputCollapsed((v) => !v), []);
   const toggleReflection = useCallback(
@@ -104,15 +111,19 @@ export default function WorkspacePage() {
       setIsDirty(true);
       setEditorValue(value);
       scheduleSave(value);
+      file.markTyped(value);
     },
-    [workspace, scheduleSave],
+    [workspace, scheduleSave, file.markTyped], // eslint-disable-line react-hooks/exhaustive-deps
   );
 
   /** 載入命名檔案至編輯器（後續變更照常自動存入草稿）。 */
-  const handleLoadFile = useCallback((code: string, name: string) => {
-    setEditorValue(code);
-    setFileName(name);
-  }, []);
+  const handleLoadFile = useCallback(
+    (code: string, name: string) => {
+      file.markLoaded(code, name);
+      setEditorValue(code);
+    },
+    [file.markLoaded], // eslint-disable-line react-hooks/exhaustive-deps
+  );
 
   const handleRun = useCallback(async () => {
     const code = codeRef.current;
@@ -154,7 +165,7 @@ export default function WorkspacePage() {
   const editorAndOutput = (
     <div className="flex h-full flex-col">
       <Toolbar
-        fileName={fileName}
+        fileName={file.currentName ?? "main.cpp"}
         onRun={handleRun}
         isRunning={isRunning}
         isDirty={isDirty}
@@ -164,6 +175,8 @@ export default function WorkspacePage() {
         saveStatus={saveStatus}
         codeFilesSidebarOpen={sidePanel === "files"}
         onToggleCodeFilesSidebar={toggleFiles}
+        onNewFile={file.newFile}
+        savedFlash={file.savedFlash}
       />
       {outputCollapsed ? (
         <>
@@ -195,30 +208,48 @@ export default function WorkspacePage() {
     </div>
   );
 
+  // Ctrl/Cmd+S 於未命名檔案 → 另存對話框（檔名預填反白）
+  const saveDialog = file.saveAsOpen ? (
+    <SaveAsDialog
+      suggestedName={file.currentName ?? "main.cpp"}
+      onSave={file.saveNamed}
+      onClose={() => file.setSaveAsOpen(false)}
+    />
+  ) : null;
+
   // 草稿載入完成前不掛編輯器，避免先閃預設範本再被草稿覆蓋
   if (draftCode === null) {
     return null;
   }
 
   if (sidePanel === null) {
-    return editorAndOutput;
+    return (
+      <>
+        {editorAndOutput}
+        {saveDialog}
+      </>
+    );
   }
 
   return (
+    <>
     <PanelGroup orientation="horizontal" className="h-full">
       <Panel defaultSize="28%" minSize="20%" maxSize="40%">
         {sidePanel === "reflection" ? (
           <ReflectionSidebar onCollapse={toggleReflection} />
         ) : (
           <CodeFilesSidebar
-            getCode={() => codeRef.current}
+            onSaveAs={file.saveNamed}
             onLoad={handleLoadFile}
             onCollapse={toggleFiles}
+            refreshToken={file.refreshToken}
           />
         )}
       </Panel>
       <PanelResizeHandle className="relative flex w-1 items-center justify-center transition-colors before:absolute before:inset-y-0 before:w-px before:bg-border-default hover:before:bg-accent-blue data-[resize-handle-active]:before:bg-accent-blue" />
       <Panel minSize="40%">{editorAndOutput}</Panel>
     </PanelGroup>
+    {saveDialog}
+    </>
   );
 }

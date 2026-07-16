@@ -1,6 +1,6 @@
 "use client";
 
-import { FolderOpen, ListChecks, Play } from "lucide-react";
+import { FilePlus, FolderOpen, ListChecks, Play } from "lucide-react";
 
 interface ToolbarProps {
   fileName?: string;
@@ -18,6 +18,10 @@ interface ToolbarProps {
   /** 我的程式碼側邊欄是否展開（無此 prop 則不顯示 toggle 按鈕）。 */
   codeFilesSidebarOpen?: boolean;
   onToggleCodeFilesSidebar?: () => void;
+  /** 開新檔案（無此 prop 則不顯示按鈕）。 */
+  onNewFile?: () => void;
+  /** 剛以 Ctrl/Cmd+S 存入我的程式碼（短暫顯示「已儲存」）。 */
+  savedFlash?: boolean;
 }
 
 /**
@@ -36,6 +40,8 @@ export function Toolbar({
   saveStatus,
   codeFilesSidebarOpen,
   onToggleCodeFilesSidebar,
+  onNewFile,
+  savedFlash = false,
 }: ToolbarProps) {
   return (
     <div className="flex h-10 shrink-0 items-center gap-2 border-b border-border-muted bg-bg-canvas px-3 body-ui">
@@ -67,6 +73,16 @@ export function Toolbar({
         </button>
       )}
 
+      {onNewFile && (
+        <button
+          onClick={onNewFile}
+          className="flex size-7 items-center justify-center rounded-md text-text-muted hover:bg-bg-subtle hover:text-text-primary"
+          title="開新檔案"
+        >
+          <FilePlus className="size-4" />
+        </button>
+      )}
+
       <div className="flex items-center gap-1.5">
         {/* 修改狀態 dot：黃色＝有未執行的變更；隱形佔位＝乾淨 */}
         <span
@@ -77,6 +93,11 @@ export function Toolbar({
           aria-hidden
         />
         <span className="text-sm text-text-primary">{fileName}</span>
+        {savedFlash && (
+          <span className="text-xs text-accent-green" aria-live="polite">
+            已儲存
+          </span>
+        )}
       </div>
 
       <span className="rounded-pill border border-border-default px-2 py-0.5 text-xs text-text-secondary font-medium">

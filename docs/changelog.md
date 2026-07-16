@@ -1,5 +1,20 @@
 # 變更日誌
 
+## [2026-07-16] — feat(workspace)：U2e 快捷鍵修訂——Ctrl/Cmd+S 儲存 + 開新檔案（仿主流編輯器）
+
+### Added
+- **Ctrl/Cmd+S 儲存**（`use-named-file.ts`）：已命名（載入過/存過）→ 直接覆寫並於檔名旁短暫顯示「已儲存」；未命名 → 開另存對話框（`save-as-dialog.tsx`，**檔名預填且反白**、Enter 確認、Esc 取消）；攔截瀏覽器預設另存網頁
+- **開新檔案**：Toolbar FilePlus 按鈕；內容尚未存至「我的程式碼」時先 confirm，再重設為預設範本並解除檔名關聯
+- **檔名關聯**：Toolbar 檔名顯示目前開啟的命名檔案（未命名顯示 main.cpp）；程式化載入/開新檔不誤標為使用者修改（suppress 機制）
+
+### Changed
+- 側欄儲存表單改與 Ctrl/Cmd+S 走同一 `saveNamed` 流程；外部儲存成功以 refreshToken 觸發側欄列表重抓
+
+### Verified
+- web tsc/eslint/build 全綠；⚠ UI 操作待使用者驗收
+
+---
+
 ## [2026-07-16] — fix(workspace)：U2e 回饋修訂——側欄化 + 近實時存檔 + 游標跳行 + Enter 縮排
 
 ### Fixed

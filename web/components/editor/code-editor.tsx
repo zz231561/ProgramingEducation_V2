@@ -42,7 +42,7 @@ const editorTheme = EditorView.theme({
   },
 });
 
-const DEFAULT_CODE = `#include <iostream>
+export const DEFAULT_CODE = `#include <iostream>
 using namespace std;
 
 int main() {

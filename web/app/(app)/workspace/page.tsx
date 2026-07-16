@@ -28,6 +28,7 @@ import {
   ACTIVE_REFLECTION_EVENT,
   getActiveReflectionId,
   getHandedOffReflectionId,
+  getHandoffFileName,
 } from "@/lib/active-reflection";
 import { useDraftAutosave } from "@/lib/use-draft-autosave";
 
@@ -43,6 +44,8 @@ export default function WorkspacePage() {
         : null,
   );
   const [hasActiveReflection, setHasActiveReflection] = useState(false);
+  // 反思綁定的檔名 — 只有開啟該檔時才顯示反思計畫按鈕
+  const [reflectionFile, setReflectionFile] = useState<string | null>(null);
   // 受控編輯器內容（載入檔案 / 開新檔時注入）
   const [editorValue, setEditorValue] = useState<string | undefined>(undefined);
   const codeRef = useRef("");
@@ -67,8 +70,12 @@ export default function WorkspacePage() {
     injectCode: setEditorValue,
     defaultCode: DEFAULT_CODE,
   });
-  // 進頁還原草稿內容 + 最後開啟的檔名（null=載入中）
-  const draftCode = useDraftRestore({ markSaved, restoreName });
+  // 進頁還原：實作題 handoff 自動開檔，否則還原草稿（null=載入中）
+  const draftCode = useDraftRestore({
+    defaultCode: DEFAULT_CODE,
+    markSaved,
+    restoreName,
+  });
   const expandOutput = useCallback(() => setOutputCollapsed(false), []);
   const { isRunning, isDirty, markChanged, run } = useRunCode({
     getCode: () => codeRef.current,
@@ -90,6 +97,7 @@ export default function WorkspacePage() {
     const update = () => {
       const id = getActiveReflectionId();
       setHasActiveReflection(!!id);
+      setReflectionFile(id ? getHandoffFileName() : null);
     };
     update();
     window.addEventListener(ACTIVE_REFLECTION_EVENT, update);
@@ -121,6 +129,12 @@ export default function WorkspacePage() {
     [markLoaded],
   );
 
+  // 反思按鈕只在「目前開啟檔案 === 反思綁定檔案」時出現（實作題入口）
+  const reflectionAvailable =
+    reflectionFile !== null && currentName === reflectionFile;
+  const effectivePanel =
+    sidePanel === "reflection" && !reflectionAvailable ? null : sidePanel;
+
   const editorAndOutput = (
     <div className="flex h-full flex-col">
       <Toolbar
@@ -128,11 +142,13 @@ export default function WorkspacePage() {
         onRun={run}
         isRunning={isRunning}
         isDirty={isDirty}
-        reflectionSidebarOpen={sidePanel === "reflection"}
-        onToggleReflectionSidebar={toggleReflection}
+        reflectionSidebarOpen={effectivePanel === "reflection"}
+        onToggleReflectionSidebar={
+          reflectionAvailable ? toggleReflection : undefined
+        }
         hasActiveReflection={hasActiveReflection}
         saveStatus={saveStatus}
-        codeFilesSidebarOpen={sidePanel === "files"}
+        codeFilesSidebarOpen={effectivePanel === "files"}
         onToggleCodeFilesSidebar={toggleFiles}
         onNewFile={newFile}
         savedFlash={savedFlash}
@@ -181,7 +197,7 @@ export default function WorkspacePage() {
     return null;
   }
 
-  if (sidePanel === null) {
+  if (effectivePanel === null) {
     return (
       <>
         {editorAndOutput}
@@ -194,7 +210,7 @@ export default function WorkspacePage() {
     <>
       <PanelGroup orientation="horizontal" className="h-full">
         <Panel defaultSize="28%" minSize="20%" maxSize="40%">
-          {sidePanel === "reflection" ? (
+          {effectivePanel === "reflection" ? (
             <ReflectionSidebar onCollapse={toggleReflection} />
           ) : (
             <CodeFilesSidebar

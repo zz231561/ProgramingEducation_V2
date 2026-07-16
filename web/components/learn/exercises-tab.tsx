@@ -19,11 +19,13 @@ import { CodingPanel, CodingPhase } from "./exercises-coding-panel";
 
 interface Props {
   conceptTag: string;
+  /** 單元標題 — Workspace 檔案自動命名用 */
+  unitTitle: string;
 }
 
 type Phase = "loading" | "empty" | "error" | "question" | "reflecting" | "done";
 
-export function ExercisesTab({ conceptTag }: Props) {
+export function ExercisesTab({ conceptTag, unitTitle }: Props) {
   const [phase, setPhase] = useState<Phase>("loading");
   const [question, setQuestion] = useState<Question | null>(null);
   const [reflection, setReflection] = useState<Reflection | null>(null);
@@ -97,6 +99,7 @@ export function ExercisesTab({ conceptTag }: Props) {
       {question && (
         <CodingPanel
           question={question}
+          unitTitle={unitTitle}
           phase={phase as CodingPhase}
           reflection={reflection}
           onStartReflect={() => setPhase("reflecting")}

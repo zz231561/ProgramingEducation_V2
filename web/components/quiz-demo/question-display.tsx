@@ -51,7 +51,12 @@ export function QuestionDisplay({
       )}
       {phase === "preview" && <PreviewFooter onStartReflect={onStartReflect} />}
       {phase === "reflecting" && <ReflectingHint />}
-      {phase === "ready" && reflection && <ReflectionSummary reflection={reflection} />}
+      {phase === "ready" && reflection && (
+        <ReflectionSummary
+          reflection={reflection}
+          starterCode={question.content.starter_code}
+        />
+      )}
     </div>
   );
 }
@@ -132,9 +137,19 @@ function ReflectingHint() {
   );
 }
 
-function ReflectionSummary({ reflection }: { reflection: Reflection }) {
+function ReflectionSummary({
+  reflection,
+  starterCode,
+}: {
+  reflection: Reflection;
+  starterCode?: string;
+}) {
   const score = reflection.quality_score;
-  const handleGoWorkspace = () => setActiveReflectionId(reflection.id);
+  const handleGoWorkspace = () =>
+    setActiveReflectionId(reflection.id, {
+      fileName: "程式實作題",
+      starterCode,
+    });
   return (
     <div className="rounded-md border border-border-default bg-surface-2 p-4">
       <p className="mb-2 flex items-center gap-1.5 text-xs font-medium text-accent-green">

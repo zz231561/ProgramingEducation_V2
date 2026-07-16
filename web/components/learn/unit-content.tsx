@@ -128,7 +128,11 @@ export function UnitContent({
       <div className="min-h-[240px]">
         {activeTab === "concept" && <ConceptTab unit={unit} />}
         {activeTab === "coding" && (
-          <ExercisesTab key="coding" conceptTag={unit.concept_tag} />
+          <ExercisesTab
+            key="coding"
+            conceptTag={unit.concept_tag}
+            unitTitle={unit.concept_name_zh}
+          />
         )}
         {activeTab === "quiz" && (
           <ConceptQuizTab key="quiz" conceptTag={unit.concept_tag} />

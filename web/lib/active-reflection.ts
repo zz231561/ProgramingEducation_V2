@@ -14,6 +14,10 @@ const KEY = "active_reflection_id";
 // U1c：記錄「這個反思是否經由正確管道（前往 Workspace 按鈕）帶入」。
 // 值 = 反思 id；與 KEY 不一致代表殘留（例如在 Quiz 建了反思但直接手動開 /workspace）。
 const HANDOFF_KEY = "active_reflection_handoff";
+// 實作題 handoff：反思綁定的程式碼檔名（「章節名稱 程式實作題」）與起手程式碼。
+// Workspace 只在目前開啟檔案 === 此檔名時顯示反思計畫按鈕。
+const FILE_KEY = "active_reflection_file";
+const STARTER_KEY = "active_reflection_starter";
 
 /** SSR safe 取值 — server side 直接回 null（避免存取 window）。 */
 export function getActiveReflectionId(): string | null {
@@ -26,13 +30,27 @@ export function getActiveReflectionId(): string | null {
   }
 }
 
-export function setActiveReflectionId(id: string): void {
+export function setActiveReflectionId(
+  id: string,
+  handoff?: { fileName: string; starterCode?: string },
+): void {
   if (typeof window === "undefined") return;
   try {
     window.sessionStorage.setItem(KEY, id);
     // 呼叫點只有「前往 Workspace」轉場按鈕，故 set 即代表正確管道 handoff。
     // 不做一次性消費：同 tab 內重新整理 Workspace 仍應保留當下解題脈絡。
     window.sessionStorage.setItem(HANDOFF_KEY, id);
+    if (handoff) {
+      window.sessionStorage.setItem(FILE_KEY, handoff.fileName);
+      if (handoff.starterCode) {
+        window.sessionStorage.setItem(STARTER_KEY, handoff.starterCode);
+      } else {
+        window.sessionStorage.removeItem(STARTER_KEY);
+      }
+    } else {
+      window.sessionStorage.removeItem(FILE_KEY);
+      window.sessionStorage.removeItem(STARTER_KEY);
+    }
     // 同 tab 內的其他元件（例如 Workspace sidebar）需要被通知；
     // sessionStorage 預設只在 *其他* tab 觸發 storage event
     window.dispatchEvent(new CustomEvent("active-reflection-change"));
@@ -46,6 +64,8 @@ export function clearActiveReflectionId(): void {
   try {
     window.sessionStorage.removeItem(KEY);
     window.sessionStorage.removeItem(HANDOFF_KEY);
+    window.sessionStorage.removeItem(FILE_KEY);
+    window.sessionStorage.removeItem(STARTER_KEY);
     window.dispatchEvent(new CustomEvent("active-reflection-change"));
   } catch {
     /* noop */
@@ -68,6 +88,26 @@ export function getHandedOffReflectionId(): string | null {
       return null;
     }
     return id;
+  } catch {
+    return null;
+  }
+}
+
+/** 反思綁定的程式碼檔名（無實作題 handoff 時為 null）。 */
+export function getHandoffFileName(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return window.sessionStorage.getItem(FILE_KEY);
+  } catch {
+    return null;
+  }
+}
+
+/** 實作題起手程式碼（可能無）。 */
+export function getHandoffStarterCode(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return window.sessionStorage.getItem(STARTER_KEY);
   } catch {
     return null;
   }

@@ -45,23 +45,6 @@ export function Toolbar({
 }: ToolbarProps) {
   return (
     <div className="flex h-10 shrink-0 items-center gap-2 border-b border-border-muted bg-bg-canvas px-3 body-ui">
-      {onToggleReflectionSidebar && (
-        <button
-          onClick={onToggleReflectionSidebar}
-          aria-pressed={reflectionSidebarOpen ?? false}
-          className="relative flex size-7 items-center justify-center rounded-md text-text-muted hover:bg-bg-subtle hover:text-text-primary aria-pressed:bg-bg-subtle aria-pressed:text-text-primary"
-          title={reflectionSidebarOpen ? "收合反思計畫" : "展開反思計畫"}
-        >
-          <ListChecks className="size-4" />
-          {hasActiveReflection && !reflectionSidebarOpen && (
-            <span
-              className="absolute right-1 top-1 size-1.5 rounded-pill bg-accent-green"
-              aria-hidden
-            />
-          )}
-        </button>
-      )}
-
       {onToggleCodeFilesSidebar && (
         <button
           onClick={onToggleCodeFilesSidebar}
@@ -80,6 +63,24 @@ export function Toolbar({
           title="開新檔案"
         >
           <FilePlus className="size-4" />
+        </button>
+      )}
+
+      {/* 反思計畫 toggle：僅實作題檔案（handoff 開啟者）才有此按鈕 */}
+      {onToggleReflectionSidebar && (
+        <button
+          onClick={onToggleReflectionSidebar}
+          aria-pressed={reflectionSidebarOpen ?? false}
+          className="relative flex size-7 items-center justify-center rounded-md text-text-muted hover:bg-bg-subtle hover:text-text-primary aria-pressed:bg-bg-subtle aria-pressed:text-text-primary"
+          title={reflectionSidebarOpen ? "收合反思計畫" : "展開反思計畫"}
+        >
+          <ListChecks className="size-4" />
+          {hasActiveReflection && !reflectionSidebarOpen && (
+            <span
+              className="absolute right-1 top-1 size-1.5 rounded-pill bg-accent-green"
+              aria-hidden
+            />
+          )}
         </button>
       )}
 

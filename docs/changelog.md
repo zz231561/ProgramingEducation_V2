@@ -1,5 +1,21 @@
 # 變更日誌
 
+## [2026-07-16] — feat(workspace)：實作題 handoff——自動命名開檔 + 反思按鈕限定實作題檔案
+
+### Added
+- **Learn 實作題 →「在 Workspace 作答」完整 handoff**：原本只是裸連結（不帶反思/程式碼），現在帶反思 id + 檔名 + 起手碼（`setActiveReflectionId(id, {fileName, starterCode})`，sessionStorage 加 `active_reflection_file`/`active_reflection_starter`）
+- **自動命名**：由實作題進入的程式碼自動命名為「{章節名稱} 程式實作題」（`unit.concept_name_zh`）；首次進入以起手碼建檔（立即出現在我的程式碼）、已存過＝載入續作、草稿仍掛該檔＝優先草稿（最新工作內容）
+- quiz-demo 同步帶檔名「程式實作題」+ 起手碼
+
+### Changed
+- **反思計畫按鈕限定實作題檔案**：只在「目前開啟檔案 === 反思綁定檔案」時顯示（切到其他檔/開新檔即隱藏並收合反思側欄，`effectivePanel` 派生、不加 setState）；一般檔案無反思按鈕
+- **Toolbar 圖示順序**：我的程式碼 → 開新檔案 → 反思計畫（反思移至開新檔案右側）
+
+### Verified
+- web tsc/eslint/build 全綠；⚠ UI 待使用者驗收（Learn 實作題 → 反思 → Workspace 動線）
+
+---
+
 ## [2026-07-16] — feat(workspace)：檔名關聯跨重整持久化 + page.tsx 拆分
 
 ### Added

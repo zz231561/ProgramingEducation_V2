@@ -93,6 +93,27 @@ export function getHandedOffReflectionId(): string | null {
   }
 }
 
+// Coddy 反思開場去重：同一反思只開場一次（同 tab；隨 handoff 一起存 sessionStorage）
+const KICKOFF_DONE_KEY = "reflection_kickoff_done";
+
+export function isKickoffDone(id: string): boolean {
+  if (typeof window === "undefined") return true;
+  try {
+    return window.sessionStorage.getItem(KICKOFF_DONE_KEY) === id;
+  } catch {
+    return true; // 讀不到就當作已開場，寧可少發不重複發
+  }
+}
+
+export function markKickoffDone(id: string): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.sessionStorage.setItem(KICKOFF_DONE_KEY, id);
+  } catch {
+    /* noop */
+  }
+}
+
 /** 反思綁定的程式碼檔名（無實作題 handoff 時為 null）。 */
 export function getHandoffFileName(): string | null {
   if (typeof window === "undefined") return null;

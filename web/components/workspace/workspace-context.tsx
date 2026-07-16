@@ -14,6 +14,7 @@ export interface ExecutionResult {
 }
 
 type ExecutionListener = (result: ExecutionResult) => void;
+type KickoffListener = (reflectionId: string) => void;
 
 interface WorkspaceContextValue {
   getCode: () => string;
@@ -28,6 +29,11 @@ interface WorkspaceContextValue {
    */
   requestChatInjection: (result: ExecutionResult) => void;
   onChatInjectionRequest: (listener: ExecutionListener) => () => void;
+  /**
+   * 實作題 handoff 時請求 Coddy 反思開場（chat panel 未掛載則 queue）。
+   */
+  requestReflectionKickoff: (reflectionId: string) => void;
+  onReflectionKickoff: (listener: KickoffListener) => () => void;
   /** Chat Panel 是否展開 */
   chatOpen: boolean;
   /** 切換 Chat Panel 收合/展開 */
@@ -53,6 +59,8 @@ export function WorkspaceProvider({ chatOpen, toggleChat, children }: WorkspaceP
   const listenersRef = useRef<Set<ExecutionListener>>(new Set());
   const injectListenersRef = useRef<Set<ExecutionListener>>(new Set());
   const pendingInjectRef = useRef<ExecutionResult[]>([]);
+  const kickoffListenersRef = useRef<Set<KickoffListener>>(new Set());
+  const pendingKickoffRef = useRef<string[]>([]);
 
   const getCode = useCallback(() => codeRef.current, []);
   const setCode = useCallback((code: string) => { codeRef.current = code; }, []);
@@ -87,10 +95,28 @@ export function WorkspaceProvider({ chatOpen, toggleChat, children }: WorkspaceP
     return () => { injectListenersRef.current.delete(listener); };
   }, []);
 
+  const requestReflectionKickoff = useCallback((reflectionId: string) => {
+    if (kickoffListenersRef.current.size > 0) {
+      kickoffListenersRef.current.forEach((fn) => fn(reflectionId));
+    } else {
+      pendingKickoffRef.current.push(reflectionId);
+    }
+  }, []);
+
+  const onReflectionKickoff = useCallback((listener: KickoffListener) => {
+    if (pendingKickoffRef.current.length > 0) {
+      pendingKickoffRef.current.forEach(listener);
+      pendingKickoffRef.current = [];
+    }
+    kickoffListenersRef.current.add(listener);
+    return () => { kickoffListenersRef.current.delete(listener); };
+  }, []);
+
   return (
     <Ctx value={{
       getCode, setCode, getExecutionResult, setExecutionResult,
       onExecutionComplete, requestChatInjection, onChatInjectionRequest,
+      requestReflectionKickoff, onReflectionKickoff,
       chatOpen, toggleChat,
     }}>
       {children}

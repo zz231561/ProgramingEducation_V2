@@ -13,6 +13,7 @@ from core.rate_limit import rate_limit
 from models.coding_event import CodingEventType
 from services.analytics import log_coding_event
 from services.chat import interact, list_sessions, get_session_messages, delete_session
+from services.chat_kickoff import reflection_kickoff
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 
@@ -79,7 +80,47 @@ class SessionDetailResponse(BaseModel):
     messages: list[MessageOut]
 
 
+class KickoffRequest(BaseModel):
+    """反思開場請求（學生帶反思進 Workspace 時前端呼叫一次）。"""
+
+    reflection_id: uuid.UUID
+
+
+class KickoffResponse(BaseModel):
+    """反思開場回應 — 新 session + Coddy 開場訊息。"""
+
+    session_id: uuid.UUID
+    session_title: str
+    assistant_message: MessageOut
+
+
 # === Endpoints ===
+
+@router.post(
+    "/reflection-kickoff",
+    response_model=KickoffResponse,
+    dependencies=[Depends(rate_limit("llm"))],
+)
+async def chat_reflection_kickoff(
+    body: KickoffRequest,
+    user: User = Depends(get_current_db_user),
+    db: AsyncSession = Depends(get_db),
+) -> KickoffResponse:
+    """Coddy 主動開場：閱讀題目 + 反思計畫，肯定亮點並接手引導。"""
+    session, msg = await reflection_kickoff(db, user.id, body.reflection_id)
+    return KickoffResponse(
+        session_id=session.id,
+        session_title=session.title or "",
+        assistant_message=MessageOut(
+            id=msg.id,
+            role=msg.role.value,
+            content=msg.content,
+            code_snapshot=None,
+            evidence=None,
+            created_at=str(msg.created_at),
+        ),
+    )
+
 
 @router.post(
     "/interact",

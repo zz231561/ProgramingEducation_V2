@@ -29,6 +29,8 @@ import {
   getActiveReflectionId,
   getHandedOffReflectionId,
   getHandoffFileName,
+  isKickoffDone,
+  markKickoffDone,
 } from "@/lib/active-reflection";
 import { useDraftAutosave } from "@/lib/use-draft-autosave";
 
@@ -107,6 +109,20 @@ export default function WorkspacePage() {
       window.removeEventListener("storage", update);
     };
   }, []);
+
+  // 實作題 handoff：自動展開 chat + 請求 Coddy 反思開場（每反思一次）
+  const kickoffFiredRef = useRef(false);
+  useEffect(() => {
+    if (kickoffFiredRef.current || draftCode === null) return;
+    const id = getHandedOffReflectionId();
+    if (!id || !getHandoffFileName()) return;
+    kickoffFiredRef.current = true;
+    if (!isKickoffDone(id)) {
+      markKickoffDone(id);
+      workspace.requestReflectionKickoff(id);
+    }
+    if (!workspace.chatOpen) workspace.toggleChat();
+  }, [draftCode, workspace]);
 
   const handleCodeChange = useCallback(
     (value: string) => {

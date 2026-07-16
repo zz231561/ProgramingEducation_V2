@@ -112,6 +112,31 @@ export function useChat(options: UseChatOptions = {}) {
     [options],
   );
 
+  /** Coddy 反思開場：建立新 session 並顯示開場訊息（失敗靜默，不擋流程）。 */
+  const loadKickoff = useCallback(
+    async (reflectionId: string) => {
+      setIsLoading(true);
+      try {
+        const res = await api<{
+          session_id: string;
+          session_title: string;
+          assistant_message: ApiMessage;
+        }>("/chat/reflection-kickoff", {
+          method: "POST",
+          body: JSON.stringify({ reflection_id: reflectionId }),
+        });
+        sessionIdRef.current = res.session_id;
+        setItems([toMessageItem(res.assistant_message)]);
+        options.onSessionCreated?.(res.session_id, res.session_title);
+      } catch {
+        // 開場失敗不打擾學生；聊天功能照常可用
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [options],
+  );
+
   const loadSession = useCallback(async (sessionId: string) => {
     setIsLoading(true);
     try {
@@ -145,6 +170,7 @@ export function useChat(options: UseChatOptions = {}) {
     isLoading,
     sessionId: sessionIdRef.current,
     sendMessage,
+    loadKickoff,
     loadSession,
     startNewSession,
     injectExecutionResult,

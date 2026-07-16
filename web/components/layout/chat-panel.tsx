@@ -17,11 +17,16 @@ interface ChatPanelProps {
  * Coddy Chat Panel — 整合訊息列表 + 輸入框 + session 管理 + 執行結果注入。
  */
 export function ChatPanel({ onCollapse }: ChatPanelProps) {
-  const { getCode, getExecutionResult, onExecutionComplete, onChatInjectionRequest } = useWorkspace();
+  const {
+    getCode, getExecutionResult, onExecutionComplete,
+    onChatInjectionRequest, onReflectionKickoff,
+  } = useWorkspace();
   const { sessions, activeId, setActiveId, deleteSession, addSession } = useSessions();
 
-  const { items, isLoading, sendMessage, loadSession, startNewSession, injectExecutionResult } =
-    useChat({ getCode, getExecutionResult, onSessionCreated: addSession });
+  const {
+    items, isLoading, sendMessage, loadKickoff, loadSession,
+    startNewSession, injectExecutionResult,
+  } = useChat({ getCode, getExecutionResult, onSessionCreated: addSession });
 
   /* Run 完成時自動注入執行結果卡片 */
   useEffect(() => {
@@ -36,6 +41,13 @@ export function ChatPanel({ onCollapse }: ChatPanelProps) {
       injectExecutionResult(result);
     });
   }, [onChatInjectionRequest, injectExecutionResult]);
+
+  /* 實作題 handoff → Coddy 反思開場（含掛載前 queue drain） */
+  useEffect(() => {
+    return onReflectionKickoff((reflectionId) => {
+      void loadKickoff(reflectionId);
+    });
+  }, [onReflectionKickoff, loadKickoff]);
 
   const handleSelectSession = useCallback(
     async (id: string) => { setActiveId(id); await loadSession(id); },

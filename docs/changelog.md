@@ -1,5 +1,17 @@
 # 變更日誌
 
+## [2026-07-16] — feat(chat)：Coddy 反思開場——進 Workspace 主動閱讀題目與反思計畫
+
+### Added
+- **`POST /chat/reflection-kickoff`**（`services/chat_kickoff.py`）：讀題目 + 反思全文 + 追問狀態 → Coddy 開場訊息（3–5 句：肯定亮點 → 接手被跳過的追問或補充最模糊處 → 邀請提出想先弄懂的概念）；建獨立新 session（title=實作題題幹）；LLM 失敗 fail-open 固定友善文案；僅本人 404 保護
+- **與 modal 追問分工**（使用者定案「modal 一層，剩下交 Coddy」）：prompt 依 followup 狀態分流——被跳過的追問由 Coddy 換句話自然帶入；已回答的不重複問
+- **前端**：實作題 handoff 進 Workspace → **自動展開 chat 面板** + 觸發開場（workspace-context 加 `requestReflectionKickoff` 事件含掛載前 queue；`useChat.loadKickoff` 建 session 顯示訊息）；sessionStorage 去重（同一反思只開場一次，重整不重發）
+
+### Tests
+- +4（開場持久化可讀回 / LLM 失敗 fallback / 他人反思 404 / 追問狀態三分支）；後端全量 **744 passed**；web tsc/eslint/build 全綠
+
+---
+
 ## [2026-07-16] — feat(reflection)：反思評分初學者寬容化（使用者回饋：評分太難、反思變負荷）
 
 ### Changed（四項，使用者全數核准）

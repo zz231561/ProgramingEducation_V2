@@ -16,10 +16,6 @@
   - **若驗收失敗**：第一優先檢查 `web/lib/pending-workspace-code.ts` 的 `consumePendingWorkspaceCode()` 是否真的有 `removeItem`；其次檢查 `web/app/(app)/workspace/page.tsx` 是否用 `useState` lazy initializer（而非直接呼叫，會導致 re-render 多次 consume）
 
 ### 部署相關（待實測）
-- [ ] **judge0.py 不支援自架 authn header**（2026-07-12 server-plan 定案後產生）
-  - `services/judge0.py` `_build_headers()` 只會在有 `JUDGE0_API_KEY` 時帶 RapidAPI header（`X-RapidAPI-Key`）；自架 Judge0 的 authn 用 `X-Auth-Token`
-  - **影響**：切換自架 + 開 authn token 時，backend 會 401
-  - **如何處理**：Phase 7 部署前加 header 分支（依 URL 是否為 rapidapi 網域或加一個 `JUDGE0_AUTH_MODE` 變數）+ 單元測試；詳見 `docs/server-plan.md`
 - [ ] **Zeabur PREBUILT + source.type=IMAGE schema 未實測**
   - 4-1b 將 `zeabur.json` 的 postgres 從 marketplace `postgresql`（不含 pgvector）改為 `template: PREBUILT` + `source: {type: "IMAGE", image: "pgvector/pgvector:pg16"}`
   - 此 schema 細節依 Zeabur template.json 規範撰寫，但**未經實際部署驗證**
@@ -29,26 +25,12 @@
   - **限制**：Zeabur 等雲平台禁用 `privileged: true` → 自架 Judge0 只能在自己的 VPS 跑
   - **如何處理**：self-host VPS 部署時實測 stack 啟動 → workers 成功 register languages → backend 能透過 `/about` 與 `/submissions` 對話；若 worker fail 多半是 cgroups / privileged 問題
 
-### 環境設定（使用者手動）
-- [ ] **git user.name / user.email 未設定**
-  - **影響**：commit `3f702be` 與後續 commits 會用系統預設身分顯示在 GitHub
-  - **如何處理**：
-    ```bash
-    git config --global user.name "你的名字"
-    git config --global user.email "你的 email"
-    ```
-
 ### 內容層（教學課綱）
 - 🔄 **YT video metadata 未補**（已從 59 → 62 個影片 concept；2026-05-07 教授交付 playlist URL，fetcher script 已產 59 列 CSV，待擴充至 62 列）→ **正式追蹤於 roadmap Phase 6-1**
   - **影響**：3-1d 學習單元頁的概念說明 tab 無法 embed YT player；只能顯示影片標題與「待補」placeholder
   - **進度**：6-1a/b 已完成；6-1b+/c/d/e/f 進行中
   - **如何處理**：fetcher 已寫好（`backend/scripts/fetch_playlist_metadata.py`）；接下來擴充 EXPECTED 1-62、加 video 1-3 migration、PATCH script 寫入 DB、字幕 RAG ingest
   - **格式**：CSV，欄位 `video_order, youtube_id, duration_seconds, title_zh`，已產出於 `data/teaching_content/videos.csv`
-- [ ] **lazy-seed 新使用者的 unit content 仍是空骨架**（2026-07-06 U2g promote 後遺留）
-  - **現況**：62 部 grounded 概念說明已 promote 至「既有」learning_units；但 `generator.py` seed 新 user 路徑時仍寫 `_empty_unit_content()` 空骨架，不讀 staging
-  - **影響**：promote 之後才註冊的新帳號（如 DEV 身分切換的 ghost user）概念說明 tab 會落到 pending fallback
-  - **如何處理**：`generate_learning_path` seed 時 join `unit_content_staging`（status=approved）帶入 content；或 unit 查詢時 fallback 讀 staging
-
 - [ ] **題庫 coding 題 validate 通過率偏低 + v17/v41 掛零**（2026-07-06 實機批次觀察）
   - **現況**：首輪 17 個失敗中 13 個為 coding 題 `VALIDATION_RETRY_EXHAUSTED`（cascade gpt-5-mini 生成 + gpt-5.4 審查）；補跑後仍有 v17 cpp-17-incr-decr / v41 cpp-41-extern-vars 兩輪全滅（0 題）、v11/v53/v61 各缺 1 題
   - **影響**：該 5 個 concept 的 Learn 練習 tab / Quiz 題庫覆蓋不足，fallback 現生（可用但較慢）
@@ -75,13 +57,13 @@
   - **現況**：6-R6 已保證 LLM 失敗時學生輸入不丟失（user message 先 commit），前端可重試；降級快取為進一步優化
   - **如何處理**：Redis 存 per-user 最近一次成功回應，LLM 5xx 時回傳並標註 fallback
 
-### 程式碼層
-- [ ] **`backend/pyproject.toml` 沒設 hatchling packages**
-  - 直接 `pip install -e .` 會失敗（hatchling 找不到 wheel target）
-  - 目前繞過：直接列依賴而非 install self
-  - **如何處理**：因 backend 是 application 不是 library，可加 `[tool.hatch.build.targets.wheel] packages = [...]` 或改用 `uv sync`（需要重組為 src/ layout）
-
 ## ✅ 已消除
+
+- ~~judge0.py 不支援自架 authn header~~ — 2026-07-18 `_build_headers` 加 authn 分支（URL 自動判斷 + 可選 `JUDGE0_AUTH_MODE` 顯式覆蓋；自架帶 `X-Auth-Token`）+ 4 tests；生產實測待 Phase 7
+- ~~lazy-seed 新使用者的 unit content 仍是空骨架~~ — 2026-07-18 `generate_learning_path` seed 時讀 staging（approved）帶入 content，與 promote 整包覆蓋行為對齊 + 2 tests
+- ~~`backend/pyproject.toml` 沒設 hatchling packages~~ — 2026-07-18 補 `[tool.hatch.build.targets.wheel] packages`（flat layout 顯式列出）；隔離環境驗證 wheel target 可解析
+- ~~git user.name / user.email 未設定~~ — 2026-07-18 確認已設定（曾冠豪 / abbyabby41@gmail.com）
+- ~~backend/uv.lock 未追蹤副產品~~ — 2026-07-18 加入 .gitignore；依賴鎖定正本維持 requirements.lock（Dockerfile 使用），避免雙鎖定檔 drift
 
 - ~~練習題重複曝光~~ — 2026-07-06 **U2d 一併消除**：bank service 加 `exclude_answered_by`（server-side join student_answers），Learn/Quiz 兩入口同時生效；全答過 → 404 → fallback 現生新題入庫
 - ~~`knowledge-graph.tsx` 265 行超標~~ — 2026-07-06 拆出 `use-graph-nav.ts` hook（章節游標 + 鏡頭動作）；主元件 212 行 + hook 119 行

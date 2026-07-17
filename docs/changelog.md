@@ -1,5 +1,25 @@
 # 變更日誌
 
+## [2026-07-18] — fix(tech-debt)：低風險技術債清償——Judge0 自架 authn / lazy-seed 空骨架 / pyproject / uv.lock
+
+### Fixed
+- **Judge0 自架 authn header**（`services/judge0.py`）：`_build_headers` 加 authn 分支——URL 含 rapidapi 網域 → `X-RapidAPI-Key`（現狀不變）；自架 + key → `X-Auth-Token`；無 key 不帶 auth header。新增可選 `JUDGE0_AUTH_MODE` 環境變數（rapidapi / self-hosted）顯式覆蓋自動判斷，供邊角情境救援；消除「切自架開 authn 會 401」技術債（生產實測仍待 Phase 7）
+- **lazy-seed 空骨架**（`services/learning/generator.py`）：`generate_learning_path` seed units 時讀 `unit_content_staging`（status=approved）直接帶入 content，無 approved 才寫空骨架——promote 後才註冊的新帳號（含 DEV ghost user）概念說明 tab 不再落 pending fallback；與 promote script 整包覆蓋行為對齊（單一真相來源，讀取端零改動）
+- **pyproject.toml hatchling packages**：補 `[tool.hatch.build.targets.wheel] packages`（flat layout 顯式列 api/core/models/services/scripts），`pip install -e .` 不再失敗；hatchling 隔離環境驗證 wheel target 可解析（151 files）
+
+### Changed
+- **`.gitignore` 加 `uv.lock`**：依賴鎖定正本維持 `requirements.lock`（Dockerfile 亦用它）；uv.lock 為先前 uv 指令副產品，不進版控避免雙鎖定檔 drift
+- **git user.name/email 技術債關閉**：確認已設定（曾冠豪 / abbyabby41@gmail.com）
+
+### Tests
+- +6（judge0 authn 4 分支 + generator staging 帶入/非 approved 排除 2）；後端全量 **750 passed**
+
+### 決策記錄
+- OpenAI client ×9 重複：維持刻意延後（抽共用需連動 9 檔 + 大量測試 monkeypatch，收益不成比例）
+- 429 toast / OpenAI 降級快取 / 6-4b 題庫補生：本輪不做（使用者裁決）
+
+---
+
 ## [2026-07-16] — feat(chat)：Coddy 反思開場——進 Workspace 主動閱讀題目與反思計畫
 
 ### Added

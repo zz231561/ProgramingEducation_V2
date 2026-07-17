@@ -39,3 +39,6 @@ data/teaching_content/audio_cache/
 
 # 本機暫存截圖（非專案文件資產）
 ScreenShot/
+
+# uv lockfile（依賴鎖定正本為 backend/requirements.lock，Dockerfile 亦用它；uv.lock 為副產品不進版控）
+uv.lock

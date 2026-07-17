@@ -31,6 +31,11 @@ dependencies = [
     "psycopg2-binary>=2.9,<3",
 ]
 
+# backend 是 application（flat layout，模組在根層），顯式列 packages 讓
+# `pip install -e .` 可用（tech-debt：hatchling 預設找不到 wheel target）
+[tool.hatch.build.targets.wheel]
+packages = ["api", "core", "models", "services", "scripts"]
+
 [project.optional-dependencies]
 dev = [
     "pytest>=8,<9",

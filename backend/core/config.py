@@ -58,6 +58,9 @@ class Settings(BaseSettings):
     # === Judge0 ===
     JUDGE0_API_URL: str = "https://judge0-ce.p.rapidapi.com"
     JUDGE0_API_KEY: str = ""
+    # authn 模式："rapidapi" / "self-hosted"；空字串 = 依 URL 自動判斷（含 rapidapi 網域
+    # → RapidAPI header，否則 X-Auth-Token）。僅在自動判斷失準時才需顯式指定。
+    JUDGE0_AUTH_MODE: str = ""
 
     # === Rate Limiting ===
     RATE_LIMIT_PER_MINUTE: int = 10

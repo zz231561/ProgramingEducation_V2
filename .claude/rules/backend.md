@@ -56,7 +56,8 @@ NEXTAUTH_URL=https://your-domain.com
 
 # Judge0
 JUDGE0_API_URL=https://judge0-ce.p.rapidapi.com
-JUDGE0_API_KEY=xxx  # 自架不需要
+JUDGE0_API_KEY=xxx  # RapidAPI key 或自架 authn token；自架未開 authn 不需要
+JUDGE0_AUTH_MODE=   # 可選：rapidapi / self-hosted；空 = 依 URL 自動判斷
 
 # 可選 — 6-M 任務導向模型路由（分組變數未設定時 fallback LLM_MODEL）
 EMBEDDING_MODEL=text-embedding-3-small

@@ -39,18 +39,29 @@ def _decode_b64(value: str | None) -> str:
         return value
 
 
+def _resolve_auth_mode() -> str:
+    """決定 authn 模式：JUDGE0_AUTH_MODE 顯式優先，否則依 URL 自動判斷。"""
+    if settings.JUDGE0_AUTH_MODE:
+        return settings.JUDGE0_AUTH_MODE
+    return "rapidapi" if "rapidapi" in settings.JUDGE0_API_URL else "self-hosted"
+
+
 def _build_headers() -> dict[str, str]:
     """根據設定建立 Judge0 request headers。
 
-    RapidAPI 模式需帶 X-RapidAPI-Key；自架模式不需要。
+    RapidAPI 模式帶 X-RapidAPI-Key；自架模式（開 authn token 時）帶 X-Auth-Token；
+    無 key 則不帶任何 auth header（自架未開 authn）。
     """
     headers: dict[str, str] = {
         "Content-Type": "application/json",
         "Accept": "application/json",
     }
     if settings.JUDGE0_API_KEY:
-        headers["X-RapidAPI-Key"] = settings.JUDGE0_API_KEY
-        headers["X-RapidAPI-Host"] = "judge0-ce.p.rapidapi.com"
+        if _resolve_auth_mode() == "rapidapi":
+            headers["X-RapidAPI-Key"] = settings.JUDGE0_API_KEY
+            headers["X-RapidAPI-Host"] = "judge0-ce.p.rapidapi.com"
+        else:
+            headers["X-Auth-Token"] = settings.JUDGE0_API_KEY
     return headers
 
 

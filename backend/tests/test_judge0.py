@@ -4,12 +4,63 @@ import base64
 import pytest
 from unittest.mock import AsyncMock, patch, MagicMock
 
-from services.judge0 import submit_and_poll, ExecutionResult, _decode_b64
+from services.judge0 import submit_and_poll, ExecutionResult, _build_headers, _decode_b64
 from core.errors import AppError
 
 
 def _b64(text: str) -> str:
     return base64.b64encode(text.encode()).decode()
+
+
+# === _build_headers（authn 分支：RapidAPI / 自架 X-Auth-Token / 無 key）===
+
+def test_headers_rapidapi_url_uses_rapidapi_key(monkeypatch):
+    """URL 含 rapidapi 網域 → 自動帶 X-RapidAPI-Key。"""
+    from services.judge0 import settings
+    monkeypatch.setattr(settings, "JUDGE0_API_URL", "https://judge0-ce.p.rapidapi.com")
+    monkeypatch.setattr(settings, "JUDGE0_API_KEY", "rapid-key")
+    monkeypatch.setattr(settings, "JUDGE0_AUTH_MODE", "")
+
+    headers = _build_headers()
+    assert headers["X-RapidAPI-Key"] == "rapid-key"
+    assert "X-Auth-Token" not in headers
+
+
+def test_headers_self_hosted_url_uses_auth_token(monkeypatch):
+    """自架 URL + key → 自動帶 X-Auth-Token（不帶 RapidAPI header）。"""
+    from services.judge0 import settings
+    monkeypatch.setattr(settings, "JUDGE0_API_URL", "http://judge0.internal:2358")
+    monkeypatch.setattr(settings, "JUDGE0_API_KEY", "self-host-token")
+    monkeypatch.setattr(settings, "JUDGE0_AUTH_MODE", "")
+
+    headers = _build_headers()
+    assert headers["X-Auth-Token"] == "self-host-token"
+    assert "X-RapidAPI-Key" not in headers
+
+
+def test_headers_explicit_auth_mode_overrides_url(monkeypatch):
+    """JUDGE0_AUTH_MODE 顯式指定時強制覆蓋 URL 自動判斷。"""
+    from services.judge0 import settings
+    # URL 看起來像 rapidapi，但顯式指定 self-hosted
+    monkeypatch.setattr(settings, "JUDGE0_API_URL", "https://proxy.rapidapi.example.com")
+    monkeypatch.setattr(settings, "JUDGE0_API_KEY", "tok")
+    monkeypatch.setattr(settings, "JUDGE0_AUTH_MODE", "self-hosted")
+
+    headers = _build_headers()
+    assert headers["X-Auth-Token"] == "tok"
+    assert "X-RapidAPI-Key" not in headers
+
+
+def test_headers_no_key_has_no_auth_header(monkeypatch):
+    """無 key（自架未開 authn）→ 不帶任何 auth header。"""
+    from services.judge0 import settings
+    monkeypatch.setattr(settings, "JUDGE0_API_URL", "http://judge0.internal:2358")
+    monkeypatch.setattr(settings, "JUDGE0_API_KEY", "")
+    monkeypatch.setattr(settings, "JUDGE0_AUTH_MODE", "")
+
+    headers = _build_headers()
+    assert "X-Auth-Token" not in headers
+    assert "X-RapidAPI-Key" not in headers
 
 
 # === _decode_b64 ===

@@ -189,6 +189,54 @@ async def test_unit_content_initialized_with_empty_skeleton():
     }
 
 
+# === lazy-seed 空骨架消除：seed 時帶入 approved staging content ===
+
+
+async def _seed_staging(concept_id: uuid.UUID, content: dict, status: str) -> None:
+    from models.unit_content_staging import UnitContentStaging
+
+    async with TestSessionFactory() as db:
+        db.add(UnitContentStaging(
+            concept_id=concept_id, content=content, status=status,
+        ))
+        await db.commit()
+
+
+@pytest.mark.asyncio
+async def test_seed_uses_approved_staging_content():
+    """promote 後才註冊的新帳號：seed 時直接帶入 approved staging content。"""
+    user_id = await _seed_user()
+    ids = await _seed_concepts([{"tag": "a"}, {"tag": "b"}])
+    grounded = {"concept_explanation": {"markdown": "# 指標", "citations": []}}
+    await _seed_staging(ids["a"], grounded, status="approved")
+
+    async with TestSessionFactory() as db:
+        path = await generate_learning_path(db, user_id, title="X")
+
+    units = await _read_units_in_order(path.id)
+    by_concept = {u.concept_id: u.content for u in units}
+    assert by_concept[ids["a"]] == grounded  # approved → 帶入
+    assert by_concept[ids["b"]] == {  # 無 staging → 空骨架
+        "examples": [], "exercise_question_ids": [],
+    }
+
+
+@pytest.mark.asyncio
+async def test_seed_ignores_non_approved_staging():
+    """pending / rejected staging 不得帶入（僅 approved 可上線）。"""
+    user_id = await _seed_user()
+    ids = await _seed_concepts([{"tag": "p"}, {"tag": "r"}])
+    await _seed_staging(ids["p"], {"concept_explanation": {}}, status="pending")
+    await _seed_staging(ids["r"], {"concept_explanation": {}}, status="rejected")
+
+    async with TestSessionFactory() as db:
+        path = await generate_learning_path(db, user_id, title="X")
+
+    units = await _read_units_in_order(path.id)
+    for u in units:
+        assert u.content == {"examples": [], "exercise_question_ids": []}
+
+
 @pytest.mark.asyncio
 async def test_category_filter_limits_concepts():
     user_id = await _seed_user()

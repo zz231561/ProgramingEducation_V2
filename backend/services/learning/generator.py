@@ -10,8 +10,9 @@
 - **不採 RL**（守則 #7：禁用 OATutor RL；演算法用純 Python 拓撲 + 弱項補強已足夠）
 - **未練概念 confidence=0**：StudentMastery row 不存在時視為 0，弱項優先邏輯天然涵蓋 cold start
 - **不重複生成**：caller 應自行管理（一個學生可有多條路徑，schema 不限制）
-- **content 預留 shape**：寫入 `{"examples": [], "exercise_question_ids": []}` 空骨架
-  （U2b 移除 summary 欄位）；實際 content 由 LLM 生成 service 後續填入
+- **content 帶入 staging**：seed 時讀 `unit_content_staging`（status=approved）直接填入
+  content；無 approved 內容才寫空骨架 `{"examples": [], "exercise_question_ids": []}`
+  （U2b 移除 summary 欄位），待後續 promote 覆蓋
 """
 
 from uuid import UUID
@@ -23,6 +24,7 @@ from core.errors import AppError
 from models.concept import Concept, ConceptEdge, EdgeType
 from models.learning import LearningPath, LearningUnit, LearningUnitStatus
 from models.mastery import StudentMastery
+from models.unit_content_staging import StagingStatus, UnitContentStaging
 from services.learning.topology import topological_sort_with_priority
 
 DEFAULT_SKIP_MASTERED_THRESHOLD = 0.8
@@ -71,6 +73,26 @@ async def _fetch_user_confidence(
 def _empty_unit_content() -> dict:
     """LearningUnit.content 初始骨架；後續 service 填入實際教學內容。"""
     return {"examples": [], "exercise_question_ids": []}
+
+
+async def _fetch_approved_content(
+    db: AsyncSession, concept_ids: set[UUID]
+) -> dict[UUID, dict]:
+    """取已 approve 的 staging content（promote 後才註冊的新帳號 seed 時直接帶入）。
+
+    與 promote script 行為對齊：promote 是把 staging.content 整包寫入既有 units，
+    seed 時帶入同一份即可讓新舊帳號資料形狀一致（tech-debt「lazy-seed 空骨架」消除）。
+    """
+    if not concept_ids:
+        return {}
+    rows = (
+        await db.execute(
+            select(UnitContentStaging.concept_id, UnitContentStaging.content)
+            .where(UnitContentStaging.status == StagingStatus.APPROVED.value)
+            .where(UnitContentStaging.concept_id.in_(concept_ids))
+        )
+    ).all()
+    return {r[0]: r[1] for r in rows if r[1]}
 
 
 async def generate_learning_path(
@@ -141,6 +163,8 @@ async def generate_learning_path(
     await db.flush()  # 取 path.id
 
     # 寫入 LearningUnits — 第一個 'available'，其餘 'locked'
+    # content：已 approve 的 staging 內容直接帶入（無則空骨架待後續 promote）
+    approved_content = await _fetch_approved_content(db, selectable_ids)
     for order_index, concept_id in enumerate(sorted_ids):
         unit_status = (
             LearningUnitStatus.AVAILABLE.value
@@ -151,7 +175,7 @@ async def generate_learning_path(
             path_id=path.id,
             concept_id=concept_id,
             order_index=order_index,
-            content=_empty_unit_content(),
+            content=approved_content.get(concept_id) or _empty_unit_content(),
             status=unit_status,
         ))
 

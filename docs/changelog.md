@@ -1,5 +1,17 @@
 # 變更日誌
 
+## [2026-07-21] — fix(workspace)：我的程式碼刪除修正 + 反思 modal 提交按鈕遮蔽
+
+### Fixed
+- **刪除檔案誤報「操作失敗」**（根因 `lib/api.ts`）：後端 DELETE 回 204 No Content，`api()` 無條件 `res.json()` 對空 body 解析失敗拋錯 → 被 catch 誤判失敗；實際已刪除（重整後列表重抓才看到消失）。加 `res.status === 204 → return undefined`；**同時修好「未立即刪除」**——樂觀 `setFiles` filter 原本在 throw 後永遠沒執行到，現正常即時移除
+- **刪到當前開啟檔案無提示**（`code-files-sidebar.tsx` + `use-named-file.ts`）：刪除時偵測 `f.name === currentName`，跳出專屬確認「此為目前開啟檔案，刪除後將移除並跳回預設程式」；確認後呼叫新抽出的 `resetToDefault`（從 `newFile` 抽離、不含未存確認）重設編輯器為預設範本並清檔名關聯
+- **反思計畫過長時提交按鈕消失**（`reflection-flow.tsx` + `reflection-flow-parts.tsx`）：modal Popup 原為 `max-h-[85vh] overflow-hidden` 但內部 header/題目(22vh)/body(60vh)/footer 直向堆疊無 flex 約束，總高超過即把 footer 裁出可視區且無法捲動觸及；改 Popup 為 `flex flex-col`、body 改 `min-h-0 flex-1` 吸收剩餘高度並內捲、header/題目/footer 加 `shrink-0` 固定 → 提交按鈕永遠可見（側欄編輯版本身已有 `overflow-y-auto`，不受影響）
+
+### Tests
+- 前端 tsc / eslint / build 全綠（前端此區無 vitest 測試層）
+
+---
+
 ## [2026-07-18] — fix(tech-debt)：低風險技術債清償——Judge0 自架 authn / lazy-seed 空骨架 / pyproject / uv.lock
 
 ### Fixed

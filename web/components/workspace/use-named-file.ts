@@ -86,6 +86,15 @@ export function useNamedFile({
     }
   }, [currentName, saveNamed]);
 
+  /** 重設編輯器為預設範本並清除檔名關聯（不含未存確認）。 */
+  const resetToDefault = useCallback(() => {
+    suppressRef.current = defaultCode;
+    injectCode(defaultCode);
+    setCurrentName(null);
+    namedDirtyRef.current = false;
+    void saveDraft(defaultCode, null).catch(() => {}); // 清除檔名關聯
+  }, [injectCode, defaultCode]);
+
   const newFile = useCallback(() => {
     const code = getCode();
     const unsaved = currentName
@@ -98,12 +107,8 @@ export function useNamedFile({
       )
     )
       return;
-    suppressRef.current = defaultCode;
-    injectCode(defaultCode);
-    setCurrentName(null);
-    namedDirtyRef.current = false;
-    void saveDraft(defaultCode, null).catch(() => {}); // 清除檔名關聯
-  }, [currentName, getCode, injectCode, defaultCode]);
+    resetToDefault();
+  }, [currentName, getCode, defaultCode, resetToDefault]);
 
   // Ctrl/Cmd+S 攔截（走 ref 讓 listener 只掛一次）
   const requestSaveRef = useRef(requestSave);
@@ -135,5 +140,6 @@ export function useNamedFile({
     restoreName,
     saveNamed,
     newFile,
+    resetToDefault,
   };
 }

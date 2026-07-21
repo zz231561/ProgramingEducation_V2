@@ -62,5 +62,8 @@ export async function api<T = unknown>(
     throw new ApiRequestError(res.status, body);
   }
 
+  // 204 No Content（如 DELETE）無 body，res.json() 會拋解析錯誤誤判為失敗
+  if (res.status === 204) return undefined as T;
+
   return res.json() as Promise<T>;
 }

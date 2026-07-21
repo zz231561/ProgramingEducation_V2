@@ -20,6 +20,8 @@ export function CodeFilesSidebar({
   onSaveAs,
   onLoad,
   onCollapse,
+  currentName = null,
+  onDeletedCurrent,
   refreshToken = 0,
 }: {
   /** 以指定檔名儲存編輯器目前內容（與 Ctrl/Cmd+S 同一流程） */
@@ -28,6 +30,10 @@ export function CodeFilesSidebar({
   onLoad: (code: string, name: string) => void;
   /** 收合時呼叫（caller 控制 layout） */
   onCollapse: () => void;
+  /** 目前開啟的命名檔案名稱（用於偵測刪到當前檔案） */
+  currentName?: string | null;
+  /** 刪除的正是當前開啟檔案時呼叫（caller 跳回預設程式） */
+  onDeletedCurrent?: () => void;
   /** 外部儲存成功時遞增，觸發列表重抓 */
   refreshToken?: number;
 }) {
@@ -72,10 +78,15 @@ export function CodeFilesSidebar({
     });
 
   const remove = (f: CodeFileMeta) => {
-    if (!confirm(`確定刪除「${f.name}」？`)) return;
+    const isCurrent = currentName !== null && f.name === currentName;
+    const message = isCurrent
+      ? `「${f.name}」是目前開啟的檔案，刪除後將移除並跳回預設程式。確定刪除？`
+      : `確定刪除「${f.name}」？`;
+    if (!confirm(message)) return;
     void run(async () => {
       await deleteCodeFile(f.id);
       setFiles((prev) => prev?.filter((x) => x.id !== f.id) ?? prev);
+      if (isCurrent) onDeletedCurrent?.();
     });
   };
 

@@ -57,7 +57,7 @@ export function ReflectionFlow(props: ReflectionFlowProps) {
     <Dialog.Root open={open} onOpenChange={(v) => !v && onClose()}>
       <Dialog.Portal>
         <Dialog.Backdrop className="fixed inset-0 bg-black/60 backdrop-blur-sm" />
-        <Dialog.Popup className="fixed top-1/2 left-1/2 z-50 max-h-[85vh] w-[min(560px,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-lg border border-border-default bg-surface-1 shadow-modal">
+        <Dialog.Popup className="fixed top-1/2 left-1/2 z-50 flex max-h-[85vh] w-[min(560px,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-lg border border-border-default bg-surface-1 shadow-modal">
           {open && <ReflectionFlowContent {...props} />}
         </Dialog.Popup>
       </Dialog.Portal>
@@ -140,14 +140,14 @@ function ReflectionFlowContent({
     <>
       <FlowHeader stage={stage} onClose={onClose} />
       {questionStem && (
-        <div className="max-h-[22vh] overflow-y-auto border-b border-border-default bg-surface-2 px-5 py-3">
+        <div className="max-h-[22vh] shrink-0 overflow-y-auto border-b border-border-default bg-surface-2 px-5 py-3">
           <p className="mb-1 text-xs font-medium text-text-muted">題目</p>
           <p className="whitespace-pre-wrap text-xs leading-relaxed text-text-secondary">
             {questionStem}
           </p>
         </div>
       )}
-      <div className="max-h-[60vh] overflow-y-auto px-5 py-4">
+      <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
         <FlowBody
           stage={stage}
           formValue={formValue}

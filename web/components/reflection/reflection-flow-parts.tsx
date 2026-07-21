@@ -22,7 +22,7 @@ export function FlowHeader({ stage, onClose }: { stage: Stage; onClose: () => vo
         ? "AI 教練評估中..."
         : "動手前先想想";
   return (
-    <div className="flex items-center justify-between border-b border-border-default px-5 py-3">
+    <div className="flex shrink-0 items-center justify-between border-b border-border-default px-5 py-3">
       <Dialog.Title className="text-base font-medium text-text-primary">
         {title}
       </Dialog.Title>
@@ -103,7 +103,7 @@ export function FlowFooter({
     (stage === "followup" && !followupAnswerFilled);
 
   return (
-    <div className="flex items-center justify-end gap-2 border-t border-border-default bg-surface-2 px-5 py-3">
+    <div className="flex shrink-0 items-center justify-end gap-2 border-t border-border-default bg-surface-2 px-5 py-3">
       {/* 追問是引導不是門檻：隨時可直接開始作答 */}
       {stage === "followup" && (
         <button

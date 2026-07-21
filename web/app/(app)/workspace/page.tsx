@@ -67,6 +67,7 @@ export default function WorkspacePage() {
     restoreName,
     saveNamed,
     newFile,
+    resetToDefault,
   } = useNamedFile({
     getCode: () => codeRef.current,
     injectCode: setEditorValue,
@@ -233,6 +234,8 @@ export default function WorkspacePage() {
               onSaveAs={saveNamed}
               onLoad={handleLoadFile}
               onCollapse={toggleFiles}
+              currentName={currentName}
+              onDeletedCurrent={resetToDefault}
               refreshToken={refreshToken}
             />
           )}

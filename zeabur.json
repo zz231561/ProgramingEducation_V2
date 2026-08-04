@@ -60,6 +60,21 @@
         "OPENAI_API_KEY": {
           "value": "${OPENAI_API_KEY}"
         },
+        "LLM_MODEL": {
+          "value": "gpt-5.4-mini"
+        },
+        "LLM_MODEL_GENERATE": {
+          "value": "gpt-5-mini"
+        },
+        "LLM_MODEL_VALIDATE": {
+          "value": "gpt-5.4"
+        },
+        "LLM_MODEL_CONTENT": {
+          "value": "gpt-5.4"
+        },
+        "EMBEDDING_MODEL": {
+          "value": "text-embedding-3-small"
+        },
         "JUDGE0_API_URL": {
           "value": "${JUDGE0_API_URL}"
         },

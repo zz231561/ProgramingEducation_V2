@@ -59,6 +59,7 @@
 
 ## ✅ 已消除
 
+- ~~`requirements.lock` 與 `pyproject.toml` 脫鉤（缺 python-multipart）~~ — 2026-08-04 Phase 7 部署前置檢查發現；lock 停留 4-1a 版導致生產映像缺套件、backend 容器啟動即崩；已 `uv pip compile` 重產並以 docker build 實測 app 可載入 81 routes。deployment.md checklist 同步改為「改 pyproject 必重產 lock」
 - ~~judge0.py 不支援自架 authn header~~ — 2026-07-18 `_build_headers` 加 authn 分支（URL 自動判斷 + 可選 `JUDGE0_AUTH_MODE` 顯式覆蓋；自架帶 `X-Auth-Token`）+ 4 tests；生產實測待 Phase 7
 - ~~lazy-seed 新使用者的 unit content 仍是空骨架~~ — 2026-07-18 `generate_learning_path` seed 時讀 staging（approved）帶入 content，與 promote 整包覆蓋行為對齊 + 2 tests
 - ~~`backend/pyproject.toml` 沒設 hatchling packages~~ — 2026-07-18 補 `[tool.hatch.build.targets.wheel] packages`（flat layout 顯式列出）；隔離環境驗證 wheel target 可解析

@@ -60,7 +60,9 @@ backend 啟動時會跑 `alembic upgrade head`，其中 migration `b2c3d4e5f6a7`
   - 在 Google Cloud Console 先建 OAuth Client
   - **Authorized redirect URI** 暫填佔位（部署完拿到 web domain 後再回頭補；見 §A Step 5）
 - OpenAI API Key（已啟用 GPT-4o + text-embedding-3-small）
-- Judge0：選 RapidAPI（Zeabur 不能跑 self-host Judge0；見 §C 警告）
+- Judge0：Zeabur 託管的 service 不能跑 self-host Judge0（見 §C 警告）。兩種選擇：
+  - **正式方案（2026-07-12 定案）**：另租一台 VPS 自架 Judge0，backend 設 `JUDGE0_API_URL=http://<伺服器B IP>:2358` + `JUDGE0_API_KEY=<authn token>` — 拓撲見 `docs/server-plan.md`
+  - 過渡方案：RapidAPI（免費 50 次/天，僅夠冒煙測試）
 
 ## Service 串接架構
 
@@ -154,7 +156,7 @@ curl https://<your-web-domain>/api/health
 - [ ] `npx auth secret` 已產生 AUTH_SECRET
 - [ ] Zeabur 帳號 + 信用卡已 ready（生產實例需付費 plan）
 - [ ] `zeabur.json` 已 commit 到 repo（最新版含 4-2b 改動）
-- [ ] `requirements.lock` 已是 4-1a 後的 272 行版（`grep -c '==' backend/requirements.lock` 應 ≥ 100）
+- [ ] `requirements.lock` 與 `pyproject.toml` 同步（改過 dependencies 後必須 `uv pip compile pyproject.toml -o requirements.lock` 重產；Dockerfile 只讀 lock，漏套件＝容器啟動即崩）
 - [ ] 部署完成後回 Google Console 補 redirect URI
 
 ## 疑難排解

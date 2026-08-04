@@ -72,16 +72,16 @@ dedicated server「停用 Zeabur 服務自由使用」）。**租用前必須確
 | 變數 | RapidAPI（舊） | 自架（新） |
 |------|---------------|-----------|
 | `JUDGE0_API_URL` | `https://judge0-ce.p.rapidapi.com` | `http://<伺服器B IP>:2358` |
-| `JUDGE0_API_KEY` | RapidAPI key | Judge0 authn token（header 邏輯需小改，見下） |
+| `JUDGE0_API_KEY` | RapidAPI key | Judge0 authn token（自動送 `X-Auth-Token`） |
 
-> ⚠ 技術債：`services/judge0.py` `_build_headers()` 目前只支援 RapidAPI header
-> （`X-RapidAPI-Key`）；自架 authn 用的是 `X-Auth-Token`。切換時需加一個 header 分支
-> （約 5 行），已記入 `docs/tech-debt.md`。
+> ✅ 2026-07-18 已支援：`services/judge0.py` `_build_headers()` 依 URL 自動判斷——含 rapidapi
+> 網域送 `X-RapidAPI-Key`，否則送 `X-Auth-Token`；自動判斷失準時可用 `JUDGE0_AUTH_MODE`
+> （`rapidapi` / `self-hosted`）顯式覆蓋。切換自架**不需改程式碼**。
 
 ## 待辦（租用後）
 
 - [ ] 確認 Zeabur 租用方案含 SSH root 權限（B 機前提）
 - [ ] A 機：Zeabur 部署 PokerNote_V2 + 本專案（deployment.md §A）
 - [ ] B 機：GRUB cgroup v1 + docker-compose Judge0 + authn + 防火牆（deployment.md §C）
-- [ ] backend `_build_headers()` 加自架 authn header 分支 + 測試
+- [x] backend `_build_headers()` 加自架 authn header 分支 + 測試（2026-07-18 完成）
 - [ ] 課堂規模壓測：模擬 30 並行提交，確認 polling 不逾時

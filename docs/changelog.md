@@ -1,5 +1,21 @@
 # 變更日誌
 
+## [2026-08-04] — fix(deploy)：Phase 7 部署前置檢查——生產映像缺 python-multipart 阻斷修復
+
+### Fixed
+- **🚨 生產 backend 容器會啟動即崩**（`backend/requirements.lock`）：5-5 作業附件加了 `python-multipart` 到 `pyproject.toml`，但 lock 檔停留在 4-1a 版本未重產；`backend/Dockerfile` 只 `pip install -r requirements.lock` → 生產映像缺此套件，FastAPI 註冊 `File()` 路由（`assignments.py` / `assignment_submissions.py`）時直接 raise，容器永遠起不來。以 `uv pip compile` 重產（既有 pin 全部保留，僅新增 `python-multipart==0.0.32`）
+- **生產會用錯 LLM 模型**（`zeabur.json`）：backend env 未傳任何模型變數，`config.py` 預設 `LLM_MODEL=gpt-4o`（2024 舊世代）且三個分組變數 fallback 至它 → 6-M 任務導向路由在生產完全失效。補上 `LLM_MODEL` / `LLM_MODEL_GENERATE` / `LLM_MODEL_VALIDATE` / `LLM_MODEL_CONTENT` / `EMBEDDING_MODEL` 五個變數，值對齊 6-M 選型表
+
+### Changed（文檔同步）
+- `docs/deployment.md`：前置條件的 Judge0 段落改寫（正式方案＝自架於伺服器 B，RapidAPI 降為過渡方案，指向 server-plan.md）；checklist 的 lock 檢查改為「與 pyproject 同步」的實質規則（原「≥ 100 個 `==`」數字本身不成立）
+- `docs/server-plan.md`：Judge0 authn header 技術債註記改為已完成（2026-07-18 消除），待辦清單對應項打勾
+
+### Verified
+- `docker build ./backend` 成功 → 容器內 `import multipart`（0.0.32）+ `from main import app` 成功載入 **81 條路由**（即生產啟動路徑可用）
+- `zeabur.json` JSON 格式驗證通過
+
+---
+
 ## [2026-07-21] — fix(workspace)：我的程式碼刪除修正 + 反思 modal 提交按鈕遮蔽
 
 ### Fixed

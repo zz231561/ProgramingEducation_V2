@@ -1,5 +1,32 @@
 # 變更日誌
 
+## [2026-08-05] — perf(deploy)：生產環境「頁面載入十秒」根因排除 — DNS threadpool + HTTP/3
+
+> 使用者回報 Learn / Knowledge / 首次登入皆需 10 秒以上（一次錄製達 3 分鐘）。逐層量測後確認是**兩個獨立的生產環境問題疊加**，本機開發（localhost）兩者皆不會出現。
+
+### 量測基線（先排除的部分）
+- 後端 13 個端點 ×5 次（真實 PostgreSQL，62 概念 / 628 題 / 861 chunks）：**2–10ms，最慢 40ms，無慢查詢**
+- lazy-seed 首次產生 62 units：**0.02 秒**；backend 冷啟動 import 0.92 秒
+- 生產 health check ×20：130–337ms 穩定無尖峰；SSR `/login` 330ms
+- 前端交付：HTTP/2 + `cache-control: immutable` + gzip，9 個 chunk，各頁只打 1 個 API（Knowledge 用 `Promise.all`），**無瀑布**
+- Performance trace（499MB / 699,950 事件）：**≥100ms 的任務只有 1 個**，總耗時 8.5 秒 → **主執行緒幾乎完全閒置，前端零阻塞**
+
+### Fixed 1 — Node DNS 走 IPv6 逾時耗盡 libuv threadpool（環境變數，見 deployment.md）
+- **證據**：Network 顯示 `/api/auth/session` 首次 **2.2 分鐘**，期間 `health` ×5 全部 5.00 秒逾時（前端 AbortController 上限）；session 一完成，health 立刻回到 86–472ms → **兩者共用同一瓶頸資源**
+- **機制**：Next.js 為單一 Node process，DNS 查詢走 libuv threadpool（預設僅 4 執行緒）。容器內 Node 18+ IPv6 優先而 Zeabur 容器 IPv6 無法路由外網 → 解析逾時佔滿 threadpool → proxy 要解析 `*.zeabur.internal` 時排隊
+- **修法**：web service 加 `NODE_OPTIONS=--dns-result-order=ipv4first` + `UV_THREADPOOL_SIZE=32`（**不在版控，已記入 deployment.md Step 2**）
+- **結果**：`workspace?_rsc` 304ms、`draft` 491ms — API 全數恢復
+
+### Fixed 2 — Zeabur 邊緣宣告 HTTP/3，瀏覽器改走 UDP（`web/next.config.ts`）
+- **證據**：修好 DNS 後靜態資源仍極慢——137KB 花 **18.50 秒**（約 7 KB/s），但同機同時 curl 測**序列 633 KB/s、15 個混合並行 0.71 秒全完成**。回應帶 `alt-svc: h3=":443"; ma=3600` → Chromium 系瀏覽器切 HTTP/3（QUIC over UDP），curl 走 TCP 不受影響
+- **修法**：`next.config.ts` 加 `Alt-Svc: clear`（RFC 7838），讓瀏覽器清除記錄並留在 HTTP/2。**拒絕「要使用者自行關閉 QUIC」的方案**——校園 / 企業 / 部分 ISP 對 UDP 443 限速或丟包很常見，2027-01 評估時學生多在校園網路
+- **結果**（使用者實測 43 筆請求全為 `h2`）：同一檔案 **18.50 秒 → 166ms（111 倍）**；靜態資源普遍 15–22ms、API 70–350ms
+
+### 診斷工具
+- `main.py` 加 `X-Process-Time` middleware（回應標頭帶 backend 內部處理毫秒，CORS `expose_headers` 一併開放）——可直接分辨慢在運算或傳輸鏈路
+
+---
+
 ## [2026-08-05] — fix(deploy)：生產環境影片 ID 全 NULL — 播種 script 補 concepts metadata 同步
 
 ### Fixed

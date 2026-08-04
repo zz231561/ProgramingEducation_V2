@@ -257,6 +257,7 @@
   - [x] 7-1a-3 **生產資料播種 script**（2026-08-04 規劃缺口補齊）：`scripts/seed_production_content.py`——**關鍵發現＝`concepts` seed 用 `uuid4()` 隨機產生 id，生產庫 UUID 與本機不同**，`unit_content_staging.concept_id` 必須以 tag 為橋樑重映射；`data_codedge_rag` 由 LlamaIndex 執行期建表（不在 migration），需 pg_dump 連 schema 搬。本機建 `prod_test` 庫完整演練通過（62 教材 / 628 題 / 861 chunks / 64 documents，0 孤兒、tag 對應一致）
   - [x] 7-1a-4 實機執行播種 ✅（2026-08-05）：pg_dump 搬 RAG 表 → script 灌入生產庫，實機結果 documents 64 / questions 628 / unit_content_staging 62；`learning_units` 為 0 屬預期（lazy-seed 在首次進 Learn 頁才觸發，屆時直接從 staging 帶入內容）
   - [x] 7-1a-5 script 環境隔離防護（2026-08-05 使用者要求）：`scripts/_db_guard.py`——對生產庫操作時 export 的 `DATABASE_URL` 會殘留在同一個 shell，後續任何 script 都會誤寫生產庫。5 支開發工具掛 `require_local_db`（假學生 seeder / content·題庫批次生成 / RAG ingest / 題庫複審，非本機一律中止無覆寫選項），2 支生產維護工具掛 `confirm_remote_db`（promote / metadata patch，需輸入 yes 或 `ALLOW_PRODUCTION_WRITE=1`）；訊息遮蔽密碼
+  - [x] 7-1a-6 生產環境效能根因排除 ✅（2026-08-05）：兩個**僅生產環境會出現**的問題疊加造成「頁面 10 秒」——① Node DNS IPv6 逾時耗盡 libuv threadpool（`NODE_OPTIONS=--dns-result-order=ipv4first` + `UV_THREADPOOL_SIZE=32`，環境變數不在版控，已記入 deployment.md）② Zeabur 邊緣宣告 HTTP/3 使瀏覽器走 UDP（`next.config.ts` 加 `Alt-Svc: clear`，拒絕要求使用者關 QUIC 的方案）；實測 137KB 檔案 18.50 秒 → 166ms、43 筆請求全 `h2`。後端全程無辜（13 端點 2–10ms、前端 trace 699,950 事件僅 1 個 ≥100ms）
 - [ ] 7-1b Golden path 跑通：登入 → 寫碼 → 執行 → AI 對話 → RAG 檢索 → 出題作答
 - [ ] 7-1c 教師端帳號 / 班級 / 行為資料端到端驗證（Phase 5 程式碼以真實流量驗收）
 

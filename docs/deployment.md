@@ -120,6 +120,17 @@ zeabur.json 內的 `${VAR}` 會從 Project 層級的變數解析。在 Project S
 > **`POSTGRES_PASSWORD` 不需手動設**：zeabur.json 用 `${PASSWORD}`，Zeabur 自動產生。
 > **Secret 標記方式**：見上方「環境變數分層」章節。
 
+### ⚠ web service 必要的 Node 執行參數（2026-08-05 上線實測血淚）
+
+**這兩個變數不在版控裡，重建 web service 時漏掉會讓整站慢到無法使用**：
+
+| 變數 | 值 | 為什麼 |
+|------|-----|--------|
+| `NODE_OPTIONS` | `--dns-result-order=ipv4first` | 容器內 Node 18+ 預設 IPv6 優先，Zeabur 容器的 IPv6 無法路由外網 → **每次 DNS 解析都要等逾時才 fallback** |
+| `UV_THREADPOOL_SIZE` | `32` | Node 的 DNS 查詢走 libuv threadpool（**預設僅 4 執行緒**）。上述逾時會佔滿它，導致同 process 的所有請求排隊 |
+
+**實測症狀**：`/api/auth/session` 首次請求卡 **2.2 分鐘**，期間所有 `/api/*` 全數 5 秒逾時（前端 health check 的 AbortController 上限），頁面因此停在 loading——但後端本身每個端點只要 2–10ms，從外部 curl 測也一切正常，**只有瀏覽器情境才會觸發**。
+
 ## Step 3：綁定 web domain
 
 1. Zeabur dashboard → web service → Domains → 綁定自訂域名（或用免費 `.zeabur.app`）
@@ -163,6 +174,8 @@ curl https://<your-web-domain>/api/health
 
 | 問題 | 檢查 |
 |------|------|
+| **整站極慢（頁面 10 秒以上）但後端 API 實測 2–10ms** | 見上方「web service 必要的 Node 執行參數」；另檢查回應是否帶 `alt-svc: h3`（HTTP/3 問題，見下） |
+| **靜態資源下載僅數 KB/s，curl 卻正常** | 瀏覽器走了 HTTP/3（UDP）。`next.config.ts` 已設 `Alt-Svc: clear` 強制留在 HTTP/2；驗證方式：Console 執行 `performance.getEntriesByType('resource').map(r=>r.nextHopProtocol)`，應全為 `h2` |
 | Template deploy 失敗：unknown schema field | Zeabur 不接受 `source.type: IMAGE`；用 fallback（marketplace pgvector / GIT + Dockerfile）|
 | 502 Bad Gateway | web 的 `BACKEND_URL` 是否正確（應為 `http://${BACKEND_HOST}:8000`，由 backend service expose）|
 | backend 502 / 一直 restart | 看 logs：alembic 失敗或 DATABASE_URL 拼錯 |

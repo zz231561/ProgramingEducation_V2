@@ -1,5 +1,23 @@
 # 變更日誌
 
+## [2026-08-04] — feat(deploy)：生產資料播種 script（7-1a-3）+ Judge0 RapidAPI 鏈路實測
+
+### Added
+- **`backend/scripts/seed_production_content.py`**：把本機教學內容搬到生產庫。**核心問題＝`concepts` 的 seed migration 用 `uuid4()` 隨機產生 id（`c3d4e5f6a7b8:163`），生產庫 UUID 與本機完全不同** → 直接 `pg_dump` 會讓 `unit_content_staging.concept_id` 全數對不上。Script 以 **concept tag 為橋樑重新映射**：讀本機 staging join concepts 取 tag → 查生產庫同 tag 的新 UUID → 改寫後寫入
+  - 分工：`documents` / `questions` 直接複製（前者 uploader_id 全 NULL、後者用 `concept_tags` 字串關聯，皆不依賴 UUID）；`unit_content_staging` 走 tag 重映射；**`data_codedge_rag` 由 LlamaIndex 執行期建表、不在 migration 內**，需先 `pg_dump` 連 schema 一起搬（script 偵測到表不存在時印出完整指令）
+  - 防呆：拒絕 `TARGET_DB_URL` 指向本機（方向反了）、目標表非空需 `--force`、兩邊 concepts 數量不符即中止、`--dry-run` 預覽
+  - JSON 欄位處理：依 `information_schema` 找出 json/jsonb 欄位顯式包 `Json()`——否則 psycopg2 會把 `concept_tags` 的 Python list 誤 adapt 成 PostgreSQL `text[]` 而型別衝突
+
+### Verified
+- **本機建 `prod_test` 庫完整演練**：跑完整 alembic → 確認 concept UUID 與本機不同（`bb615138…` vs `0e660c1e…`）→ pg_dump 搬 RAG 表 → 執行 script → **62 教材 / 628 題（503 MC + 125 coding）/ 861 chunks / 64 documents 全數寫入，0 孤兒、tag 對應與本機完全一致**
+- **Judge0 RapidAPI 端到端實測**（此鏈路首次真正跑通）：正常執行（stdin `3 4` → `stdout='sum=7\n'`、0.003s / 1140KB）/ 編譯錯誤（g++ 訊息完整回傳）/ 服務不可用（`AppError 503 JUDGE0_UNAVAILABLE`）三路徑皆符合 `backend.md` 規範
+
+### 部署進度（Zeabur）
+- 四個 service 建立完成（手動建立，避開未實測的 `zeabur.json` PREBUILT schema）+ 網域綁定 + Google OAuth 登入通過
+- 踩點記錄：Zeabur 預設埠 8080 與 backend 寫死的 8000 / web 的 3000 不符；`zeabur.app` 是公共後綴無法登記為 Google 授權網域 → 改用 OAuth 測試模式（100 人上限，1 月評估前需評估改用自訂網域）
+
+---
+
 ## [2026-08-04] — fix(deploy)：Phase 7 部署前置檢查——生產映像缺 python-multipart 阻斷修復
 
 ### Fixed

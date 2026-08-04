@@ -252,6 +252,10 @@
 
 ### 7-1 Golden path 整合驗證
 - [ ] 7-1a 部署到 Zeabur（web + backend + pgvector + redis）+ Judge0 self-host VPS
+  - [x] 7-1a-1 部署前置修復（2026-08-04）：`requirements.lock` 補 python-multipart（生產映像缺此套件會啟動即崩，docker build 實測 81 routes）+ `zeabur.json` 補 6-M 模型變數（原本會 fallback gpt-4o）
+  - [x] 7-1a-2 Judge0 RapidAPI 鏈路實測（2026-08-04）：正常執行 / 編譯錯誤 / 503 三路徑通過；`_build_headers()` RapidAPI 分支驗證可用
+  - [x] 7-1a-3 **生產資料播種 script**（2026-08-04 規劃缺口補齊）：`scripts/seed_production_content.py`——**關鍵發現＝`concepts` seed 用 `uuid4()` 隨機產生 id，生產庫 UUID 與本機不同**，`unit_content_staging.concept_id` 必須以 tag 為橋樑重映射；`data_codedge_rag` 由 LlamaIndex 執行期建表（不在 migration），需 pg_dump 連 schema 搬。本機建 `prod_test` 庫完整演練通過（62 教材 / 628 題 / 861 chunks / 64 documents，0 孤兒、tag 對應一致）
+  - [ ] 7-1a-4 實機執行播種（等生產 backend 部署完成 + postgres 臨時開公網轉送）
 - [ ] 7-1b Golden path 跑通：登入 → 寫碼 → 執行 → AI 對話 → RAG 檢索 → 出題作答
 - [ ] 7-1c 教師端帳號 / 班級 / 行為資料端到端驗證（Phase 5 程式碼以真實流量驗收）
 

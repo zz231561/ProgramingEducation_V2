@@ -1,9 +1,10 @@
 """FastAPI 應用程式進入點。"""
 
+import time
 from contextlib import asynccontextmanager
 from collections.abc import AsyncIterator
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -64,6 +65,19 @@ app = FastAPI(
     redoc_url="/redoc" if settings.DEBUG else None,
 )
 
+@app.middleware("http")
+async def add_process_time_header(request: Request, call_next):
+    """回應加上 `X-Process-Time`（backend 內部處理毫秒）。
+
+    效能診斷用：瀏覽器 Network 分頁的總耗時扣掉這個值，就是網路 + proxy 的成本，
+    可直接分辨慢在後端運算還是傳輸鏈路。
+    """
+    start = time.perf_counter()
+    response = await call_next(request)
+    response.headers["X-Process-Time"] = f"{(time.perf_counter() - start) * 1000:.0f}"
+    return response
+
+
 # === CORS — 僅允許前端 origin ===
 app.add_middleware(
     CORSMiddleware,
@@ -71,6 +85,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["X-Process-Time"],
 )
 
 # === 全域錯誤處理 ===

@@ -14,6 +14,13 @@ from openai import AsyncOpenAI
 from core.config import settings
 from core.llm_params import chat_model_kwargs
 from core.errors import AppError
+from services.edf.citations import (
+    CITATION_RULE,
+    NO_SOURCE_RULE,
+    extract_citations,
+    format_rag_chunk,
+    strip_ungrounded_citations,
+)
 from services.edf.rag_integration import fetch_rag_chunks_safe
 from services.rag import RetrievedChunk
 from services.security.sanitizer import wrap_student_input
@@ -97,49 +104,18 @@ def build_system_prompt(
         blocks.append(reflection_block)
 
     if rag_chunks:
-        rag_lines = [_format_rag_chunk(i, c) for i, c in enumerate(rag_chunks, 1)]
-        rag_block = (
+        rag_lines = [format_rag_chunk(i, c) for i, c in enumerate(rag_chunks, 1)]
+        blocks.append(
             "教材參考片段（請以這些教材內容為依據引導學生，避免自編未驗證的細節）：\n"
             + "\n\n".join(rag_lines)
             + "\n\n"
-            + _CITATION_RULE
+            + CITATION_RULE
         )
-        blocks.append(rag_block)
+    else:
+        # 檢索無結果時明確告知，避免 Coddy 把自身知識講成教材內容
+        blocks.append(NO_SOURCE_RULE)
 
     return "\n\n".join(blocks)
-
-
-# === RAG 片段格式化（K4b+：帶章節名稱與可點擊時間戳）===
-
-# 影片引用規則：chunk metadata 已提供確切章節與時間，杜撰時間戳是先前實測到的問題
-_CITATION_RULE = (
-    "引用影片時的規則：\n"
-    "- 只能使用上面每則片段標示的「出處」資訊，**嚴禁自行推測或編造時間點**\n"
-    "- 必須寫成 Markdown 連結格式：[章節名稱 分:秒](連結)，例如 [甚麼是程式語言 01:03](https://...)\n"
-    "- 沒有出處資訊的片段就不要提時間點，直接說明概念即可"
-)
-
-
-def _format_timestamp(seconds: float) -> str:
-    """秒數 → mm:ss（超過一小時仍以總分鐘數表示，教學影片不會這麼長）。"""
-    minutes, secs = divmod(int(seconds), 60)
-    return f"{minutes:02d}:{secs:02d}"
-
-
-def _format_rag_chunk(index: int, chunk: RetrievedChunk) -> str:
-    """組裝單則教材片段，metadata 齊全時附上章節名稱與帶時間參數的 YouTube 連結。"""
-    meta = chunk.metadata or {}
-    title = meta.get("title_zh")
-    youtube_id = meta.get("youtube_id")
-    start = meta.get("start_time_seconds")
-
-    if title and youtube_id and start is not None:
-        url = f"https://www.youtube.com/watch?v={youtube_id}&t={int(start)}s"
-        header = f"[{index}] 出處：{title} {_format_timestamp(start)}｜連結：{url}"
-    else:
-        # ingest 較早的片段可能缺 metadata — 不附出處，prompt 規則會要求不提時間
-        header = f"[{index}]"
-    return f"{header}\n{chunk.text.strip()}"
 
 
 # === 輸出驗證 ===
@@ -188,6 +164,7 @@ async def generate_feedback(
     reflection_block: str = "",
     kgraph_block: str = "",
     debug_sink: dict | None = None,
+    citations_sink: list[dict] | None = None,
 ) -> str:
     """組裝 prompt、呼叫 LLM、驗證輸出，回傳教學回應。
 
@@ -195,6 +172,7 @@ async def generate_feedback(
     `kgraph_block`（K4a）：學生 K-Graph 知識狀態 + 鷹架指令；空字串代表不注入。
     RAG（K4b）：一律檢索，`fetch_rag_chunks_safe` 內部依相似度分數過濾。
     `debug_sink`（DEV-7）：dev 帳號的中間層觀測 dict；非 None 時寫入 RAG 命中明細。
+    `citations_sink`：非 None 時寫入本次引用的教材出處（供前端顯示原文核對）。
     """
     client = _get_client()
 
@@ -232,5 +210,12 @@ async def generate_feedback(
         raise AppError(502, "LLM_ERROR", f"AI 服務暫時不可用：{e}") from e
 
     raw = response.choices[0].message.content or ""
+    validated = validate_output(raw, strategy.allow_code_snippet)
 
-    return validate_output(raw, strategy.allow_code_snippet)
+    # 機械式防幻覺：prompt 規則不保證 LLM 遵守，這裡把不在檢索結果內的影片連結移除
+    cleaned, removed = strip_ungrounded_citations(validated, rag_chunks)
+    if debug_sink is not None:
+        debug_sink["citations_stripped"] = removed
+    if citations_sink is not None:
+        citations_sink.extend(extract_citations(rag_chunks))
+    return cleaned

@@ -155,7 +155,8 @@ async def interact(
             "reflection_injected": bool(reflection_feedback_block),
         })
 
-    # Feedback 層
+    # Feedback 層（citations_sink 收本次引用的教材出處，供學生核對）
+    citations: list[dict] = []
     ai_response = await generate_feedback(
         evidence=evidence,
         strategy=strategy,
@@ -164,6 +165,7 @@ async def interact(
         reflection_block=reflection_feedback_block,
         kgraph_block=kgraph_block,
         debug_sink=debug_sink,
+        citations_sink=citations,
     )
 
     # 儲存 assistant message（user message 已於 LLM 呼叫前 commit）
@@ -172,6 +174,7 @@ async def interact(
         role=MessageRole.ASSISTANT,
         content=ai_response,
         evidence=evidence.model_dump(),
+        citations=citations or None,
     )
     db.add(assistant_msg)
 

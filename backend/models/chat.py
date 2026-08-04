@@ -94,6 +94,9 @@ class ChatMessage(Base):
     code_snapshot: Mapped[str | None] = mapped_column(Text, default=None)
     execution_result: Mapped[dict | None] = mapped_column(JSON, default=None)
     evidence: Mapped[dict | None] = mapped_column(JSON, default=None)
+    # 本則回應引用的教材出處（章節 / 時間 / 連結 / 原文摘錄）——供學生當場核對，
+    # 隨訊息持久化才能在重開對話時仍可驗證（防幻覺第三層）
+    citations: Mapped[list | None] = mapped_column(JSON, default=None)
     # 學生訊息對話行為分類（StudyChat schema，5-2c）；String+CHECK 避開 PG ENUM 雙寫坑，
     # 與 coding_events.event_type 同款；啟發式分類、訊號不足留 NULL（僅 user 訊息填值）
     dialogue_act: Mapped[str | None] = mapped_column(String(24), default=None)

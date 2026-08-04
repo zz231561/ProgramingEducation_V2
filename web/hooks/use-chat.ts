@@ -25,6 +25,7 @@ function toMessageItem(msg: ApiMessage): MessageItem {
     content: msg.content,
     codeSnapshot: msg.code_snapshot ?? undefined,
     evidence: msg.evidence ?? undefined,
+    citations: msg.citations ?? undefined,
     createdAt: msg.created_at,
   };
 }

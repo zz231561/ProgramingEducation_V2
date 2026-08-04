@@ -1,5 +1,27 @@
 # 變更日誌
 
+## [2026-08-05] — feat(edf)：Coddy 防幻覺三層機制（NotebookLM 式可驗證引用）
+
+> 承上一條：把正確 metadata 餵給 LLM 只解決「它沒資料可用」，**不保證它聽話**。本次補上不依賴 LLM 自律的機制。原 `validate_output()` 只檢查程式碼洩漏，對「內容是否真的來自教材」零檢查。
+
+### Added — `services/edf/citations.py`（新模組，163 行）
+> `feedback.py` 已 236 行逼近 250 上限，格式化邏輯一併移出，主檔反而降至 221 行
+
+- **① 機械式攔截 `strip_ungrounded_citations()`**：由檢索結果建立「合法出處表」（video_id → [(start, end)]），掃描回應中的 Markdown 連結，解析 YouTube video id 與 `t=` 參數，**不在檢索結果內的整段連結直接移除**（連標籤一起——標籤本身就含編造的時間）。容差 ±90 秒（LLM 常把 63 秒寫成 01:00）；非 YouTube 連結（如 cppreference）保留；攔截時寫 `logger.warning`，**可據此統計幻覺率供論文使用**
+- **② 誠實路徑 `NO_SOURCE_RULE`**：RAG 全部低於門檻時原本靜默不注入教材，Coddy 會用自身知識回答且不告知學生。現改為明確指示——不可提及任何章節或時間點、被問「老師在哪講過」要誠實說沒有對應段落、可用一般知識但不得宣稱是課程教材
+- **③ 可驗證 UI**：`extract_citations()` 輸出章節/時間/連結/原文摘錄/相似度 → migration `t6c7d8e9f0a1` 為 `chat_messages` 加 `citations` JSON 欄位（**持久化才能在重開對話時仍可核對**；不塞進 `evidence`，語意不同）→ 前端 `components/chat/citation-list.tsx` 摺疊清單，展開即見 transcript 原文（原文本身帶 `[00:45]` 逐句時間標記），另附「在 YouTube 開啟此段」
+
+### Tests
+- `tests/test_edf_citations.py` **+13**：合法引用保留 / 未知影片攔截 / 時間偏離過遠攔截 / 容差內放行 / 非 YouTube 連結保留 / 無檢索結果時全部攔截 / 清理殘留空列表項 / youtu.be 短網址 / metadata 缺漏處理；後端全量 **763 passed**，migration up-down 可逆驗證，web build + tsc + eslint 綠
+
+### Verified（真實 LLM）
+- 引用 `[C++的for迴圈 03:01](...&t=181s)`（181s=03:01 換算正確）；citations 回傳 3 則，含相似度 0.649–0.663 與 transcript 原文
+
+### 已知限制（誠實記錄）
+- **幻覺無法 100% 消除**：出處已鎖死，但 LLM 仍可能曲解教材內容（老師說 A 講成 B）。驗證這個需第二次 LLM 呼叫比對，成本與延遲翻倍 → **不常態開啟**，日後可做抽樣稽核工具（原方案④）
+
+---
+
 ## [2026-08-05] — fix(edf)：Coddy 影片引用改為真實出處 + 可點擊時間連結（K4d 驗收回饋）
 
 ### Fixed

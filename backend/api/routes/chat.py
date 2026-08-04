@@ -41,6 +41,8 @@ class MessageOut(BaseModel):
     content: str
     code_snapshot: str | None = None
     evidence: dict | None = None
+    # 教材出處（章節 / 時間 / 連結 / 原文摘錄），供前端讓學生核對
+    citations: list[dict] | None = None
     created_at: str
 
     model_config = {"from_attributes": True}
@@ -177,6 +179,7 @@ async def chat_interact(
             content=ai_msg.content,
             code_snapshot=None,
             evidence=ai_msg.evidence,
+            citations=ai_msg.citations,
             created_at=str(ai_msg.created_at),
         ),
     )
@@ -220,6 +223,7 @@ async def get_session_detail(
                 content=m.content,
                 code_snapshot=m.code_snapshot,
                 evidence=m.evidence,
+                citations=m.citations,
                 created_at=str(m.created_at),
             )
             for m in session.messages

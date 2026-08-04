@@ -120,14 +120,17 @@ zeabur.json 內的 `${VAR}` 會從 Project 層級的變數解析。在 Project S
 > **`POSTGRES_PASSWORD` 不需手動設**：zeabur.json 用 `${PASSWORD}`，Zeabur 自動產生。
 > **Secret 標記方式**：見上方「環境變數分層」章節。
 
-### ⚠ web service 必要的 Node 執行參數（2026-08-05 上線實測血淚）
+### web service 的 Node 執行參數（2026-08-05 上線實測）
 
-**這兩個變數不在版控裡，重建 web service 時漏掉會讓整站慢到無法使用**：
+**已寫入 `web/Dockerfile`（烘進映像）+ `zeabur.json`，重建服務會自動帶入，dashboard 無需手動設定**：
 
 | 變數 | 值 | 為什麼 |
 |------|-----|--------|
 | `NODE_OPTIONS` | `--dns-result-order=ipv4first` | 容器內 Node 18+ 預設 IPv6 優先，Zeabur 容器的 IPv6 無法路由外網 → **每次 DNS 解析都要等逾時才 fallback** |
 | `UV_THREADPOOL_SIZE` | `32` | Node 的 DNS 查詢走 libuv threadpool（**預設僅 4 執行緒**）。上述逾時會佔滿它，導致同 process 的所有請求排隊 |
+
+> 驗證方式：`docker run <image> node -e "console.log(require('dns').getDefaultResultOrder())"` 應回 `ipv4first`。
+> ⚠ Zeabur dashboard 的手動環境變數會**覆蓋** Dockerfile 的 `ENV`——若曾手動設過，請確認值一致或直接移除。
 
 **實測症狀**：`/api/auth/session` 首次請求卡 **2.2 分鐘**，期間所有 `/api/*` 全數 5 秒逾時（前端 health check 的 AbortController 上限），頁面因此停在 loading——但後端本身每個端點只要 2–10ms，從外部 curl 測也一切正常，**只有瀏覽器情境才會觸發**。
 

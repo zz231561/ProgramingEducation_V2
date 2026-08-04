@@ -118,3 +118,71 @@ async def test_rate_limit_isolated_per_user(rl_client: AsyncClient):
 
     assert resp_a.status_code == 429
     assert resp_b.status_code == 200
+
+
+# === 每日配額（成本天花板）===
+
+@pytest.fixture
+def daily_app() -> FastAPI:
+    """掛 scope="llm" 才會觸發每日配額。"""
+    _app = FastAPI()
+    _app.add_exception_handler(AppError, app_error_handler)  # type: ignore[arg-type]
+
+    @_app.post("/llm", dependencies=[Depends(rate_limit("llm", limit_per_minute=999))])
+    async def _llm():
+        return {"ok": True}
+
+    return _app
+
+
+@pytest.fixture
+def daily_client(daily_app: FastAPI) -> AsyncClient:
+    return AsyncClient(transport=ASGITransport(app=daily_app), base_url="http://test")
+
+
+async def test_daily_quota_blocks_after_limit(daily_client: AsyncClient):
+    """超過每日上限回 429 DAILY_QUOTA_EXCEEDED，且訊息說明明日恢復。"""
+    token = encrypt_test_token(SAMPLE_PAYLOAD)
+    stub = _StubRedis()
+    with (
+        patch("core.rate_limit.get_redis", return_value=stub),
+        patch("core.rate_limit.settings.RATE_LIMIT_LLM_PER_DAY", 2),
+    ):
+        for _ in range(2):
+            r = await daily_client.post("/llm", cookies={"authjs.session-token": token})
+            assert r.status_code == 200
+
+        r = await daily_client.post("/llm", cookies={"authjs.session-token": token})
+        assert r.status_code == 429
+        body = r.json()
+        assert body["error"] == "DAILY_QUOTA_EXCEEDED"
+        assert "明天" in body["message"]
+        assert body["detail"]["limit"] == 2
+
+
+async def test_daily_quota_disabled_when_zero(daily_client: AsyncClient):
+    """設 0 代表停用每日配額。"""
+    token = encrypt_test_token(SAMPLE_PAYLOAD)
+    stub = _StubRedis()
+    with (
+        patch("core.rate_limit.get_redis", return_value=stub),
+        patch("core.rate_limit.settings.RATE_LIMIT_LLM_PER_DAY", 0),
+    ):
+        for _ in range(5):
+            r = await daily_client.post("/llm", cookies={"authjs.session-token": token})
+            assert r.status_code == 200
+
+
+async def test_daily_quota_not_applied_to_non_llm_scope(rl_client: AsyncClient):
+    """非 llm scope（如 /code/execute）不受每日配額限制。"""
+    token = encrypt_test_token(SAMPLE_PAYLOAD)
+    stub = _StubRedis()
+    with (
+        patch("core.rate_limit.get_redis", return_value=stub),
+        patch("core.rate_limit.settings.RATE_LIMIT_LLM_PER_DAY", 1),
+    ):
+        for _ in range(3):
+            r = await rl_client.post("/limited", cookies={"authjs.session-token": token})
+            assert r.status_code == 200
+        # 只有每分鐘限制（3）生效，沒有 daily key 被建立
+        assert not any(k.startswith("rl:daily:") for k in stub.store)

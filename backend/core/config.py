@@ -34,7 +34,7 @@ class Settings(BaseSettings):
     # 6-M 任務導向模型路由（2026-07-06 定案，roadmap 6-M 選型表）：
     # LLM_MODEL = 預設（對話組 EDF Feedback + 分析組 Evidence / Reflection / Comprehension 評分）
     # 分組變數未設定時一律 fallback LLM_MODEL，行為與單一模型時代相同
-    LLM_MODEL: str = "gpt-4o"
+    LLM_MODEL: str = "gpt-5.6-luna"
     # 生成組：Quiz generate / Hint / Comprehension 出題
     LLM_MODEL_GENERATE: str = ""
     # 審查組：Quiz validate——cascade 強把關端
@@ -64,6 +64,8 @@ class Settings(BaseSettings):
 
     # === Rate Limiting ===
     RATE_LIMIT_PER_MINUTE: int = 10
+    # 每人每日 LLM 互動上限（成本天花板）；正常密集使用約 30-50 次，0 = 停用
+    RATE_LIMIT_LLM_PER_DAY: int = 60
 
     # === 開發者模式 ===
     # 總開關（生產環境保持 False，即使 email 在白名單也無效）

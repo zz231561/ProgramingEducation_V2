@@ -46,3 +46,9 @@ class EvidenceResult(BaseModel):
     bloom_level: BloomLevel = Field(description="學生目前所處的 Bloom 認知等級")
     bloom_reasoning: str = Field(default="", description="Bloom 等級判斷依據")
     code_analysis: str = Field(default="", description="程式碼問題分析（供 Decision 層使用）")
+    # 成本分流（2026-08-05）：搭在既有 Evidence 呼叫上判斷，零額外成本。
+    # 離題時 Feedback 走輕量路徑（跳過 RAG + 精簡 prompt），仍會回應學生、不攔截。
+    # 預設 True：舊資料與 LLM 未回傳此欄時一律當作課程相關，避免誤判成離題。
+    is_on_topic: bool = Field(
+        default=True, description="學生訊息是否與 C++ 程式學習相關"
+    )

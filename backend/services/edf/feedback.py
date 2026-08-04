@@ -21,14 +21,15 @@ from services.edf.citations import (
     format_rag_chunk,
     strip_ungrounded_citations,
 )
+from services.edf.off_topic import generate_off_topic_reply
 from services.edf.rag_integration import fetch_rag_chunks_safe
 from services.rag import RetrievedChunk
 from services.security.sanitizer import wrap_student_input
 
 from .decision import TeachingStrategy
+from .models import EvidenceResult
 
 logger = logging.getLogger(__name__)
-from .models import EvidenceResult
 
 _client: AsyncOpenAI | None = None
 
@@ -175,6 +176,11 @@ async def generate_feedback(
     `citations_sink`：非 None 時寫入本次引用的教材出處（供前端顯示原文核對）。
     """
     client = _get_client()
+
+    # 成本分流：離題訊息不需要 RAG 檢索與完整教學 prompt（input 約降至 1/8）。
+    # 注意這是「換一條路徑」不是「攔截」——學生一樣會收到回應，只是簡短並引導回課程。
+    if not evidence.is_on_topic:
+        return await generate_off_topic_reply(client, student_message)
 
     rag_chunks: list[RetrievedChunk] = await fetch_rag_chunks_safe(evidence)
     if debug_sink is not None:

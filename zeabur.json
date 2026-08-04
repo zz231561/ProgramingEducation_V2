@@ -67,16 +67,16 @@
           "value": "${OPENAI_API_KEY}"
         },
         "LLM_MODEL": {
-          "value": "gpt-5.4-mini"
+          "value": "gpt-5.6-luna"
         },
         "LLM_MODEL_GENERATE": {
-          "value": "gpt-5-mini"
+          "value": "gpt-5.6-luna"
         },
         "LLM_MODEL_VALIDATE": {
-          "value": "gpt-5.4"
+          "value": "gpt-5.6-terra"
         },
         "LLM_MODEL_CONTENT": {
-          "value": "gpt-5.4"
+          "value": "gpt-5.6-terra"
         },
         "EMBEDDING_MODEL": {
           "value": "text-embedding-3-small"

@@ -61,11 +61,12 @@ JUDGE0_AUTH_MODE=   # 可選：rapidapi / self-hosted；空 = 依 URL 自動判�
 
 # 可選 — 6-M 任務導向模型路由（分組變數未設定時 fallback LLM_MODEL）
 EMBEDDING_MODEL=text-embedding-3-small
-LLM_MODEL=gpt-5.4-mini        # 預設：對話組（EDF Feedback）+ 分析組（Evidence/Reflection/Comprehension 評分）
-LLM_MODEL_GENERATE=gpt-5-mini # 生成組：Quiz generate / Hint / Comprehension 出題
-LLM_MODEL_VALIDATE=gpt-5.4    # 審查組：Quiz validate（cascade 強把關端）
-LLM_MODEL_CONTENT=gpt-5.4     # 內容組：Unit content 批次
+LLM_MODEL=gpt-5.6-luna         # 預設：對話組（EDF Feedback）+ 分析組（Evidence/Reflection/Comprehension 評分）
+LLM_MODEL_GENERATE=gpt-5.6-luna # 生成組：Quiz generate / Hint / Comprehension 出題
+LLM_MODEL_VALIDATE=gpt-5.6-terra # 審查組：Quiz validate（cascade 強把關端）
+LLM_MODEL_CONTENT=gpt-5.6-terra  # 內容組：Unit content 批次
 RATE_LIMIT_PER_MINUTE=10
+RATE_LIMIT_LLM_PER_DAY=60      # 每人每日 LLM 互動上限（防濫用；正常密集使用約 30-50 次）
 LOG_LEVEL=INFO
 ```
 

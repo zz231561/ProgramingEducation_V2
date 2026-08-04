@@ -1,5 +1,43 @@
 # 變更日誌
 
+## [2026-08-05] — perf(llm)：模型全面升級 gpt-5.6 + 每日配額 + 離題分流（成本控制三層）
+
+> 上線前防濫用盤點：rate limit（10 次/分）與 prompt injection 防護已有，但**主題範圍限制完全沒有**（RULE-1~5 只管程式碼洩漏/語言/字數/收尾）、`off_topic` 只是欄位（`dialogue.py:53` 明寫「暫不主動判定」）、**沒有每日總量上限**（理論上一人一天可打 14,400 次）。
+> **業界基準**：CS50.ai（架構幾乎相同——GPT-4o + 講座字幕 RAG + 教學護欄）實測 **$1.90/學生/月、$0.05/prompt**。
+
+### Changed — 模型全面升級（實測後定案，取代 6-M 選型表）
+| 用途 | 舊 | 新 | 單價變化 |
+|---|---|---|---|
+| 對話 + 分析 | `gpt-5.4-mini` | **`gpt-5.6-luna`** | $0.75/$4.50 → **$0.20/$1.20** |
+| 生成（Quiz/Hint） | `gpt-5-mini` | **`gpt-5.6-luna`** | $0.25/$2.00 → **$0.20/$1.20** |
+| 審查 / 內容批次 | `gpt-5.4` | **`gpt-5.6-terra`** | $2.50/$15 → **$2.00/$12** |
+
+- **每項都更便宜且更新世代，無取捨**。實測單次互動成本 **$0.00316 → $0.00081（省 74%）**；100 人×80 則/月：**$25.3 → $6.5**
+- **修 `core/llm_params.py`**：gpt-5.6 世代拒收自訂 `temperature`**也拒收 `reasoning_effort`**（原判斷只認 `gpt-5-` 前綴 → luna 直接 502）。拆出 `_accepts_custom_temperature()`；預設 `reasoning_tokens=0` 無須壓制
+- `config.py` 的 `LLM_MODEL` 預設由 `gpt-4o` 改為 `gpt-5.6-luna`（生產漏設時的 fallback 不該是 2024 世代）
+
+### Added — 每日配額（`core/rate_limit.py`）
+- `RATE_LIMIT_LLM_PER_DAY=60`：**只掛 `scope="llm"`**，`/code/execute` 等不受影響。UTC 日期分 key、26 小時 TTL 涵蓋任何時區；超額回 429 `DAILY_QUOTA_EXCEEDED` 並明示「明天重新計算，仍可寫程式/執行/讀教材」；設 0 停用。+3 tests
+- **決策：不做上課日/非上課日分級配額**——正常使用僅 $6.5/月，分級省的是最壞情況的一部分（該由 OpenAI 帳號硬上限擋），卻要付出教師端課表 UI + 時區處理的複雜度，且**會傷害週末複習/考前衝刺的學習體驗**
+
+### Added — 離題分流（`services/edf/off_topic.py`，新模組）
+> **分流不是攔截**：關鍵字黑名單會誤傷「這題老師上課有講嗎」這類合法提問（使用者指出），改採 routing 思路（呼應 6-M 已引用的 FrugalGPT / RouteLLM）
+
+- **判斷搭在既有 Evidence 呼叫上，零額外成本**：`EvidenceResult` 加 `is_on_topic`（預設 True——LLM 未回傳時寧可多花錢也不誤判）；**Evidence 原本看不到學生提問**（prompt 只有程式碼+執行結果），故 `analyze_evidence` 補 `question` 參數並以 `wrap_student_input` 包裝防注入
+- prompt 明列不得判為離題的情境：程式問題、對教材/影片/課程的詢問（**明寫「老師上課有講嗎」**）、對錯誤訊息的困惑、極簡短但語境上在求助（「?」）
+- 離題 → `generate_off_topic_reply()`：跳過 RAG 檢索與 persona/strategy/K-Graph 組裝，**Feedback input 1,699 → 135 tokens（省 92%）**；LLM 失敗回固定文案不拋錯
+- 離題判定回填 `dialogue_act=off_topic`（5-2c 啟發式無此訊號）→ 評估期可統計學生離題比例
+- `feedback.py` 加完後達 263 行**超過 250 硬上限 → 拆出 off_topic.py**（227 + 53）
+
+### Tests
+- +10（3 每日配額 + 7 離題分流，含「LLM 未回傳欄位預設 on-topic」與鎖住 prompt 規則不被誤刪）；後端全量 **773 passed**
+
+### Verified（真實 LLM）
+- 「晚餐推薦吃什麼」→ 輕量路徑，友善婉拒並給出可問的具體例子，**0 citations**（未檢索）
+- **「這題老師上課有講嗎」→ 正確判為課程相關**，走完整路徑並附教材連結 + 3 則 citations
+
+---
+
 ## [2026-08-05] — feat(edf)：Coddy 防幻覺三層機制（NotebookLM 式可驗證引用）
 
 > 承上一條：把正確 metadata 餵給 LLM 只解決「它沒資料可用」，**不保證它聽話**。本次補上不依賴 LLM 自律的機制。原 `validate_output()` 只檢查程式碼洩漏，對「內容是否真的來自教材」零檢查。

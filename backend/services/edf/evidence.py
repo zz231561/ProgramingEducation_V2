@@ -13,7 +13,7 @@ from core.config import settings
 from core.llm_params import chat_model_kwargs
 from core.errors import AppError
 from .models import EvidenceResult, CONCEPT_TAGS
-from services.security.sanitizer import wrap_student_code
+from services.security.sanitizer import wrap_student_code, wrap_student_input
 
 logger = logging.getLogger(__name__)
 
@@ -41,8 +41,12 @@ SYSTEM_PROMPT = f"""\
 - bloom_level: 1-6 整數（1=REMEMBER, 2=UNDERSTAND, 3=APPLY, 4=ANALYZE, 5=EVALUATE, 6=CREATE）
 - bloom_reasoning: 判斷 Bloom 等級的依據（一句話）
 - code_analysis: 程式碼問題的詳細分析（2-3 句話，供教學策略使用）
+- is_on_topic: 布林值 — 學生的提問是否與 C++ 程式學習相關
 
 判斷規則：
+- is_on_topic 只在提問明顯與程式學習無關時才為 false（閒聊、時事、生活話題等）。
+  以下一律視為 true：任何程式問題、對教材/影片/課程的詢問（例如「老師上課有講嗎」）、
+  對錯誤訊息的困惑、極簡短但語境上在求助的訊息（例如「?」「這是什麼意思」）
 - bloom_level 根據學生「嘗試做的事」判斷，不是根據錯誤嚴重度
 - concept_tags 最多選 3 個最相關的
 - 若程式碼正確無誤，error_type 為 "none"，仍需分析涉及的概念和 Bloom 等級
@@ -55,6 +59,7 @@ def _build_user_prompt(
     stderr: str,
     compile_output: str,
     reflection_summary: str = "",
+    question: str = "",
 ) -> str:
     """組裝送給 LLM 的使用者 prompt（XML 標籤隔離學生程式碼）。
 
@@ -62,6 +67,10 @@ def _build_user_prompt(
     為何加在最後：避免反思內容稀釋 LLM 對程式碼/錯誤訊息的關注（核心仍是程式碼分析）。
     """
     parts = [wrap_student_code(source_code)]
+
+    # 學生提問是 is_on_topic 判斷的唯一依據；沿用 sanitizer 包裝防 prompt injection
+    if question:
+        parts.append(wrap_student_input(question))
 
     if compile_output:
         parts.append(f"編譯器輸出:\n```\n{compile_output}\n```")
@@ -85,6 +94,7 @@ async def analyze_evidence(
     stderr: str = "",
     compile_output: str = "",
     reflection_summary: str = "",
+    question: str = "",
 ) -> EvidenceResult:
     """呼叫 LLM 分析程式碼，回傳結構化 Evidence。
 
@@ -93,7 +103,7 @@ async def analyze_evidence(
     """
     client = _get_client()
     user_prompt = _build_user_prompt(
-        source_code, stdout, stderr, compile_output, reflection_summary
+        source_code, stdout, stderr, compile_output, reflection_summary, question
     )
 
     try:

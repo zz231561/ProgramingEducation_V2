@@ -59,6 +59,8 @@
   - **7-1a-6 效能根因排除 ✅**（2026-08-05）：兩個僅生產環境出現的問題疊加致「頁面 10 秒」——① Node DNS IPv6 逾時耗盡 libuv threadpool（web 加 `NODE_OPTIONS=--dns-result-order=ipv4first` + `UV_THREADPOOL_SIZE=32`，**環境變數不在版控，見 deployment.md**）② Zeabur 邊緣宣告 HTTP/3 使瀏覽器走 UDP（`next.config.ts` 加 `Alt-Svc: clear`）；實測 137KB 檔案 **18.50 秒 → 166ms**
   - **Judge0 策略**：先用 RapidAPI（免費 50 次/天）跑通 golden path，自架延至 2026-12（B 機屆時再租，需 Ubuntu 24.04 + GRUB cgroup v1）
   - **已知限制**：`zeabur.app` 是公共後綴無法登記 Google 授權網域 → 現用 OAuth 測試模式（**100 人上限**）；2027-01 可用性評估前建議購自訂網域送驗證
+  - **6-M2 模型升級 ✅**（2026-08-05）：全面轉 gpt-5.6 世代——對話/分析/生成＝`gpt-5.6-luna`、審查/內容＝`gpt-5.6-terra`；單次互動省 74%（$0.00316→$0.00081），100 人月成本 $25.3→$6.5（業界基準 CS50.ai $1.90/學生/月）
+  - **6-M3 成本控制 ✅**：離題分流（搭 Evidence 呼叫零額外成本、Feedback input 省 92%、**不用黑名單避免誤傷「這題老師上課有講嗎」**）+ 每日配額 60 次/人（僅 LLM 端點）；K4e 防幻覺三層（機械攔截未 grounded 引用 + 誠實說教材沒提 + citations 原文核對 UI）
 
 ## 文件索引
 > 本文件目標 ≤ 60 行。新增內容先判斷歸屬，禁止回填 roadmap/日誌/UI 參數/Schema。

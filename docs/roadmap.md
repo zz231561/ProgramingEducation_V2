@@ -150,6 +150,8 @@
 > **選型表**：對話組（EDF Feedback）+ 分析組（Evidence / Reflection / Comprehension 評分）= `gpt-5.4-mini`（K4d 實測不足再升 5.4）｜生成組（Quiz generate / Hint / Comprehension 出題）= `gpt-5-mini`｜審查組（Quiz validate）= `gpt-5.4`｜Unit content 6-2b 批次 = `gpt-5.4`（教科書本體，品質優先）｜Embedding 維持 `text-embedding-3-small`（861 chunks 已入庫不重嵌）。
 > **費用**：一次性批次 ≈ $6.6（content $4 + 題庫生成 $1 + 審查 $1.6）；儲值 $10；上線後即時互動估 $35-40/月（100 學生）。不採 OpenAI Batch API（省 <$1.5 不值得改寫非同步流程）。
 - [x] 6-M1 分組模型環境變數（2026-07-06 ✅）：config 三組變數 + fallback property + 11 個呼叫點切換 + .env 套用選型表；608 tests 全綠
+- [x] 6-M2 模型全面升級 gpt-5.6 世代（2026-08-05 實測定案，取代上表選型）：對話+分析+生成＝`gpt-5.6-luna`（$0.20/$1.20）、審查+內容＝`gpt-5.6-terra`（$2.00/$12）；**每項都更便宜且更新世代**，單次互動 $0.00316 → $0.00081（省 74%），100 人×80 則/月 $25.3 → $6.5。修 `core/llm_params.py`——gpt-5.6 拒收 `temperature` 也拒收 `reasoning_effort`（原只認 `gpt-5-` 前綴 → 502）
+- [x] 6-M3 成本控制三層（2026-08-05）：① 主題限制寫進 Evidence prompt ② **離題分流**（`services/edf/off_topic.py`——判斷搭既有 Evidence 呼叫零額外成本、Feedback input 1699→135 省 92%、`dialogue_act=off_topic` 回填供評估期統計）③ **每日配額** `RATE_LIMIT_LLM_PER_DAY=60`（僅 scope=llm、UTC 分 key、超額明示明日重置）；+10 tests（773）。**決策：不做上課日分級配額**——省的錢遠小於複雜度且傷週末複習體驗；業界基準 CS50.ai 為 $1.90/學生/月
 
 ### 6-R 健壯性強化（2026-07-04 架構審查新增，同日完成）✅
 > 背景：上線前架構審查發現三個系統性缺口：可觀測性為零（500 不留痕）、安全規範未落地（rate limit / token exp 只在文件）、外部依賴網路例外未馴服。全部本機完成 + 測試驗證（後端 513 tests 全綠，+14 新測試）。

@@ -7,7 +7,7 @@ from sqlalchemy import select, desc, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from models.chat import ChatSession, ChatMessage, MessageRole
+from models.chat import ChatSession, ChatMessage, DialogueAct, MessageRole
 from models.reflection import Reflection
 from services.analytics import classify_dialogue_act
 from services.edf.evidence import analyze_evidence
@@ -129,8 +129,12 @@ async def interact(
     compile_output = (execution_result or {}).get("compile_output", "")
 
     evidence = await analyze_evidence(
-        code, stdout, stderr, compile_output, reflection_evidence_summary
+        code, stdout, stderr, compile_output, reflection_evidence_summary, question
     )
+
+    # 離題判定回填 dialogue_act（5-2c 啟發式無此訊號）——供評估期統計學生離題比例
+    if not evidence.is_on_topic and user_msg.dialogue_act is None:
+        user_msg.dialogue_act = DialogueAct.OFF_TOPIC.value
 
     # 精熟度更新（roadmap 2-3b）— 在 Feedback 之前跑，確保 BKT state 與此次互動同步
     # 容錯：mastery 失敗不阻擋教學回應（與 RAG 同款處理）

@@ -4,6 +4,7 @@
 """
 
 import json
+import logging
 
 from openai import AsyncOpenAI
 from pydantic import ValidationError
@@ -13,6 +14,8 @@ from core.llm_params import chat_model_kwargs
 from core.errors import AppError
 from .models import EvidenceResult, CONCEPT_TAGS
 from services.security.sanitizer import wrap_student_code
+
+logger = logging.getLogger(__name__)
 
 _client: AsyncOpenAI | None = None
 
@@ -105,6 +108,10 @@ async def analyze_evidence(
             ),
         )
     except Exception as e:
+        logger.warning(
+            "Evidence LLM 呼叫失敗（model=%s）：%s: %s",
+            settings.LLM_MODEL, type(e).__name__, e,
+        )
         raise AppError(502, "LLM_ERROR", f"AI 服務暫時不可用：{e}") from e
 
     raw = response.choices[0].message.content or "{}"

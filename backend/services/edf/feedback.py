@@ -6,6 +6,7 @@ RAG（K4b）：每次互動都檢索，由相似度分數決定是否注入（ra
 K-Graph state（K4a）：學生 mastery 狀態 + 鷹架指令，由 caller 預先渲染傳入。
 """
 
+import logging
 import re
 
 from openai import AsyncOpenAI
@@ -18,6 +19,8 @@ from services.rag import RetrievedChunk
 from services.security.sanitizer import wrap_student_input
 
 from .decision import TeachingStrategy
+
+logger = logging.getLogger(__name__)
 from .models import EvidenceResult
 
 _client: AsyncOpenAI | None = None
@@ -185,6 +188,12 @@ async def generate_feedback(
             ),
         )
     except Exception as e:
+        # 502 是預期內的錯誤碼，不會進 unhandled_error_handler 的 traceback logging——
+        # 沒有這行，生產環境只會留下一句 "502 Bad Gateway"，查不到任何原因
+        logger.warning(
+            "Feedback LLM 呼叫失敗（model=%s）：%s: %s",
+            settings.LLM_MODEL, type(e).__name__, e,
+        )
         raise AppError(502, "LLM_ERROR", f"AI 服務暫時不可用：{e}") from e
 
     raw = response.choices[0].message.content or ""

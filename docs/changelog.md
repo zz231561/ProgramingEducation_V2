@@ -1,5 +1,18 @@
 # 變更日誌
 
+## [2026-08-05] — fix(edf)：Coddy 影片引用改為真實出處 + 可點擊時間連結（K4d 驗收回饋）
+
+### Fixed
+- **Coddy 的影片時間戳是幻覺**（使用者驗收發現）：`feedback.py` 組 prompt 時只注入 `chunk.text`，**完全沒帶 metadata** → LLM 手上沒有任何時間資訊，卻仍輸出「影片 01:22～01:40」這類看似精確的內容。而 RAG chunk 的 metadata 其實一應俱全（`title_zh` / `youtube_id` / `start_time_seconds` / `end_time_seconds`），只是從未被使用
+- **修法**：新增 `_format_rag_chunk()`，每則片段標示「出處：{章節名稱} {mm:ss}｜連結：{帶 t= 參數的 YouTube URL}」；prompt 加 `_CITATION_RULE` 三條規則——只能用標示的出處、**嚴禁自行推測時間點**、必須輸出 Markdown 連結格式；metadata 不齊的片段不附出處，規則要求該片段不提時間
+- **前端**（`components/ui/markdown.tsx`）：補 `a` 元件（`text-text-link` + 底線 + `target="_blank"` + `rel="noopener noreferrer"`）——Coddy 回覆本就走 react-markdown 渲染，補上樣式後連結即可點擊
+
+### Verified
+- 本機真實 LLM 實測：輸出 `[C++的break與continue 04:05](...&t=245s)`、`[C++的while迴圈 07:04](...&t=424s)`，章節名稱與秒數換算皆正確（245s=04:05、424s=07:04）且來自真實 metadata
+- 後端 750 passed；web tsc / eslint 綠
+
+---
+
 ## [2026-08-05] — perf(deploy)：生產環境「頁面載入十秒」根因排除 — DNS threadpool + HTTP/3
 
 > 使用者回報 Learn / Knowledge / 首次登入皆需 10 秒以上（一次錄製達 3 分鐘）。逐層量測後確認是**兩個獨立的生產環境問題疊加**，本機開發（localhost）兩者皆不會出現。

@@ -97,14 +97,49 @@ def build_system_prompt(
         blocks.append(reflection_block)
 
     if rag_chunks:
-        rag_lines = [f"[{i}] {c.text.strip()}" for i, c in enumerate(rag_chunks, 1)]
+        rag_lines = [_format_rag_chunk(i, c) for i, c in enumerate(rag_chunks, 1)]
         rag_block = (
             "教材參考片段（請以這些教材內容為依據引導學生，避免自編未驗證的細節）：\n"
             + "\n\n".join(rag_lines)
+            + "\n\n"
+            + _CITATION_RULE
         )
         blocks.append(rag_block)
 
     return "\n\n".join(blocks)
+
+
+# === RAG 片段格式化（K4b+：帶章節名稱與可點擊時間戳）===
+
+# 影片引用規則：chunk metadata 已提供確切章節與時間，杜撰時間戳是先前實測到的問題
+_CITATION_RULE = (
+    "引用影片時的規則：\n"
+    "- 只能使用上面每則片段標示的「出處」資訊，**嚴禁自行推測或編造時間點**\n"
+    "- 必須寫成 Markdown 連結格式：[章節名稱 分:秒](連結)，例如 [甚麼是程式語言 01:03](https://...)\n"
+    "- 沒有出處資訊的片段就不要提時間點，直接說明概念即可"
+)
+
+
+def _format_timestamp(seconds: float) -> str:
+    """秒數 → mm:ss（超過一小時仍以總分鐘數表示，教學影片不會這麼長）。"""
+    minutes, secs = divmod(int(seconds), 60)
+    return f"{minutes:02d}:{secs:02d}"
+
+
+def _format_rag_chunk(index: int, chunk: RetrievedChunk) -> str:
+    """組裝單則教材片段，metadata 齊全時附上章節名稱與帶時間參數的 YouTube 連結。"""
+    meta = chunk.metadata or {}
+    title = meta.get("title_zh")
+    youtube_id = meta.get("youtube_id")
+    start = meta.get("start_time_seconds")
+
+    if title and youtube_id and start is not None:
+        url = f"https://www.youtube.com/watch?v={youtube_id}&t={int(start)}s"
+        header = f"[{index}] 出處：{title} {_format_timestamp(start)}｜連結：{url}"
+    else:
+        # ingest 較早的片段可能缺 metadata — 不附出處，prompt 規則會要求不提時間
+        header = f"[{index}]"
+    return f"{header}\n{chunk.text.strip()}"
 
 
 # === 輸出驗證 ===

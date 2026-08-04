@@ -46,6 +46,17 @@ export const MARKDOWN_COMPONENTS = {
   strong: ({ children }: { children?: React.ReactNode }) => (
     <strong className="text-text-primary">{children}</strong>
   ),
+  // Coddy 引用教材時輸出帶 t= 參數的 YouTube 連結，需另開分頁跳到該時間點
+  a: ({ href, children }: { href?: string; children?: React.ReactNode }) => (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="text-text-link underline underline-offset-2 hover:no-underline"
+    >
+      {children}
+    </a>
+  ),
 };
 
 /** 渲染 Markdown 字串（GFM 支援：列表、表格、刪除線等）。 */

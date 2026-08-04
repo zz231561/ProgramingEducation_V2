@@ -93,6 +93,30 @@ def copy_direct(src_cur, dst_cur, table: str, dry_run: bool) -> int:
     return len(rows)
 
 
+def sync_concept_metadata(src_cur, dst_cur, dry_run: bool) -> tuple[int, int]:
+    """以 tag 為鍵同步 concepts 的影片 metadata，回傳 (待更新數, 生產缺漏數)。
+
+    migration 把 video_youtube_id seed 成 NULL（6-1d 才由 patch script 寫入本機），
+    生產庫因此沒有影片 ID——前端 concept-tab 會 early return 成 placeholder，
+    連已灌好的 grounded 教材都不渲染。
+    """
+    dst_cur.execute("select count(*) from concepts where video_youtube_id is null")
+    missing = dst_cur.fetchone()[0]
+
+    src_cur.execute(
+        "select tag, video_youtube_id, video_duration_seconds from concepts "
+        "where video_youtube_id is not null"
+    )
+    rows = src_cur.fetchall()
+    if rows and not dry_run:
+        dst_cur.executemany(
+            "update concepts set video_youtube_id = %s, video_duration_seconds = %s "
+            "where tag = %s",
+            [(yid, dur, tag) for tag, yid, dur in rows],
+        )
+    return len(rows), missing
+
+
 def copy_staging_mapped(src_cur, dst_cur, dry_run: bool) -> tuple[int, list[str]]:
     """搬 unit_content_staging，concept_id 依 tag 重新映射到生產庫的 UUID。"""
     cols = columns_of(src_cur, MAPPED_TABLE)
@@ -191,6 +215,9 @@ def main() -> None:
     for table, s, before, n in plan:
         print(f"{table:24} {s:>8} {before:>10} {n:>8}")
 
+    synced, missing = sync_concept_metadata(src_cur, dst_cur, args.dry_run)
+    print(f"\nconcepts 影片 metadata：生產原本 {missing} 筆缺 video_youtube_id → 同步 {synced} 筆")
+
     if unmatched:
         print(f"\n[警告] {len(unmatched)} 個 concept tag 在生產庫找不到：{unmatched[:5]}")
 
@@ -202,6 +229,8 @@ def main() -> None:
         print("\n完成。生產庫現況：")
         for table in (*DIRECT_TABLES, MAPPED_TABLE):
             print(f"  {table:24} {count_of(dst_cur, table):>8}")
+        dst_cur.execute("select count(*) from concepts where video_youtube_id is not null")
+        print(f"  {'concepts(有影片ID)':24} {dst_cur.fetchone()[0]:>8}")
 
     src.close()
     dst.close()

@@ -1,5 +1,17 @@
 # 變更日誌
 
+## [2026-08-05] — fix(deploy)：生產環境影片 ID 全 NULL — 播種 script 補 concepts metadata 同步
+
+### Fixed
+- **生產 Learn 概念說明只顯示 placeholder**（使用者實測回報）：根因**不是**教材沒灌成功，而是 `concepts.video_youtube_id` 在生產庫全為 NULL——migration `e1f2a3b4c5d6:134` 把它 seed 成 `None`，62 個真實影片 ID 是 6-1d 用 `patch_video_metadata.py` 寫進**本機** DB 的，屬「本機有、migration 沒有」的第三類缺口（前兩類＝concept UUID 隨機、`data_codedge_rag` 執行期建表）
+- **放大效應**：`web/components/learn/concept-tab.tsx:32` 在 `video_youtube_id` 為 null 時**整個 tab early return placeholder**，連已經灌好的 grounded 教材都不渲染 → 症狀看起來像「播種失敗」，實際只差影片 ID
+- **修法**：`seed_production_content.py` 新增 `sync_concept_metadata()`，以 tag 為鍵 UPDATE 生產庫的 `video_youtube_id` / `video_duration_seconds`
+
+### Verified
+- 重建 `prod_test` 完整重現症狀（migration 後 62 筆全 NULL）→ 執行修正後 script → **0 筆仍為 NULL**，抽查 v01/v02/v03 的 youtube_id 與 duration 與本機一致
+
+---
+
 ## [2026-08-05] — feat(scripts)：測試/生產環境隔離防護 + 生產播種實機完成
 
 ### Added

@@ -23,6 +23,7 @@ import sys
 from core.database import async_session
 from services.quiz.batch_generator import (
     ConceptBatchResult,
+from scripts._db_guard import require_local_db
     generate_all,
     list_target_concepts,
 )
@@ -109,6 +110,7 @@ async def _run(only: int | None, force: bool) -> int:
 
 
 async def main() -> int:
+    require_local_db("題庫批次生成")
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--only", type=int, default=None, help="只處理特定 video_order"

@@ -1,5 +1,22 @@
 # 變更日誌
 
+## [2026-08-05] — feat(scripts)：測試/生產環境隔離防護 + 生產播種實機完成
+
+### Added
+- **`backend/scripts/_db_guard.py`**：所有 script 共用 `core.database` 讀 `settings.DATABASE_URL`，而對生產庫做維護時 `export DATABASE_URL=<生產>` 會**殘留在同一個終端機**——之後跑任何 script 都會誤寫生產庫（本次部署過程中就已具備此條件）。兩級防護：
+  - `require_local_db()` — **無覆寫選項，非本機一律中止**。掛 `seed_fake_students`（假帳號污染實驗資料）/ `generate_unit_content` / `generate_unit_questions` / `ingest_transcripts_rag` / `rereview_questions`（本機生成、之後用播種搬運，沒有對生產跑的理由）
+  - `confirm_remote_db()` — 允許但需互動輸入 `yes`（非互動環境用 `ALLOW_PRODUCTION_WRITE=1`）。掛 `promote_unit_content` / `patch_video_metadata`（生產庫的合法維護操作）
+  - 訊息一律遮蔽密碼（`postgres:***@host`），並提示「這通常是變數殘留，請開新終端機或 unset」
+
+### Verified
+- 假 seeder 指向生產 → 中止；本機 → 正常；promote 指向遠端輸入 no → 取消；後端全量 **750 passed**
+- **生產播種實機完成**：documents 64 / questions 628 / unit_content_staging 62 / data_codedge_rag 861
+
+### 決策記錄
+- DEV 工具安全性複查（使用者提問）：`/dev/reset`·`/dev/mastery`·`/dev/role`·`/dev/simulate-failures` **全部已限定 `user.id`**（`services/dev_tools.py` 每條 delete 都帶 user_id 條件），`/dev/questions` 唯讀、幽靈解鎖純前端 → **無需修改**；生產開啟 DEV 僅需 `DEV_MODE_ENABLED=true` + email 白名單
+
+---
+
 ## [2026-08-04] — feat(deploy)：生產資料播種 script（7-1a-3）+ Judge0 RapidAPI 鏈路實測
 
 ### Added

@@ -32,6 +32,7 @@ from sqlalchemy import select, update
 
 from core.database import async_session
 from models.concept import Concept
+from scripts._db_guard import confirm_remote_db
 
 # script 位於 backend/scripts/，CSV 位於 project_root/data/teaching_content/
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
@@ -201,6 +202,7 @@ def print_report(
 
 
 async def main() -> int:
+    confirm_remote_db("video metadata patch")
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--csv", default=str(DEFAULT_CSV),

@@ -37,6 +37,7 @@ from sqlalchemy import text as sa_text
 
 from core.database import async_session
 from services.rag.pipeline import VECTOR_TABLE_NAME, get_ingestion_pipeline
+from scripts._db_guard import require_local_db
 
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 CORRECTED_DIR = _PROJECT_ROOT / "data" / "teaching_content" / "transcripts_corrected"
@@ -185,6 +186,7 @@ async def reset_video_transcripts() -> int:
 
 
 async def main() -> int:
+    require_local_db("字幕 RAG ingest")
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--only", type=int, default=None,
                         help="Only ingest this video_order")

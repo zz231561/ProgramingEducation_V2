@@ -26,6 +26,7 @@ from core.database import async_session
 from core.errors import AppError
 from models.quiz import Question, StudentAnswer
 from services.quiz.validate import validate_question
+from scripts._db_guard import require_local_db
 
 
 async def _run(dry_run: bool, only_source: str | None, only_type: str | None) -> int:
@@ -81,6 +82,7 @@ async def _run(dry_run: bool, only_source: str | None, only_type: str | None) ->
 
 
 async def main() -> int:
+    require_local_db("題庫批次複審")
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--dry-run", action="store_true", help="只報告不刪除")
     parser.add_argument(

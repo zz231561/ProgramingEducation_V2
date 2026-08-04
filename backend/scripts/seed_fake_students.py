@@ -19,6 +19,7 @@ import uuid
 
 from core.database import async_session
 from services.dev_seed import seed_fake_students
+from scripts._db_guard import require_local_db
 
 
 def _parse_args() -> argparse.Namespace:
@@ -30,6 +31,7 @@ def _parse_args() -> argparse.Namespace:
 
 
 async def main() -> int:
+    require_local_db("DEV-E 假學生 seeder")
     args = _parse_args()
     class_id = uuid.UUID(args.class_id) if args.class_id else None
     async with async_session() as db:

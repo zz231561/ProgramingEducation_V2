@@ -23,6 +23,7 @@ from core.database import async_session
 from models.concept import Concept
 from models.unit_content_staging import StagingStatus, UnitContentStaging
 from services.learning.unit_content_promote import promote_concept
+from scripts._db_guard import confirm_remote_db
 
 _REMOVED_SECTIONS = ("summary", "code_examples")
 
@@ -60,6 +61,7 @@ async def _run(only: int | None) -> int:
 
 
 def main() -> int:
+    confirm_remote_db("staging promote")
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--only", type=int, default=None, help="僅處理指定 video_order")
     args = parser.parse_args()

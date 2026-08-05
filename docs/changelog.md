@@ -1,5 +1,32 @@
 # 變更日誌
 
+## [2026-08-05] — fix(workspace)：檔名鎖定 .cpp 尾綴 + 點檔名改名 + 首次草稿併發修復（U2e 驗收回饋）
+
+> 使用者生產環境驗收回報三點：①「點資料夾剛開始跳錯誤、之後正常」②「存成 main.md 也能執行，副檔名形同虛設」③「最上方檔名點不動、無法改名」。
+
+### Fixed — 副檔名鎖定（②，使用者裁決：鎖尾綴而非靜默改寫）
+- **確認副檔名完全無作用**：`services/judge0.py:13` 寫死 `CPP_LANGUAGE_ID = 54`，前端執行時只送 code 不送檔名 → `main.md` / `main` / `main.txt` 都以 C++ 編譯。後端原本只驗長度 1–100
+- **後端 `normalize_file_name()`**（`services/workspace_files.py`）：`.cpp` 結尾（不分大小寫）保持原樣，否則**補上**（不改寫既有副檔名——使用者明確表示 `main.md → main.cpp` 的靜默轉換很怪）；補完超長回 422。`save_file` / `rename_file` 皆走此規則，API 直呼也繞不過
+- **前端 `.cpp` 為鎖定尾綴**（新元件 `file-name-input.tsx`）：輸入框只編輯主檔名，尾綴以固定灰字呈現於框內、無法刪改；另存對話框 / 側欄儲存 / 改名列三處共用。另存對話框補一行「程式一律以 C++ 編譯執行」
+- 存檔後**以伺服器回傳的檔名為準**（原本沿用送出的字串，補副檔名後會與 DB 不一致）；實作題 handoff 自動命名同步改為「{單元} 程式實作題.cpp」，維持反思按鈕的檔名比對成立
+
+### Added — 點檔名就地重新命名（③；使用者選「真正重新命名」）
+- 後端 `PATCH /code/files`（`rename_file`）：以 `(user, name)` 定位 → **同一列改名不複製**（回傳 id 不變），新名已存在回 409 `CODE_FILE_NAME_TAKEN`、不存在 404；**草稿的 `opened_name` 一併跟著改**，重整後仍停在同一檔
+- 前端 `file-name-field.tsx`：Toolbar 檔名改為可點按鈕 → 就地編輯（Enter 確認 / Esc 取消 / 失焦取消 / 錯誤以浮層顯示）。**未命名草稿**點檔名則開啟另存對話框（還沒有檔案可改名）
+
+### Fixed — 首次草稿併發建立回 500（①的可證缺陷）
+- `save_draft` 原本「查無草稿 → INSERT」，但**進頁時 handoff 開檔與自動存檔可能同時發出**，`uq_code_files_draft` partial unique index 會擋下較慢者 → IntegrityError 冒泡成 500。**只在第一次（草稿列還不存在時）可能發生，之後全走 UPDATE**，症狀與回報的「剛開始有錯、後來都正常」吻合
+- 修法比照 6-R7 `get_or_create_user`：捕捉 IntegrityError → rollback → 重查對方建立的那列繼續更新
+- ⚠ **未能確認這就是使用者當下看到的錯誤**（列表載入與草稿存檔是不同端點，且錯誤已無法重現）→ 併同下一項讓下次可辨識
+
+### Changed — 側欄錯誤可診斷
+- 列表載入失敗原本一律顯示「載入檔案列表失敗」吞掉真因 → 改為附上後端訊息與 HTTP status（如 `後端回應逾時（504）`）+ **重試按鈕**（不必收合再展開）
+
+### Tests
+- `tests/test_code_files.py` +10：副檔名正規化 5 例（`main`/`main.cpp`/`main.CPP`/`main.md`/前後空白）+ 補完超長 422 + 改名成功（含草稿 opened_name 跟隨、id 不變）+ 改名撞名 409 + 他人檔案 404 + 首次草稿並發三發皆 200；後端全量 **783 passed**，web build + tsc + eslint 綠
+
+---
+
 ## [2026-08-05] — docs：生產庫播種狀態複驗（7-1a-4 收尾，無待補項）
 
 > 承接「concepts 影片 ID 待補」的掛帳。開公網後以 `--dry-run --force` 查驗，結果**該項在上個 session 修完 script 後就已執行完畢**，只是狀態文件未同步 → 本次為純狀態修正，**未對生產庫做任何寫入**（dry-run 已 rollback）。

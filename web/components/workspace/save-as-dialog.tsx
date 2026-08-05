@@ -9,6 +9,9 @@ import { useEffect, useRef, useState } from "react";
 import { Loader2 } from "lucide-react";
 
 import { ApiRequestError } from "@/lib/api";
+import { toStem, withSuffix } from "@/lib/code-files";
+
+import { FileNameInput } from "./file-name-input";
 
 export function SaveAsDialog({
   suggestedName,
@@ -20,7 +23,7 @@ export function SaveAsDialog({
   onSave: (name: string) => Promise<void>;
   onClose: () => void;
 }) {
-  const [name, setName] = useState(suggestedName);
+  const [stem, setStem] = useState(() => toStem(suggestedName));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -32,11 +35,11 @@ export function SaveAsDialog({
   }, []);
 
   const submit = async () => {
-    if (!name.trim() || busy) return;
+    if (!stem.trim() || busy) return;
     setBusy(true);
     setError(null);
     try {
-      await onSave(name.trim());
+      await onSave(withSuffix(stem));
       onClose();
     } catch (e) {
       setError(e instanceof ApiRequestError ? e.body.message : "儲存失敗");
@@ -64,17 +67,15 @@ export function SaveAsDialog({
           }}
           className="mt-3 flex items-center gap-2"
         >
-          <input
+          <FileNameInput
             ref={inputRef}
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            maxLength={100}
-            placeholder="檔名"
-            className="h-8 min-w-0 flex-1 rounded-md border border-border-default bg-bg-canvas px-2 text-sm text-text-primary focus:border-accent-blue focus:outline-none"
+            stem={stem}
+            onStemChange={setStem}
+            ariaLabel="檔名"
           />
           <button
             type="submit"
-            disabled={!name.trim() || busy}
+            disabled={!stem.trim() || busy}
             className="flex h-8 shrink-0 items-center gap-1.5 rounded-md bg-btn-primary-bg px-3 text-sm font-medium text-white transition-colors hover:bg-btn-primary-hover disabled:opacity-50"
           >
             {busy && <Loader2 className="size-3.5 animate-spin" />}
@@ -88,7 +89,9 @@ export function SaveAsDialog({
             取消
           </button>
         </form>
-        <p className="mt-2 text-[10px] text-text-muted">同名檔案將被覆蓋</p>
+        <p className="mt-2 text-[10px] text-text-muted">
+          同名檔案將被覆蓋；程式一律以 C++ 編譯執行
+        </p>
         {error && <p className="mt-1 text-xs text-accent-red">{error}</p>}
       </div>
     </div>

@@ -8,7 +8,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { saveCodeFile, saveDraft } from "@/lib/code-files";
+import { renameCodeFile, saveCodeFile, saveDraft } from "@/lib/code-files";
 
 const SAVED_FLASH_MS = 1500;
 
@@ -62,10 +62,11 @@ export function useNamedFile({
   const saveNamed = useCallback(
     async (name: string) => {
       const code = getCode();
-      await saveCodeFile(name, code);
-      setCurrentName(name);
+      // 以伺服器回傳的檔名為準（後端會補上 .cpp 副檔名）
+      const saved = await saveCodeFile(name, code);
+      setCurrentName(saved.name);
       namedDirtyRef.current = false;
-      void saveDraft(code, name).catch(() => {}); // 持久化檔名關聯
+      void saveDraft(code, saved.name).catch(() => {}); // 持久化檔名關聯
       setRefreshToken((n) => n + 1);
       setSavedFlash(true);
       if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
@@ -75,6 +76,18 @@ export function useNamedFile({
       );
     },
     [getCode],
+  );
+
+  /** 重新命名目前開啟的檔案（同一份檔案改名，不留舊檔）。 */
+  const renameCurrent = useCallback(
+    async (newName: string) => {
+      if (!currentName) return;
+      const renamed = await renameCodeFile(currentName, newName);
+      setCurrentName(renamed.name);
+      void saveDraft(getCode(), renamed.name).catch(() => {});
+      setRefreshToken((n) => n + 1);
+    },
+    [currentName, getCode],
   );
 
   /** Ctrl/Cmd+S 入口：已命名直接覆寫，失敗或未命名開對話框。 */
@@ -139,6 +152,7 @@ export function useNamedFile({
     markLoaded,
     restoreName,
     saveNamed,
+    renameCurrent,
     newFile,
     resetToDefault,
   };

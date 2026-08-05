@@ -16,6 +16,10 @@ from core.database import Base
 MAX_CODE_CHARS = 100_000
 # 每人命名檔案數量上限（service 層把關）
 MAX_FILES_PER_USER = 50
+# 檔名長度上限（與 String(100) 一致）
+MAX_NAME_CHARS = 100
+# 命名檔案固定副檔名（平台只編譯 C++；service 層正規化把關）
+CODE_FILE_SUFFIX = ".cpp"
 
 
 class CodeFile(Base):

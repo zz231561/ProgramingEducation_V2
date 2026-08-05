@@ -146,7 +146,7 @@ function ReflectionSummary({
 }) {
   const handleGoWorkspace = () =>
     setActiveReflectionId(reflection.id, {
-      fileName: "程式實作題",
+      fileName: "程式實作題.cpp",
       starterCode,
     });
   return (

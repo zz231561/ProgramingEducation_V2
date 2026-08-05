@@ -2,8 +2,16 @@
 
 import { FilePlus, FolderOpen, ListChecks, Play } from "lucide-react";
 
+import { FileNameField } from "./file-name-field";
+
 interface ToolbarProps {
   fileName?: string;
+  /** 已存成命名檔案（可就地改名；未命名則點檔名 → 另存） */
+  isNamed?: boolean;
+  /** 重新命名目前檔案 */
+  onRename?: (newName: string) => Promise<void>;
+  /** 未命名時點檔名的動作（開啟另存對話框） */
+  onSaveAs?: () => void;
   /** 程式碼自上次成功執行後是否已修改 */
   isDirty?: boolean;
   onRun?: () => void;
@@ -31,6 +39,9 @@ interface ToolbarProps {
  */
 export function Toolbar({
   fileName = "main.cpp",
+  isNamed = false,
+  onRename,
+  onSaveAs,
   isDirty = false,
   onRun,
   isRunning = false,
@@ -93,7 +104,16 @@ export function Toolbar({
           title={isDirty ? "尚未執行此版本" : "已是最新執行版本"}
           aria-hidden
         />
-        <span className="text-sm text-text-primary">{fileName}</span>
+        {onRename && onSaveAs ? (
+          <FileNameField
+            name={fileName}
+            canRename={isNamed}
+            onRename={onRename}
+            onSaveAs={onSaveAs}
+          />
+        ) : (
+          <span className="text-sm text-text-primary">{fileName}</span>
+        )}
         {savedFlash && (
           <span className="text-xs text-accent-green" aria-live="polite">
             已儲存

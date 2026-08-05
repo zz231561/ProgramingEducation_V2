@@ -4,6 +4,25 @@
 
 import { api } from "./api";
 
+/**
+ * 命名檔案固定副檔名。副檔名對執行沒有作用（後端一律以 C++ 編譯），
+ * 鎖定收尾是為了不讓 `main.md` 這種檔名誤導學生；後端 `normalize_file_name` 同步把關。
+ */
+export const CODE_FILE_SUFFIX = ".cpp";
+
+/** 去掉固定副檔名，取得可編輯的主檔名。 */
+export function toStem(name: string): string {
+  return name.toLowerCase().endsWith(CODE_FILE_SUFFIX)
+    ? name.slice(0, -CODE_FILE_SUFFIX.length)
+    : name;
+}
+
+/** 主檔名補回固定副檔名（與後端正規化規則一致）。 */
+export function withSuffix(stem: string): string {
+  const s = stem.trim();
+  return s.toLowerCase().endsWith(CODE_FILE_SUFFIX) ? s : s + CODE_FILE_SUFFIX;
+}
+
 export interface CodeDraft {
   code: string;
   /** 目前開啟的命名檔案（重整/再登入後還原檔名關聯） */
@@ -58,6 +77,17 @@ export function saveCodeFile(name: string, code: string): Promise<CodeFileDetail
   return api<CodeFileDetail>("/code/files", {
     method: "PUT",
     body: JSON.stringify({ name, code }),
+  });
+}
+
+/** 重新命名（同一份檔案改名，不留舊檔）；名稱已存在時後端回 409。 */
+export function renameCodeFile(
+  oldName: string,
+  newName: string,
+): Promise<CodeFileMeta> {
+  return api<CodeFileMeta>("/code/files", {
+    method: "PATCH",
+    body: JSON.stringify({ old_name: oldName, new_name: newName }),
   });
 }
 

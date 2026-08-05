@@ -66,6 +66,7 @@ export default function WorkspacePage() {
     markLoaded,
     restoreName,
     saveNamed,
+    renameCurrent,
     newFile,
     resetToDefault,
   } = useNamedFile({
@@ -94,6 +95,7 @@ export default function WorkspacePage() {
     () => setSidePanel((p) => (p === "files" ? null : "files")),
     [],
   );
+  const openSaveAs = useCallback(() => setSaveAsOpen(true), [setSaveAsOpen]);
 
   // 訂閱 sessionStorage 變化，控制 toolbar dot 與「初次自動展開」
   useEffect(() => {
@@ -156,6 +158,9 @@ export default function WorkspacePage() {
     <div className="flex h-full flex-col">
       <Toolbar
         fileName={currentName ?? "main.cpp"}
+        isNamed={currentName !== null}
+        onRename={renameCurrent}
+        onSaveAs={openSaveAs}
         onRun={run}
         isRunning={isRunning}
         isDirty={isDirty}

@@ -23,6 +23,7 @@ from services.workspace_files import (
     get_draft,
     get_file,
     list_files,
+    rename_file,
     save_draft,
     save_file,
 )
@@ -39,6 +40,11 @@ class DraftIn(BaseModel):
 class SaveFileIn(BaseModel):
     name: str = Field(..., min_length=1, max_length=100)
     code: str = Field(default="", max_length=MAX_CODE_CHARS)
+
+
+class RenameFileIn(BaseModel):
+    old_name: str = Field(..., min_length=1, max_length=100)
+    new_name: str = Field(..., min_length=1, max_length=100)
 
 
 class CodeFileMetaOut(BaseModel):
@@ -117,6 +123,16 @@ async def save_code_file(
 ) -> CodeFileOut:
     file = await save_file(db, user.id, body.name, body.code)
     return CodeFileOut.from_model(file)
+
+
+@router.patch("/files", response_model=CodeFileMetaOut)
+async def rename_code_file(
+    body: RenameFileIn,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_db_user),
+) -> CodeFileMetaOut:
+    file = await rename_file(db, user.id, body.old_name, body.new_name)
+    return CodeFileMetaOut.from_model(file)
 
 
 @router.get("/files/{file_id}", response_model=CodeFileOut)

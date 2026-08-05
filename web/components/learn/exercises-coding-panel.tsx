@@ -24,7 +24,7 @@ export function CodingPanel({
   onStartReflect,
 }: {
   question: Question;
-  /** 單元標題 — Workspace 自動命名為「{unitTitle} 程式實作題」 */
+  /** 單元標題 — Workspace 自動命名為「{unitTitle} 程式實作題.cpp」 */
   unitTitle: string;
   phase: CodingPhase;
   reflection: Reflection | null;
@@ -68,7 +68,7 @@ export function CodingPanel({
       {phase === "done" && reflection && (
         <ReflectionDoneSummary
           reflection={reflection}
-          fileName={`${unitTitle} 程式實作題`}
+          fileName={`${unitTitle} 程式實作題.cpp`}
           starterCode={content.starter_code}
         />
       )}

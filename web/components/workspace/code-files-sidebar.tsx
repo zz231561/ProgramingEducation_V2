@@ -5,8 +5,8 @@
  * 另存命名檔案（同名覆蓋）+ 列表載入/刪除。
  */
 
-import { useEffect, useState } from "react";
-import { Loader2, Trash2, X } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { Loader2, RotateCw, Trash2, X } from "lucide-react";
 
 import { ApiRequestError } from "@/lib/api";
 import {
@@ -14,7 +14,10 @@ import {
   deleteCodeFile,
   getCodeFile,
   listCodeFiles,
+  withSuffix,
 } from "@/lib/code-files";
+
+import { FileNameInput } from "./file-name-input";
 
 export function CodeFilesSidebar({
   onSaveAs,
@@ -38,20 +41,34 @@ export function CodeFilesSidebar({
   refreshToken?: number;
 }) {
   const [files, setFiles] = useState<CodeFileMeta[] | null>(null);
-  const [name, setName] = useState("");
+  const [stem, setStem] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // 列表載入失敗（與操作失敗分開：只有這個狀態才顯示重試）
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [reloadToken, setReloadToken] = useState(0);
+
+  const reload = useCallback(() => setReloadToken((n) => n + 1), []);
 
   useEffect(() => {
     let cancelled = false;
+    setLoadError(null);
     listCodeFiles().then(
       (xs) => !cancelled && setFiles(xs),
-      () => !cancelled && setError("載入檔案列表失敗"),
+      (e) => {
+        if (cancelled) return;
+        // 帶出後端原因（如 BACKEND_TIMEOUT / 500），避免問題只剩「失敗」兩字
+        setLoadError(
+          e instanceof ApiRequestError
+            ? `${e.body.message}（${e.status}）`
+            : "無法連線至伺服器",
+        );
+      },
     );
     return () => {
       cancelled = true;
     };
-  }, [refreshToken]);
+  }, [refreshToken, reloadToken]);
 
   const run = async (fn: () => Promise<void>) => {
     setBusy(true);
@@ -67,8 +84,8 @@ export function CodeFilesSidebar({
 
   const save = () =>
     run(async () => {
-      await onSaveAs(name.trim()); // 成功後 refreshToken 遞增觸發重抓
-      setName("");
+      await onSaveAs(withSuffix(stem)); // 成功後 refreshToken 遞增觸發重抓
+      setStem("");
     });
 
   const load = (f: CodeFileMeta) =>
@@ -108,20 +125,19 @@ export function CodeFilesSidebar({
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            if (name.trim()) void save();
+            if (stem.trim()) void save();
           }}
           className="flex items-center gap-2"
         >
-          <input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            maxLength={100}
-            placeholder="檔名（同名覆蓋）"
-            className="h-7 min-w-0 flex-1 rounded-md border border-border-default bg-bg-canvas px-2 text-xs text-text-primary focus:border-accent-blue focus:outline-none"
+          <FileNameInput
+            stem={stem}
+            onStemChange={setStem}
+            size="xs"
+            ariaLabel="檔名（同名覆蓋）"
           />
           <button
             type="submit"
-            disabled={!name.trim() || busy}
+            disabled={!stem.trim() || busy}
             className="flex h-7 shrink-0 items-center gap-1 rounded-md bg-btn-primary-bg px-2.5 text-xs font-medium text-white transition-colors hover:bg-btn-primary-hover disabled:opacity-50"
           >
             {busy && <Loader2 className="size-3 animate-spin" />}
@@ -135,7 +151,20 @@ export function CodeFilesSidebar({
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto px-3 py-1">
-        {files === null && (
+        {loadError !== null && (
+          <div className="py-2">
+            <p className="text-xs text-accent-red">載入檔案列表失敗：{loadError}</p>
+            <button
+              type="button"
+              onClick={reload}
+              className="mt-1.5 flex items-center gap-1 rounded-md border border-border-default px-2 py-1 text-xs text-text-secondary hover:bg-surface-2 hover:text-text-primary"
+            >
+              <RotateCw className="size-3" />
+              重試
+            </button>
+          </div>
+        )}
+        {files === null && loadError === null && (
           <p className="py-2 text-xs text-text-muted">載入中…</p>
         )}
         {files?.length === 0 && (

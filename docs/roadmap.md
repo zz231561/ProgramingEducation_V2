@@ -294,6 +294,14 @@
   - [x] R5d UI 收斂（使用者回饋「進階：預先餵入很醜」）：`stdin-panel.tsx` 移除 → `args-panel.tsx`（僅 argv 單行，`codeUsesArgs` 為真才渲染）+ 靜態偵測函式移至 `lib/code-detect.ts`（`usesLocalTime` 供 Coddy UTC 說明）；context 移除 orphan `getStdin/setStdin`，批次降級路徑不再送 stdin
 - [ ] R6 收尾：教材健檢解除 20 支/天上限 + 額度文案清理（acceptance-checklist / CLAUDE.md）+ 30 並行壓測 + 文件同步
 
+### 7-U 上線後體驗優化（2026-08-06 使用者回饋定案）
+- [x] 7-U1 上下單元只在概念說明顯示（作答中跳單元非合理動線）
+- [x] 7-U2 **課程全解鎖**：generator 全 available + migration `u7d8e9f0a1b2` 轉既有 locked + 前端移除 ghostUnlock 整條線路（含 DEV 設定卡）；順序改由編號/狀態圖示呈現為建議路徑
+- [ ] 7-U3 教材出處：LEARN 與 Coddy 皆從 UI 移除（RAG 仍注入 prompt）+ 內文時間戳改**句尾註腳式播放標記**（▸ 0:15，hover 變藍）
+- [ ] 7-U4 終端機與執行歷史 per-file（每檔 20 次、5 檔 LRU）
+- [ ] 7-U5 靜態補全：關鍵字 + 常用 STL + 當前檔變數（CodeMirror；**不接 clangd LSP**——B 機 2GB 撐不住 30 個實例）
+- [ ] 7-U6 Coddy 分階段狀態文字（`/chat/interact` 改 SSE 推送 EDF 三層進度）
+
 ---
 
 ## 已確認決策

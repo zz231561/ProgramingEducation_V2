@@ -15,7 +15,6 @@ import { DevMasteryCard } from "./dev-mastery-card";
 import { DevQuestionBankCard } from "./dev-question-bank-card";
 import { DevResetCard } from "./dev-reset-card";
 import { DevRoleCard } from "./dev-role-card";
-import { DevUnlockCard } from "./dev-unlock-card";
 
 export function DevToolsSection() {
   const isDev = useDevMode();
@@ -34,7 +33,6 @@ export function DevToolsSection() {
       </p>
       <div className="mt-4 space-y-4">
         <DevRoleCard />
-        <DevUnlockCard />
         <DevMasteryCard />
         <DevDiagnosisCard />
         <DevQuestionBankCard />

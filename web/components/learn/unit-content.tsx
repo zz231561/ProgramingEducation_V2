@@ -40,8 +40,6 @@ interface Props {
   onStart: () => void;
   onComplete: () => void;
   busy: boolean;
-  /** 全開瀏覽（教師/DEV）：locked 單元標頭以「可學習」呈現，不顯示鎖頭。 */
-  ghostUnlock?: boolean;
 }
 
 const TABS: { key: Tab; label: string }[] = [
@@ -60,12 +58,11 @@ export function UnitContent({
   onStart,
   onComplete,
   busy,
-  ghostUnlock,
 }: Props) {
   const [tab, setTab] = useState<Tab>("concept");
   const role = useRole();
-  const displayStatus =
-    ghostUnlock && unit.status === "locked" ? "available" : unit.status;
+  // 7-U2 全解鎖後不應再有 locked；舊快照殘留一律以「可學習」呈現
+  const displayStatus = unit.status === "locked" ? "available" : unit.status;
 
   // 6-3c：資料驅動隱藏 tab——無 batch 題的 tab 直接不顯示
   // （安裝教學片無可測驗概念 → 觀念題消失；課程介紹片無程式題 → 程式實作題消失）
@@ -142,10 +139,20 @@ export function UnitContent({
         )}
       </div>
 
-      <div className="flex items-center justify-between border-t border-border-default pt-4">
-        <NavButton disabled={!onPrev} onClick={onPrev || undefined} direction="prev" />
+      {/* 7-U1：單元導航只在概念說明出現——作答中（程式實作題／觀念題）
+          跳到別的單元不是合理動線，按鈕在那裡只會誤觸 */}
+      <div
+        className={`flex items-center border-t border-border-default pt-4 ${
+          activeTab === "concept" ? "justify-between" : "justify-center"
+        }`}
+      >
+        {activeTab === "concept" && (
+          <NavButton disabled={!onPrev} onClick={onPrev || undefined} direction="prev" />
+        )}
         <ActionButton unit={unit} onStart={onStart} onComplete={onComplete} busy={busy} />
-        <NavButton disabled={!onNext} onClick={onNext || undefined} direction="next" />
+        {activeTab === "concept" && (
+          <NavButton disabled={!onNext} onClick={onNext || undefined} direction="next" />
+        )}
       </div>
     </div>
   );

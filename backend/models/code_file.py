@@ -7,7 +7,17 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, String, Text, func
+from sqlalchemy import (
+    CheckConstraint,
+    DateTime,
+    ForeignKey,
+    Index,
+    String,
+    Text,
+    UniqueConstraint,
+    func,
+    text,
+)
 from sqlalchemy.orm import Mapped, mapped_column
 
 from core.database import Base
@@ -26,6 +36,27 @@ class CodeFile(Base):
     """使用者的 Workspace 程式碼（草稿或命名檔案）。"""
 
     __tablename__ = "code_files"
+
+    # ⚠ 這些約束原本只寫在 migration `r4a5b6c7d8e9`，model 未宣告 → 測試的
+    # `Base.metadata.create_all` 建不出來，於是 save_draft 的併發保護
+    # （靠 IntegrityError 接住較慢的 INSERT）在測試中從未真正執行過。
+    # 2026-08-06 補宣告，讓測試 schema 與生產一致。dialect 條件兩者都給：
+    # partial index 在 Postgres 與 SQLite 語法不同，SQLAlchemy 需分別指定。
+    __table_args__ = (
+        UniqueConstraint("user_id", "name", name="uq_code_files_user_name"),
+        # migration 用 Postgres 專有的 char_length()；此處用 length()，
+        # 兩者在 Postgres 對 text 等價，且 SQLite 只認得 length()
+        CheckConstraint(
+            f"length(code) <= {MAX_CODE_CHARS}", name="ck_code_files_code_len"
+        ),
+        Index(
+            "uq_code_files_draft",
+            "user_id",
+            unique=True,
+            postgresql_where=text("name IS NULL"),
+            sqlite_where=text("name IS NULL"),
+        ),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     user_id: Mapped[uuid.UUID] = mapped_column(

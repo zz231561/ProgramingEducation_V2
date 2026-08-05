@@ -122,7 +122,7 @@ async def test_create_path_returns_full_detail(client: AsyncClient):
     assert body["units"][0]["concept_tag"] == "a"
     assert body["units"][0]["status"] == "available"
     assert body["units"][1]["concept_tag"] == "b"
-    assert body["units"][1]["status"] == "locked"
+    assert body["units"][1]["status"] == "available"  # 7-U2 課程全解鎖
 
 
 async def test_create_path_no_concepts_returns_422(client: AsyncClient):
@@ -173,7 +173,7 @@ async def test_list_paths_with_progress_summary(client: AsyncClient):
     summary = body["paths"][0]
     assert summary["title"] == "P1"
     assert summary["total_units"] == 3
-    assert summary["available_units"] == 1  # 第一個 unit
+    assert summary["available_units"] == 3  # 7-U2 課程全解鎖：全部可學習
     assert summary["completed_units"] == 0
 
 

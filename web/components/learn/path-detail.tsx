@@ -3,9 +3,9 @@
 /**
  * 學習路徑詳細頁 — unit 列表 + 進度（roadmap 3-1c/d）。
  *
- * 3-1d 起：unit 變可點，locked 不可點。
  * 3-1c+ 簡化：Learn 頁面直接以此頁為主畫面（無 list 模式可返），故不顯示「返回」按鈕。
- * DEV-4：ghostUnlock 開啟時 locked 也可點（僅瀏覽，狀態轉移仍受限）。
+ * 7-U2（2026-08-06）：**課程全解鎖**——所有 unit 皆可點，不再有 locked 阻擋，
+ * DEV 幽靈解鎖隨之移除。順序仍以編號呈現為建議路徑，狀態圖示保留進度感。
  */
 
 import { PathDetail, Unit } from "@/lib/learning";
@@ -15,11 +15,9 @@ import { UnitStatusIcon, statusLabel } from "./unit-status-icon";
 interface Props {
   detail: PathDetail;
   onSelectUnit: (unit: Unit) => void;
-  /** DEV-4 幽靈解鎖：locked unit 可點瀏覽（僅 dev 帳號生效）。 */
-  ghostUnlock?: boolean;
 }
 
-export function PathDetailView({ detail, onSelectUnit, ghostUnlock }: Props) {
+export function PathDetailView({ detail, onSelectUnit }: Props) {
   const total = detail.units.length;
   const completed = detail.units.filter((u) => u.status === "completed").length;
   const percent = total === 0 ? 0 : Math.round((completed / total) * 100);
@@ -49,7 +47,6 @@ export function PathDetailView({ detail, onSelectUnit, ghostUnlock }: Props) {
             unit={unit}
             index={index}
             onSelect={() => onSelectUnit(unit)}
-            ghostUnlock={ghostUnlock}
           />
         ))}
       </ol>
@@ -67,30 +64,22 @@ function UnitRow({
   unit,
   index,
   onSelect,
-  ghostUnlock,
 }: {
   unit: Unit;
   index: number;
   onSelect: () => void;
-  ghostUnlock?: boolean;
 }) {
-  const clickable = unit.status !== "locked" || ghostUnlock === true;
-  // 全開瀏覽（教師/DEV）時，locked 以「可學習」呈現，避免顯示鎖頭與「未解鎖」誤導
-  const displayStatus =
-    ghostUnlock && unit.status === "locked" ? "available" : unit.status;
+  // 舊資料若仍殘留 locked（migration 前的快照），一律以「可學習」呈現
+  const displayStatus = unit.status === "locked" ? "available" : unit.status;
   return (
     <li
-      role={clickable ? "button" : undefined}
-      tabIndex={clickable ? 0 : undefined}
-      onClick={clickable ? onSelect : undefined}
+      role="button"
+      tabIndex={0}
+      onClick={onSelect}
       onKeyDown={(e) => {
-        if (clickable && (e.key === "Enter" || e.key === " ")) onSelect();
+        if (e.key === "Enter" || e.key === " ") onSelect();
       }}
-      className={`flex items-start gap-3 rounded-md border border-border-default bg-surface-1 px-3 py-2.5 transition-colors ${
-        clickable
-          ? "cursor-pointer hover:border-border-emphasis"
-          : "opacity-60"
-      }`}
+      className="flex cursor-pointer items-start gap-3 rounded-md border border-border-default bg-surface-1 px-3 py-2.5 transition-colors hover:border-border-emphasis"
     >
       <UnitStatusIcon status={displayStatus} className="mt-0.5 size-4" />
       <div className="min-w-0 flex-1">

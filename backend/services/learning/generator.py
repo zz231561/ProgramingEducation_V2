@@ -162,15 +162,13 @@ async def generate_learning_path(
     db.add(path)
     await db.flush()  # 取 path.id
 
-    # 寫入 LearningUnits — 第一個 'available'，其餘 'locked'
+    # 寫入 LearningUnits — **全部 available**（7-U2 2026-08-06 決策：課程全解鎖，
+    # 學生可自由跳章。順序仍以 order_index 呈現為「建議路徑」，並由 K-Graph
+    # 前置依賴 / 弱項診斷 / 補救路徑提供學習引導，不再用鎖擋人）
     # content：已 approve 的 staging 內容直接帶入（無則空骨架待後續 promote）
     approved_content = await _fetch_approved_content(db, selectable_ids)
     for order_index, concept_id in enumerate(sorted_ids):
-        unit_status = (
-            LearningUnitStatus.AVAILABLE.value
-            if order_index == 0
-            else LearningUnitStatus.LOCKED.value
-        )
+        unit_status = LearningUnitStatus.AVAILABLE.value
         db.add(LearningUnit(
             path_id=path.id,
             concept_id=concept_id,

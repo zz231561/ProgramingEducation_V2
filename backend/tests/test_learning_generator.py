@@ -130,7 +130,7 @@ async def test_category_filter_with_no_match_raises_422():
 
 @pytest.mark.asyncio
 async def test_generate_linear_chain_path():
-    """a → b → c；無 mastery → 排序 a, b, c；第一個 available 其餘 locked。"""
+    """a → b → c；無 mastery → 排序 a, b, c；**全部 available**（7-U2 課程全解鎖）。"""
     user_id = await _seed_user()
     ids = await _seed_concepts([{"tag": "a"}, {"tag": "b"}, {"tag": "c"}])
     await _seed_edges([(ids["a"], ids["b"]), (ids["b"], ids["c"])])
@@ -141,8 +141,8 @@ async def test_generate_linear_chain_path():
 
     units = await _read_units_in_order(path.id)
     assert [u.concept_id for u in units] == [ids["a"], ids["b"], ids["c"]]
-    assert units[0].status == LearningUnitStatus.AVAILABLE.value
-    assert all(u.status == LearningUnitStatus.LOCKED.value for u in units[1:])
+    # 7-U2：不再有 locked，順序僅作為建議路徑呈現
+    assert all(u.status == LearningUnitStatus.AVAILABLE.value for u in units)
 
 
 @pytest.mark.asyncio

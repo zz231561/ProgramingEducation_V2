@@ -1,5 +1,24 @@
 # 變更日誌
 
+## [2026-08-06] — feat(learn)：7-U1 單元導航收斂 + 7-U2 課程全解鎖；修 schema 漂移
+
+### Changed — 7-U1 上下單元只在概念說明顯示
+- 作答中（程式實作題／觀念題）跳到別的單元不是合理動線，按鈕只會誤觸；該分頁改為只置中顯示主動作按鈕
+
+### Changed — 7-U2 課程全解鎖（推翻「循序解鎖」設計）
+- `generator.py`：新路徑所有 unit 皆 `available`（原為第一個 available、其餘 locked）
+- migration **`u7d8e9f0a1b2`**：既有使用者的 `locked` → `available`（downgrade 不可逆，僅還原初始語義）
+- 前端移除 **ghostUnlock 整條線路**：`learn/page.tsx` / `path-detail.tsx` / `unit-content.tsx` 的 prop、`hooks/use-dev-mode.ts` 的 `useGhostUnlock`、`lib/dev-mode.ts` 的旗標讀寫、`components/settings/dev-unlock-card.tsx`（DEV 設定卡）、以及 5-6b「教師全開」特例——全解鎖後這些例外全部多餘
+- 學習引導改由 K-Graph 前置依賴 / 弱項診斷 / 補救路徑負責，不再用鎖擋人；順序仍以編號與狀態圖示呈現為建議路徑
+- 3 個測試改為斷言新語義（generator 全 available / route status / progress summary available_units 3）
+
+### Fixed — 🔴 models 與 migration 的 schema 漂移（本次跑測試時挖出，與 7-U 無關）
+- `uq_code_files_draft`（草稿每人一份的 partial unique index）**只存在於 migration**，`CodeFile` model 未宣告 → 測試的 `Base.metadata.create_all` 建不出來
+- 後果：`save_draft()` 靠 `IntegrityError` 接住併發 INSERT 的保護（`workspace_files.py:71-77`）**在測試中從未真正執行過**；機器負載升高（Colima 運行）後三個併發請求真的重疊，`test_concurrent_first_draft_save_does_not_500` 開始穩定失敗於 `MultipleResultsFound`
+- **生產不受影響**（Postgres 走 migration，index 存在），問題是測試給了假的安全感，且 `alembic --autogenerate` 未來會想刪掉這個 index
+- 修法：`CodeFile.__table_args__` 補宣告 3 個約束（partial index 同時給 `postgresql_where` 與 `sqlite_where`；CHECK 用兩種 dialect 都認得的 `length()` 取代 Postgres 專有的 `char_length()`）
+- 該測試現已穩定通過且**真正在驗那條防線**；後端 **818 全綠**
+
 ## [2026-08-06] — feat(runner)：R5c-2 生產互動終端上線 + R5d 移除 stdin 預填 UI
 
 ### 🎉 生產環境互動終端已上線（使用者驗收通過）

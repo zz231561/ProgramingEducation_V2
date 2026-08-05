@@ -19,9 +19,7 @@ import { Loader2 } from "lucide-react";
 
 import { PathDetailView } from "@/components/learn/path-detail";
 import { UnitContent } from "@/components/learn/unit-content";
-import { useGhostUnlock } from "@/hooks/use-dev-mode";
 import { ApiRequestError } from "@/lib/api";
-import { useRole } from "@/lib/use-role";
 import {
   PathDetail,
   Unit,
@@ -38,9 +36,6 @@ type View =
 
 export default function LearnPage() {
   const [view, setView] = useState<View>({ mode: "loading" });
-  // 5-6b：教師瀏覽全部單元不受鎖定限制（等同自動幽靈解鎖）；DEV 帳號沿用手動開關
-  const role = useRole();
-  const ghostUnlock = useGhostUnlock() || role === "teacher";
 
   const loadDefault = useCallback(async () => {
     setView({ mode: "loading" });
@@ -104,7 +99,6 @@ export default function LearnPage() {
           onAfterStatusChange={(updatedDetail, newIndex) =>
             setView({ mode: "unit", detail: updatedDetail, unitIndex: newIndex })
           }
-          ghostUnlock={ghostUnlock}
         />
       </div>
     );
@@ -113,11 +107,7 @@ export default function LearnPage() {
   // detail 模式
   return (
     <div className="h-full overflow-y-auto px-6 py-8">
-      <PathDetailView
-        detail={view.detail}
-        onSelectUnit={handleSelectUnit}
-        ghostUnlock={ghostUnlock}
-      />
+      <PathDetailView detail={view.detail} onSelectUnit={handleSelectUnit} />
     </div>
   );
 }
@@ -133,13 +123,11 @@ function UnitView({
   unitIndex,
   onBackToDetail,
   onAfterStatusChange,
-  ghostUnlock,
 }: {
   detail: PathDetail;
   unitIndex: number;
   onBackToDetail: () => void;
   onAfterStatusChange: (detail: PathDetail, newIndex: number) => void;
-  ghostUnlock?: boolean;
 }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -149,11 +137,10 @@ function UnitView({
     return (offset: number) => {
       const target = unitIndex + offset;
       if (target < 0 || target >= detail.units.length) return null;
-      // DEV-4 幽靈解鎖：locked 也可導航（僅瀏覽，狀態轉移仍受後端限制）
-      if (detail.units[target].status === "locked" && !ghostUnlock) return null;
+      // 7-U2 全解鎖：不再檢查 locked，僅受路徑邊界限制
       return () => onAfterStatusChange(detail, target);
     };
-  }, [detail, unitIndex, onAfterStatusChange, ghostUnlock]);
+  }, [detail, unitIndex, onAfterStatusChange]);
 
   const refreshAndStay = useCallback(async () => {
     const fresh = await getPath(detail.id);
@@ -188,7 +175,6 @@ function UnitView({
         onStart={() => transition("in_progress")}
         onComplete={() => transition("completed")}
         busy={busy}
-        ghostUnlock={ghostUnlock}
       />
       {error && (
         <div className="mx-auto mt-4 max-w-3xl rounded-md border-l-2 border-accent-red bg-surface-2 px-3 py-2 text-xs text-accent-red">

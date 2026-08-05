@@ -5,8 +5,9 @@
  */
 
 import { useState } from "react";
-import { Check, ChevronDown, Copy, Users } from "lucide-react";
+import { ChevronDown, Users } from "lucide-react";
 
+import { CopyButton } from "@/components/ui/copy-button";
 import { ApiRequestError } from "@/lib/api";
 import { ClassInfo, updateClass } from "@/lib/classroom";
 
@@ -20,19 +21,8 @@ export function ClassCard({
   onUpdated: (updated: ClassInfo) => void;
 }) {
   const [expanded, setExpanded] = useState(false);
-  const [copied, setCopied] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const copyCode = async () => {
-    try {
-      await navigator.clipboard.writeText(klass.invite_code);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
-    } catch {
-      /* 剪貼簿不可用時靜默；使用者仍可手動複製 */
-    }
-  };
 
   const toggleActive = async () => {
     setBusy(true);
@@ -73,18 +63,10 @@ export function ClassCard({
           <code className="rounded bg-surface-inset px-2 py-1 font-mono text-sm tracking-widest text-text-primary">
             {klass.invite_code}
           </code>
-          <button
-            onClick={copyCode}
-            className="flex size-7 items-center justify-center rounded-md text-text-muted hover:bg-surface-2 hover:text-text-primary transition-colors"
-            aria-label="複製邀請碼"
-            title="複製邀請碼"
-          >
-            {copied ? (
-              <Check className="size-3.5 text-accent-green" />
-            ) : (
-              <Copy className="size-3.5" />
-            )}
-          </button>
+          <CopyButton
+            getText={() => klass.invite_code}
+            label="複製邀請碼"
+          />
         </div>
 
         {/* 操作 */}

@@ -3,7 +3,6 @@
 import {
   ChevronDown,
   ChevronRight,
-  Copy,
   MessageSquare,
   Check,
   X,
@@ -12,6 +11,8 @@ import {
   Minus,
   type LucideIcon,
 } from "lucide-react";
+import { CopyButton } from "@/components/ui/copy-button";
+
 import type { ExecutionResult, RunRecord } from "./types";
 
 export type RunStatus = "accepted" | "compile-error" | "runtime-error" | "limit-exceeded" | "unknown";
@@ -39,12 +40,12 @@ export function RunBlock({ block, expanded, index, onToggle, onSendToChat }: Run
   const hasCompile = result.compile_output.length > 0;
   const hasAnyOutput = hasStdout || hasStderr || hasCompile;
 
-  const handleCopy = () => {
+  const copyText = () => {
     const parts: string[] = [];
     if (hasCompile) parts.push(`[compile]\n${result.compile_output}`);
     if (hasStdout) parts.push(`[stdout]\n${result.stdout}`);
     if (hasStderr) parts.push(`[stderr]\n${result.stderr}`);
-    navigator.clipboard.writeText(parts.join("\n\n"));
+    return parts.join("\n\n");
   };
 
   return (
@@ -78,15 +79,11 @@ export function RunBlock({ block, expanded, index, onToggle, onSendToChat }: Run
 
         <div className="flex-1" />
 
-        <button
-          onClick={handleCopy}
+        <CopyButton
+          getText={copyText}
+          label="複製輸出"
           disabled={!hasAnyOutput}
-          className="flex h-6 w-6 items-center justify-center rounded text-text-muted hover:text-text-primary hover:bg-surface-2 transition-colors disabled:opacity-40 disabled:hover:bg-transparent"
-          title="複製輸出"
-          aria-label="複製輸出"
-        >
-          <Copy className="size-3.5" />
-        </button>
+        />
         <button
           onClick={onSendToChat}
           className="flex h-6 w-6 items-center justify-center rounded text-text-muted hover:text-accent-blue hover:bg-surface-2 transition-colors"

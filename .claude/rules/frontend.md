@@ -99,7 +99,7 @@ Active tab: `border-bottom: 2px solid #F78166`
 
 **例外白名單**：
 - `text-text-muted/N` 等灰階淡化（純黑白透明度，無色相）
-- `shadcn/ui/button.tsx` 預設變體（基礎庫，避免動）
+- `web/components/ui/button.tsx` 預設變體（shadcn 基礎庫，避免動）
 - `lucide-react` icon（線條圖示，非 emoji）
 - 邊框實線色 `border-accent-X`（功能性，無填充）
 - ~~Knowledge Graph 星系背景~~（2026-07-05 核准，同日使用者要求移除星雲圖層而撤銷；`/knowledge` 現僅剩灰階星空點與軌道虛線，屬既有灰階白名單）

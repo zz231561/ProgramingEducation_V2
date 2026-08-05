@@ -1,6 +1,25 @@
 # Roadmap
 
-> **執行策略**：功能優先（Phase 2 → 3）→ 部署準備程式碼（Phase 4）→ **Phase 5 教師端 / Phase 6 教學內容建構（兩者可平行或先後，依教授資料準備進度而定）** → 上線實測（Phase 7）。
+## 🎯 現在的執行順序（2026-08-06 定序）
+
+> Phase 1–6 全數完成、Phase 7 已上線。**現在的主線是 7-C Coddy 教學品質**，
+> 其餘（Phase 8 健檢、7-2 監控、7-3 效能、5-3/5-4 行為分析）都排在驗收之後。
+
+| 順序 | 項目 | 性質 | 狀態 |
+|------|------|------|------|
+| ① | **7-C2** Coddy P1（NZEC 教學語意 / 逾時文案 / 分層說明+認錯規則 / 429 配額顯示） | 功能優化 | 🎯 下一步 |
+| ② | **7-C3** 2-6 Comprehension 前端 UI（後端完整但學生碰不到） | 新建功能 | 待辦 |
+| ③ | **7-C4** Coddy 品質再驗（`eval_coddy` 七型重跑前後對照） | 驗證 | 待辦 |
+| ④ | **7-D** 技術債清償（前端測試 → 檔案拆分 → changelog 拆檔 → R6 收尾 → 文件稽核） | 技術債 | 待辦 |
+| ⑤ | **7-E** 使用者驗收（acceptance-checklist 0~9 段） | 驗收 | 待辦 |
+| ⑥ | Phase 8 專案健檢整理 → 7-2 監控 → 7-3 效能 baseline → 5-3/5-4 行為分析 | 後續 | 待辦 |
+
+> **定序原則（使用者定案）**：新功能／功能優化 → **技術債清償** → 驗收。
+> 驗收放最後是因為使用者裁決「功能全部完善後一律驗收」，避免同一動線反覆驗。
+
+---
+
+> **原始執行策略（歷史脈絡）**：功能優先（Phase 2 → 3）→ 部署準備程式碼（Phase 4）→ **Phase 5 教師端 / Phase 6 教學內容建構（兩者可平行或先後，依教授資料準備進度而定）** → 上線實測（Phase 7）。
 > **核心原則**：需要實際 Zeabur / VPS 部署才能驗證的工作（Golden path / 監控 / 效能 baseline）集中在 Phase 7。本機可完成的程式碼準備全部排在 Phase 7 之前。
 > **OSS 重用**：開發前必查 `docs/references.md` §1 決策矩陣（CLAUDE.md 守則 #7）。
 > **完成細節**：已完成 sub-task 細節已歸檔至 `docs/roadmap-archive.md`（按 phase 結構） / `docs/changelog.md`（按時間）。本檔只保留「現在要做什麼」+「未來地圖」+「已確認決策」。
@@ -196,12 +215,12 @@
 - [x] K4b RAG 觸發改內容相關性：`TeachingStrategy` 移除 `use_rag`，Feedback 層每次檢索、`RAG_MIN_SCORE=0.40` 分數過濾（原 6-5a）；門檻初始值待 K4d 依實際命中率調整；tests 更新 +2
 - [x] K4c 補救路徑（`services/learning/remedial.py` + `POST /concepts/{tag}/diagnosis/remediate`）：診斷觸發後把嫌疑概念在 default path 的既有 units **重新開放**（completed/locked → available、清 completed_at；系統級動作繞過手動轉移限制）；不新建 row 不動 order 唯一約束；order_index 升冪 = 建議補救順序；未觸發回 409；5 tests
 - [ ] K4d 真人測試驗收（原 6-5c）：比對改動前後語氣 / RAG 命中率（含 RAG_MIN_SCORE 調參）/ 鷹架適切度 / 補救路徑 Learn 頁呈現（2026-07-06：RAG_MIN_SCORE 調參與對話組模型是否升 `gpt-5.4` 併入第 5 批實機批次執行；語氣部分使用者自測）
-- [x] K4f 編譯失敗主動說明（2026-08-05 使用者定案）：`services/compile_error.py` + `POST /chat/compile-error`——平台限制（引用平台沒有的函式庫）機械判定 + 固定文案**不呼叫 LLM**；學生自己的編譯錯誤走 LLM 引導（禁給修好的程式碼）；前端僅編譯失敗觸發 + 錯誤簽章去重（同一錯誤只說明一次，省配額）；+10 tests（793）
-- [x] K4e Coddy 防幻覺三層（2026-08-05 使用者驗收發現時間戳為幻覺後新增）：`services/edf/citations.py`——① `strip_ungrounded_citations` 機械攔截不在檢索結果內的影片連結（容差 ±90s、非 YouTube 連結保留、攔截寫 log 可統計幻覺率）② `NO_SOURCE_RULE` 檢索無命中時明確禁止提及章節時間並誠實告知 ③ `extract_citations` + migration `t6c7d8e9f0a1`（`chat_messages.citations`）+ 前端 `citation-list.tsx` 摺疊顯示 transcript 原文供學生核對；+13 tests（763）。**限制**：出處已鎖死，內容曲解仍需第二次 LLM 比對，成本翻倍故不常態開啟
+- [x] K4f 編譯失敗主動說明（2026-08-05 使用者定案）：`services/run_help.py` + `POST /chat/run-help`——平台限制（引用平台沒有的函式庫）機械判定 + 固定文案**不呼叫 LLM**；學生自己的編譯錯誤走 LLM 引導（禁給修好的程式碼）；前端僅編譯失敗觸發 + 錯誤簽章去重（同一錯誤只說明一次，省配額）；+10 tests（793）
+- [x] K4e Coddy 防幻覺三層（2026-08-05 使用者驗收發現時間戳為幻覺後新增）：`services/edf/citations.py`——① `strip_ungrounded_citations` 機械攔截不在檢索結果內的影片連結（容差 ±90s、非 YouTube 連結保留、攔截寫 log 可統計幻覺率）② `NO_SOURCE_RULE` 檢索無命中時明確禁止提及章節時間並誠實告知 ③ `extract_citations` + migration `t6c7d8e9f0a1`（`chat_messages.citations`）+ 前端 citation-list 元件（已刪除）摺疊顯示 transcript 原文供學生核對；+13 tests（763）。**限制**：出處已鎖死，內容曲解仍需第二次 LLM 比對，成本翻倍故不常態開啟。**2026-08-06 註**：③ 的 UI 已隨 7-U3 移除（元件檔已刪，citations 仍存 DB），防幻覺實際剩 ①② 兩層
 
 ### K5 知識圖譜視覺改版（功能五；吸收原 6-6a/c/d）
 - [x] K5a 套件調研決策記錄：維持 Cytoscape.js + fcose（決策記錄見 `docs/references.md` §1；dagre 不支援 compound、React Flow 定位 workflow editor 無決定性優勢）
-- [x] K5b 多對多邊 + 熟練度視覺：節點填色改 mastery band + 分章 compound cluster + prerequisite 箭頭強化；`toElements` 拆至 `knowledge-graph-elements.ts`；**2026-07-05 迭代（使用者三輪回饋）**：fcose → 確定性 preset 佈局 → **太陽系主題定案**（星雲雙層視圖（overview 章節級星系 ⇄ detail 概念級，zoom 門檻 crossfade）、蛇形軌道 + 軌道線/星空 underlay、點擊即聚焦、全覽鈕、zoom cap、跨章邊淡出；星系 SVG 隱形根因 = 缺 width/height，`galaxy-backgrounds.ts` 留作備援）；**2026-07-05 六驗**：overview 改語意縮放——保留全部概念節點與名稱、依 zoom 門檻放大節點/字體並重排每章緊湊網格（移除章節星系節點層，`overview-layout.ts`）；**七驗**：移除星雲背景圖層（純黑星空）+ 修 detail panel setState-in-effect lint
+- [x] K5b 多對多邊 + 熟練度視覺：節點填色改 mastery band + 分章 compound cluster + prerequisite 箭頭強化；`toElements` 拆至 `knowledge-graph-elements.ts`；**2026-07-05 迭代（使用者三輪回饋）**：fcose → 確定性 preset 佈局 → **太陽系主題定案**（星雲雙層視圖（overview 章節級星系 ⇄ detail 概念級，zoom 門檻 crossfade）、蛇形軌道 + 軌道線/星空 underlay、點擊即聚焦、全覽鈕、zoom cap、跨章邊淡出；星系 SVG 隱形根因 = 缺 width/height；當時留作備援的 galaxy-backgrounds 模組已隨七驗移除星雲圖層一併刪除）；**2026-07-05 六驗**：overview 改語意縮放——保留全部概念節點與名稱、依 zoom 門檻放大節點/字體並重排每章緊湊網格（移除章節星系節點層，`overview-layout.ts`）；**七驗**：移除星雲背景圖層（純黑星空）+ 修 detail panel setState-in-effect lint
 - [x] K5c 個人化路徑高亮：underlay ring = 路徑狀態（藍=目前 / 綠=已完成 / 紅=補救嫌疑，`?remedial=` query 觸發 + 鏡頭聚焦）；R1-R8 檢核通過（灰階 cluster 容器、無外來 hex、無 emoji）
 - [ ] K5d 真人測試驗收（原 6-6d）：學生能從圖讀懂自己的進度與弱項，不只是好看（2026-07-06 改使用者 session 後自測，不排入開發批次）
 
@@ -252,7 +271,7 @@
 ## Phase 7：上線實測（須實際部署到 Zeabur / VPS）
 > Golden path 跑通、監控告警接通、效能 baseline 記錄；可對外開放給真實學生使用。
 > **前置條件**：Phase 4 配置層完成；Phase 6 至少 6-1 + 6-2b 完成（含字幕 RAG ingest + grounded LLM 生成 unit content）；6-R 健壯性 H 級完成 ✅（2026-07-04）；Zeabur 帳號 + VPS（Judge0 self-host）就緒。
-> ⚠ 上次卡關於 API 串接（前後端 proxy / NextAuth callback URL / CORS / Judge0 endpoint），重啟前先排查 `web/app/api/*` proxy 設定、`backend/app/core/config.py` 環境變數、Zeabur dashboard service 連線狀態。
+> ⚠ 上次卡關於 API 串接（前後端 proxy / NextAuth callback URL / CORS / Judge0 endpoint），重啟前先排查 `web/app/api/*` proxy 設定、`backend/core/config.py` 環境變數、Zeabur dashboard service 連線狀態。
 
 ### 7-1 Golden path 整合驗證
 - [ ] 7-1a 部署到 Zeabur（web + backend + pgvector + redis）+ ~~Judge0 self-host VPS~~（2026-08-05 改 7-R 自建 runner，B 機部署列 R5）
@@ -292,13 +311,10 @@
   - [x] R5c-1 **B 機實機部署 ✅**（2026-08-06）：bootstrap 8/8 驗證通過（swap/docker/ufw/DOCKER-USER/systemd unit/SSH 禁密碼）+ 映像建置 + 容器 healthy；實機驗過 hello/stdin/argv/編譯錯誤/逾時/SIGSEGV/快取命中/401/**PTY 互動**；外部直連 8080 已阻斷（Mac 測 000）
     - 修 3 個實機才暴露的缺陷：① `iptables-persistent` 與 ufw 互斥導致 **apt 直接移除 ufw**（改 systemd unit 持久化 DOCKER-USER，purge 該套件）② 驗證函式 `cmd | grep -q` 在 `pipefail` 下收 SIGPIPE 回 141 被誤判 FAIL ③ 🔴 **`/lib64` 未掛入 jail**——amd64 動態載入器在此，execve 報 "No such file or directory"；arm64 loader 在 `/lib` 底下故本機 Apple Silicon 完全測不出來
   - [x] R5c-2 **Zeabur 設定 ✅ 生產互動終端上線**（2026-08-06 使用者驗收通過）：backend 綁公開子網域 + 三變數 + **重啟 backend**（環境變數需重啟才讀入，這是唯一卡點）；web `NEXT_PUBLIC_TERMINAL_WS_URL` + redeploy；**A 機出口 IP 實測即 `43.153.167.105`**（與推測值一致，防火牆無需調整）
-  - [x] R5d UI 收斂（使用者回饋「進階：預先餵入很醜」）：`stdin-panel.tsx` 移除 → `args-panel.tsx`（僅 argv 單行，`codeUsesArgs` 為真才渲染）+ 靜態偵測函式移至 `lib/code-detect.ts`（`usesLocalTime` 供 Coddy UTC 說明）；context 移除 orphan `getStdin/setStdin`，批次降級路徑不再送 stdin
+  - [x] R5d UI 收斂（使用者回饋「進階：預先餵入很醜」）：stdin-panel 元件刪除 → `args-panel.tsx`（僅 argv 單行，`codeUsesArgs` 為真才渲染）+ 靜態偵測函式移至 `lib/code-detect.ts`（`usesLocalTime` 供 Coddy UTC 說明）；context 移除 orphan `getStdin/setStdin`，批次降級路徑不再送 stdin
 - [ ] R6 收尾：教材健檢解除 20 支/天上限 + 額度文案清理（acceptance-checklist / CLAUDE.md）+ 30 並行壓測 + 文件同步
 
-### 7-R6 收尾（使用者要求暫緩，待驗收後執行）
-- [ ] 教材健檢解除每日 20 支上限（Judge0 額度限制已消失，改為全 62 支一輪）
-- [ ] 額度相關文案清理（`CLAUDE.md` / hook 提示仍寫著 Judge0 50 次/天）
-- [ ] 30 並行壓測（驗證 server-plan 容量假設）
+> **7-R6 收尾已改列 7-D4**（2026-08-06 重排：技術債統一排在功能之後、驗收之前）。
 
 ### 7-U 上線後體驗優化（2026-08-06 使用者回饋定案）
 - [x] 7-U1 上下單元只在概念說明顯示（作答中跳單元非合理動線）
@@ -324,16 +340,47 @@
   同一執行結果重複計 BKT 負證據 / 無碼提問建立精熟度 / kgraph 鷹架被當輪雜訊污染（改先讀後寫）/
   散文洩答（strategy 層防線，殘留記 tech-debt）/ off_topic 覆寫誤標 / RAG 查詢加問句+導覽型只用問句 /
   Coddy 反要學生提供連結 / 索答詞跳級與失敗重跑歸零；後端 834 tests；⚠ `chat.py` 299 行超硬上限待拆
-- [ ] 7-C2 **P1 批次**：NZEC 教學語意主動說明（機械判定固定文案，分清 C++ 標準/OS 慣例/平台判定三層）+ `run_help` 逾時文案修正（仍指向已移除的 stdin 欄位）+ Feedback prompt 加「分層說明來源」與「明確認錯」規則 + 429 配額前端顯示（`retry_after_seconds` 消費 + chat 錯誤訊息分流）+ `chat.py`/`feedback.py` 拆分（超門檻）
-- [ ] 7-C3 **2-6 Comprehension 前端 UI**（使用者裁決：建 UI 非降級）：答對後呼叫 `GET /comprehension/trigger-suggestion` → 依 suggested_type 彈出 EPL/預測輸出/變體挑戰作答流程（ui-ux-spec §12.2 modal 線框）；變體挑戰禁用 AI；結果顯示 passed + 回寫 BKT 已在後端
+- [ ] 7-C2 **P1 批次｜Coddy 教學品質**（對應 tech-debt B1–B4）
+  - NZEC 教學語意主動說明：機械判定固定文案（零 LLM），分清 **C++ 標準 / OS 慣例 / 本平台判定**三層，
+    並以第一人稱說明「這是本平台的判定方式」（現行回應是「線上評測通常…」的第三人稱迴避）
+  - `run_help.py` `_TIMEOUT_TEMPLATE` 修正（仍叫學生去填 R5d 已移除的「輸入」欄位）
+  - Feedback prompt 補兩條規則：**分層說明來源**（禁用「通常」「一般來說」含糊帶過規範來源）、
+    **明確認錯**（要修正自己先前說法時第一句就說「我前面說錯了」，不得先稱讚再夾帶）
+  - 429 配額前端顯示：`use-chat.ts` 分辨 `ApiRequestError`，配額與故障不同文案（消費 `retry_after_seconds`）
+- [ ] 7-C3 **2-6 Comprehension 前端 UI｜新建功能**（使用者裁決：建 UI 非降級；對應 tech-debt A1）
+  - 答對後呼叫 `GET /comprehension/trigger-suggestion` → 依 `suggested_type` 彈出
+    EPL / 預測輸出 / 變體挑戰三種作答流程（ui-ux-spec §12.2 modal 線框）
+  - 變體挑戰須禁用 AI（2-6d 明列為前端責任）；結果顯示 passed，BKT 回寫後端已完成
+- [ ] 7-C4 **Coddy 品質再驗**：`scripts/eval_coddy` 全七型重跑，比對 7-C2/C3 前後；
+      B3 洩答殘留在此決定採「條件式二次檢查」或接受現狀（有量測數據才裁決）
+
+### 7-D 技術債清償（**排在功能完成之後、使用者驗收之前**；2026-08-06 使用者定序）
+> 清單正本在 `docs/tech-debt.md`，此處只排執行順序。機械事實一律跑 `python3 scripts/doc_selfcheck.py`。
+- [ ] 7-D1 **前端測試基礎設施**（tech-debt C1，原 8-3a）：Vitest + 純函式測試——
+      `lib/hint-escalation.ts`（**最優先**：與 `eval_coddy/ladder.py` 互為鏡像，靠人工同步遲早出錯）、
+      `lib/transcript-timestamps.ts`、`use-run-history.ts`、`cpp-completion-source.ts`
+- [ ] 7-D2 **檔案拆分**（tech-debt C2）：8 個超硬上限檔——`quiz.py` 347 / `generate.py` 307 /
+      `chat.py` 299 / `concept-detail-panel.tsx` 279 / `batch_generator.py` 267 /
+      `variation.py` 255 / `comprehension.py` 255 / `quiz/feedback.py` 251
+- [ ] 7-D3 **`changelog.md` 拆檔**（tech-debt C4）：2026-07 以前移至 `changelog-archive.md`
+- [ ] 7-D4 **7-R R6 收尾**：教材健檢解除每日 20 支上限（Judge0 額度限制已隨自建 runner 消失）+
+      額度文案清理（hook 提示仍寫 Judge0 50 次/天）+ 30 並行壓測驗證 server-plan 容量假設
+- [ ] 7-D5 **其餘文件稽核**（原 8-1a）：`modules.md` / `api-spec.md` / `db-schema.md` / `ui-ux-spec.md`
+      四份最久沒動的逐份核對（`doc_selfcheck.py` 只驗機械事實，語意描述仍需人工讀）
+- 暫不處理（已記錄且有明確重評時機）：tech-debt B5 / C3 / C5 / D1 / D2 / E1–E3
+
+### 7-E 使用者驗收（**7-C 與 7-D 全數完成後才開始**）
+- [ ] 依 `docs/acceptance-checklist.md` 0~9 段走完；目前僅 1-1 互動終端通過
+- [ ] 驗收發現的問題回饋 → 小問題當輪修（守則 9）、大問題重新排入 7-C
 
 ---
 
 ## Phase 8 — 專案健檢與整理（2026-08-06 使用者提出）
 
-> **執行前提**：驗收清單第 1–8 段跑完且無阻斷問題。
-> **下個 session 的順序**：① 先討論（8-0）→ ② 使用者驗收 → ③ 驗收無問題才動手整理。
+> **執行前提**：7-C 功能完成 → 7-D 技術債清償 → 7-E 使用者驗收，全數無阻斷問題後才動手。
 > 排序原則：**先談清楚方向，再做不可逆的刪除**；能自動驗證的排前面，需要人判斷的排後面。
+> ⚠ **2026-08-06 重排**：8-1c/8-1d/8-3a 已前移至 **7-D**（技術債統一在驗收前清）；
+> 本 Phase 只剩 8-0a 討論、8-1a 文件稽核（＝7-D5）與 8-2 專案清理。
 
 ### 8-0 討論（不寫程式）
 - [ ] 8-0a **是否還有新功能要加** — **2026-08-06 使用者裁決：等驗收跑完再盤點**（驗收過程本身可能冒出新需求，先不預設）
@@ -358,17 +405,15 @@
 
 ### 8-1 文件一致性全面稽核
 > 2026-08-06 已先修三份（roadmap / 驗收清單 / tech-debt），其餘尚未逐字核對。
-- [ ] 8-1a 逐份核對 `docs/` 其餘 13 份與現況是否相符（重點：`modules.md`、`api-spec.md`、`db-schema.md`、`ui-ux-spec.md` — 這幾份最久沒動）
+- [ ] 8-1a 逐份核對 `docs/` 其餘 13 份與現況是否相符（重點：`modules.md`、`api-spec.md`、`db-schema.md`、`ui-ux-spec.md` — 這幾份最久沒動）→ **已前移為 7-D5**
 - [x] 8-1b ~~修正 `CLAUDE.md` 文件索引的過時描述~~ — 2026-08-06 已隨 8-0c 瘦身處理完（文件索引兩處描述先前已修；同時修 `技術棧` 仍寫 Judge0 / GPT-4o → 改自建 runner + gpt-5.6）
-- [ ] 8-1c `changelog.md` 4500+ 行 → 拆 `changelog-archive.md`（2026-07 以前）；**順帶收斂 `.git` loose object 成長速度**（見 8-0b）
-- [ ] 8-1d **文件自檢 script（2026-08-06 8-0c 定案：寫 script、手動跑、不掛 pre-commit）**
-  - **掛 pre-commit 已評估後否決**：會擋下「想先存檔再整理」的中途 commit，代價大於效益
-  - **掃三件事**（皆為機械可判定，不做語意檢查）：
-    1. 超過 `CLAUDE.md` 門檻的檔案清單（⚠ 150 / 🚫 250，排除 `tests/`）
-    2. 文件中以 backtick 標注的檔案路徑是否真實存在（抓「文件指向已刪除檔案」這類腐化）
-    3. 後端 / runner 測試數（取代手寫的「XXX tests 全綠」）
-  - **輸出格式**：直接可貼進 tech-debt / changelog 的 markdown，杜絕手抄數字
-  - **執行時機**：session 結束前由 AI 自行跑一次，結果併入當次文件同步
+- [ ] 8-1c `changelog.md` 4500+ 行 → 拆 `changelog-archive.md`（2026-07 以前）→ **已前移為 7-D3**
+- [x] 8-1d **文件自檢 script ✅ 完成**（2026-08-06）：`scripts/doc_selfcheck.py`（手動跑，不掛 pre-commit）
+  - 掃三件機械可判定的事：① 超門檻檔案（⚠150 / 🚫250，排除 tests）② 文件中 backtick 標注的路徑是否存在
+    ③ 後端 / runner 測試函式數；輸出即可貼進文件的 markdown，杜絕手抄
+  - **歷史日誌（changelog / roadmap-archive）不掃路徑**——它們如實記錄當時的檔案，事後刪除是正常的
+  - **首跑即抓到 4 處真實漂移並當場修正**（見 tech-debt 已消除節）
+  - **執行時機**：session 結束前 AI 自行跑一次，結果併入該次文件同步
 
 ### 8-2 專案清理（2026-08-06 依 8-0b 量測結果縮減範圍）
 - [x] 8-2a ~~清除 `.DS_Store` / `.pytest_cache` / `.next` 快取，確認 `.gitignore` 涵蓋完整~~
@@ -378,8 +423,8 @@
 - [ ] 8-2c 盤點死程式碼與孤兒檔案（提出清單由使用者裁決，**不自行刪除**）；已知納入：`.venv` 未宣告的 scipy/pandas/sklearn、`docker-compose.judge0.yml`（Judge0 自架方案已作廢僅供追溯）
 - [ ] 8-2d `ScreenShot/` 676K 未進版控——確認用途，決定保留或移除
 
-### 8-3 前端測試基礎設施（tech-debt 🔴）
-- [ ] 8-3a Vitest 建置 + 把 7-U 期間用 node 臨時驗證的三支純函式測試固化（`transcript-timestamps` / `use-run-history` / `cpp-completion-source`）
+### 8-3 前端測試基礎設施（tech-debt C1）
+- [ ] 8-3a Vitest 建置 + 純函式測試固化 → **已前移為 7-D1**（含新增的 `hint-escalation`，與 harness 互為鏡像須釘住）
 - [ ] 8-3b 視情況再評估 React 元件測試與 Playwright
 
 ---

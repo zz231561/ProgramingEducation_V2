@@ -3,6 +3,11 @@
 > 只列**必須由使用者親自操作**才能確認的項目；自動化測試涵蓋的不列入。
 > 完成一項就把 `[ ]` 改成 `[x]` 並註明日期；整段完成後回寫 roadmap 對應 sub-task。
 > **最後全面稽核：2026-08-06**（移除已作廢項目、依操作動線重編）
+>
+> ⏳ **本清單對應 roadmap 7-E，開始時機＝7-C（功能）與 7-D（技術債）全數完成後**
+> （2026-08-06 使用者裁決：功能全部完善後一律驗收，避免同一動線反覆驗）。
+> 屆時本清單需先增補 7-C 的新驗收點：Coddy 提示階梯遞增、NZEC 教學說明、
+> Comprehension 三種驗證流程、429 配額文案。
 
 ---
 
@@ -10,7 +15,7 @@
 
 **不需要手動部署**——Zeabur 已連接 GitHub，每次 push 自動觸發重新部署，
 backend 容器啟動時 `start.sh` 會跑 `alembic upgrade head`，所以 7-U2 的
-課程全解鎖 migration（`u7d8e9f0a1b2`）也已套用。截至 `b8d2b9b` 的變更全部在線上。
+課程全解鎖 migration（`u7d8e9f0a1b2`）也已套用。
 
 - [ ] 開始前確認 Zeabur 最新一次部署狀態為成功（若失敗，驗收會看到舊版而誤判）
 
@@ -116,7 +121,7 @@ backend 容器啟動時 `start.sh` 會跑 `alembic upgrade head`，所以 7-U2 �
 
 - [ ] **9-1 教材品質**：用到哪個單元覺得內容不對，記下編號 → 走 6-4b 局部重跑
 - [ ] **9-2 教材健檢**：`cd backend && .venv/bin/python -m scripts.verify_code_snippets`
-  - 每日 20 支的限制**已可解除**（Judge0 額度不再是瓶頸），待 R6 調整；跑出 `Compile Error` 就是下一個 `external` 等級的缺陷
+  - 每日 20 支的限制**已可解除**（Judge0 額度不再是瓶頸），待 **7-D4** 調整；跑出 `Compile Error` 就是下一個 `external` 等級的缺陷
 
 ---
 

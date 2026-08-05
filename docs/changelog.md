@@ -1,5 +1,42 @@
 # 變更日誌
 
+## [2026-08-06] — docs：8-1d 自檢 script + roadmap 重排（技術債納入排程）+ 全域文件同步
+
+> 使用者要求：重整現況、重排 roadmap（以現在進行的事為主）、技術債清理排在**功能之後驗收之前**、
+> 確保文檔與現況一致無幻覺，並新增「小問題當輪直接修」守則。
+
+### Added — `scripts/doc_selfcheck.py`（roadmap 8-1d 完成，144 行）
+- 掃三件機械可判定的事：① 超門檻檔案（⚠150 / 🚫250，排除 tests）② 文件中 backtick 標注的路徑是否存在
+  ③ 後端 / runner 測試函式數；輸出即可貼進文件的 markdown，**杜絕手抄數字**
+- 誤判防治（兩輪自我修正）：歷史日誌（changelog / roadmap-archive）與刪除線行、「已消除」區塊不掃路徑；
+  路徑比對含**未追蹤但未被 ignore** 的新檔（否則本次新增檔案會被誤報失效）
+- 有超標檔或失效路徑時回非零，未來可直接接 CI
+
+### Fixed — 首跑抓到並當場修正的文件漂移（守則 9 首次適用）
+- `.claude/rules/frontend.md`：`shadcn/ui/button.tsx` → `web/components/ui/button.tsx`
+- `docs/roadmap.md`：`backend/app/core/config.py` → `backend/core/config.py`（舊目錄結構殘留）
+- `docs/roadmap.md`：K4f 寫的 `services/compile_error.py` **實為 `services/run_help.py`**（該檔名從未存在）
+- `docs/roadmap.md`：`galaxy-backgrounds.ts` 寫「留作備援」但檔案早已刪除
+- 三處已刪除元件（citation-list / galaxy-backgrounds / stdin-panel）改為非路徑措辭 → 自檢報告失效路徑歸零
+
+### Changed — roadmap 重排（使用者定序）
+- 新增開頭「🎯 現在的執行順序」表：**7-C2 功能優化 → 7-C3 新建功能 → 7-C4 再驗 → 7-D 技術債 → 7-E 驗收 → Phase 8/監控/效能/行為分析**
+- 新增 **7-D 技術債清償**節（前端測試 → 檔案拆分 → changelog 拆檔 → R6 收尾 → 文件稽核），
+  原 7-R6 / 8-1c / 8-1d / 8-3a 併入；新增 **7-E 使用者驗收**節
+- 7-C2 展開為四項具體工作（原本只是一行）；7-C4 新增「改完用 eval_coddy 七型重跑對照」
+
+### Changed — tech-debt 全面重整
+- 依性質重編為 A 功能缺口 / B Coddy 品質 / C 測試與工程 / D 部署 / E 內容視覺，每項給編號供 roadmap 引用
+- **關閉兩條已失去現實對應的項目**：7-R 過渡期 stdin 兩缺陷（R4/R5d 已上線，回退前提不可能成立）、
+  Zeabur PREBUILT schema 未實測（實際部署走 dashboard 手動建 service，未用該 template 路徑）
+- 已消除項集中到底部並補上 7-C 系列 9 項；表頭聲明「機械事實一律以 doc_selfcheck.py 產出為準」
+- C2 檔案大小更新為**實測 8 個超硬上限**（原記 4-5 個，且遺漏 variation/comprehension/quiz-feedback）
+
+### Changed — 其他文件
+- `CLAUDE.md`：新增**守則 9「當場修小問題」**（範圍小＋根因明確＋不需設計裁決＝當輪直接修，
+  只有擴散性改動 / 架構或教學設計取捨 / 根因未定才需討論）；當前狀態改寫為 7-C 主線 + 兩項工具指引
+- `docs/acceptance-checklist.md`：標題區註明對應 7-E、開始時機為 7-C+7-D 完成後，並列出待增補的新驗收點
+
 ## [2026-08-06] — feat(eval) + fix(coddy)：7-C1' 七型學生模擬驗收 harness + 診斷輪修復 9 項
 
 > 使用者指示：扮演多型學生與 Coddy 真實對話、同步白盒檢測後台、驗證 RAG，確認機制符合設計。

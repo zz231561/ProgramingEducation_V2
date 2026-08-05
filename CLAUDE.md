@@ -13,6 +13,7 @@
    - `docs/tech-debt.md` — 若產生或消除技術債
 7. **改檔案一律用 Edit/Write 工具**：**禁止**用 `python3 - <<EOF` / `sed -i` / `cat >` 等 shell 手法改動專案檔案——那是任意程式碼執行、diff 不可見、且會繞過權限確認。批次改動就多呼叫幾次 Edit。
 8. **避免重複造輪子（OSS 優先）**：開發新功能前必先查 `docs/references.md` §1 決策矩陣。**禁止移植已有對應套件的演算法**（例：BKT 必用 pyBKT）。**禁止引入 AGPL/GPL 授權套件**（見 references.md §2 黑名單）。
+9. **當場修小問題**：發現的問題若**範圍小、根因明確、不需設計裁決**（過時文案、失效路徑、錯誤敘述、明顯 bug），**當輪直接修**，不要只記錄或延後、也不必先問。需要討論的只有三種：改動會擴散到其他模組、涉及架構或教學設計取捨、根因尚未確定。修完照守則 6 同步文檔。
 
 ## 技術棧（已鎖定）
 - **前端**：Next.js 15 + TypeScript + Tailwind CSS（`web/`）
@@ -33,15 +34,18 @@ Phase 1-4 全數 ✅｜Phase 5 教師端 ✅（5-3/5-4 除外，等真實資料�
 Phase 6-K K-Graph 自適應引擎 ✅｜Phase 6-U 學生端修正 ✅｜DEV 開發者模式 ✅｜
 Phase 7-R 自建互動執行引擎 ✅（生產終端已上線）｜Phase 7-U 上線後體驗優化 ✅ 六項
 
-**🎯 進行中**
-- **7-C Coddy 教學品質修復**（2026-08-06 使用者對話回報 → 審計出四個「機制寫好但環節斷線」缺陷）：
-  7-C1 ✅ P0（Hint Ladder 接通 + Evidence 補 exit_code/status；827 tests）→ 7-C2 P1（NZEC 文案・429 顯示・prompt 規則）→ 7-C3 **2-6 Comprehension 前端**（後端完整但 UI 從未存在，裁決＝建 UI）
-- **使用者驗收**：裁決改為**功能全部完善後一律驗收**（7-C 完成後）；驗收清單 0~9 段，目前僅 1-1 通過
-- **Phase 8 專案健檢**：8-0 討論完成（體積已釐清、自檢 script 已定案）；動手清理排在驗收後
+**🎯 進行中 — 7-C Coddy 教學品質**（2026-08-06 使用者回報對話品質 → 全面審計 → 兩輪模擬驗收）
+- 7-C1 ✅ 接通 Hint Ladder（`hint_level` 原寫死 0，36 格策略矩陣只用得到最不給提示的第 0 欄）+ Evidence 補 exit_code/status
+- 7-C1' ✅ 七型學生模擬 harness（`backend/scripts/eval_coddy/`）+ 診斷輪修復 9 項；
+  最重大＝**gpt-5.6 reasoning 預算間歇吃光輸出**（8-05「拒收 reasoning_effort」結論錯誤，值域改為 none/low/…），
+  反思評分因此在生產一直靜默 fail-open；已全面改送 `reasoning_effort="none"`
+- **下一步順序（roadmap 開頭有完整表）**：7-C2 P1 → 7-C3 Comprehension 前端 → 7-C4 再驗 →
+  **7-D 技術債清償** → **7-E 使用者驗收** → Phase 8 / 7-2 監控 / 7-3 效能 / 5-3·5-4
 
-**待辦（未排期）**
-7-R R6 收尾（使用者要求暫緩）／7-2 監控程式碼／7-3 效能 baseline／
-5-3·5-4 行為分析（等真實資料）／6-4b 教材局部重跑（依實際操作回饋）／K1d·K4d·K5d 使用者自測
+**排在驗收之後**：Phase 8 專案健檢（8-0 討論已完成）／6-4b 教材局部重跑（依操作回饋）／K1d·K4d·K5d 使用者自測
+
+**工具**：`python3 scripts/doc_selfcheck.py` — 文件自檢（超門檻檔案／失效路徑／測試數）；session 結束前跑一次
+**驗收機制**：`backend/scripts/eval_coddy/` — 七型學生模擬（真實 LLM + debug_sink/DB 白盒探針），改完 Coddy 重跑對照
 
 **部署與營運**：見 `docs/deployment.md`。要點＝**push 即自動部署**、migration 自動跑；
 **唯獨改環境變數必須手動重啟 service**；OAuth 測試模式 100 人上限（Step 6 與已知限制節）。

@@ -60,6 +60,8 @@
   - **Judge0 策略**：先用 RapidAPI（免費 50 次/天）跑通 golden path，自架延至 2026-12（B 機屆時再租，需 Ubuntu 24.04 + GRUB cgroup v1）
   - **已知限制**：`zeabur.app` 是公共後綴無法登記 Google 授權網域 → 現用 OAuth 測試模式（**100 人上限**）；2027-01 可用性評估前建議購自訂網域送驗證
   - **6-M2 模型升級 ✅**（2026-08-05）：全面轉 gpt-5.6 世代——對話/分析/生成＝`gpt-5.6-luna`、審查/內容＝`gpt-5.6-terra`；單次互動省 74%（$0.00316→$0.00081），100 人月成本 $25.3→$6.5（業界基準 CS50.ai $1.90/學生/月）
+  - **7-1b 前修訂批 ✅**（2026-08-05 使用者驗收回饋連續修訂）：檔名鎖 `.cpp` + 就地改名 / Output 執行歷史移出元件樹 + 歷史選單 / 全站滾動條 GitHub Dark / 對話歷史選單溢出 / 複製按鈕統一回饋 / **stdin 輸入介面**（後端本就支援、前端從未送）/ **argv 執行參數**（章節 58 原本教不了）/ Coddy 主動說明三類執行問題（平台限制·逾時·UTC 時區，皆機械判定零成本）/ **收合聊天不再遺失對話**（`ChatRuntimeProvider`）/ 平板 chat bottom sheet / 執行語言鎖死 C++；後端 804 tests
+  - **教材品質防線 ✅**（2026-08-05）：發現章節 41 把 `extern` 教成 `external`（Whisper 逐字稿錯 → grounded 忠實複製 → 兩題全錯且無人察覺）→ 修正鏈跑完並同步生產；新增 `scripts/verify_code_snippets.py`（靜態拼字掃描免費 + Judge0 編譯每日 20 支）+ SessionStart 提醒 hook
   - **6-M3 成本控制 ✅**：離題分流（搭 Evidence 呼叫零額外成本、Feedback input 省 92%、**不用黑名單避免誤傷「這題老師上課有講嗎」**）+ 每日配額 60 次/人（僅 LLM 端點）；K4e 防幻覺三層（機械攔截未 grounded 引用 + 誠實說教材沒提 + citations 原文核對 UI）
 
 ## 文件索引
@@ -72,6 +74,7 @@
 
 **`docs/`**（按需查閱，預設不主動讀）
 - [dev-setup.md](docs/dev-setup.md) — **本機環境啟動 SOP（每次 session 必讀 §1）**
+- [acceptance-checklist.md](docs/acceptance-checklist.md) — **真人驗收清單（A~E 段，含每日額度限制）**
 - [roadmap.md](docs/roadmap.md) — 任務追蹤（精簡）/ [roadmap-archive.md](docs/roadmap-archive.md) — 完成細節（凍結）
 - [changelog.md](docs/changelog.md) — 變更日誌（時間序）
 - [architecture.md](docs/architecture.md) / [modules.md](docs/modules.md) / [db-schema.md](docs/db-schema.md)

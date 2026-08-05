@@ -59,9 +59,9 @@
   - **7-1a-4 實機播種 ✅ 全數完成並複驗**（2026-08-05）：documents 64 / questions 628 / staging 62 approved / RAG 861 / **concepts 影片 ID 62/62** 皆與本機一致；`learning_units` 62 筆 content 全非空（lazy-seed 已帶入 staging）；alembic 已在 `t6c7d8e9f0a1`
   - **7-1a-6 效能根因排除 ✅**（2026-08-05）：兩個僅生產環境出現的問題疊加致「頁面 10 秒」——① Node DNS IPv6 逾時耗盡 libuv threadpool（web 加 `NODE_OPTIONS=--dns-result-order=ipv4first` + `UV_THREADPOOL_SIZE=32`，**環境變數不在版控，見 deployment.md**）② Zeabur 邊緣宣告 HTTP/3 使瀏覽器走 UDP（`next.config.ts` 加 `Alt-Svc: clear`）；實測 137KB 檔案 **18.50 秒 → 166ms**
   - ~~Judge0 策略：自架延至 2026-12~~ → **7-R 自建互動執行引擎（2026-08-05 定案，R0 ✅）**：A12 驗收體驗差 + 批次天生無互動 → 推翻 Batch Terminal 決策；nsjail + PTY + WS 互動終端（xterm 嵌 Output 面板）、Judge0 降 fallback；**B 機已租實測全綠**（43.133.7.93，2C2G，cgroup v2 免動 GRUB）；R1 ✅（`runner/` 9 模組 + Dockerfile + 15 tests；狀態字串對齊 Judge0 慣例）→ R2 ✅（`services/runner.py` dispatcher，URL 未設自動退 Judge0）→ R3 ✅（PTY 終端 WS + Redis ticket 認證 + backend 中繼；runner 22 + 後端 818 tests）→ R4 ✅（xterm 嵌 Output 面板 + ANSI 主題 + 退批次 fallback；A12 兩缺陷消滅）→ R5a/b ✅（部署產物 + 本機 Docker 實測 nsjail，修 3 個容器內才爆的缺陷：PCH 未綁 jail / execve 需絕對路徑 / **128+signal 逾時誤判**；PTY 互動實證）→ **R5c-1 B 機實機部署 ✅**（2026-08-06；bootstrap 8/8 + 全路徑實測 + PTY 互動 + 外部阻斷；再修 `/lib64` 未掛 jail「arm64 本機測不出」/ iptables-persistent 移除 ufw / pipefail 誤判）→ **R5c-2 ✅ 生產互動終端上線**（2026-08-06 驗收通過；卡點＝backend 須重啟才讀環境變數；A 機出口 IP 實測 `43.153.167.105` 與推測一致）+ R5d ✅ 移除 stdin 預填 UI（僅留 argv 列）→ R6 收尾（教材健檢解除 20 支/天上限 + 額度文案清理，**使用者要求暫緩**）
-- **🎯 Phase 7-U 上線後體驗優化進行中**（2026-08-06 使用者回饋定案，6 項）：7-U1 ✅ 單元導航只在概念說明 / 7-U2 ✅ **課程全解鎖**（migration `u7d8e9f0a1b2` + 移除 ghostUnlock 整條線路）/ 7-U3 ✅ 教材出處 UI 移除（citations 仍存 DB＋注入 prompt；K4e 防幻覺降為兩層）+ 時間戳改段尾註腳式播放標記 / 7-U4 ✅ 執行歷史 per-file（每檔 20 次、5 檔 LRU）+ 切檔清終端 / 7-U5 ✅ C++ 靜態補全（92 候選含繁中說明 + 當前檔識別字；Tab/Enter 接受；**不接 clangd LSP**——B 機 2GB 撐不住）/ 7-U6 ✅ Coddy 分階段進度（`/chat/interact` 改 SSE：stage×3 → done/error + 三段進度條；`chat.py` 超 250 行 → 抽 `chat_sse.py`）→ **7-U 六項全數完成，待真人驗收（清單 G 段 15 項）**
-  - **驗收清單新增 F 段（7-R 互動終端 5 項）與 G 段（7-U 8 項）**，全待真人操作
-  - 途中修 **schema 漂移**：`uq_code_files_draft` partial index 只在 migration、model 未宣告 → 測試建不出來、併發保護從未被驗證（生產不受影響）；已補 `__table_args__`，後端 818 全綠（詳 roadmap 7-R / server-plan.md）
+- **🎯 Phase 7-U 上線後體驗優化進行中**（2026-08-06 使用者回饋定案，6 項）：7-U1 ✅ 單元導航只在概念說明 / 7-U2 ✅ **課程全解鎖**（migration `u7d8e9f0a1b2` + 移除 ghostUnlock 整條線路）/ 7-U3 ✅ 教材出處 UI 移除（citations 仍存 DB＋注入 prompt；K4e 防幻覺降為兩層）+ 時間戳改段尾註腳式播放標記 / 7-U4 ✅ 執行歷史 per-file（每檔 20 次、5 檔 LRU）+ 切檔清終端 / 7-U5 ✅ C++ 靜態補全（92 候選含繁中說明 + 當前檔識別字；Tab/Enter 接受；**不接 clangd LSP**——B 機 2GB 撐不住）/ 7-U6 ✅ Coddy 分階段進度（`/chat/interact` 改 SSE：stage×3 → done/error + 三段進度條；`chat.py` 超 250 行 → 抽 `chat_sse.py`）→ **7-U 六項全數完成**
+  - 途中修 **schema 漂移**：`uq_code_files_draft` partial index 只在 migration、model 未宣告 → 測試建不出來、併發保護從未被驗證（生產不受影響）；已補 `__table_args__`
+- **🔜 下一步（2026-08-06 定案）**：① **重新部署 web + backend**（含 migration 與 `NEXT_PUBLIC_*` 建置期變數）② 使用者依 `docs/acceptance-checklist.md`（已全面重寫，0~9 段）走完驗收 ③ 進 **Phase 8 專案健檢與整理**——先做 8-0 討論（是否還有新功能 / 專案體積 1.3G / 工作流檢討），再動手清理
   - **已知限制**：`zeabur.app` 是公共後綴無法登記 Google 授權網域 → 現用 OAuth 測試模式（**100 人上限**）；2027-01 可用性評估前建議購自訂網域送驗證
   - **6-M2 模型升級 ✅**（2026-08-05）：全面轉 gpt-5.6 世代——對話/分析/生成＝`gpt-5.6-luna`、審查/內容＝`gpt-5.6-terra`；單次互動省 74%（$0.00316→$0.00081），100 人月成本 $25.3→$6.5（業界基準 CS50.ai $1.90/學生/月）
   - **7-1b 前修訂批 ✅**（2026-08-05 使用者驗收回饋連續修訂）：檔名鎖 `.cpp` + 就地改名 / Output 執行歷史移出元件樹 + 歷史選單 / 全站滾動條 GitHub Dark / 對話歷史選單溢出 / 複製按鈕統一回饋 / **stdin 輸入介面**（後端本就支援、前端從未送）/ **argv 執行參數**（章節 58 原本教不了）/ Coddy 主動說明三類執行問題（平台限制·逾時·UTC 時區，皆機械判定零成本）/ **收合聊天不再遺失對話**（`ChatRuntimeProvider`）/ 平板 chat bottom sheet / 執行語言鎖死 C++；後端 804 tests
@@ -78,10 +78,11 @@
 
 **`docs/`**（按需查閱，預設不主動讀）
 - [dev-setup.md](docs/dev-setup.md) — **本機環境啟動 SOP（每次 session 必讀 §1）**
-- [acceptance-checklist.md](docs/acceptance-checklist.md) — **真人驗收清單（A~E 段，含每日額度限制）**
+- [acceptance-checklist.md](docs/acceptance-checklist.md) — **真人驗收清單（依操作動線分 0~9 段；2026-08-06 全面重寫）**
 - [roadmap.md](docs/roadmap.md) — 任務追蹤（精簡）/ [roadmap-archive.md](docs/roadmap-archive.md) — 完成細節（凍結）
 - [changelog.md](docs/changelog.md) — 變更日誌（時間序）
 - [architecture.md](docs/architecture.md) / [modules.md](docs/modules.md) / [db-schema.md](docs/db-schema.md)
 - [ui-ux-spec.md](docs/ui-ux-spec.md) / [ui-wireframes.md](docs/ui-wireframes.md)（實作該頁時才讀）
-- [api-spec.md](docs/api-spec.md) / [deployment.md](docs/deployment.md) / [server-plan.md](docs/server-plan.md) — 伺服器規格與兩台拓撲（2026-07-12 定案）
+- [api-spec.md](docs/api-spec.md) / [deployment.md](docs/deployment.md)（§E = Runner 部署 SOP）/ [server-plan.md](docs/server-plan.md) — A 機 + B 機 Runner 專用機（2026-08-05 改版）
+- [design-plan.md](docs/design-plan.md) — 統一視覺協議（實作 UI 前才讀）
 - [tech-debt.md](docs/tech-debt.md) / [references.md](docs/references.md)

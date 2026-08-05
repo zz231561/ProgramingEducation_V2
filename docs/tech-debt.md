@@ -4,19 +4,22 @@
 
 ## ⚠ 待處理
 
-### 檔案大小逼近門檻（⚠ 提醒，未超硬上限）
-- [ ] `code-files-sidebar.tsx` 207 / `run-block.tsx` 201 / `workspace/page.tsx` 190 / `services/workspace_files.py` 174 / `runner/app/terminal.py` 165 / `output-panel.tsx` 163（R4 +25：終端/歷史二選一分支）/ `use-named-file.ts` 159 / `api/routes/code_files.py` 153 / `toolbar.tsx` 147
+### 🔴 前端零自動化測試
+- [ ] **`web/` 沒有任何測試框架**，但 `frontend.md` 寫著 Vitest + Playwright
+  - **代價已經在付**：2026-08 這一輪十幾批 UI 改動，全靠 `tsc` / `eslint` / `build` 加使用者手動點。7-U3/U4/U5 的純函式（時間戳改寫、per-file 歷史 store、識別字掃描）我只能用「把真實原始碼 `tsc` 編出來再用 node 跑斷言」來驗——**這個做法有效但無法納入 CI、也沒人會記得重跑**
+  - **最小可用起點**：Vitest + 幾支純函式測試（`lib/transcript-timestamps.ts`、`components/workspace/use-run-history.ts`、`components/editor/cpp-completion-source.ts`）即可把上述臨時驗證固化下來；React 元件測試與 Playwright 可後續再加
+  - **時機**：介面已於 7-U 收斂完畢，適合現在補
 
-### 延遲驗收（Phase 6-2 → 6-4 必跑）
-- [ ] **6-2 grounded UI 狀態尚未真機驗收** → **6-4a-deferred-ui 必驗（roadmap 已標）**
-  - **背景**：6-2c / 6-2d / 6-2e 完成時 DB 內無任何 promoted `concept_explanation` / `code_examples` / `summary` object，使用者只能驗 fallback / placeholder 狀態。grounded 主路徑必須等 6-2b 實機批次（延至 6-4 合併執行）跑完才驗得到
-  - **必驗項目**（任一 promoted unit 即可作 sample）：
-    - [x] ~~6-2c：grounded markdown render + 點 citation 真的呼叫 `player.seekTo`~~ — **2026-08-06 使用者已私下驗收通過**（跳轉正確）；同日 7-U3 將 citation 清單改為句尾註腳式播放標記，跳轉機制沿用
-    - 6-2d：卡片列表（title/code/explanation/citation）+ 「在 Workspace 開啟」→ CodeEditor `initialValue` 載入 + 一次性消費（重整不再覆蓋）
-    - ~~6-2e：摘要 tab 三狀態切換~~ → **已作廢（2026-07-06 U2b 決策：LEARN 摘要 tab 直接移除）**
-    - 6-3b：ExercisesTab 命中題庫 path（前端 Loading 顯示「查找題庫題目」< 1 秒、不打 LLM、直接顯示題目）— 當前只能驗 fallback 「AI 正在生成」path
-  - **如何處理**：批次跑完拿到至少 1 個 promoted unit 後，依 changelog 2026-05-22 6-2d 條目「How to verify」步驟 1-4 逐項操作；其中第 3-4 步是 sessionStorage 一次性消費的關鍵驗收，**不可漏跑**
-  - **若驗收失敗**：第一優先檢查 `web/lib/pending-workspace-code.ts` 的 `consumePendingWorkspaceCode()` 是否真的有 `removeItem`；其次檢查 `web/app/(app)/workspace/page.tsx` 是否用 `useState` lazy initializer（而非直接呼叫，會導致 re-render 多次 consume）
+### 文件一致性（2026-08-06 稽核發現）
+- [x] ~~tech-debt「延遲驗收 Phase 6-2」整段過期~~ — 2026-08-06 移除：6-2c 已驗收、6-2d/6-2e 的 tab 早被 U2g/U2b 刪除、排查指引還指向已不存在的 `web/lib/pending-workspace-code.ts`
+- [x] ~~驗收清單含已作廢項目~~ — 2026-08-06 全面重寫：移除 A12（stdin 預填 UI 已隨互動終端移除）等，改依操作動線編排並附「已作廢項目」對照表
+- [ ] **`changelog.md` 已 4500+ 行**，單檔持續成長
+  - **影響**：查閱成本高；但它是時間序日誌，內容本身沒錯
+  - **如何處理**：比照 `roadmap-archive.md` 的做法，把 2026-07 以前的條目移到 `changelog-archive.md`
+
+### 檔案大小逼近門檻（⚠ 提醒線 150，硬上限 250）
+> 2026-08-06 重新量測。無任何檔案超過硬上限。
+- [ ] `code-files-sidebar.tsx` 207 / `api/routes/chat.py` 208 / `run-block.tsx` 201 / `workspace/page.tsx` 190 / `services/workspace_files.py` 174 / `runner/app/terminal.py` 165 / `output-panel.tsx` 164 / `use-named-file.ts` 159 / `api/routes/code_files.py` 153
 
 ### 部署相關（待實測）
 - [ ] **A↔B runner 走明文 HTTP**（7-R R5 已知限制）

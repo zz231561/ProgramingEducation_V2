@@ -262,11 +262,12 @@
   - [x] 7-1a-4 實機執行播種 ✅（2026-08-05）：pg_dump 搬 RAG 表 → script 灌入生產庫，實機結果 documents 64 / questions 628 / unit_content_staging 62；**同日複驗**：concepts 影片 ID 62/62（含 duration 逐筆比對本機一致）、RAG 861、alembic `t6c7d8e9f0a1`、`learning_units` 62 筆 content 全非空（lazy-seed 已由首次進 Learn 頁觸發並帶入 staging 內容）→ **播種與 metadata 同步全數完成，無待補項**
   - [x] 7-1a-5 script 環境隔離防護（2026-08-05 使用者要求）：`scripts/_db_guard.py`——對生產庫操作時 export 的 `DATABASE_URL` 會殘留在同一個 shell，後續任何 script 都會誤寫生產庫。5 支開發工具掛 `require_local_db`（假學生 seeder / content·題庫批次生成 / RAG ingest / 題庫複審，非本機一律中止無覆寫選項），2 支生產維護工具掛 `confirm_remote_db`（promote / metadata patch，需輸入 yes 或 `ALLOW_PRODUCTION_WRITE=1`）；訊息遮蔽密碼
   - [x] 7-1a-6 生產環境效能根因排除 ✅（2026-08-05）：兩個**僅生產環境會出現**的問題疊加造成「頁面 10 秒」——① Node DNS IPv6 逾時耗盡 libuv threadpool（`NODE_OPTIONS=--dns-result-order=ipv4first` + `UV_THREADPOOL_SIZE=32`，環境變數不在版控，已記入 deployment.md）② Zeabur 邊緣宣告 HTTP/3 使瀏覽器走 UDP（`next.config.ts` 加 `Alt-Svc: clear`，拒絕要求使用者關 QUIC 的方案）；實測 137KB 檔案 18.50 秒 → 166ms、43 筆請求全 `h2`。後端全程無辜（13 端點 2–10ms、前端 trace 699,950 事件僅 1 個 ≥100ms）
-- [ ] 7-1b Golden path 跑通：登入 → 寫碼 → 執行 → AI 對話 → RAG 檢索 → 出題作答
-- [ ] 7-1c 教師端帳號 / 班級 / 行為資料端到端驗證（Phase 5 程式碼以真實流量驗收）
+- [~] 7-1b Golden path：登入 → 寫碼 → **互動終端執行**（2026-08-06 已通）→ AI 對話 → RAG → 出題作答；**其餘待驗收清單第 1–6 段**
+- [ ] 7-1c 教師端帳號 / 班級 / 行為資料端到端驗證（驗收清單第 7 段；**生產環境從未跑過**）
 
 ### 7-2 監控與告警
 > Sentry / 結構化日誌 / 健康檢查端點的**程式碼**可在本機預先寫好，但接通告警鏈路、Log aggregation、Sentry 收 issue 都需實際部署。
+> ⚠ 2026-08-06 起 B 機 runner 也需納入監控（`GET /healthz` 已具備 queue/cache/session 觀測欄位）。
 - [ ] 7-2a Sentry SDK 整合（前後端 init + DSN 環境變數 + 異常捕捉）— 程式碼可本機完成
 - [ ] 7-2b 結構化日誌（structlog / loguru + request_id middleware）— 程式碼可本機完成
 - [ ] 7-2c 健康檢查端點分離（/health/live + /health/ready）— 程式碼可本機完成
@@ -294,6 +295,11 @@
   - [x] R5d UI 收斂（使用者回饋「進階：預先餵入很醜」）：`stdin-panel.tsx` 移除 → `args-panel.tsx`（僅 argv 單行，`codeUsesArgs` 為真才渲染）+ 靜態偵測函式移至 `lib/code-detect.ts`（`usesLocalTime` 供 Coddy UTC 說明）；context 移除 orphan `getStdin/setStdin`，批次降級路徑不再送 stdin
 - [ ] R6 收尾：教材健檢解除 20 支/天上限 + 額度文案清理（acceptance-checklist / CLAUDE.md）+ 30 並行壓測 + 文件同步
 
+### 7-R6 收尾（使用者要求暫緩，待驗收後執行）
+- [ ] 教材健檢解除每日 20 支上限（Judge0 額度限制已消失，改為全 62 支一輪）
+- [ ] 額度相關文案清理（`CLAUDE.md` / hook 提示仍寫著 Judge0 50 次/天）
+- [ ] 30 並行壓測（驗證 server-plan 容量假設）
+
 ### 7-U 上線後體驗優化（2026-08-06 使用者回饋定案）
 - [x] 7-U1 上下單元只在概念說明顯示（作答中跳單元非合理動線）
 - [x] 7-U2 **課程全解鎖**：generator 全 available + migration `u7d8e9f0a1b2` 轉既有 locked + 前端移除 ghostUnlock 整條線路（含 DEV 設定卡）；順序改由編號/狀態圖示呈現為建議路徑
@@ -301,6 +307,38 @@
 - [x] 7-U4 終端機與執行歷史 per-file（每檔 20 次、5 檔 LRU；切檔即清終端並中止進行中 session）
 - [x] 7-U5 靜態補全：92 個候選（關鍵字 + 教材用得到的 STL 含繁中說明 + 骨架片段）+ 當前檔識別字掃描；Tab/Enter 接受、Esc 關閉；彈窗樣式對齊 GitHub Dark（**不接 clangd LSP**——B 機 2GB 撐不住 30 個實例）
 - [x] 7-U6 Coddy 分階段狀態文字：`/chat/interact` 改 SSE（stage → done/error）+ 前端三段進度條；`chat.py` 263 行超硬上限 → 抽 `chat_sse.py`（使用者核准）
+
+---
+
+## Phase 8 — 專案健檢與整理（2026-08-06 使用者提出）
+
+> **執行前提**：驗收清單第 1–8 段跑完且無阻斷問題。
+> **下個 session 的順序**：① 先討論（8-0）→ ② 使用者驗收 → ③ 驗收無問題才動手整理。
+> 排序原則：**先談清楚方向，再做不可逆的刪除**；能自動驗證的排前面，需要人判斷的排後面。
+
+### 8-0 討論（不寫程式，下個 session 開場先做）
+- [ ] 8-0a **是否還有新功能要加**——若有，優先排入，因為它會影響「該刪什麼」的判斷
+- [ ] 8-0b **專案體積討論**（1.3G）
+  - 事實已量測（2026-08-06）：`web/node_modules` 666M + `backend/.venv` 390M + `web/.next` 226M + `.git` 36M，**三者皆未進版控**；`git count-objects` 顯示實際追蹤內容僅 **378 KB**
+  - 待討論：這個量級對此類專案是否正常、有無實質可瘦身處（如 `.next` 快取、`.git` 有 3854 個 loose object 未 gc）
+- [ ] 8-0c **工作流檢討**——目前是「單一 session 連續多批 + 每批 commit/push + 文件同步」，討論哪裡好用、哪裡拖慢
+
+### 8-1 文件一致性全面稽核
+> 2026-08-06 已先修三份（roadmap / 驗收清單 / tech-debt），其餘尚未逐字核對。
+- [ ] 8-1a 逐份核對 `docs/` 其餘 13 份與現況是否相符（重點：`modules.md`、`api-spec.md`、`db-schema.md`、`ui-ux-spec.md` — 這幾份最久沒動）
+- [ ] 8-1b 修正 `CLAUDE.md` 文件索引的過時描述（已知：驗收清單寫「A~E 段」、server-plan 寫「兩台拓撲 2026-07-12 定案」但已改 runner 專用機）
+- [ ] 8-1c `changelog.md` 4500+ 行 → 拆 `changelog-archive.md`（2026-07 以前）
+- [ ] 8-1d 建立防止再度腐化的機制（如 session 結束前的自檢清單，或把「文件提到的檔案是否存在」做成 script）
+
+### 8-2 專案清理
+- [ ] 8-2a 清除不必要檔案：`.DS_Store`（散落多處）、`.pytest_cache`、`web/.next` 快取；確認 `.gitignore` 涵蓋完整
+- [ ] 8-2b `git gc` 壓縮 loose objects
+- [ ] 8-2c 盤點死程式碼與孤兒檔案（提出清單由使用者裁決，**不自行刪除**）
+- [ ] 8-2d `ScreenShot/` 676K 未進版控——確認用途，決定保留或移除
+
+### 8-3 前端測試基礎設施（tech-debt 🔴）
+- [ ] 8-3a Vitest 建置 + 把 7-U 期間用 node 臨時驗證的三支純函式測試固化（`transcript-timestamps` / `use-run-history` / `cpp-completion-source`）
+- [ ] 8-3b 視情況再評估 React 元件測試與 Playwright
 
 ---
 
@@ -326,4 +364,4 @@
 - **反思計畫粒度**（2026-07-06 確認）：現行即為「每題一份」（Quiz 與 Learn 練習皆以 `sourceType="quiz"` + question id 建立），符合預期不需改；Workspace 顯示 gating 問題列 U1c
 - **自建互動執行引擎（2026-08-05 定案，7-R）**：nsjail 沙箱（Google 維護，不自造輪子）+ PTY（stdout 行緩衝，提示字即時出現——修掉 V1 pipe 緩衝缺陷）+ WebSocket；拓撲＝Browser `wss` → A 機 backend（綁公開子網域；Next.js Route Handler 不支援 WS proxy）中繼 → B 機 runner；**一律互動終端**（`POST /run` 批次僅供題庫驗證 / 教材健檢 / 實作題判定）；Judge0 降為 fallback（`RUNNER_BACKEND`）；`ExecutionResult` 欄位不變 → EDF / analytics / run_help 零改動；B 機另租不動 PokerNote（總 $12/月）；「僅放行 A 機」防火牆規則**保留並加 `X-Runner-Token` 縱深**（B 機不持有任何 credential）；已知兩缺陷（stdin 提示不即時 / Run 不攔截）不修、由 R4 取代；UI＝終端機嵌入 Output 面板（非 V1 modal）+ ANSI 16 色例外（僅終端畫布，frontend.md 白名單）
 - **LLM 模型選型 v2**（2026-07-06 確認）：放棄單一 GPT-4o，改任務導向路由（詳見 6-M 節選型表）；cascade 設計 = `gpt-5-mini` 生成 + `gpt-5.4` 審查；Unit content 批次用 `gpt-5.4`（教科書品質優先）；對話/分析組 `gpt-5.4-mini` 起步、K4d 實測後定案；文獻依據 FrugalGPT / RouteLLM（references.md §5.1）；論文記錄實驗當下確切模型版本
-- **實作執行順序**（2026-07-06 session 定案，共 10 批）：① U1a/b/c bug 修正 → ② U2b 移除摘要 + U2c 拔 1-3 範例 → ③ knowledge-graph.tsx 拆分（已核可）+ K6a/b/c → ④ U2d 題庫優先 + U2a QUIZ 美化 + 練習題重複曝光 → ⑤ 6-M1 模型分組 + 6-3a-3/6-4a 實機批次 + deferred-ui + K4d 調參（需 OpenAI 儲值 $10；key 已在 backend/.env） → ⑥ ~~U2f 範例程式~~ **改 U2g tab 重構+移除範例** → ⑥' 6-3c 知識點驅動題庫 → ⑦ 教師端 5-1 → 5-2 → DEV-E → 5-5 → ⑧ U2e Workspace 存檔 + 7-2a/b/c 監控程式碼 → ⑨ Phase 7 部署實測 → ⑩ 5-3/5-4 行為分析（待真實資料）；真人驗收（K1d/K5d/K4d 語氣）改使用者 session 後自測（2026-07-06 晚間修訂：U2f 作廢、新增 U2g/6-3c、簡答題型不做）
+- ~~**實作執行順序**（2026-07-06 定案，共 10 批）~~ → **已全數執行完畢，保留供追溯**。2026-08-06 起的順序改為：驗收清單 1–8 段 → Phase 8 健檢整理（8-0 討論先行）→ 7-2 監控 → 7-3 效能 baseline → 5-3/5-4 行為分析（等真實資料）。原文：① U1a/b/c bug 修正 → ② U2b 移除摘要 + U2c 拔 1-3 範例 → ③ knowledge-graph.tsx 拆分（已核可）+ K6a/b/c → ④ U2d 題庫優先 + U2a QUIZ 美化 + 練習題重複曝光 → ⑤ 6-M1 模型分組 + 6-3a-3/6-4a 實機批次 + deferred-ui + K4d 調參（需 OpenAI 儲值 $10；key 已在 backend/.env） → ⑥ ~~U2f 範例程式~~ **改 U2g tab 重構+移除範例** → ⑥' 6-3c 知識點驅動題庫 → ⑦ 教師端 5-1 → 5-2 → DEV-E → 5-5 → ⑧ U2e Workspace 存檔 + 7-2a/b/c 監控程式碼 → ⑨ Phase 7 部署實測 → ⑩ 5-3/5-4 行為分析（待真實資料）；真人驗收（K1d/K5d/K4d 語氣）改使用者 session 後自測（2026-07-06 晚間修訂：U2f 作廢、新增 U2g/6-3c、簡答題型不做）

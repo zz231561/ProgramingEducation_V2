@@ -5,6 +5,7 @@ import { ChevronUp, ChevronDown, Trash2 } from "lucide-react";
 import { useWorkspace } from "./workspace-context";
 import type { RunRecord } from "./types";
 import { RunBlock, classifyStatus, STATUS_META } from "./run-block";
+import { RunHistoryMenu } from "./run-history-menu";
 
 interface OutputPanelProps {
   /** 是否收合為單行 status bar */
@@ -33,6 +34,16 @@ export function OutputPanel({ collapsed = false, onToggleCollapse }: OutputPanel
     [],
   );
 
+  /** 從歷史選單選一筆：展開它並捲到畫面內 */
+  const revealBlock = useCallback((id: number) => {
+    setOverrides((prev) => ({ ...prev, [id]: true }));
+    requestAnimationFrame(() => {
+      document
+        .getElementById(`run-block-${id}`)
+        ?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    });
+  }, []);
+
   /* 收合狀態：單行 status bar 顯示最新 block 摘要 */
   if (collapsed) {
     return (
@@ -59,6 +70,7 @@ export function OutputPanel({ collapsed = false, onToggleCollapse }: OutputPanel
 
         <div className="flex-1" />
 
+        <RunHistoryMenu runs={runs} onSelect={revealBlock} />
         {runs.length > 0 && (
           <button
             onClick={clearRuns}
@@ -87,14 +99,16 @@ export function OutputPanel({ collapsed = false, onToggleCollapse }: OutputPanel
           </div>
         ) : (
           runs.map((block) => (
-            <RunBlock
-              key={block.id}
-              block={block}
-              expanded={isExpanded(block.id)}
-              index={block.id}
-              onToggle={() => toggleBlock(block.id, isExpanded(block.id))}
-              onSendToChat={() => requestChatInjection(block.result)}
-            />
+            // id 供歷史選單 scrollIntoView 定位
+            <div key={block.id} id={`run-block-${block.id}`}>
+              <RunBlock
+                block={block}
+                expanded={isExpanded(block.id)}
+                index={block.id}
+                onToggle={() => toggleBlock(block.id, isExpanded(block.id))}
+                onSendToChat={() => requestChatInjection(block.result)}
+              />
+            </div>
           ))
         )}
       </div>

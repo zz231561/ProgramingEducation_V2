@@ -183,7 +183,7 @@ export const STATUS_META: Record<RunStatus, StatusMeta> = {
   },
 };
 
-function formatTime(ts: number): string {
+export function formatTime(ts: number): string {
   const d = new Date(ts);
   return d.toLocaleTimeString("zh-TW", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false });
 }

@@ -1,5 +1,14 @@
 # 變更日誌
 
+## [2026-08-05] — feat(workspace)：Output 加執行歷史選單（驗收回饋：歷史需要明確入口）
+
+- 前一批把執行歷史保存下來了，但入口只有「往下捲看舊 block」，使用者反映**看不到歷史記錄按鈕**
+- 新增 `components/workspace/run-history-menu.tsx`（80 行）：Output header 的「歷史」鈕 → 下拉列出每次執行（Run #N ／狀態 icon ＋文字／時間），**沿用 Chat 對話歷史的下拉寫法**（靠右對齊 + 點外面關閉 + `max-w` 保底），避免同一功能兩種操作邏輯
+- 選一筆 → 展開該次結果並 `scrollIntoView`（每個 block 掛 `run-block-{id}`）
+- `formatTime` 由 run-block 匯出共用，不另寫一份時間格式
+
+---
+
 ## [2026-08-05] — fix(ui)：對話歷史選單溢出視窗 + 全站滾動條改 GitHub Dark 風格
 
 > 使用者截圖回報兩點：對話歷史下拉選單被切掉一半、系統各處滾動條是白色不透明的。

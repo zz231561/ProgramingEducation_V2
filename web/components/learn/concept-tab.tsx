@@ -1,20 +1,26 @@
 "use client";
 
 /**
- * 概念說明 tab（Phase 6-2c）— grounded 內容渲染 + YT player + citation 跳轉。
+ * 概念說明 tab（Phase 6-2c；7-U3 改版）— grounded 內容渲染 + YT player + 時間跳轉。
  *
  * 三種狀態優先順序：
  * 1. 無 video_youtube_id（教授尚未補資料）→ placeholder
  * 2. 有影片但無 grounded content（content.concept_explanation 未生成 / promote）
  *    → 仍嵌入 player + 簡短說明
- * 3. 完整 grounded → player + Markdown + citations 列表（點擊跳轉影片時間）
+ * 3. 完整 grounded → player + Markdown（句尾註腳式播放標記可跳轉影片）
+ *
+ * 7-U3（2026-08-06）：移除「影片出處」清單；句中 `[00:15]` 戳記改寫為段尾標記。
  */
 
-import { useRef } from "react";
-import { MonitorPlay } from "lucide-react";
+import { useMemo, useRef } from "react";
+import { MonitorPlay, Play } from "lucide-react";
 
 import { MarkdownContent } from "@/components/ui/markdown";
-import { Citation, Unit } from "@/lib/learning";
+import { Unit } from "@/lib/learning";
+import {
+  rewriteTimestamps,
+  seekSecondsFromHref,
+} from "@/lib/transcript-timestamps";
 
 import {
   YouTubePlayer,
@@ -38,11 +44,6 @@ export function ConceptTab({ unit }: Props) {
     );
   }
 
-  const handleCitationClick = (timestamp: string) => {
-    const seconds = parseTimestampStart(timestamp);
-    if (seconds != null) playerRef.current?.seekTo(seconds);
-  };
-
   const explanation = unit.content.concept_explanation;
   const hasGrounded =
     !!explanation && !explanation.needs_more_source && !!explanation.markdown;
@@ -53,8 +54,7 @@ export function ConceptTab({ unit }: Props) {
       {hasGrounded ? (
         <GroundedExplanation
           markdown={explanation.markdown}
-          citations={explanation.citations}
-          onCitationClick={handleCitationClick}
+          onSeek={(seconds) => playerRef.current?.seekTo(seconds)}
         />
       ) : (
         <PendingContentNotice
@@ -67,71 +67,66 @@ export function ConceptTab({ unit }: Props) {
 }
 
 /**
- * 解析 mm:ss / mm:ss-mm:ss / hh:mm:ss → 起點秒數。
- * 格式錯誤 → null（caller 不跳轉）。
+ * grounded 內文 —— 7-U3：移除「影片出處」清單（與 Coddy 教材出處一致），
+ * 句中的 `[00:15]` 戳記改寫為**句尾註腳式播放標記**，點擊跳轉影片。
  */
-export function parseTimestampStart(timestamp: string): number | null {
-  const [start] = timestamp.split("-");
-  const parts = start.trim().split(":").map((p) => p.trim());
-  if (parts.length < 2 || parts.length > 3) return null;
-  const nums = parts.map((p) => Number(p));
-  if (nums.some((n) => !Number.isFinite(n) || n < 0)) return null;
-  if (parts.length === 2) {
-    const [m, s] = nums;
-    return m * 60 + s;
-  }
-  const [h, m, s] = nums;
-  return h * 3600 + m * 60 + s;
-}
-
 function GroundedExplanation({
   markdown,
-  citations,
-  onCitationClick,
+  onSeek,
 }: {
   markdown: string;
-  citations: Citation[];
-  onCitationClick: (timestamp: string) => void;
+  onSeek: (seconds: number) => void;
 }) {
+  const rewritten = useMemo(() => rewriteTimestamps(markdown), [markdown]);
+  const components = useMemo(
+    () => ({
+      a: ({ href, children }: { href?: string; children?: React.ReactNode }) => {
+        const seconds = seekSecondsFromHref(href);
+        if (seconds === null) {
+          return (
+            <a
+              href={href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-text-link underline underline-offset-2 hover:no-underline"
+            >
+              {children}
+            </a>
+          );
+        }
+        return <SeekMarker seconds={seconds} onSeek={onSeek}>{children}</SeekMarker>;
+      },
+    }),
+    [onSeek],
+  );
+
   return (
-    <>
-      <div className="rounded-md border border-border-default bg-surface-1 p-4 text-sm leading-relaxed text-text-secondary">
-        <MarkdownContent>{markdown}</MarkdownContent>
-      </div>
-      {citations.length > 0 && (
-        <CitationList citations={citations} onClick={onCitationClick} />
-      )}
-    </>
+    <div className="rounded-md border border-border-default bg-surface-1 p-4 text-sm leading-relaxed text-text-secondary">
+      <MarkdownContent components={components}>{rewritten}</MarkdownContent>
+    </div>
   );
 }
 
-function CitationList({
-  citations,
-  onClick,
+/** 註腳式播放標記：平常淡灰，hover 變藍 */
+function SeekMarker({
+  seconds,
+  onSeek,
+  children,
 }: {
-  citations: Citation[];
-  onClick: (timestamp: string) => void;
+  seconds: number;
+  onSeek: (seconds: number) => void;
+  children?: React.ReactNode;
 }) {
   return (
-    <div className="rounded-md border border-border-default bg-surface-1 p-3">
-      <h4 className="text-xs font-medium text-text-secondary">
-        影片出處（點擊跳轉）
-      </h4>
-      <ul className="mt-2 space-y-1.5">
-        {citations.map((c, idx) => (
-          <li key={`${c.timestamp}-${idx}`}>
-            <button
-              type="button"
-              onClick={() => onClick(c.timestamp)}
-              className="flex w-full items-start gap-2 rounded-sm px-1.5 py-1 text-left text-xs hover:bg-surface-2"
-            >
-              <span className="font-mono text-text-link">{c.timestamp}</span>
-              <span className="text-text-secondary">{c.text_excerpt}</span>
-            </button>
-          </li>
-        ))}
-      </ul>
-    </div>
+    <button
+      type="button"
+      onClick={() => onSeek(seconds)}
+      title="跳到影片這個時間點"
+      className="ml-1 inline-flex translate-y-[1px] items-center gap-0.5 align-baseline font-mono text-xs text-text-muted transition-colors hover:text-text-link"
+    >
+      <Play className="size-2.5 fill-current" />
+      {children}
+    </button>
   );
 }
 

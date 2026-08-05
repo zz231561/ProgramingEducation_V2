@@ -4,7 +4,6 @@ import { Bot, User } from "lucide-react";
 import { MarkdownContent } from "@/components/ui/markdown";
 import type { MessageItem } from "@/lib/chat-types";
 import { BloomBadge, extractBloomLevel } from "./bloom-badge";
-import { CitationList } from "./citation-list";
 import { EdfDebugPanel } from "./edf-debug-panel";
 import { EdfTimeline } from "./edf-timeline";
 
@@ -54,10 +53,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
             </div>
           )}
         </div>
-        {/* 教材出處：展開可看 transcript 原文，讓學生自行核對 Coddy 說法 */}
-        {!isUser && message.citations && message.citations.length > 0 && (
-          <CitationList citations={message.citations} />
-        )}
+        {/* 7-U3：教材出處 UI 已移除（citations 仍隨回應傳回並存 DB，僅不呈現給學生） */}
         {/* DEV-7：dev 帳號的 EDF 中間層觀測（僅當輪互動附帶） */}
         {!isUser && message.debug && <EdfDebugPanel debug={message.debug} />}
       </div>

@@ -1,5 +1,23 @@
 # 變更日誌
 
+## [2026-08-06] — feat(learn)：7-U3 教材出處移除 + 時間戳改句尾註腳式播放標記
+
+### Removed — 教材出處 UI（使用者決策：只有模型看得到）
+- LEARN 概念說明的「影片出處（點擊跳轉）」清單移除
+- Coddy 回應下方的「教材出處（展開可看原文）」移除，`components/chat/citation-list.tsx` 刪除
+- **citations 資料本身保留**：後端照常檢索、注入 prompt、隨回應傳回並存 DB，只是不再呈現給學生
+- ⚠ 副作用：K4e 防幻覺從三層變**兩層**（機械攔截未 grounded 引用 + 誠實說教材沒提仍在；失去「學生當場核對原文」那層）
+
+### Added — `lib/transcript-timestamps.ts`
+- grounded 內文句中的 `[00:15]`、`[01:02-01:20]` 戳記把文句切得很碎 → 改寫為**段尾註腳式播放標記**（`▸ 0:15`，平常 muted、hover 變藍、點擊 `player.seekTo`）
+- 行為：**段落內去重**（同一秒數只留一個）、**程式碼圍籬內不動**（可能是學生要照抄的程式）、區間戳記取起點、支援 `mm:ss` 與 `hh:mm:ss`
+- 實作方式：轉為自訂 scheme 的 markdown 連結（`codedge-seek:秒數`），由 `MarkdownContent` 的 `a` 覆寫接成按鈕；`MarkdownContent` 新增選用 `components` 覆寫參數
+- **驗證**：前端無測試框架（tech-debt 🔴），故將真實原始碼 `tsc` 編出後以 node 跑 7 種情境（句中單戳／多戳去重／跨段落／圍籬不動／無戳記／區間／小時制）全數正確
+- 移除 `concept-tab.tsx` 內已成 orphan 的 `parseTimestampStart`
+
+### Fixed
+- tech-debt「6-2c citation 跳轉未真機驗收」**標為消除**——使用者已私下驗收通過，跳轉正確（此條掛最久）
+
 ## [2026-08-06] — feat(learn)：7-U1 單元導航收斂 + 7-U2 課程全解鎖；修 schema 漂移
 
 ### Changed — 7-U1 上下單元只在概念說明顯示

@@ -59,10 +59,22 @@ export const MARKDOWN_COMPONENTS = {
   ),
 };
 
-/** 渲染 Markdown 字串（GFM 支援：列表、表格、刪除線等）。 */
-export function MarkdownContent({ children }: { children: string }) {
+/**
+ * 渲染 Markdown 字串（GFM 支援：列表、表格、刪除線等）。
+ * `components` 可覆寫個別元素（Learn 用它把時間戳連結接成播放標記）。
+ */
+export function MarkdownContent({
+  children,
+  components,
+}: {
+  children: string;
+  components?: Partial<typeof MARKDOWN_COMPONENTS>;
+}) {
   return (
-    <ReactMarkdown remarkPlugins={[remarkGfm]} components={MARKDOWN_COMPONENTS}>
+    <ReactMarkdown
+      remarkPlugins={[remarkGfm]}
+      components={{ ...MARKDOWN_COMPONENTS, ...components }}
+    >
       {children}
     </ReactMarkdown>
   );

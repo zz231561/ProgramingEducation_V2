@@ -11,7 +11,7 @@
 - [ ] **6-2 grounded UI 狀態尚未真機驗收** → **6-4a-deferred-ui 必驗（roadmap 已標）**
   - **背景**：6-2c / 6-2d / 6-2e 完成時 DB 內無任何 promoted `concept_explanation` / `code_examples` / `summary` object，使用者只能驗 fallback / placeholder 狀態。grounded 主路徑必須等 6-2b 實機批次（延至 6-4 合併執行）跑完才驗得到
   - **必驗項目**（任一 promoted unit 即可作 sample）：
-    - 6-2c：grounded markdown render + 點 citation 真的呼叫 `player.seekTo`
+    - [x] ~~6-2c：grounded markdown render + 點 citation 真的呼叫 `player.seekTo`~~ — **2026-08-06 使用者已私下驗收通過**（跳轉正確）；同日 7-U3 將 citation 清單改為句尾註腳式播放標記，跳轉機制沿用
     - 6-2d：卡片列表（title/code/explanation/citation）+ 「在 Workspace 開啟」→ CodeEditor `initialValue` 載入 + 一次性消費（重整不再覆蓋）
     - ~~6-2e：摘要 tab 三狀態切換~~ → **已作廢（2026-07-06 U2b 決策：LEARN 摘要 tab 直接移除）**
     - 6-3b：ExercisesTab 命中題庫 path（前端 Loading 顯示「查找題庫題目」< 1 秒、不打 LLM、直接顯示題目）— 當前只能驗 fallback 「AI 正在生成」path

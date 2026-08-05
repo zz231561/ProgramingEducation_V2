@@ -67,7 +67,9 @@ function Dropdown({
   onNewChat,
 }: Omit<SessionListProps, ""> ) {
   return (
-    <div className="absolute left-0 top-full z-50 mt-1 w-64 rounded-md border border-border-default bg-bg-default shadow-lg">
+    // 靠右對齊：History 鈕在 Chat panel 右上角，left-0 會讓 256px 寬的選單溢出視窗
+    // （與 global-nav avatar 選單同一寫法）；max-w 再保底窄視窗情境
+    <div className="absolute right-0 top-full z-50 mt-1 w-64 max-w-[calc(100vw-2rem)] rounded-md border border-border-default bg-bg-default shadow-modal">
       <button
         onClick={onNewChat}
         className="flex w-full items-center gap-2 px-3 py-2 text-sm text-accent-blue hover:bg-bg-subtle transition-colors"

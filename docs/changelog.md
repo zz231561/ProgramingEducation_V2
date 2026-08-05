@@ -1,5 +1,25 @@
 # 變更日誌
 
+## [2026-08-05] — fix(ui)：對話歷史選單溢出視窗 + 全站滾動條改 GitHub Dark 風格
+
+> 使用者截圖回報兩點：對話歷史下拉選單被切掉一半、系統各處滾動條是白色不透明的。
+
+### Fixed — 下拉選單溢出（`components/chat/session-list.tsx`）
+- History 鈕位於 Chat panel 右上角，選單卻寫 `absolute left-0` + `w-64` → 256px 往右畫必然超出面板與視窗（連帶讓整頁出現橫向滾動條）
+- 改 `right-0` 靠右對齊（**與 `global-nav.tsx` avatar 選單同一寫法**，該處本來就是對的）+ `max-w-[calc(100vw-2rem)]` 保底窄視窗
+- 順修 R4 違規：`shadow-lg` → `shadow-modal`（全站唯一一處非 token 陰影，已無殘留）
+
+### Fixed — 滾動條（`app/globals.css`，使用者選定方案）
+- **根因**：`globals.css` 從未宣告 `color-scheme`，也沒有任何滾動條樣式 → 瀏覽器一律給淺色預設，在純 Dark Mode 介面上就是一條白槓
+- `html { color-scheme: dark }` — 讓所有原生元件（滾動條、select、日期選擇器）跟著深色，不只滾動條受益
+- 自訂滾動條（使用者選 10px + 透明軌道）：拇指 `--border-default`、hover 轉 `--border-emphasis`、`border: 2px solid transparent` + `background-clip: content-box` 內縮 → **視覺 6px 細、實際 10px 好抓**；軌道與 corner 全透明；Firefox 以 `scrollbar-width: thin` + `scrollbar-color` 對應
+- 全部走既有 token，未引入新色（R1 通過）
+
+### Verified
+- web build + tsc + eslint 綠
+
+---
+
 ## [2026-08-05] — fix(workspace)：Output 執行歷史不再被側邊欄清空 + page.tsx 拆分（250 行硬線）
 
 > 使用者回報：「開啟側邊欄，先前終端機的輸出會被清空，且沒有歷史記錄可查看。」

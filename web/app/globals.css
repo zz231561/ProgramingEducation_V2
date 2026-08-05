@@ -152,11 +152,47 @@
 }
 
 /* ===== 全域樣式 ===== */
+html {
+  /* 純 Dark Mode：讓原生元件（滾動條、select、日期選擇器）跟著深色，
+     否則瀏覽器會給淺色預設——滾動條因此是白色的（2026-08-05 驗收回報） */
+  color-scheme: dark;
+}
+
 body {
   background: var(--bg-canvas);
   color: var(--text-primary);
   /* Phase 1-6b: Inter OpenType — cv01 (單層 'a')、ss03 (幾何字形) */
   font-feature-settings: "cv01", "ss03";
+}
+
+/* ===== 滾動條（GitHub Dark 風格：透明軌道 + 內縮拇指） ===== */
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-default) transparent;
+}
+
+/* Chromium / Safari */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-default);
+  border-radius: 9999px;
+  /* 內縮 2px：實際拇指看起來只有 6px，卻仍保有 10px 的好抓範圍 */
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--border-emphasis);
+  background-clip: content-box;
+}
+::-webkit-scrollbar-corner {
+  background: transparent;
 }
 
 /* Phase 1-6b: Typography helper classes（design-plan §3.4） */

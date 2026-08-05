@@ -29,6 +29,11 @@
   - **如何處理**：self-host VPS 部署時實測 stack 啟動 → workers 成功 register languages → backend 能透過 `/about` 與 `/submissions` 對話；若 worker fail 多半是 cgroups / privileged 問題
 
 ### 內容層（教學課綱）
+- [ ] 🔴 **章節 41 教材把 `extern` 寫成 `external`**（2026-08-05 盤點 Judge0 能力矩陣時發現）
+  - **根因**：Whisper 逐字稿 [00:35]「在資料型態的前面加上 external 這個字」→ grounded 生成忠實複製錯誤關鍵字
+  - **影響**：學生照打 `external int x;` 編譯必失敗；本機與**生產庫皆有**（RAG 2 chunks / staging 1 / learning_units 1 / questions 2）
+  - **極可能是 v41 題庫掛零主因**（生成端依錯誤教材出題 → 審查端打回）
+  - **修法鏈**：`corrections.json` 加 `"external": "extern"` → `apply_corrections --only 41` → RAG 重 ingest v41 → 重生 v41 content + questions → promote → 生產重播種
 - 🔄 **YT video metadata 未補**（已從 59 → 62 個影片 concept；2026-05-07 教授交付 playlist URL，fetcher script 已產 59 列 CSV，待擴充至 62 列）→ **正式追蹤於 roadmap Phase 6-1**
   - **影響**：3-1d 學習單元頁的概念說明 tab 無法 embed YT player；只能顯示影片標題與「待補」placeholder
   - **進度**：6-1a/b 已完成；6-1b+/c/d/e/f 進行中

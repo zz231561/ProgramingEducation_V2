@@ -139,23 +139,24 @@ export function useChat(options: UseChatOptions = {}) {
   );
 
   /**
-   * 編譯失敗時 Coddy 主動說明（平台限制直說 / 學生錯誤引導，後端判定）。
+   * 執行出問題時 Coddy 主動說明（環境限制直說 / 學生錯誤引導，後端判定）。
    * 失敗靜默：學生仍可自己提問，不因此看到錯誤訊息。
    */
-  const requestCompileErrorHelp = useCallback(
-    async (compileOutput: string, statusDescription = "") => {
+  const requestRunHelp = useCallback(
+    async (compileOutput: string, statusDescription = "", kind = "") => {
       setIsLoading(true);
       try {
         const res = await api<{
           session_id: string;
           session_title: string;
           assistant_message: ApiMessage;
-        }>("/chat/compile-error", {
+        }>("/chat/run-help", {
           method: "POST",
           body: JSON.stringify({
             code: options.getCode?.() ?? "",
             compile_output: compileOutput,
             status_description: statusDescription,
+            kind,
             session_id: sessionIdRef.current,
           }),
         });
@@ -206,7 +207,7 @@ export function useChat(options: UseChatOptions = {}) {
     sessionId: sessionIdRef.current,
     sendMessage,
     loadKickoff,
-    requestCompileErrorHelp,
+    requestRunHelp,
     loadSession,
     startNewSession,
     injectExecutionResult,

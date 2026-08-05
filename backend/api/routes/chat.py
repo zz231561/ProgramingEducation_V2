@@ -13,7 +13,7 @@ from models.coding_event import CodingEventType
 from services.analytics import log_coding_event
 from services.chat import interact
 from services.chat_kickoff import reflection_kickoff
-from services.compile_error import compile_error_help
+from services.run_help import run_help
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 
@@ -100,47 +100,50 @@ async def chat_reflection_kickoff(
     )
 
 
-class CompileErrorRequest(BaseModel):
-    """編譯失敗時請 Coddy 主動說明。"""
+class RunHelpRequest(BaseModel):
+    """執行出現問題時請 Coddy 主動說明。"""
 
     code: str = Field(default="", max_length=50_000)
-    # 逾時的情況沒有編譯訊息，改由 status_description 判定
+    # 逾時 / 時區的情況沒有編譯訊息，改由 status_description 與 kind 判定
     compile_output: str = Field(default="", max_length=10_000)
     status_description: str = Field(default="", max_length=200)
+    # 前端機械判定出的類型（目前只有 "timezone"）；空＝依編譯訊息判斷
+    kind: str = Field(default="", max_length=20)
     session_id: uuid.UUID | None = Field(default=None)
 
 
-class CompileErrorResponse(BaseModel):
+class RunHelpResponse(BaseModel):
     session_id: uuid.UUID
     session_title: str
-    # True = 機械判定（平台限制 / 執行逾時），以固定文案直接說明、未呼叫 LLM
-    is_platform_limit: bool
+    # True = 機械判定（平台限制 / 逾時 / 時區），固定文案未呼叫 LLM
+    is_mechanical: bool
     assistant_message: MessageOut
 
 
 @router.post(
-    "/compile-error",
-    response_model=CompileErrorResponse,
+    "/run-help",
+    response_model=RunHelpResponse,
     dependencies=[Depends(rate_limit("llm"))],
 )
-async def chat_compile_error(
-    body: CompileErrorRequest,
+async def chat_run_help(
+    body: RunHelpRequest,
     user: User = Depends(get_current_db_user),
     db: AsyncSession = Depends(get_db),
-) -> CompileErrorResponse:
-    """編譯失敗時 Coddy 主動發話：平台限制直說，學生自己的錯誤走引導。"""
-    session, msg, is_platform = await compile_error_help(
+) -> RunHelpResponse:
+    """執行出問題時 Coddy 主動發話：環境限制直說，學生自己的錯誤走引導。"""
+    session, msg, mechanical = await run_help(
         db,
         user.id,
         body.session_id,
         body.code,
         body.compile_output,
         body.status_description,
+        body.kind,
     )
-    return CompileErrorResponse(
+    return RunHelpResponse(
         session_id=session.id,
         session_title=session.title or "",
-        is_platform_limit=is_platform,
+        is_mechanical=mechanical,
         assistant_message=MessageOut(
             id=msg.id,
             role=msg.role.value,

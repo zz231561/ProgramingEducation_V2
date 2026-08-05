@@ -1,4 +1,4 @@
-"""編譯失敗 Coddy 主動說明測試（2026-08-05）。
+"""執行問題 Coddy 主動說明測試（2026-08-05）。
 
 重點：平台限制走固定文案**不呼叫 LLM**，學生自己的錯誤才走 LLM 引導。
 """
@@ -8,7 +8,7 @@ from unittest.mock import AsyncMock, patch
 import pytest
 from httpx import AsyncClient
 
-from services.compile_error import detect_unavailable_header
+from services.run_help import detect_unavailable_header, uses_local_time
 from tests.helpers import encrypt_test_token
 
 USER = {"sub": "ce-a", "email": "ce@ex.com", "name": "A", "googleId": "g-ce-a"}
@@ -43,16 +43,16 @@ def test_detect_unavailable_header(output: str, expected: str | None):
 async def test_platform_limit_answers_without_llm(client: AsyncClient):
     """引用 Qt → 固定文案直說，且完全不觸發 LLM（零成本）。"""
     with patch(
-        "services.compile_error._generate_guidance", new_callable=AsyncMock
+        "services.run_help._generate_guidance", new_callable=AsyncMock
     ) as llm:
         resp = await client.post(
-            "/chat/compile-error",
+            "/chat/run-help",
             json={"code": "#include <QInputDialog>", "compile_output": QT_ERROR},
             cookies=_CK,
         )
     assert resp.status_code == 200
     body = resp.json()
-    assert body["is_platform_limit"] is True
+    assert body["is_mechanical"] is True
     llm.assert_not_called()
 
     content = body["assistant_message"]["content"]
@@ -62,18 +62,18 @@ async def test_platform_limit_answers_without_llm(client: AsyncClient):
 
 async def test_student_error_goes_through_llm_guidance(client: AsyncClient):
     with patch(
-        "services.compile_error._generate_guidance",
+        "services.run_help._generate_guidance",
         new_callable=AsyncMock,
         return_value="先看第 5 行結尾少了什麼。",
     ) as llm:
         resp = await client.post(
-            "/chat/compile-error",
+            "/chat/run-help",
             json={"code": "int main(){int x = 1}", "compile_output": SYNTAX_ERROR},
             cookies=_CK,
         )
     assert resp.status_code == 200
     body = resp.json()
-    assert body["is_platform_limit"] is False
+    assert body["is_mechanical"] is False
     assert body["assistant_message"]["content"] == "先看第 5 行結尾少了什麼。"
     llm.assert_awaited_once()
 
@@ -81,13 +81,13 @@ async def test_student_error_goes_through_llm_guidance(client: AsyncClient):
 async def test_message_persists_into_session_history(client: AsyncClient):
     """主動說明要留在對話歷史裡，重開對話仍看得到。"""
     with patch(
-        "services.compile_error._generate_guidance",
+        "services.run_help._generate_guidance",
         new_callable=AsyncMock,
         return_value="引導內容",
     ):
         first = (
             await client.post(
-                "/chat/compile-error",
+                "/chat/run-help",
                 json={"code": "x", "compile_output": SYNTAX_ERROR},
                 cookies=_CK,
             )
@@ -102,11 +102,11 @@ async def test_message_persists_into_session_history(client: AsyncClient):
 async def test_llm_failure_falls_back(client: AsyncClient):
     """LLM 掛掉不可讓學生看到錯誤畫面（fail-open，與 kickoff 一致）。"""
     with patch(
-        "services.compile_error._get_client",
+        "services.run_help._get_client",
         side_effect=RuntimeError("boom"),
     ):
         resp = await client.post(
-            "/chat/compile-error",
+            "/chat/run-help",
             json={"code": "x", "compile_output": SYNTAX_ERROR},
             cookies=_CK,
         )
@@ -117,10 +117,10 @@ async def test_llm_failure_falls_back(client: AsyncClient):
 async def test_timeout_answers_without_llm(client: AsyncClient):
     """逾時沒有編譯訊息可分析 → 固定文案直說，同樣不花 LLM。"""
     with patch(
-        "services.compile_error._generate_guidance", new_callable=AsyncMock
+        "services.run_help._generate_guidance", new_callable=AsyncMock
     ) as llm:
         resp = await client.post(
-            "/chat/compile-error",
+            "/chat/run-help",
             json={
                 "code": "while(1){}",
                 "compile_output": "",
@@ -132,3 +132,33 @@ async def test_timeout_answers_without_llm(client: AsyncClient):
     llm.assert_not_called()
     content = resp.json()["assistant_message"]["content"]
     assert "迴圈" in content and "輸入" in content
+
+
+@pytest.mark.parametrize(
+    "code,expected",
+    [
+        ("time_t t=time(NULL); localtime(&t);", True),
+        ("strftime(buf,80,\"%Y\",tm);", True),
+        ("std::cout<<time(NULL);", False),   # 只印 epoch，不受時區影響
+        ("clock();", False),                  # CPU 時間，與時區無關
+        ("int main(){}", False),
+    ],
+)
+def test_uses_local_time(code: str, expected: bool):
+    assert uses_local_time(code) is expected
+
+
+async def test_timezone_notice_without_llm(client: AsyncClient):
+    """時區提醒是環境事實 → 固定文案，不花 LLM。"""
+    with patch(
+        "services.run_help._generate_guidance", new_callable=AsyncMock
+    ) as llm:
+        resp = await client.post(
+            "/chat/run-help",
+            json={"code": "localtime(&t);", "kind": "timezone"},
+            cookies=_CK,
+        )
+    assert resp.status_code == 200
+    llm.assert_not_called()
+    content = resp.json()["assistant_message"]["content"]
+    assert "UTC" in content and "8 小時" in content

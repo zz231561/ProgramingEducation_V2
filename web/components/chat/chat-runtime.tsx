@@ -15,6 +15,7 @@
 import { createContext, useContext, useEffect, useRef } from "react";
 
 import { useWorkspace } from "@/components/workspace/workspace-context";
+import { usesLocalTime } from "@/components/workspace/stdin-panel";
 import { useChat } from "@/hooks/use-chat";
 import { useSessions } from "@/hooks/use-sessions";
 
@@ -49,7 +50,7 @@ export function ChatRuntimeProvider({ children }: { children: React.ReactNode })
   const { sessions, activeId, setActiveId, deleteSession, addSession } =
     useSessions();
   const chat = useChat({ getCode, getExecutionResult, onSessionCreated: addSession });
-  const { injectExecutionResult, requestCompileErrorHelp, loadKickoff } = chat;
+  const { injectExecutionResult, requestRunHelp, loadKickoff } = chat;
 
   // 已主動說明過的執行問題（編譯錯誤簽章 / 逾時狀態）
   const explainedRef = useRef<Set<string>>(new Set());
@@ -61,14 +62,21 @@ export function ChatRuntimeProvider({ children }: { children: React.ReactNode })
       const output = result.compile_output;
       const status = result.status_description ?? "";
       const timedOut = status.toLowerCase().includes("time limit");
-      if (!output && !timedOut) return;
+      if (!output && !timedOut) {
+        // 跑成功但會印當地時間 → 提醒伺服器時鐘是 UTC（每個 session 一次）
+        if (usesLocalTime(getCode()) && !explainedRef.current.has("timezone")) {
+          explainedRef.current.add("timezone");
+          void requestRunHelp("", status, "timezone");
+        }
+        return;
+      }
       // 逾時沒有編譯訊息，以狀態當簽章
       const signature = output ? errorSignature(output) : status;
       if (explainedRef.current.has(signature)) return;
       explainedRef.current.add(signature);
-      void requestCompileErrorHelp(output, status);
+      void requestRunHelp(output, status);
     });
-  }, [onExecutionComplete, injectExecutionResult, requestCompileErrorHelp]);
+  }, [onExecutionComplete, injectExecutionResult, requestRunHelp, getCode]);
 
   /* 從 Output block「詢問 Coddy」按鈕手動注入（含掛載前 queue drain） */
   useEffect(() => {

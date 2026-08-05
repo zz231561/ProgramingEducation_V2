@@ -1,4 +1,4 @@
-"""編譯失敗時 Coddy 主動說明 service（2026-08-05 使用者定案）。
+"""執行問題發生時 Coddy 主動說明 service（2026-08-05 使用者定案）。
 
 分成兩類，處理方式刻意不同：
 
@@ -7,6 +7,8 @@
   （零成本，同時避免 LLM 亂編「你可以裝一下」這種做不到的建議）
 - **學生自己的錯誤**（漏分號、型別不符、變數未宣告…）：屬於可學習的範圍 →
   走 LLM 引導，只點方向不給修好的程式碼
+
+機械判定的種類（皆零成本）：平台限制（無此函式庫）/ 執行逾時 / 伺服器時鐘為 UTC。
 
 觸發時機由前端負責：僅編譯失敗、且同一個錯誤只主動一次（見 chat-panel）。
 """
@@ -70,6 +72,13 @@ _TIMEOUT_TEMPLATE = (
     "想讓它結束的話，想想看要在什麼條件下 `break`？"
 )
 
+_TIMEZONE_TEMPLATE = (
+    "提醒一下：你的程式有取用「現在時間」，但這裡的執行環境時鐘是 **UTC（世界標準時間）**，"
+    "比台灣時間**慢 8 小時**——所以印出來的時刻看起來會怪怪的，這不是你的程式寫錯。\n\n"
+    "雲端執行環境（LeetCode 這類線上判題也一樣）通常都跑 UTC。"
+    "如果你想顯示台灣時間，想想看：拿到 `time_t` 之後，加上多少秒就會變成台灣時間？"
+)
+
 _FALLBACK_GUIDANCE = (
     "編譯沒有通過。先看錯誤訊息的第一行——它會告訴你是哪一行、哪個符號出問題。"
     "從那一行往前看一行，通常問題就在附近。看完跟我說你覺得是什麼原因，我們一起確認。"
@@ -85,6 +94,15 @@ def _get_client() -> AsyncOpenAI | None:
             return None
         _client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
     return _client
+
+
+# 會把時間格式化成「人看的當地時間」的函式；只有這些才受時區影響
+_LOCALTIME_RE = re.compile(r"\b(localtime|strftime|asctime|ctime)\s*\(")
+
+
+def uses_local_time(code: str) -> bool:
+    """程式是否會把時間轉成當地時間（受伺服器時區影響）。"""
+    return _LOCALTIME_RE.search(code or "") is not None
 
 
 def is_timeout(status_description: str) -> bool:
@@ -151,18 +169,24 @@ async def _generate_guidance(code: str, compile_output: str) -> str:
         return _FALLBACK_GUIDANCE
 
 
-async def compile_error_help(
+async def run_help(
     db: AsyncSession,
     user_id: uuid.UUID,
     session_id: uuid.UUID | None,
     code: str,
     compile_output: str,
     status_description: str = "",
+    kind: str = "",
 ) -> tuple[ChatSession, ChatMessage, bool]:
     """寫入一則 Coddy 主動說明；回傳 (session, message, 是否為機械判定)。
 
     機械判定（平台限制 / 執行逾時）走固定文案不呼叫 LLM；其餘走引導。
     """
+    if kind == "timezone":
+        content = _TIMEZONE_TEMPLATE
+        mechanical = True
+        return await _persist(db, user_id, session_id, content, mechanical)
+
     header = detect_unavailable_header(compile_output)
     if header is not None:
         content = _PLATFORM_TEMPLATE.format(header=header)
@@ -174,6 +198,16 @@ async def compile_error_help(
         content = await _generate_guidance(code, compile_output)
         mechanical = False
 
+    return await _persist(db, user_id, session_id, content, mechanical)
+
+
+async def _persist(
+    db: AsyncSession,
+    user_id: uuid.UUID,
+    session_id: uuid.UUID | None,
+    content: str,
+    mechanical: bool,
+) -> tuple[ChatSession, ChatMessage, bool]:
     session = await get_or_create_session(db, user_id, session_id)
     if session.title in (None, "", DEFAULT_SESSION_TITLE):
         session.title = "執行問題引導"

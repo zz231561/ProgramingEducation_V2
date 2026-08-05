@@ -1,5 +1,25 @@
 # 變更日誌
 
+## [2026-08-05] — feat(edf)：時區提醒 + 端點正名 run-help；發現章節 41 教材把 `extern` 寫成 `external`
+
+### Added — UTC 時區 Coddy 主動提醒（機械判定，零成本）
+- 伺服器時鐘是 UTC，比台灣慢 8 小時 → 學生在章節 45 印出「現在時間」會看到差 8 小時的結果，且**看不出是環境問題還是自己寫錯**
+- `uses_local_time()` 偵測 `localtime` / `strftime` / `asctime` / `ctime`（**只認會轉成「人看的當地時間」的函式**；`time(NULL)` 印 epoch、`clock()` 算 CPU 時間都不受時區影響，不觸發）
+- 執行**成功**時才提醒（編譯失敗/逾時另有路徑），每個 session 一次；文案說明這是雲端環境常態並反問「加多少秒會變成台灣時間」，不直接給答案
+
+### Changed — 端點正名 `/chat/compile-error` → `/chat/run-help`
+- 現在處理三種執行問題（平台限制 / 逾時 / 時區），原名已不準確；`services/compile_error.py` → `services/run_help.py`、回應欄位 `is_platform_limit` → `is_mechanical`
+- 抽出 `_persist()` 消除三條路徑的重複寫入邏輯
+
+### Tests
+- `tests/test_run_help.py`（原 test_compile_error）+6：`uses_local_time` 5 例（含 `time(NULL)` / `clock()` 不觸發的反例）+ 時區提醒不呼叫 LLM；後端全量 **804 passed**
+
+### 🔴 發現內容錯誤（待修，見 tech-debt）
+- **章節 41 教材與逐字稿把 C++ 關鍵字 `extern` 寫成 `external`**（Whisper 逐字稿 [00:35] 即為 `external`，grounded 生成忠實複製）→ 學生照打**編譯必失敗**
+- 影響範圍：RAG 2 chunks / staging 1 / questions 2；**生產庫同樣有**（staging 1 / learning_units 1 / RAG 2）
+- **極可能就是 v41 題庫掛零的原因**：生成端依錯誤教材出題，審查端（懂 C++ 的強模型）一律打回
+
+
 ## [2026-08-05] — fix(chat)：收合聊天不再遺失對話 + 平板補 chat + 執行語言鎖死（A1/A2/A3）
 
 > 上一則問題總結中查證出的三個缺陷，全部修掉。

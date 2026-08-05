@@ -23,6 +23,11 @@ export function codeUsesArgs(code: string): boolean {
   return /\bmain\s*\([^)]*\bargv\b/.test(code);
 }
 
+/** 程式是否會印出「當地時間」（章節 45）— 伺服器時鐘為 UTC，需提醒 */
+export function usesLocalTime(code: string): boolean {
+  return /\b(localtime|strftime|asctime|ctime)\s*\(/.test(code);
+}
+
 export function StdinPanel({
   /** 最近一次執行的程式需要輸入 → 預設展開並提示 */
   hintNeeded,

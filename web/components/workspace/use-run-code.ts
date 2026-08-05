@@ -110,11 +110,20 @@ export function useRunCode({
     pendingRef.current = [];
   }, []);
 
+  /** 切換檔案時呼叫：中止進行中的 session 並清空畫布（7-U4） */
+  const resetTerminal = useCallback(() => {
+    terminal.stop();
+    termRef.current?.clear();
+    pendingRef.current = [];
+    setIsRunning(false);
+  }, [terminal]);
+
   return {
     isRunning,
     isDirty,
     markChanged,
     run,
+    resetTerminal,
     /** 直接傳給 OutputPanel 的 terminal prop */
     terminal: {
       phase: terminal.phase,

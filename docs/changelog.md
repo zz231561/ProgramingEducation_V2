@@ -1,5 +1,22 @@
 # 變更日誌
 
+## [2026-08-06] — feat(workspace)：7-U4 執行歷史 per-file + 切檔清空終端
+
+### Changed — `use-run-history.ts`（store 結構改版，sessionStorage key v1 → v2）
+- 從「全域一份歷史」改為 **`{ order, byFile }` 每個檔案各自一份**：切到 A.cpp 就只看到 A.cpp 的執行紀錄，不再混入別支程式的輸出
+- 上限（使用者要求「合理上限、不要負荷太高也不要太冗餘」）：**每檔 20 次 / 最多 5 個檔案**，超過依 LRU 淘汰最久未使用的檔案
+- 未命名草稿有自己的 key（`__draft__`）——草稿也是一支程式
+- `clearRuns()` 只清目前檔案，其他檔案不受影響；Run 編號改為**每檔各自從 1 起算**
+- 新增 `setActiveRunFile(name)`；workspace 頁以 `currentName` 變動驅動
+
+### Added — 切換程式時重置終端
+- `useRunCode` 新增 `resetTerminal()`：中止進行中的 WS session、清空 xterm 畫布、清掉待寫入 buffer
+- 避免「切了檔案卻留著一個等不到輸入的終端」
+
+### 驗證
+- 前端仍無測試框架，故將**真實 store 原始碼**編譯後以 node 跑 10 項斷言全通過：草稿獨立計數／切檔互不污染／編號各自從 1／清空只影響當前檔／每檔上限 20／最多 5 檔／最舊被淘汰／LRU 順序正確／回到同檔可續寫
+- tsc 0 錯、eslint 0 錯、build 通過
+
 ## [2026-08-06] — feat(learn)：7-U3 教材出處移除 + 時間戳改句尾註腳式播放標記
 
 ### Removed — 教材出處 UI（使用者決策：只有模型看得到）

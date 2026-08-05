@@ -9,7 +9,7 @@
  * - use-named-file.ts — Ctrl/Cmd+S、另存、開新檔
  */
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { CodeEditor, DEFAULT_CODE } from "@/components/editor/code-editor";
 import { ReflectionSidebar } from "@/components/reflection/reflection-sidebar";
 import { Toolbar } from "@/components/workspace/toolbar";
@@ -19,6 +19,7 @@ import { SaveAsDialog } from "@/components/workspace/save-as-dialog";
 import { useDraftRestore } from "@/components/workspace/use-draft-restore";
 import { useNamedFile } from "@/components/workspace/use-named-file";
 import { useRunCode } from "@/components/workspace/use-run-code";
+import { setActiveRunFile } from "@/components/workspace/use-run-history";
 import { useReflectionHandoff } from "@/components/workspace/use-reflection-handoff";
 import { useWorkspace } from "@/components/workspace/workspace-context";
 import { WorkspaceLayout } from "@/components/workspace/workspace-layout";
@@ -73,10 +74,17 @@ export default function WorkspacePage() {
     workspace,
   });
   const expandOutput = useCallback(() => setOutputCollapsed(false), []);
-  const { isRunning, isDirty, markChanged, run, terminal } = useRunCode({
-    getCode: () => codeRef.current,
-    onRunStart: expandOutput,
-  });
+  const { isRunning, isDirty, markChanged, run, terminal, resetTerminal } =
+    useRunCode({
+      getCode: () => codeRef.current,
+      onRunStart: expandOutput,
+    });
+
+  // 7-U4：切換程式時終端機清空、歷史切換到該檔自己的紀錄
+  useEffect(() => {
+    setActiveRunFile(currentName);
+    resetTerminal();
+  }, [currentName, resetTerminal]);
 
   const toggleOutput = useCallback(() => setOutputCollapsed((v) => !v), []);
   const toggleReflection = useCallback(

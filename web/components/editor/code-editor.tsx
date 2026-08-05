@@ -6,41 +6,15 @@ import { EditorView, keymap, lineNumbers, highlightActiveLine, highlightActiveLi
 import { defaultKeymap, indentWithTab, history, historyKeymap } from "@codemirror/commands";
 import { syntaxHighlighting, defaultHighlightStyle, bracketMatching, indentOnInput, foldGutter, indentUnit } from "@codemirror/language";
 import { cpp } from "@codemirror/lang-cpp";
+import {
+  acceptCompletion,
+  autocompletion,
+  completionKeymap,
+} from "@codemirror/autocomplete";
 import { oneDark } from "@codemirror/theme-one-dark";
 
-/** CodeMirror 自訂主題：覆蓋 One Dark 背景色以匹配 Design Tokens */
-const editorTheme = EditorView.theme({
-  "&": {
-    height: "100%",
-    fontSize: "14px",
-    fontFamily: "'JetBrains Mono', monospace",
-  },
-  ".cm-content": {
-    padding: "8px 0",
-    caretColor: "#58A6FF",
-  },
-  ".cm-gutters": {
-    backgroundColor: "#0D1117",
-    borderRight: "1px solid #21262D",
-    color: "#6E7681",
-  },
-  ".cm-activeLineGutter": {
-    backgroundColor: "#1C2128",
-    color: "#E6EDF3",
-  },
-  ".cm-activeLine": {
-    backgroundColor: "#1C212844",
-  },
-  "&.cm-focused .cm-cursor": {
-    borderLeftColor: "#58A6FF",
-  },
-  "&.cm-focused .cm-selectionBackground, ::selection": {
-    backgroundColor: "#264F78",
-  },
-  ".cm-scroller": {
-    overflow: "auto",
-  },
-});
+import { cppCompletionSource } from "./cpp-completion-source";
+import { editorTheme } from "./editor-theme";
 
 export const DEFAULT_CODE = `#include <iostream>
 using namespace std;
@@ -98,9 +72,23 @@ export function CodeEditor({ initialValue, value, onChange }: CodeEditorProps) {
         // 導致換行後還要再按一次 Tab 才對齊）
         indentUnit.of("    "),
         cpp(),
+        // 7-U5 靜態補全（關鍵字 + 教材用得到的 STL + 當前檔識別字）
+        autocompletion({
+          override: [cppCompletionSource],
+          defaultKeymap: false, // 由下方 keymap 統一排序，避免與 indentWithTab 打架
+          icons: false, // CM 內建圖示是字元字形，與 R8.2 相衝
+        }),
         oneDark,
         editorTheme,
-        keymap.of([...defaultKeymap, ...historyKeymap, indentWithTab]),
+        keymap.of([
+          // 補全相關鍵位必須排在最前：Escape 要先關補全、Tab 要先接受候選，
+          // 沒有補全開啟時這些 handler 回傳 false，才輪到 indentWithTab 縮排
+          { key: "Tab", run: acceptCompletion },
+          ...completionKeymap,
+          ...defaultKeymap,
+          ...historyKeymap,
+          indentWithTab,
+        ]),
         EditorView.updateListener.of((update) => {
           if (update.docChanged) {
             onChangeRef.current?.(update.state.doc.toString());

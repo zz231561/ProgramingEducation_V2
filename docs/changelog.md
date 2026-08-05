@@ -1,5 +1,24 @@
 # 變更日誌
 
+## [2026-08-06] — feat(editor)：7-U5 C++ 靜態補全（VSCode 式，不接 LSP）
+
+### Added
+- **`cpp-completions.ts`**：92 個候選 — 語言關鍵字 + **教材真的會用到的** STL（cout/cin/getline/vector/push_back/sort/substr…，各帶簽章與**繁中一行說明**，例：`getline(cin, str)` — 讀取一整行含空白）+ 骨架片段（main / for / while / include，插入後游標自動落在該填的位置）
+  - 收錄原則刻意保守：清單過長會讓學生在沒學過的 API 裡迷路，違背教學目的
+- **`cpp-completion-source.ts`**：掃描當前檔案的變數與函式名並排在候選最前（`boost: 1`）——學生最常用的是自己剛寫的東西。以正則而非 AST（同 tech-debt「真 AST 暫不引入」的判斷；掃錯只是多一個沒用的候選，不影響編譯）；過濾保留字與單字元名；註解內不觸發
+- **`editor-theme.ts`**：自 `code-editor.tsx` 抽出（補全彈窗樣式讓該檔到 208 行超過提醒線；現為 135 行）。彈窗對齊 GitHub Dark：`#161B22` 底、`#30363D` 邊、JetBrains Mono、已輸入字元 `#58A6FF` 標示；關閉 CM 內建圖示（字元字形與 R8.2 相衝）
+
+### 鍵位設計
+- `{ key: "Tab", run: acceptCompletion }` 排在 `indentWithTab` **之前**：有候選時 Tab 接受、沒候選時 handler 回傳 false 才輪到縮排，兩者不打架
+- Enter 亦可接受（VSCode 行為）；Esc 關閉
+
+### 決策記錄
+- **不接 clangd LSP**：B 機 2GB，clangd 每實例 300MB 起跳，30 人同時上課必爆（與不自架 Judge0 同一資源理由）。要做得先升硬體
+
+### 驗證
+- 編譯真實原始碼後以 node 跑識別字掃描：`addNumbers`(function) / `score`,`average`,`playerName`,`results`,`title`(variable) 全中，`main`/`return` 正確過濾，單字元 `a`/`b`/`i` 依設計略過 — 13 項斷言全通過
+- tsc 0 錯、eslint 0 錯、build 通過；`@codemirror/autocomplete` 已隨相依存在，**未新增套件**
+
 ## [2026-08-06] — feat(workspace)：7-U4 執行歷史 per-file + 切檔清空終端
 
 ### Changed — `use-run-history.ts`（store 結構改版，sessionStorage key v1 → v2）

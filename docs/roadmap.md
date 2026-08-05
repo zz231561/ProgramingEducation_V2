@@ -299,7 +299,7 @@
 - [x] 7-U2 **課程全解鎖**：generator 全 available + migration `u7d8e9f0a1b2` 轉既有 locked + 前端移除 ghostUnlock 整條線路（含 DEV 設定卡）；順序改由編號/狀態圖示呈現為建議路徑
 - [x] 7-U3 教材出處：LEARN 與 Coddy 皆從 UI 移除（citations 仍存 DB 與注入 prompt）+ 內文時間戳改**句尾註腳式播放標記**（`lib/transcript-timestamps.ts`；段落內去重、程式碼圍籬不動、區間取起點）
 - [x] 7-U4 終端機與執行歷史 per-file（每檔 20 次、5 檔 LRU；切檔即清終端並中止進行中 session）
-- [ ] 7-U5 靜態補全：關鍵字 + 常用 STL + 當前檔變數（CodeMirror；**不接 clangd LSP**——B 機 2GB 撐不住 30 個實例）
+- [x] 7-U5 靜態補全：92 個候選（關鍵字 + 教材用得到的 STL 含繁中說明 + 骨架片段）+ 當前檔識別字掃描；Tab/Enter 接受、Esc 關閉；彈窗樣式對齊 GitHub Dark（**不接 clangd LSP**——B 機 2GB 撐不住 30 個實例）
 - [ ] 7-U6 Coddy 分階段狀態文字（`/chat/interact` 改 SSE 推送 EDF 三層進度）
 
 ---

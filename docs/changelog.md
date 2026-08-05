@@ -1,5 +1,26 @@
 # 變更日誌
 
+## [2026-08-05] — docs：生產庫播種狀態複驗（7-1a-4 收尾，無待補項）
+
+> 承接「concepts 影片 ID 待補」的掛帳。開公網後以 `--dry-run --force` 查驗，結果**該項在上個 session 修完 script 後就已執行完畢**，只是狀態文件未同步 → 本次為純狀態修正，**未對生產庫做任何寫入**（dry-run 已 rollback）。
+
+### Verified（生產庫實查，逐項對照本機）
+| 項目 | 生產 | 本機 |
+|---|---|---|
+| concepts / 有 `video_youtube_id` | 62 / **62** | 62 / 62（v01–v05 抽查 id + duration 逐筆相同） |
+| documents / questions | 64 / 628 | 64 / 628 |
+| unit_content_staging（approved） | 62 | 62 |
+| data_codedge_rag | 861 | 861 |
+| alembic 版本 | `t6c7d8e9f0a1` | head（**K4e citations migration 已上生產**） |
+
+- **`learning_units` 62 筆 content 全部非空**（`concept_explanation` 1,061–2,161 字，0 筆空骨架）——lazy-seed 已在首次進 Learn 頁時觸發並帶入 staging 內容，原 roadmap「為 0 屬預期」的註記已過期
+- 生產 `users` 1 / `learning_paths` 1 = 目前僅開發者本人登入過，實驗資料乾淨
+
+### Changed
+- `CLAUDE.md` 7-1a-4 移除「待補：concepts 影片 ID」；`docs/roadmap.md` 7-1a-4 補複驗結果並修正 `learning_units` 為 0 的過期敘述
+
+---
+
 ## [2026-08-05] — perf(llm)：模型全面升級 gpt-5.6 + 每日配額 + 離題分流（成本控制三層）
 
 > 上線前防濫用盤點：rate limit（10 次/分）與 prompt injection 防護已有，但**主題範圍限制完全沒有**（RULE-1~5 只管程式碼洩漏/語言/字數/收尾）、`off_topic` 只是欄位（`dialogue.py:53` 明寫「暫不主動判定」）、**沒有每日總量上限**（理論上一人一天可打 14,400 次）。

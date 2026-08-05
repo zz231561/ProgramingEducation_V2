@@ -288,7 +288,9 @@
 - [~] R5 B 機上線：**部署產物 + 本機 Docker 實測完成 ✅（2026-08-05）**，實機執行待使用者
   - [x] R5a 部署產物：`docker-compose.yml`（SYS_ADMIN + apparmor/seccomp unconfined + mem/pids/cpu 天花板 + tmpfs /tmp）/ `bootstrap.sh`（swap+docker+ufw+**DOCKER-USER 補洞**+禁密碼登入）/ `deploy.sh`（build→up→healthy→冒煙）/ `.env.example` / deployment.md **§E 完整 SOP**（含來源 IP 探測法、回滾、疑難排解）
   - [x] R5b 本機 Docker 實測（nsjail 真實沙箱）：修 3 個只在容器內才會爆的缺陷——① PCH 目錄未綁入 jail ② nsjail 用 execve 故編譯器需絕對路徑（`--really_quiet` 把錯誤吃掉）③ **nsjail 以 128+signal 回報，逾時被誤判 NZEC**（會讓 Coddy 給錯的主動說明）；驗過 hello/stdin/argv/編譯錯誤/逾時/SIGSEGV/`/usr` 唯讀/**PTY 互動提示字先到達**；runner 27 tests
-  - [ ] R5c **實機執行（需使用者）**：rsync → bootstrap → deploy → Zeabur 綁 backend 子網域 + 三個環境變數 + web redeploy → 驗收表
+  - [x] R5c-1 **B 機實機部署 ✅**（2026-08-06）：bootstrap 8/8 驗證通過（swap/docker/ufw/DOCKER-USER/systemd unit/SSH 禁密碼）+ 映像建置 + 容器 healthy；實機驗過 hello/stdin/argv/編譯錯誤/逾時/SIGSEGV/快取命中/401/**PTY 互動**；外部直連 8080 已阻斷（Mac 測 000）
+    - 修 3 個實機才暴露的缺陷：① `iptables-persistent` 與 ufw 互斥導致 **apt 直接移除 ufw**（改 systemd unit 持久化 DOCKER-USER，purge 該套件）② 驗證函式 `cmd | grep -q` 在 `pipefail` 下收 SIGPIPE 回 141 被誤判 FAIL ③ 🔴 **`/lib64` 未掛入 jail**——amd64 動態載入器在此，execve 報 "No such file or directory"；arm64 loader 在 `/lib` 底下故本機 Apple Silicon 完全測不出來
+  - [ ] R5c-2 **Zeabur 設定（需使用者）**：backend 綁公開子網域 + `RUNNER_BACKEND/RUNNER_URL/RUNNER_TOKEN` + web 設 `NEXT_PUBLIC_TERMINAL_WS_URL` 並 **redeploy**；A 機出口 IP 待實連校正（deployment.md §E 探測法）
 - [ ] R6 收尾：教材健檢解除 20 支/天上限 + 額度文案清理（acceptance-checklist / CLAUDE.md）+ 30 並行壓測 + 文件同步
 
 ---

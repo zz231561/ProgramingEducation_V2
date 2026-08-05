@@ -1,5 +1,21 @@
 # 變更日誌
 
+## [2026-08-06] — fix(runner)：R5c-1 B 機實機部署 — 再修 3 個只有真實硬體才暴露的缺陷
+
+> 本機 Colima（arm64）與 B 機（amd64 Ubuntu 24.04）的差異，以及「腳本靜默失敗」，各貢獻了一個真缺陷。
+
+### Fixed
+1. 🔴 **`/lib64` 未掛入 jail（架構相依）** — amd64 動態載入器在 `/lib64/ld-linux-x86-64.so.2`，未掛載時 `execve` 回報 `No such file or directory`（看起來像編譯器不見了，實際缺的是 loader）。**arm64 的 loader 在 `/lib` 底下，故 Apple Silicon 本機 100% 測不出來**。改為候選清單 `_RO_CANDIDATES` + 存在才掛（同時涵蓋 `/lib32`、`ld.so.conf*`）
+2. **`iptables-persistent` 與 `ufw` 互斥** — apt 為安裝前者**直接移除 ufw**（`Remove: ufw:amd64`），而原腳本用 `>/dev/null 2>&1 || true` 把訊息吃掉，於是「防火牆設定成功」是假象。改為：偵測到即 purge，DOCKER-USER 規則改用 **systemd oneshot unit**（`runner-firewall.service`，After=docker）持久化，完全不依賴持久化套件
+3. **驗證函式在 `pipefail` 下誤判** — `cmd | grep -q` 命中即結束，上游收 SIGPIPE 回 141 被當失敗（SSH 檢查假性 FAIL）。`check()` 改在子 shell 內 `set +o pipefail`
+- `bootstrap.sh` 結尾由「只印狀態」改為 **8 項逐條驗證 + 失敗 `exit 1`**（原版即使沒做到也會顯示成功）
+
+### Verified — B 機實機（43.133.7.93）
+bootstrap 8/8 [OK]；容器 healthy；hello / stdin / argv / 編譯錯誤（真實 g++ 訊息）/ 逾時→Time Limit Exceeded / SIGSEGV / **快取命中**（第二次 `cache_hit:true`）/ 無 token→401 / **WS PTY 互動**（`'name: '` 先於輸入到達、kernel 回顯、`hi Alice`）；**從外部 Mac 直連 8080 回 000（防火牆生效）**
+
+### 待使用者（R5c-2）
+Zeabur：backend 綁公開子網域 + 三個環境變數；web 設 `NEXT_PUBLIC_TERMINAL_WS_URL` 並 **redeploy**（建置期烘入）。A 機出口 IP 目前暫填 `43.153.167.105`，待首次實連後依 ufw 日誌校正。
+
 ## [2026-08-05] — feat(runner)：R5a/b 部署產物 + 本機 Docker 實測（修 3 個容器內才會爆的缺陷）
 
 ### Added — 部署產物

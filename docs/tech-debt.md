@@ -4,6 +4,28 @@
 
 ## ⚠ 待處理
 
+### 🔴 Hint Ladder 在對話路徑上從未接通（2026-08-06 使用者回報 Coddy 對話後查證）
+- [ ] **`web/hooks/use-chat.ts:75` 把 `hint_level: 0` 寫死**，前端從未遞增
+  - `decide_strategy()` 的 docstring 寫「hint_level 由前端追蹤（學生同一問題連續求助次數）」，
+    但**只有 quiz 路徑真的有傳**（`quiz-runner.tsx` / `weakness-quiz-runner.tsx` 傳 `hints.length + 1`），chat 路徑恆為 0
+  - **後果**：`_STRATEGY_MATRIX` 36 格中，對話永遠只用得到第 0 欄——最不肯給資訊的一欄
+    （`(2,0)` 請學生用自己的話解釋、不給提示／`(3,0)` 問學生打算怎麼應用／`(4,0)` 請學生分析結構），
+    且 `allow_code_snippet` 恆為 False。**學生連問四次同一件事也不會升級到直接說明**
+  - 這是 `.claude/rules/edf-pipeline.md` 明列的核心設計（Hint Ladder 0-5）在對話裡實際是死的
+  - **實例**：學生問「誰定義 return 0 代表正常」，Coddy 連續反問，最後由學生 push back 兩次才逼出正確答案
+
+### 🔴 執行狀態 `Runtime Error (NZEC)` 對教學情境會誤導
+- [ ] `runner/app/executor.py:67` 非零 exit → `Runtime Error (NZEC)`（沿用 Judge0 判題慣例）
+  - 學生程式**正常執行、輸出正確、沒有崩潰**，只因 `return 1` 被標成「執行錯誤」
+  - 對競賽判題是對的，對教學平台是**平台自製的困惑**：學生以為 C++ 出錯，實際是本平台的約定
+  - 需與「真的被 signal 打死」區分（`_signal_status` 已有分支，缺的是非零 exit 的教學語意）
+
+### 🔴 `run_help.py` 逾時固定文案已與互動終端脫節
+- [ ] `_TIMEOUT_TEMPLATE` 仍寫「這裡是一次跑完的**批次執行**，程式不會停下來等你打字，
+      要先在 Output 上方的「**輸入**」填好內容」
+  - R4 互動終端上線 + R5d 移除 stdin 預填 UI 之後，**這個「輸入」欄位已不存在**
+  - 此為零 LLM 的機械固定文案 → 會非常有自信地叫學生去點一個不存在的東西
+
 ### 🔴 前端零自動化測試
 - [ ] **`web/` 沒有任何測試框架**，但 `frontend.md` 寫著 Vitest + Playwright
   - **代價已經在付**：2026-08 這一輪十幾批 UI 改動，全靠 `tsc` / `eslint` / `build` 加使用者手動點。7-U3/U4/U5 的純函式（時間戳改寫、per-file 歷史 store、識別字掃描）我只能用「把真實原始碼 `tsc` 編出來再用 node 跑斷言」來驗——**這個做法有效但無法納入 CI、也沒人會記得重跑**

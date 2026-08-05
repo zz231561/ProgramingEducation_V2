@@ -73,7 +73,7 @@ export default function WorkspacePage() {
     workspace,
   });
   const expandOutput = useCallback(() => setOutputCollapsed(false), []);
-  const { isRunning, isDirty, markChanged, run } = useRunCode({
+  const { isRunning, isDirty, markChanged, run, terminal } = useRunCode({
     getCode: () => codeRef.current,
     onRunStart: expandOutput,
   });
@@ -158,6 +158,7 @@ export default function WorkspacePage() {
           <OutputPanel
             collapsed={outputCollapsed}
             onToggleCollapse={toggleOutput}
+            terminal={terminal}
           />
         }
         outputCollapsed={outputCollapsed}

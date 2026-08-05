@@ -284,7 +284,7 @@
 - [x] R1 runner service ✅（2026-08-05）：`runner/` 9 模組 + Dockerfile（nsjail 自 source 建 + PCH 預編）+ `POST /run` + 15 tests 全綠（Dockerfile 建置與 nsjail 路徑待 R5 B 機實測）
 - [x] R2 backend 抽換 ✅（2026-08-05）：`services/runner.py` dispatcher（RUNNER_URL 未設自動退 Judge0）+ 2 呼叫點換 import + 7 tests；後端 811 全綠
 - [x] R3 互動層 ✅（2026-08-05）：runner `WS /terminal`（PTY + 看門狗 + session 上限）+ backend `POST /terminal/ticket`（Redis 單次 60s，沿用 execute rate limit）+ `WS /terminal/ws` 中繼 + 行為事件側錄；runner 22 / backend 818 tests 全綠
-- [ ] R4 前端：Output 面板終端模式（`@xterm/xterm` + fit addon，非 modal）+ GitHub Dark ANSI 主題 + 排隊提示 + 結束後收合為 RunBlock + stdin textarea 降級「進階：預先餵入」（一併消滅 A12 兩缺陷：提示不即時 / Run 不攔截）
+- [x] R4 前端 ✅（2026-08-05）：Output 面板終端模式（`@xterm/xterm` 動態載入避 SSR + ANSI 主題 + 排隊提示）+ 結束收合回 RunBlock + stdin 降級「進階：預先餵入」+ runner 不可用自動退批次；tsc/eslint/build 全過（A12 兩缺陷隨之消滅）
 - [ ] R5 B 機上線：swap 2G + docker + compose 部署 + 防火牆僅放行 A 機 + `X-Runner-Token` + SSH 禁密碼登入 + 健康檢查 + backend 綁 Zeabur 公開子網域（WS 直達）+ 環境變數切換
 - [ ] R6 收尾：教材健檢解除 20 支/天上限 + 額度文案清理（acceptance-checklist / CLAUDE.md）+ 30 並行壓測 + 文件同步
 

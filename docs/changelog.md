@@ -1,5 +1,22 @@
 # 變更日誌
 
+## [2026-08-05] — feat(runner)：R4 前端互動終端 — xterm 嵌入 Output 面板
+
+### Added — `web/`
+- **`lib/terminal-theme.ts`**：xterm 主題；bg/fg/cursor 直接對應既有 token（`--bg-inset` / `--text-primary` / `--text-link`），ANSI 16 色採 GitHub 官方 dark 色盤（frontend.md R8 白名單核准例外，僅限終端畫布）
+- **`lib/terminal-protocol.ts`**：frame 型別（與 `runner/app/terminal.py` docstring 同一份契約）+ `terminalWsUrl()`（讀 `NEXT_PUBLIC_TERMINAL_WS_URL`，未設退同源）+ `frameToExecutionResult()`（exit/compile_error → 既有 ExecutionResult 語意）
+- **`use-terminal-session.ts`**：ticket → WS → frame 分派；**任何錯誤（RUNNER_BUSY / SESSION_LIMIT / ticket 503 / 連線失敗）一律退回批次執行**，學生不會卡住
+- **`terminal-view.tsx`**：xterm 動態 import（避 SSR）+ ResizeObserver fit + **不做 local echo**（PTY 端 kernel 行規範已處理回顯）；回呼以 ref 持有，避免 prop 變動重建終端機清空畫面
+- **`terminal-pane.tsx`**：狀態列（排隊中／編譯中／互動中）+ 畫布；排隊時顯示「前面還有 N 位」
+
+### Changed
+- `use-run-code.ts`：改為**優先互動終端**，退回批次；xterm 動態載入期間的首批輸出先 buffer、attach 時 flush（避免掉字）
+- `output-panel.tsx`：session 進行中以終端畫布取代歷史列表，結束後自動收回 RunBlock（`STATUS_META` 圖示／「詢問 Coddy」／執行歷史選單全部沿用）
+- `stdin-panel.tsx`：降級為「**進階：預先餵入**」，預設收合、移除 `codeNeedsInput` 與「程式在等待輸入」提示（互動模式下程式真的會停下來等，提示無意義）→ **tech-debt 記錄的 A12 兩缺陷（提示不即時 / Run 不攔截）就此消滅**
+- `.env.example` 加 `NEXT_PUBLIC_TERMINAL_WS_URL`；新增 `@xterm/xterm` + `@xterm/addon-fit`
+- 驗證：`tsc --noEmit` 0 錯、eslint 0 錯（1 既有 warning 在無關檔案）、`npm run build` 通過
+- ⚠ `output-panel.tsx` 163 行（R4 +25，>150 提醒線未達硬線）已記 tech-debt
+
 ## [2026-08-05] — feat(runner)：R3 互動層 — PTY 終端 WS + ticket 認證 + backend 中繼
 
 ### Added — runner（`app/pty_exec.py` + `app/terminal.py`）

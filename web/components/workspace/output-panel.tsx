@@ -6,13 +6,23 @@ import { useWorkspace } from "./workspace-context";
 import type { RunRecord } from "./types";
 import { RunBlock, classifyStatus, STATUS_META } from "./run-block";
 import { RunHistoryMenu } from "./run-history-menu";
-import { StdinPanel, codeNeedsInput, codeUsesArgs } from "./stdin-panel";
+import { StdinPanel, codeUsesArgs } from "./stdin-panel";
+import { TerminalPane } from "./terminal-pane";
+import type { TerminalHandle } from "./terminal-view";
+import type { TerminalPhase } from "./use-terminal-session";
 
 interface OutputPanelProps {
   /** 是否收合為單行 status bar */
   collapsed?: boolean;
   /** 收合/展開切換 */
   onToggleCollapse?: () => void;
+  /** 互動終端 session 狀態（idle = 顯示執行歷史） */
+  terminal?: {
+    phase: TerminalPhase;
+    queuePosition: number;
+    onData: (data: string) => void;
+    onReady: (handle: TerminalHandle) => void;
+  };
 }
 
 /**
@@ -21,12 +31,15 @@ interface OutputPanelProps {
  * 本元件只持有「哪一則展開」的檢視狀態。
  * 視覺規格：design-plan.md §2.3
  */
-export function OutputPanel({ collapsed = false, onToggleCollapse }: OutputPanelProps) {
+export function OutputPanel({
+  collapsed = false,
+  onToggleCollapse,
+  terminal,
+}: OutputPanelProps) {
   const { runs, clearRuns, requestChatInjection, getCode } = useWorkspace();
   const latestBlock = runs[0];
-  // 程式會讀輸入 → StdinPanel 預設展開並提示（避免學生對著「卡住的」輸出困惑）
   const code = getCode();
-  const needsInput = codeNeedsInput(code);
+  const terminalActive = terminal !== undefined && terminal.phase !== "idle";
   // 預設只展開最新一則（仿 Warp）；這裡只記使用者手動翻過的例外，
   // 因此新結果進來時自動展開、舊的自動收合，不需要 effect 重設狀態。
   const [overrides, setOverrides] = useState<Record<number, boolean>>({});
@@ -95,29 +108,41 @@ export function OutputPanel({ collapsed = false, onToggleCollapse }: OutputPanel
         </button>
       </div>
 
-      <StdinPanel hintNeeded={needsInput} showArgs={codeUsesArgs(code)} />
-
-      {/* Block 列表 */}
-      <div className="flex-1 overflow-auto p-2 space-y-2">
-        {runs.length === 0 ? (
-          <div className="flex h-full items-center justify-center">
-            <p className="text-xs text-text-muted body-reading">執行程式碼後，輸出結果會以 block 顯示在這裡。</p>
+      {/* 互動終端進行中：畫布取代歷史列表（stdin 預填面板此時無意義，隱藏） */}
+      {terminalActive ? (
+        <TerminalPane
+          phase={terminal.phase as Exclude<TerminalPhase, "idle">}
+          queuePosition={terminal.queuePosition}
+          onData={terminal.onData}
+          onReady={terminal.onReady}
+        />
+      ) : (
+        <>
+          <StdinPanel showArgs={codeUsesArgs(code)} />
+          <div className="flex-1 overflow-auto p-2 space-y-2">
+            {runs.length === 0 ? (
+              <div className="flex h-full items-center justify-center">
+                <p className="text-xs text-text-muted body-reading">
+                  執行程式碼後，輸出結果會以 block 顯示在這裡。
+                </p>
+              </div>
+            ) : (
+              runs.map((block) => (
+                // id 供歷史選單 scrollIntoView 定位
+                <div key={block.id} id={`run-block-${block.id}`}>
+                  <RunBlock
+                    block={block}
+                    expanded={isExpanded(block.id)}
+                    index={block.id}
+                    onToggle={() => toggleBlock(block.id, isExpanded(block.id))}
+                    onSendToChat={() => requestChatInjection(block.result)}
+                  />
+                </div>
+              ))
+            )}
           </div>
-        ) : (
-          runs.map((block) => (
-            // id 供歷史選單 scrollIntoView 定位
-            <div key={block.id} id={`run-block-${block.id}`}>
-              <RunBlock
-                block={block}
-                expanded={isExpanded(block.id)}
-                index={block.id}
-                onToggle={() => toggleBlock(block.id, isExpanded(block.id))}
-                onSendToChat={() => requestChatInjection(block.result)}
-              />
-            </div>
-          ))
-        )}
-      </div>
+        </>
+      )}
     </div>
   );
 }

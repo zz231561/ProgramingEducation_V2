@@ -5,7 +5,7 @@
 ## ⚠ 待處理
 
 ### 檔案大小逼近門檻（⚠ 提醒，未超硬上限）
-- [ ] `code-files-sidebar.tsx` 207 / `run-block.tsx` 201 / `services/workspace_files.py` 174 / `use-named-file.ts` 159 / `api/routes/code_files.py` 153 / `toolbar.tsx` 147
+- [ ] `code-files-sidebar.tsx` 207 / `run-block.tsx` 201 / `workspace/page.tsx` 190 / `services/workspace_files.py` 174 / `runner/app/terminal.py` 165 / `output-panel.tsx` 163（R4 +25：終端/歷史二選一分支）/ `use-named-file.ts` 159 / `api/routes/code_files.py` 153 / `toolbar.tsx` 147
 
 ### 延遲驗收（Phase 6-2 → 6-4 必跑）
 - [ ] **6-2 grounded UI 狀態尚未真機驗收** → **6-4a-deferred-ui 必驗（roadmap 已標）**

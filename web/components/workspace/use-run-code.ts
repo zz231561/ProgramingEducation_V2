@@ -1,14 +1,19 @@
 "use client";
 
 /**
- * 程式碼執行 hook — 提交 /code/execute（Judge0）並把結果寫進 workspace context。
- * 自 workspace/page.tsx 拆出（250 行硬性線）。
+ * 程式碼執行 hook — 優先走互動終端（7-R R4），runner 不可用時退回批次 Judge0。
+ *
+ * 互動路徑：useTerminalSession 開 WS，輸出直接進 xterm，結束時 exit frame
+ * 轉成 ExecutionResult 寫回 workspace（RunBlock / Coddy 主動說明皆沿用）。
+ * 批次路徑：原 POST /code/execute，stdin 取自「進階：預先餵入」面板。
  */
 
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 
 import { useWorkspace } from "@/components/workspace/workspace-context";
 import { api } from "@/lib/api";
+import type { TerminalHandle } from "./terminal-view";
+import { useTerminalSession } from "./use-terminal-session";
 
 /** 後端 /code/execute 回傳格式 */
 interface ExecuteResponse {
@@ -34,27 +39,23 @@ export function useRunCode({
   const [isRunning, setIsRunning] = useState(false);
   // 程式碼自上次成功執行後是否已修改（Toolbar dot）
   const [isDirty, setIsDirty] = useState(false);
+  const termRef = useRef<TerminalHandle | null>(null);
+  const pendingRef = useRef<string[]>([]);
 
   const markChanged = useCallback(() => setIsDirty(true), []);
 
-  const run = useCallback(async () => {
-    const code = getCode();
-    if (!code.trim()) return;
-
+  const runBatch = useCallback(async () => {
     setIsRunning(true);
-    onRunStart();
-
     try {
       const result = await api<ExecuteResponse>("/code/execute", {
         method: "POST",
-        // Judge0 為批次執行：程式讀取的輸入必須在送出前一次給完
+        // 批次路徑：程式讀取的輸入必須在送出前一次給完
         body: JSON.stringify({
-          code,
+          code: getCode(),
           stdin: workspace.getStdin(),
           args: workspace.getArgs(),
         }),
       });
-
       workspace.setExecutionResult({
         stdout: result.stdout,
         stderr: result.stderr,
@@ -77,7 +78,53 @@ export function useRunCode({
     } finally {
       setIsRunning(false);
     }
-  }, [workspace, getCode, onRunStart]);
+  }, [workspace, getCode]);
 
-  return { isRunning, isDirty, markChanged, run };
+  const terminal = useTerminalSession({
+    getCode,
+    getArgs: workspace.getArgs,
+    // xterm 是動態載入的，首批輸出可能早於 handle 就緒 → 先 buffer，attach 時 flush
+    onOutput: (data) => {
+      if (termRef.current) termRef.current.write(data);
+      else pendingRef.current.push(data);
+    },
+    onFinish: (result) => {
+      workspace.setExecutionResult(result);
+      setIsDirty(false);
+      setIsRunning(false);
+    },
+    onUnavailable: () => {
+      setIsRunning(false);
+      void runBatch();
+    },
+  });
+
+  const run = useCallback(async () => {
+    if (!getCode().trim()) return;
+    onRunStart();
+    setIsRunning(true);
+    termRef.current?.clear();
+    pendingRef.current = [];
+    await terminal.start();
+  }, [getCode, onRunStart, terminal]);
+
+  const attachTerminal = useCallback((handle: TerminalHandle) => {
+    termRef.current = handle;
+    pendingRef.current.forEach((chunk) => handle.write(chunk));
+    pendingRef.current = [];
+  }, []);
+
+  return {
+    isRunning,
+    isDirty,
+    markChanged,
+    run,
+    /** 直接傳給 OutputPanel 的 terminal prop */
+    terminal: {
+      phase: terminal.phase,
+      queuePosition: terminal.queuePosition,
+      onData: terminal.sendInput,
+      onReady: attachTerminal,
+    },
+  };
 }

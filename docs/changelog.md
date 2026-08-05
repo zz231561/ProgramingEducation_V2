@@ -22,6 +22,10 @@
 ### Added — `scripts/fix_production_video.py`
 - `seed_production_content.py` 是 `on conflict do nothing` 的初次播種，**無法更新既有資料** → 新增單章重播工具（RAG chunks / staging / learning_units / questions 四者整章替換），支援 `--dry-run`
 
+### 生產庫已同步（2026-08-05 使用者核准後執行）
+- v41：RAG chunks 8 換新 / questions 2 → **5** / staging + learning_units 內容更新
+- **全庫複查：questions / staging / learning_units / RAG 四張表的 `external` 殘留皆為 0**；總量 questions 631、RAG 861（僅 v41 被替換，其餘未動）
+
 
 ## [2026-08-05] — feat(edf)：時區提醒 + 端點正名 run-help；發現章節 41 教材把 `extern` 寫成 `external`
 

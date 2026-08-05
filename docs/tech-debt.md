@@ -29,8 +29,8 @@
   - **如何處理**：self-host VPS 部署時實測 stack 啟動 → workers 成功 register languages → backend 能透過 `/about` 與 `/submissions` 對話；若 worker fail 多半是 cgroups / privileged 問題
 
 ### 內容層（教學課綱）
-- [x] ~~🔴 **章節 41 教材把 `extern` 寫成 `external`**~~ — 2026-08-05 已修（corrections + RAG 重建 + 內容題目重生 + promote；生產同步待執行）
-- [ ] ~~原記錄~~ **章節 41 教材把 `extern` 寫成 `external`**（2026-08-05 盤點 Judge0 能力矩陣時發現）
+- [x] ~~🔴 **章節 41 教材把 `extern` 寫成 `external`**~~ — 2026-08-05 全數修畢（corrections + RAG 重建 + 內容題目重生 + promote + **生產同步完成**，四張表殘留皆 0）
+- [ ] ~~原記錄（已消除，保留說明供追溯）~~ **章節 41 教材把 `extern` 寫成 `external`**（2026-08-05 盤點 Judge0 能力矩陣時發現）
   - **根因**：Whisper 逐字稿 [00:35]「在資料型態的前面加上 external 這個字」→ grounded 生成忠實複製錯誤關鍵字
   - **影響**：學生照打 `external int x;` 編譯必失敗；本機與**生產庫皆有**（RAG 2 chunks / staging 1 / learning_units 1 / questions 2）
   - **極可能是 v41 題庫掛零主因**（生成端依錯誤教材出題 → 審查端打回）

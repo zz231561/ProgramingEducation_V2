@@ -59,6 +59,29 @@ def test_debugging_from_execution_error():
     assert act == DialogueAct.DEBUGGING.value
 
 
+def test_debugging_from_nonzero_exit():
+    # NZEC：stderr 全空，失敗只反映在 exit_code / status_description
+    act = classify_dialogue_act(
+        "出現了Runtime Error 為什麼",
+        execution_result={
+            "stdout": "Hello, World!", "stderr": "",
+            "exit_code": 1, "status_description": "Runtime Error (NZEC)",
+        },
+    )
+    assert act == DialogueAct.DEBUGGING.value
+
+
+def test_accepted_result_not_debugging():
+    act = classify_dialogue_act(
+        "跑完了然後呢",
+        execution_result={
+            "stdout": "Hello", "stderr": "",
+            "exit_code": 0, "status_description": "Accepted",
+        },
+    )
+    assert act is None
+
+
 def test_asking_hint_from_text():
     assert classify_dialogue_act("我卡住了幫我一下") == DialogueAct.ASKING_HINT.value
 

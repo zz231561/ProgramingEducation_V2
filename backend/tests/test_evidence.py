@@ -23,6 +23,36 @@ def test_user_prompt_success():
     assert "程式執行成功" in prompt
 
 
+def test_user_prompt_nzec_not_reported_as_success():
+    # NZEC（return 1）：stderr 全空，只有狀態欄看得到失敗——
+    # 修復前 prompt 會說「程式執行成功」而學生螢幕上是 Runtime Error
+    prompt = _build_user_prompt(
+        "int main(){ return 1; }", "Hello", "", "",
+        exit_code=1, status_description="Runtime Error (NZEC)",
+    )
+    assert "程式執行成功" not in prompt
+    assert "Runtime Error (NZEC)" in prompt
+    assert "exit code 1" in prompt
+
+
+def test_user_prompt_accepted_status_still_success():
+    prompt = _build_user_prompt(
+        "int main(){}", "Hello", "", "",
+        exit_code=0, status_description="Accepted",
+    )
+    assert "程式執行成功" in prompt
+    assert "執行平台狀態" not in prompt
+
+
+def test_user_prompt_nonzero_exit_without_status():
+    # 只有 exit_code 沒有狀態字串（防守：不同執行後端欄位齊全度不一）
+    prompt = _build_user_prompt(
+        "int main(){ return 2; }", "", "", "", exit_code=2,
+    )
+    assert "程式執行成功" not in prompt
+    assert "exit code 2" in prompt
+
+
 # === SYSTEM_PROMPT ===
 
 def test_system_prompt_contains_concept_tags():

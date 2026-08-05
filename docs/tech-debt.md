@@ -4,8 +4,10 @@
 
 ## ⚠ 待處理
 
-### 🔴 Hint Ladder 在對話路徑上從未接通（2026-08-06 使用者回報 Coddy 對話後查證）
-- [ ] **`web/hooks/use-chat.ts:75` 把 `hint_level: 0` 寫死**，前端從未遞增
+### ~~🔴 Hint Ladder 在對話路徑上從未接通~~ — **2026-08-06 已修（7-C1，待使用者實測）**
+- [x] 修復＝`web/lib/hint-escalation.ts` 純函式 + `use-chat.ts` ref 追蹤；下游 hint_request 事件與
+      ASKING_HINT 分支隨之復活（dialogue_act 部分改傳 0——自動階梯≠明確要提示，防過度標記）。原始記錄 ↓
+- **`web/hooks/use-chat.ts:75` 把 `hint_level: 0` 寫死**，前端從未遞增
   - `decide_strategy()` 的 docstring 寫「hint_level 由前端追蹤（學生同一問題連續求助次數）」，
     但**只有 quiz 路徑真的有傳**（`quiz-runner.tsx` / `weakness-quiz-runner.tsx` 傳 `hints.length + 1`），chat 路徑恆為 0
   - **後果**：`_STRATEGY_MATRIX` 36 格中，對話永遠只用得到第 0 欄——最不肯給資訊的一欄
@@ -30,8 +32,10 @@
     references.md §5.1 有標）是死功能；其 BKT 強證據訊號源也一併缺席
   - **處置需使用者裁決**：補前端 UI（量體不小：三種驗證各有作答流程）vs 降級為論文描述「已實作未部署」vs 移除
 
-### 🔴 Evidence 層拿不到 exit_code / status_description——執行結果注入不完整（2026-08-06 審計發現）
-- [ ] `services/chat.py` 只從 execution_result 抽 `stdout / stderr / compile_output` 餵給 `analyze_evidence()`，
+### ~~🔴 Evidence 層拿不到 exit_code / status_description~~ — **2026-08-06 已修（7-C1，待使用者實測）**
+- [x] 修復＝`analyze_evidence` 增兩參數 + prompt 注入「執行平台狀態」（NZEC 不再誤稱執行成功）
+      + `_has_execution_error` 同步看 exit/status。原始記錄 ↓
+- `services/chat.py` 只從 execution_result 抽 `stdout / stderr / compile_output` 餵給 `analyze_evidence()`，
       **`exit_code` 與 `status_description` 被丟棄**（前端明明有送——`ExecutionResult` 型別完整）
   - **後果**：非零 exit（NZEC）時 stderr 全空 → Evidence LLM **機械上看不到任何異常訊號**；
     使用者實例中 Coddy 知道 Runtime Error 是因為**學生自己打字說的**，不是管線給的

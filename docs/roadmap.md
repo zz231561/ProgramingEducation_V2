@@ -308,6 +308,19 @@
 - [x] 7-U5 靜態補全：92 個候選（關鍵字 + 教材用得到的 STL 含繁中說明 + 骨架片段）+ 當前檔識別字掃描；Tab/Enter 接受、Esc 關閉；彈窗樣式對齊 GitHub Dark（**不接 clangd LSP**——B 機 2GB 撐不住 30 個實例）
 - [x] 7-U6 Coddy 分階段狀態文字：`/chat/interact` 改 SSE（stage → done/error）+ 前端三段進度條；`chat.py` 263 行超硬上限 → 抽 `chat_sse.py`（使用者核准）
 
+### 7-C Coddy 教學品質修復（2026-08-06 使用者對話回報 → 全面審計 → 分批修復）
+> 起因：使用者實測 return 1 對話——Coddy 連續反問不升級、學生 push back 兩次才拿到正確答案。
+> 審計方法：後端每個 API 欄位 ↔ 前端實際送出值、每個 service ↔ 呼叫端、規範文件 ↔ 實作，逐一比對。
+> 完整缺陷清單見 tech-debt；**驗收策略（使用者裁決）：功能全部修補/新建完成後一律驗收**。
+- [x] 7-C1 **P0 批次**（2026-08-06 ✅ 待實測）：
+  - 接通 Hint Ladder：`web/lib/hint-escalation.ts` 純函式（同脈絡追問 +1 / 卡住訊號「不懂・沒辦法回答」跳 2 級至少 2 / 致謝歸零 / 新 session・重新執行歸零）+ `use-chat.ts` ref 追蹤送出真實 hint_level（原寫死 0）；下游自動復活＝chat hint_request 行為事件 + 策略矩陣 1-5 欄
+  - Evidence 補執行狀態：`analyze_evidence` 增 `exit_code`/`status_description`，NZEC 時 prompt 改注入「執行平台狀態」（修復前會對 LLM 說「程式執行成功」而學生螢幕是 Runtime Error）
+  - `_has_execution_error` 同步看 exit_code/status → NZEC 提問正確分類 DEBUGGING
+  - dialogue_act 語意修正：chat 的自動升級階梯≠學生明確要提示，`classify_dialogue_act` 改傳 0 防 asking_hint 過度標記
+  - 後端 827 tests 全綠（+5）；前端 tsc/eslint/build 過 + hint-escalation 11 斷言含真實對話重演
+- [ ] 7-C2 **P1 批次**：NZEC 教學語意主動說明（機械判定固定文案，分清 C++ 標準/OS 慣例/平台判定三層）+ `run_help` 逾時文案修正（仍指向已移除的 stdin 欄位）+ Feedback prompt 加「分層說明來源」與「明確認錯」規則 + 429 配額前端顯示（`retry_after_seconds` 消費 + chat 錯誤訊息分流）
+- [ ] 7-C3 **2-6 Comprehension 前端 UI**（使用者裁決：建 UI 非降級）：答對後呼叫 `GET /comprehension/trigger-suggestion` → 依 suggested_type 彈出 EPL/預測輸出/變體挑戰作答流程（ui-ux-spec §12.2 modal 線框）；變體挑戰禁用 AI；結果顯示 passed + 回寫 BKT 已在後端
+
 ---
 
 ## Phase 8 — 專案健檢與整理（2026-08-06 使用者提出）

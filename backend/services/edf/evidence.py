@@ -53,6 +53,18 @@ SYSTEM_PROMPT = f"""\
 """
 
 
+def _is_failing_status(status_description: str, exit_code: int | None) -> bool:
+    """執行平台是否把這次執行判為失敗（NZEC / 逾時 / signal 等）。
+
+    NZEC（非零 exit）這類失敗 stderr 全空，只有狀態欄看得到——
+    沒有這個判斷，prompt 會對 LLM 說「程式執行成功」而學生螢幕上是 Runtime Error。
+    """
+    status = (status_description or "").strip()
+    if status and status.lower() != "accepted":
+        return True
+    return isinstance(exit_code, int) and exit_code != 0
+
+
 def _build_user_prompt(
     source_code: str,
     stdout: str,
@@ -60,6 +72,8 @@ def _build_user_prompt(
     compile_output: str,
     reflection_summary: str = "",
     question: str = "",
+    exit_code: int | None = None,
+    status_description: str = "",
 ) -> str:
     """組裝送給 LLM 的使用者 prompt（XML 標籤隔離學生程式碼）。
 
@@ -79,7 +93,13 @@ def _build_user_prompt(
     if stdout:
         parts.append(f"stdout:\n```\n{stdout}\n```")
 
-    if not compile_output and not stderr:
+    if _is_failing_status(status_description, exit_code):
+        exit_note = f"，exit code {exit_code}" if exit_code is not None else ""
+        parts.append(
+            f"執行平台狀態：{status_description or 'Runtime Error'}{exit_note}。"
+            "（stderr 為空時這是唯一的失敗訊號，例如 main 回傳非零值）"
+        )
+    elif not compile_output and not stderr:
         parts.append("程式執行成功，無錯誤。")
 
     if reflection_summary:
@@ -95,15 +115,20 @@ async def analyze_evidence(
     compile_output: str = "",
     reflection_summary: str = "",
     question: str = "",
+    exit_code: int | None = None,
+    status_description: str = "",
 ) -> EvidenceResult:
     """呼叫 LLM 分析程式碼，回傳結構化 Evidence。
 
     `reflection_summary`（Phase 2-5e）：學生先前提交的反思摘要字串。
     傳空字串等於不注入；caller 應透過 `format_reflection_for_evidence` 預先渲染。
+    `exit_code` / `status_description`：執行平台的結束狀態——NZEC 這類
+    「stderr 全空的失敗」只有這兩個欄位看得到。
     """
     client = _get_client()
     user_prompt = _build_user_prompt(
-        source_code, stdout, stderr, compile_output, reflection_summary, question
+        source_code, stdout, stderr, compile_output, reflection_summary, question,
+        exit_code=exit_code, status_description=status_description,
     )
 
     try:

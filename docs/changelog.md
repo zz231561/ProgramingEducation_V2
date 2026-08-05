@@ -1,5 +1,36 @@
 # 變更日誌
 
+## [2026-08-06] — fix(coddy)：7-C1 P0 批次——接通 Hint Ladder + Evidence 補執行狀態
+
+> 起因：使用者實測 return 1 對話，Coddy 連續反問不升級。審計證實兩個結構性斷線（詳見 tech-debt / roadmap 7-C）。
+
+### Fixed — Hint Ladder（前端寫死 0 → 真實追蹤）
+- 新增 `web/lib/hint-escalation.ts`（純函式，供未來 Vitest）：同脈絡追問 +1；
+  卡住訊號（不懂/沒辦法回答/看不懂…保守列舉，「會不會」不誤中）跳 2 級、下限 2；
+  致謝／理解訊號歸零（卡住優先——「謝謝但我還是不懂」仍升級）；上限 5
+- `use-chat.ts`：ref 追蹤 hint_level 送出真實值；歸零時機＝新 session／載入歷史 session／
+  反思開場／**重新執行程式**（injectExecutionResult＝學生已採取行動，脈絡刷新）
+- **下游自動復活**：`chat_sse.py` hint_request 行為事件（原永不觸發，5-2 hint 分布恆空）、
+  策略矩陣 1-5 欄（原本 36 格只用得到第 0 欄、allow_code_snippet 恆 False）
+- 驗證：真實對話重演斷言——那段 return 1 對話在新版下第 5 則（「我不明白也沒辦法回答」）
+  會落在 hint 5＝完整解釋，不再無限反問
+
+### Fixed — Evidence 執行狀態盲區
+- `analyze_evidence()` 增 `exit_code` / `status_description` 參數；`services/chat.py` 從
+  execution_result 傳入（原本抽三欄後丟棄）
+- `_build_user_prompt`：失敗狀態（非 Accepted 或非零 exit）注入「執行平台狀態」行——
+  **修復前 NZEC 時 prompt 對 LLM 說「程式執行成功，無錯誤」**，而學生螢幕上是 Runtime Error
+- `_has_execution_error`（dialogue_act）同步看 exit_code/status →「出現了Runtime Error 為什麼」
+  正確分類 DEBUGGING（原漏判，行為資料失真）
+
+### Changed — dialogue_act 語意修正
+- `services/chat.py` 呼叫 `classify_dialogue_act` 的 hint_level 改傳 0：chat 的階梯是**自動升級**
+  （連續追問位置），不是學生「明確要提示」的行為——照傳會把一般追問全誤標 asking_hint
+
+### 驗證
+- 後端 827 tests 全綠（+5：NZEC prompt×3、dialogue×2）；前端 tsc / eslint / build 過；
+  `hint-escalation` 編譯後 node 斷言 11/11（含上述對話重演）
+
 ## [2026-08-06] — docs：Phase 8-0 討論（專案體積釐清 + 工作流自檢定案 + CLAUDE.md 瘦身）
 
 > 本次 session 依使用者指示**只做 8-0 討論、不寫程式**。8-0a（是否加新功能）經裁決延到驗收跑完再盤點。

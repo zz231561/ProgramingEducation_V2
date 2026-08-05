@@ -29,13 +29,22 @@ _ACK_MAX_LEN = 15  # acknowledgment 通常極短，避免長句誤判
 
 
 def _has_execution_error(execution_result: dict | None) -> bool:
-    """判定隨訊息附帶的執行結果是否含錯誤（stderr / 編譯輸出）。"""
+    """判定隨訊息附帶的執行結果是否含錯誤。
+
+    stderr / 編譯輸出之外也看 exit_code 與 status_description——
+    NZEC（如 main 回傳非零）stderr 全空，只有狀態欄看得到失敗。
+    """
     if not execution_result:
         return False
-    return bool(
-        (execution_result.get("stderr") or "").strip()
-        or (execution_result.get("compile_output") or "").strip()
-    )
+    if (execution_result.get("stderr") or "").strip() or (
+        execution_result.get("compile_output") or ""
+    ).strip():
+        return True
+    exit_code = execution_result.get("exit_code")
+    if isinstance(exit_code, int) and exit_code != 0:
+        return True
+    status = (execution_result.get("status_description") or "").strip().lower()
+    return bool(status) and status != "accepted"
 
 
 def _matches(text: str, keywords: tuple[str, ...]) -> bool:

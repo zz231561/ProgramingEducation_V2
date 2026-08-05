@@ -111,8 +111,10 @@ async def interact(
     history_rows = (await db.execute(history_stmt)).scalars().all()
     chat_history = [{"role": m.role.value, "content": m.content} for m in history_rows]
 
-    # 對話行為分類（5-2c）— 啟發式，僅用 LLM 呼叫前既有訊號，隨 user message 一併持久化
-    dialogue_act = classify_dialogue_act(question, hint_level, execution_result)
+    # 對話行為分類（5-2c）— 啟發式，僅用 LLM 呼叫前既有訊號，隨 user message 一併持久化。
+    # hint_level 傳 0：chat 的 hint_level 是前端自動升級的階梯位置（連續追問），
+    # 不是學生「明確要提示」的行為訊號——照傳會把一般追問全誤標成 asking_hint
+    dialogue_act = classify_dialogue_act(question, 0, execution_result)
 
     # Fail-safe 持久化：user message 在 LLM 呼叫前先 commit。
     # OpenAI 偶發失敗是常態，不可讓學生打的問題隨 rollback 蒸發。
@@ -134,15 +136,20 @@ async def interact(
     reflection_evidence_summary = format_reflection_for_evidence(reflection)
     reflection_feedback_block = format_reflection_for_feedback(reflection)
 
-    # Evidence 層
+    # Evidence 層 — exit_code / status_description 必須帶上：
+    # NZEC（如 return 1）stderr 全空，少了這兩欄管線會誤稱「執行成功」
     stdout = (execution_result or {}).get("stdout", "")
     stderr = (execution_result or {}).get("stderr", "")
     compile_output = (execution_result or {}).get("compile_output", "")
+    exit_code = (execution_result or {}).get("exit_code")
+    status_description = (execution_result or {}).get("status_description") or ""
 
     if on_stage:
         await on_stage(STAGE_ANALYZING)
     evidence = await analyze_evidence(
-        code, stdout, stderr, compile_output, reflection_evidence_summary, question
+        code, stdout, stderr, compile_output, reflection_evidence_summary, question,
+        exit_code=exit_code if isinstance(exit_code, int) else None,
+        status_description=status_description,
     )
 
     # 離題判定回填 dialogue_act（5-2c 啟發式無此訊號）——供評估期統計學生離題比例

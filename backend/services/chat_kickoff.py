@@ -82,10 +82,10 @@ async def _generate_opening(
     reflection: Reflection, question: Question | None
 ) -> str:
     """生成開場訊息；任何失敗回 fallback 文案（fail-open）。"""
-    client = _get_client()
-    if client is None:
-        return _FALLBACK_MESSAGE
     try:
+        client = _get_client()  # 建構失敗（如 key 格式錯）也必須 fail-open
+        if client is None:
+            return _FALLBACK_MESSAGE
         response = await client.chat.completions.create(
             messages=[
                 {"role": "system", "content": _build_prompt(reflection, question)},

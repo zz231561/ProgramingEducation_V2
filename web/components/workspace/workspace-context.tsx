@@ -13,6 +13,9 @@ type KickoffListener = (reflectionId: string) => void;
 interface WorkspaceContextValue {
   getCode: () => string;
   setCode: (code: string) => void;
+  /** 執行時餵給程式的標準輸入（Judge0 為批次執行，需事先填好） */
+  getStdin: () => string;
+  setStdin: (stdin: string) => void;
   getExecutionResult: () => ExecutionResult | null;
   setExecutionResult: (result: ExecutionResult | null) => void;
   /** 訂閱「Run 完成」事件（auto-inject 用）。 */
@@ -52,6 +55,7 @@ interface WorkspaceProviderProps {
  */
 export function WorkspaceProvider({ chatOpen, toggleChat, children }: WorkspaceProviderProps) {
   const codeRef = useRef("");
+  const stdinRef = useRef("");
   const execRef = useRef<ExecutionResult | null>(null);
   const listenersRef = useRef<Set<ExecutionListener>>(new Set());
   const injectListenersRef = useRef<Set<ExecutionListener>>(new Set());
@@ -61,6 +65,8 @@ export function WorkspaceProvider({ chatOpen, toggleChat, children }: WorkspaceP
 
   const getCode = useCallback(() => codeRef.current, []);
   const setCode = useCallback((code: string) => { codeRef.current = code; }, []);
+  const getStdin = useCallback(() => stdinRef.current, []);
+  const setStdin = useCallback((v: string) => { stdinRef.current = v; }, []);
   const getExecutionResult = useCallback(() => execRef.current, []);
   const runs = useRunHistory();
 
@@ -115,7 +121,8 @@ export function WorkspaceProvider({ chatOpen, toggleChat, children }: WorkspaceP
 
   return (
     <Ctx value={{
-      getCode, setCode, getExecutionResult, setExecutionResult,
+      getCode, setCode, getStdin, setStdin,
+      getExecutionResult, setExecutionResult,
       onExecutionComplete, runs, clearRuns,
       requestChatInjection, onChatInjectionRequest,
       requestReflectionKickoff, onReflectionKickoff,

@@ -1,5 +1,24 @@
 # 變更日誌
 
+## [2026-08-05] — feat(workspace)：補上標準輸入介面（`cin` 無處可輸入）+ 修 kickoff fail-open
+
+> 使用者寫了含 `std::cin >> userInput` 的程式，**畫面上沒有任何地方可以輸入**。
+
+### Fixed — stdin 從未被送出（後端一直支援，前端沒接）
+- `api/routes/code.py:20` 的 `ExecuteRequest.stdin` 早就存在且會傳給 Judge0，但 `use-run-code.ts` 只送 `{ code }`，**UI 也沒有輸入欄位** → 學生的 `cin` 永遠讀到 EOF，畫面看起來像程式壞掉
+- `use-run-code` 補送 `stdin: workspace.getStdin()`；`workspace-context` 加 `getStdin/setStdin`（ref，不觸發 re-render）
+
+### Added — `components/workspace/stdin-panel.tsx`
+- Output 面板頂端的「輸入」摺疊列：多行 textarea（上限 10,000 字，與後端一致）、顯示目前行數
+- **偵測到程式會讀輸入時自動展開並標示「程式在等待輸入」**（`codeNeedsInput()` 比對 `cin >>` / `getline` / `scanf` / `cin.get`，純字串比對零成本）
+- 明說批次執行的限制：「程式是一次跑完的，不能邊跑邊打字——請先在這裡填好所有 `cin` 要讀的內容，再按 Run」（roadmap 既有決策：Judge0 批次模式，不做即時互動 terminal）
+
+### Fixed — `services/chat_kickoff.py` 同型 fail-open 缺口
+- 上一批在 `compile_error.py` 修掉的問題（`_get_client()` 在 try 之外，client 建構失敗會 500）在 kickoff 也存在，一併修掉
+
+### Tests
+- `tests/test_code_execute.py` +2：stdin 確實轉發給 Judge0 / 未提供時為空字串（鎖住這條被漏掉過的契約）；後端全量 **795 passed**，web build + tsc + eslint 綠
+
 ## [2026-08-05] — feat(edf)：編譯失敗時 Coddy 主動說明（平台限制直說 / 學生錯誤引導）
 
 > 使用者提問「預設函式庫有哪些、想引用別的怎麼辦」+ 定案「編譯錯誤本來就該由 Coddy 主動分析；系統錯誤直說，學生自己出錯要引導」。

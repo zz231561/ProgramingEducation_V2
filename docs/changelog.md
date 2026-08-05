@@ -1,5 +1,53 @@
 # 變更日誌
 
+## [2026-08-06] — docs：7-C2a Decision 層重構設計定案（**純設計，本 session 不實作**）
+
+> 使用者指示：本 session 只討論與落檔，實作留到下個 session。以下全是**設計決策紀錄**，
+> 程式碼未動——`decision.py` / `feedback.py` / `hint-escalation.ts` 皆維持現狀。
+
+### 架構審視（三個查證過的事實，決定了設計方向）
+1. `decide_strategy` **全專案只有 `services/chat.py` 呼叫**（其餘皆測試）→ 改動不影響 Quiz，blast radius 小
+2. Quiz 有獨立階梯 `services/quiz/hint.py`，等級是 **1–5 沒有 0**——因為在 Quiz 裡「沒按提示鈕」
+   不需要編號。**這證實 chat 的 L0 是被硬塞進來的**：它在 Quiz 的語意是「還沒求助」，
+   搬到 chat 卻變成「學生開口的第一句話」
+3. `validate_output` 即使 `allow_code=True` 仍截斷 >8 行且無 TODO 的區塊，`quiz/hint.py` 也早已寫明
+   「不可直接給完整答案」→ **機械防線一直是對的，只有 `decision.py` 的 L5 措辭在說謊**（無行為 bug）
+
+### 設計決策（四項，採方案 B）
+- **六層改累積式**：單調維度＝「本題解法被揭露多少」而非「講了多少話」。
+  L0 重新定義為「回答學生實際問的問題 + 解釋概念 + 本題解法揭露 0%」
+- **動態選層**：`reveal_level = min(5, base(error_type) + persistence)`——
+  無錯誤 L0 ／ syntax·compilation·runtime L2（看不懂錯誤訊息，指位置不算給答案）／
+  logic·semantic L1（找出邏輯錯在哪本身就是練習）
+- **方案 B**：6 等級指令 + 6 Bloom 修飾（12 條）取代 36 格矩陣。理由＝累積語意在「互相獨立的格子」裡
+  表達不出來，且近日已被「手寫的東西沒有機制驗證」咬過三次
+- **persistence 搬後端**：`chat.py` 已有 `history_rows`（含每則的 `code_snapshot`/`execution_result`），
+  自算即可；刪 `hint-escalation.ts` 與其人工鏡像 `eval_coddy/ladder.py`，
+  chat 不再由前端送 `hint_level`（**送不出去的東西不可能被寫死成 0**）
+
+### 修正一項早先的判斷（洩答重新界定）
+- 2026-08-06 早先把「散文給出閏年規則」列為 🔴 洩答，**判斷過當**：該題屬章節 25「if-else」，
+  **學習目標是 if-else 與模數**，閏年定義只是背景設定——講出來反而移除了與目標無關的認知負荷
+- 真正的缺陷是 **L0 的語意錯誤**（該回答問題時卻反問），已改由 7-C2a 處理
+- 保留的例外：若學生問的正是本題目標概念（如演算法題），仍須引導而非直述
+
+### 矛盾的解法：移除離群值而非新增裁決
+- 明文原則：**RULE-1／RULE-2 是階梯之上的不變量，任何等級都不得突破；
+  L5 的「完整」指解釋完整、非程式碼完整**
+- 依據＝`modules.md` 引用的 CodeAid 研究（不給直接程式碼的 AI 學習效果更好）是整個設計的證據基礎，
+  為了階梯好看而破例會拆掉地基
+- 附帶發現：edf-pipeline.md 寫 L5「僅在反覆失敗 5+ 次後觸發」，**此門檻從未被任何程式碼實作**
+
+### Changed — 文件（僅文件）
+- `docs/roadmap.md`：7-C2 拆為 **7-C2a**（Decision 重構，含可直接執行的六段規格）與 **7-C2b**（其餘 P1）；
+  執行順序表更新；「已確認決策」新增本次設計全文
+- `.claude/rules/edf-pipeline.md`：Hint Ladder 表標註「現行（改版前）」+ 新增「⚠ 已知矛盾」節
+  （L5 vs RULE-1、5+ 次門檻未實作、chat 與 Quiz 兩條階梯語意不同不可混用）；
+  Decision 節註明 `decide_strategy` 只有 chat 呼叫
+- `docs/tech-debt.md`：B3 重新界定（洩答 → L0 語意錯誤）；新增 **B6**（L5 措辭矛盾）；
+  C1 註明鏡像檔問題將由 7-C2a 根除
+- `docs/roadmap.md` 7-D1：測試清單移除 `hint-escalation.ts`（該檔將於 7-C2a 刪除）
+
 ## [2026-08-06] — docs：8-1d 自檢 script + roadmap 重排（技術債納入排程）+ 全域文件同步
 
 > 使用者要求：重整現況、重排 roadmap（以現在進行的事為主）、技術債清理排在**功能之後驗收之前**、

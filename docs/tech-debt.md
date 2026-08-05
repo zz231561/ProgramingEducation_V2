@@ -30,12 +30,25 @@
   - R4 互動終端 + R5d 移除 stdin 預填 UI 之後**這個欄位已不存在**
   - 零 LLM 的機械固定文案 → 會非常有自信地叫學生去點一個不存在的東西
 
-**B3. 洩答殘留：prompt 層防線不保證散文不給完整解法**（2026-08-06 模擬驗收）
-- [ ] hint 0-2 的洩答防線已消除字面條件（`year % 400 == 0`），但**散文描述完整規則組仍會出現**
-  - 本質：LLM 指令遵循的軟性極限——「想幫忙」的傾向蓋過矩陣第 0 欄的「只提問不給提示」
-  - **升級選項**：① 條件式二次檢查（僅在機械偵測到「解法形狀」時才多一次呼叫，非每輪）
-    ② hint 0-1 回應模板約束 ③ 接受現狀（洩的是題目領域規則而非程式碼，學生仍須自行實作）
-  - 觀測工具已備：`scripts/eval_coddy/` P3 腳本可隨時重測，此項**可量測不需憑感覺**
+**B3. ~~洩答殘留~~ → 重新界定為「L0 語意錯誤」**（2026-08-06 設計討論後修正判斷，改由 7-C2a 處理）
+- [ ] **早先把它列為 🔴 洩答是判斷過當**：閏年題屬章節 25「if-else」，**學習目標是 if-else 與模數**，
+      「閏年怎麼定義」只是背景設定——講出規則其實移除了與目標無關的認知負荷，是對的教法。
+      真正不該給的是程式碼結構，而 RULE-1/2 + `validate_output` 本來就守得住（驗證輪實測：
+      hint 3 的 TODO 真留白、hint 4 明確拒絕填答）
+- [ ] **真正的缺陷是 L0 的語意**：現行 L0＝「只問問題不給提示」，但 chat 的 L0 實際是
+      「學生開口的第一句話」（可能是提問／求審閱／查教材），一律反問是類別錯誤 → **7-C2a 重新定義**
+- [ ] **殘留的例外要在 7-C2a 一併處理**：若學生問的正是**本題的目標概念**（如演算法題要學生自己想出
+      判斷法），仍應改為引導而非直述——需靠注入的 `concept_tags` 判斷
+- 觀測工具已備：`scripts/eval_coddy/` P3 腳本可隨時重測，此項**可量測不需憑感覺**
+
+**B6. `decision.py` L5 措辭與 RULE-1 自相矛盾**（2026-08-06 架構審視發現；7-C2a 消除）
+- [ ] 矩陣 (3,5) 寫「展示**完整的應用方式**」、(6,5) 寫「展示**完整的設計方案**」，
+      但 PREAMBLE RULE-1 是「絕對不要提供完整的解答程式碼」且標為不可違反
+  - **無行為 bug**：`validate_output` 即使 `allow_code=True` 仍截斷 >8 行且無 TODO 的區塊，
+    `services/quiz/hint.py` 同級說明也早已正確寫成「不可直接給完整答案」——**離群值只有 `decision.py` 與
+    `edf-pipeline.md` 的措辭**，實際行為一直正確
+  - 但 prompt 自相矛盾會讓 LLM 行為不可預期，且文件誤導後續開發者
+  - **附帶**：edf-pipeline.md 寫 L5「僅在反覆失敗 5+ 次後觸發」，**此門檻從未被任何程式碼實作**
 
 **B4. 前端 429 / 5xx 統一攔截宣告了但沒實作**
 - [ ] `web/lib/api.ts` 檔頭與 `frontend.md` 皆寫「429 → 冷卻倒數 toast、5xx → 錯誤 toast」，實作**只有 401**
@@ -57,8 +70,9 @@
     7-C1 的純函式我只能「把原始碼 `tsc` 編出來再用 node 跑斷言」——有效但**無法納入 CI、沒人會記得重跑**
   - **最小可用起點**：Vitest + 純函式測試（`lib/transcript-timestamps.ts`、`lib/hint-escalation.ts`、
     `components/workspace/use-run-history.ts`、`components/editor/cpp-completion-source.ts`）
-  - ⚠ `lib/hint-escalation.ts` 另有 `backend/scripts/eval_coddy/ladder.py` 鏡像移植，**兩邊改動必須同步**——
-    這正是最需要測試釘住的地方
+  - ⚠ `lib/hint-escalation.ts` 另有 `backend/scripts/eval_coddy/ladder.py` 鏡像移植，**兩邊改動必須同步**
+  - ✅ **鏡像問題將由 7-C2a 根除**（persistence 計算搬後端後兩檔皆刪除）→ 屆時 7-D1 的測試清單
+    改為 `transcript-timestamps` / `use-run-history` / `cpp-completion-source` 三支
 
 **C2. 檔案大小超過門檻**（⚠ 150 / 🚫 250；數據來自 `scripts/doc_selfcheck.py`，2026-08-06）
 - [ ] 🚫 **超過硬上限 250（8 個）**：`api/routes/quiz.py` 347 / `services/quiz/generate.py` 307 /

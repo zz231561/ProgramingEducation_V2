@@ -39,7 +39,11 @@ Phase 7-R 自建互動執行引擎 ✅（生產終端已上線）｜Phase 7-U �
 - 7-C1' ✅ 七型學生模擬 harness（`backend/scripts/eval_coddy/`）+ 診斷輪修復 9 項；
   最重大＝**gpt-5.6 reasoning 預算間歇吃光輸出**（8-05「拒收 reasoning_effort」結論錯誤，值域改為 none/low/…），
   反思評分因此在生產一直靜默 fail-open；已全面改送 `reasoning_effort="none"`
-- **下一步順序（roadmap 開頭有完整表）**：7-C2 P1 → 7-C3 Comprehension 前端 → 7-C4 再驗 →
+- 🎯 **下個 session 第一件事＝7-C2a Decision 層重構**（2026-08-06 設計已定案、**程式碼未動**）：
+  累積式六層 + 動態選層（`base(error_type) + persistence`）+ 方案 B（12 條指令取代 36 格矩陣）
+  + persistence 搬後端刪鏡像檔 + 消除 L5/RULE-1 矛盾。
+  **可直接執行的規格在 `docs/roadmap.md` 7-C2a**，設計理由在同檔「已確認決策」末條
+- **順序（roadmap 開頭有完整表）**：7-C2a → 7-C2b 其餘 P1 → 7-C3 Comprehension 前端 → 7-C4 再驗 →
   **7-D 技術債清償** → **7-E 使用者驗收** → Phase 8 / 7-2 監控 / 7-3 效能 / 5-3·5-4
 
 **排在驗收之後**：Phase 8 專案健檢（8-0 討論已完成）／6-4b 教材局部重跑（依操作回饋）／K1d·K4d·K5d 使用者自測

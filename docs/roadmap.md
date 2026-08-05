@@ -7,7 +7,8 @@
 
 | 順序 | 項目 | 性質 | 狀態 |
 |------|------|------|------|
-| ① | **7-C2** Coddy P1（NZEC 教學語意 / 逾時文案 / 分層說明+認錯規則 / 429 配額顯示） | 功能優化 | 🎯 下一步 |
+| ① | **7-C2a** Decision 層重構（累積式階梯 + 動態選層，方案 B；設計已定案待實作） | 架構優化 | 🎯 **下個 session 第一件事** |
+| ①' | **7-C2b** 其餘 P1（NZEC 教學語意 / 逾時文案 / 分層說明+認錯規則 / 429 配額顯示） | 功能優化 | 待辦 |
 | ② | **7-C3** 2-6 Comprehension 前端 UI（後端完整但學生碰不到） | 新建功能 | 待辦 |
 | ③ | **7-C4** Coddy 品質再驗（`eval_coddy` 七型重跑前後對照） | 驗證 | 待辦 |
 | ④ | **7-D** 技術債清償（前端測試 → 檔案拆分 → changelog 拆檔 → R6 收尾 → 文件稽核） | 技術債 | 待辦 |
@@ -340,7 +341,43 @@
   同一執行結果重複計 BKT 負證據 / 無碼提問建立精熟度 / kgraph 鷹架被當輪雜訊污染（改先讀後寫）/
   散文洩答（strategy 層防線，殘留記 tech-debt）/ off_topic 覆寫誤標 / RAG 查詢加問句+導覽型只用問句 /
   Coddy 反要學生提供連結 / 索答詞跳級與失敗重跑歸零；後端 834 tests；⚠ `chat.py` 299 行超硬上限待拆
-- [ ] 7-C2 **P1 批次｜Coddy 教學品質**（對應 tech-debt B1–B4）
+- [ ] 7-C2a **Decision 層重構：累積式階梯 + 動態選層**（2026-08-06 設計定案，方案 B；**下個 session 的第一件事**）
+  > 完整設計理由與架構審視見「已確認決策」末條；本節是可直接執行的規格。
+  - **背景（三個查證過的事實）**
+    1. `decide_strategy` 全專案**只有 `services/chat.py` 呼叫**（其餘皆測試）→ 改動不影響 Quiz
+    2. Quiz 有獨立階梯 `services/quiz/hint.py`（**1–5 無 0**），且檔頭已寫明「不可直接給完整答案」——
+       **與 RULE-1 一致；`decision.py` 的 L5 措辭才是離群值**
+    3. `validate_output` 即使 `allow_code=True` 仍會截斷 >8 行且無 TODO 的區塊 →
+       **機械防線一直照 Quiz 那套執行，只有矩陣文字在說謊**（無行為 bug，是文件/prompt 矛盾）
+  - **① 六層改累積式**（單調維度＝「本題解法被揭露多少」，不是「講了多少話」）
+    | 層 | 累積行為 | code |
+    |---|---|---|
+    | L0 | 回答學生實際問的問題、解釋所需概念、可舉與本題無關的例子；**本題解法揭露 0%** | ✗ |
+    | L1 | ＋指出問題落在哪個區域／哪個概念 | ✗ |
+    | L2 | ＋精確位置（行號）＋為什麼錯 | ✗ |
+    | L3 | ＋解法骨架，**TODO 必須真留白** | ✓ |
+    | L4 | ＋逐步帶到只剩最後一步 | ✓ |
+    | L5 | ＋逐行完整解釋、修正後**片段** | ✓ |
+  - **② 動態選層**：`reveal_level = min(5, base(error_type) + persistence)`
+    - `base`：無錯誤（純提問／查教材／程式正確）→ **L0**；syntax/compilation/runtime → **L2**
+      （學生看不懂錯誤訊息，指出位置不算給答案）；logic/semantic → **L1**
+      （找出邏輯錯在哪本身就是練習，直接指位置等於代寫）
+    - `persistence`：同脈絡連續追問 +1／明確表示卡住 +2／**成功執行（exit 0）歸零**
+  - **③ 結構改為方案 B**：6×6＝36 格手寫矩陣 → **6 條等級指令 ＋ 6 條 Bloom 深度修飾（共 12 條）**，
+    由 Feedback 層組裝「基底行為 ＋ 本級額外揭露 ＋ 依 Bloom 調整深度」。
+    Bloom 在 L0 的展開：REMEMBER 直接給語法定義／UNDERSTAND 概念含義加對比／APPLY 說明適用情境／
+    ANALYZE 給拆解方法論／EVALUATE 給比較面向／CREATE 給可選設計方向
+  - **④ persistence 計算搬到後端**：`chat.py` 已載入 `history_rows`，每則訊息帶 `code_snapshot` 與
+    `execution_result` → 連續追問次數與「上次成功執行」皆可自算。
+    刪除 `web/lib/hint-escalation.ts` 與其鏡像 `backend/scripts/eval_coddy/ladder.py`；
+    `InteractRequest.hint_level` 於 chat 路徑停用（**送不出去的東西就不可能被寫死成 0**）。
+    ⚠ Quiz 的 `hint_level` 語意是「學生按了 N 次提示鈕」，**維持原樣不動**
+  - **⑤ 消除矛盾**（明文寫進 PREAMBLE 與 edf-pipeline.md）：
+    **RULE-1／RULE-2 是階梯之上的不變量，任何等級都不得突破；L5 的「完整」指解釋完整、非程式碼完整**
+  - **⑥ 補一條收尾規則**：提問必須是學生用手上已有資訊答得出來的；否則改行動建議（RULE-5 本就允許）
+  - **驗證**：`scripts/eval_coddy` 七型重跑，與 2026-08-06 基準逐輪對照（P1 迷惘新手、P3 答案索取型差異最明顯）
+  - **連帶影響**：`tests/test_decision.py` 需重寫（現行斷言 36 格矩陣形狀）；tech-debt C1 的鏡像檔項消失
+- [ ] 7-C2b **其餘 P1 修正**（對應 tech-debt B1／B2／B4）
   - NZEC 教學語意主動說明：機械判定固定文案（零 LLM），分清 **C++ 標準 / OS 慣例 / 本平台判定**三層，
     並以第一人稱說明「這是本平台的判定方式」（現行回應是「線上評測通常…」的第三人稱迴避）
   - `run_help.py` `_TIMEOUT_TEMPLATE` 修正（仍叫學生去填 R5d 已移除的「輸入」欄位）
@@ -357,8 +394,8 @@
 ### 7-D 技術債清償（**排在功能完成之後、使用者驗收之前**；2026-08-06 使用者定序）
 > 清單正本在 `docs/tech-debt.md`，此處只排執行順序。機械事實一律跑 `python3 scripts/doc_selfcheck.py`。
 - [ ] 7-D1 **前端測試基礎設施**（tech-debt C1，原 8-3a）：Vitest + 純函式測試——
-      `lib/hint-escalation.ts`（**最優先**：與 `eval_coddy/ladder.py` 互為鏡像，靠人工同步遲早出錯）、
       `lib/transcript-timestamps.ts`、`use-run-history.ts`、`cpp-completion-source.ts`
+      （原列首位的 `lib/hint-escalation.ts` 會在 7-C2a 隨 persistence 搬後端而刪除，改由後端 pytest 覆蓋）
 - [ ] 7-D2 **檔案拆分**（tech-debt C2）：8 個超硬上限檔——`quiz.py` 347 / `generate.py` 307 /
       `chat.py` 299 / `concept-detail-panel.tsx` 279 / `batch_generator.py` 267 /
       `variation.py` 255 / `comprehension.py` 255 / `quiz/feedback.py` 251
@@ -452,3 +489,26 @@
 - **自建互動執行引擎（2026-08-05 定案，7-R）**：nsjail 沙箱（Google 維護，不自造輪子）+ PTY（stdout 行緩衝，提示字即時出現——修掉 V1 pipe 緩衝缺陷）+ WebSocket；拓撲＝Browser `wss` → A 機 backend（綁公開子網域；Next.js Route Handler 不支援 WS proxy）中繼 → B 機 runner；**一律互動終端**（`POST /run` 批次僅供題庫驗證 / 教材健檢 / 實作題判定）；Judge0 降為 fallback（`RUNNER_BACKEND`）；`ExecutionResult` 欄位不變 → EDF / analytics / run_help 零改動；B 機另租不動 PokerNote（總 $12/月）；「僅放行 A 機」防火牆規則**保留並加 `X-Runner-Token` 縱深**（B 機不持有任何 credential）；已知兩缺陷（stdin 提示不即時 / Run 不攔截）不修、由 R4 取代；UI＝終端機嵌入 Output 面板（非 V1 modal）+ ANSI 16 色例外（僅終端畫布，frontend.md 白名單）
 - **LLM 模型選型 v2**（2026-07-06 確認）：放棄單一 GPT-4o，改任務導向路由（詳見 6-M 節選型表）；cascade 設計 = `gpt-5-mini` 生成 + `gpt-5.4` 審查；Unit content 批次用 `gpt-5.4`（教科書品質優先）；對話/分析組 `gpt-5.4-mini` 起步、K4d 實測後定案；文獻依據 FrugalGPT / RouteLLM（references.md §5.1）；論文記錄實驗當下確切模型版本
 - ~~**實作執行順序**（2026-07-06 定案，共 10 批）~~ → **已全數執行完畢，保留供追溯**。2026-08-06 起的順序改為：驗收清單 1–8 段 → Phase 8 健檢整理（8-0 討論先行）→ 7-2 監控 → 7-3 效能 baseline → 5-3/5-4 行為分析（等真實資料）。原文：① U1a/b/c bug 修正 → ② U2b 移除摘要 + U2c 拔 1-3 範例 → ③ knowledge-graph.tsx 拆分（已核可）+ K6a/b/c → ④ U2d 題庫優先 + U2a QUIZ 美化 + 練習題重複曝光 → ⑤ 6-M1 模型分組 + 6-3a-3/6-4a 實機批次 + deferred-ui + K4d 調參（需 OpenAI 儲值 $10；key 已在 backend/.env） → ⑥ ~~U2f 範例程式~~ **改 U2g tab 重構+移除範例** → ⑥' 6-3c 知識點驅動題庫 → ⑦ 教師端 5-1 → 5-2 → DEV-E → 5-5 → ⑧ U2e Workspace 存檔 + 7-2a/b/c 監控程式碼 → ⑨ Phase 7 部署實測 → ⑩ 5-3/5-4 行為分析（待真實資料）；真人驗收（K1d/K5d/K4d 語氣）改使用者 session 後自測（2026-07-06 晚間修訂：U2f 作廢、新增 U2g/6-3c、簡答題型不做）
+- **Decision 層重構：累積式階梯 + 動態選層**（2026-08-06 設計討論定案，**方案 B**；實作見 7-C2a）
+  - **問題**：Hint Ladder 借自 OATutor，那裡 L0 的語意是「學生按了提示鈕但還沒給提示」。搬到 chat 後，
+    **L0 實際變成「學生開口的第一句話」**——可能是提問、求審閱、查教材。一律回「請你用自己的話解釋
+    這段程式碼」是把「該給多少幫助」與「該做什麼對話動作」混成一軸（類別錯誤，非單純措辭問題）。
+    佐證：Quiz 自己的階梯 `services/quiz/hint.py` 是 **1–5 沒有 0**——因為在 Quiz 裡「沒求助」不需要編號
+  - **決策一：六層改累積式**，單調維度＝「本題解法被揭露多少」而非「講了多少話」。
+    L0 重新定義為「回答學生實際問的問題 + 解釋概念 + 本題解法揭露 0%」
+  - **決策二：動態選層** `reveal_level = min(5, base(error_type) + persistence)`——
+    需求決定起點（無錯誤 L0 / syntax·compilation·runtime L2 / logic·semantic L1），堅持程度往上加
+  - **決策三：採方案 B**（6 等級指令 + 6 Bloom 修飾＝12 條，取代 36 格矩陣）。
+    理由：累積語意在「36 格互相獨立的字串」裡表達不出來；且 2026-08-06 已被「手寫的東西沒有機制驗證」
+    咬過三次（tech-debt 檔案數 / llm_params 結論 / hint_level 寫死），不再新增手寫格子
+  - **決策四：persistence 計算搬後端**，刪除 `hint-escalation.ts` 與其人工鏡像 `eval_coddy/ladder.py`；
+    chat 不再由前端傳 `hint_level`（Quiz 的同名欄位語意不同，維持原樣）
+  - **洩答的重新界定**（修正 2026-08-06 早先的判斷）：閏年題屬章節 25「if-else」，**學習目標是 if-else
+    與模數，「閏年怎麼定義」只是背景設定**——講出規則其實移除了與目標無關的認知負荷，是對的教法。
+    真正不該給的是程式碼結構，而那條線 RULE-1/2 本來就守得住。**例外**：若學生問的正是本題的目標概念
+    （如演算法題要學生自己想出判斷法），則改為引導而非直述
+  - **RULE-1 vs L5 矛盾的解法**：不是新裁決，是**移除離群值**——`quiz/hint.py` 早已寫明
+    「不可直接給完整答案」，`validate_output` 也一直照此執行（>8 行無 TODO 即截斷），
+    **只有 `decision.py` 的 L5 措辭在說謊**。原則明文化：
+    **RULE-1／RULE-2 是階梯之上的不變量，任何等級都不得突破；L5 的「完整」指解釋完整、非程式碼完整**。
+    依據＝`modules.md` 引用的 CodeAid 研究（不給直接程式碼的 AI 學習效果更好）是整個設計的證據基礎

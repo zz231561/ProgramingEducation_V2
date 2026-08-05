@@ -29,7 +29,8 @@
   - **如何處理**：self-host VPS 部署時實測 stack 啟動 → workers 成功 register languages → backend 能透過 `/about` 與 `/submissions` 對話；若 worker fail 多半是 cgroups / privileged 問題
 
 ### 內容層（教學課綱）
-- [ ] 🔴 **章節 41 教材把 `extern` 寫成 `external`**（2026-08-05 盤點 Judge0 能力矩陣時發現）
+- [x] ~~🔴 **章節 41 教材把 `extern` 寫成 `external`**~~ — 2026-08-05 已修（corrections + RAG 重建 + 內容題目重生 + promote；生產同步待執行）
+- [ ] ~~原記錄~~ **章節 41 教材把 `extern` 寫成 `external`**（2026-08-05 盤點 Judge0 能力矩陣時發現）
   - **根因**：Whisper 逐字稿 [00:35]「在資料型態的前面加上 external 這個字」→ grounded 生成忠實複製錯誤關鍵字
   - **影響**：學生照打 `external int x;` 編譯必失敗；本機與**生產庫皆有**（RAG 2 chunks / staging 1 / learning_units 1 / questions 2）
   - **極可能是 v41 題庫掛零主因**（生成端依錯誤教材出題 → 審查端打回）
@@ -39,10 +40,10 @@
   - **進度**：6-1a/b 已完成；6-1b+/c/d/e/f 進行中
   - **如何處理**：fetcher 已寫好（`backend/scripts/fetch_playlist_metadata.py`）；接下來擴充 EXPECTED 1-62、加 video 1-3 migration、PATCH script 寫入 DB、字幕 RAG ingest
   - **格式**：CSV，欄位 `video_order, youtube_id, duration_seconds, title_zh`，已產出於 `data/teaching_content/videos.csv`
-- [ ] **題庫 coding 題 validate 通過率偏低 + v17/v41 掛零**（2026-07-06 實機批次觀察）
-  - **現況**：首輪 17 個失敗中 13 個為 coding 題 `VALIDATION_RETRY_EXHAUSTED`（cascade gpt-5-mini 生成 + gpt-5.4 審查）；補跑後仍有 v17 cpp-17-incr-decr / v41 cpp-41-extern-vars 兩輪全滅（0 題）、v11/v53/v61 各缺 1 題
-  - **影響**：該 5 個 concept 的 Learn 練習 tab / Quiz 題庫覆蓋不足，fallback 現生（可用但較慢）
-  - **如何處理**：6-4b 檢視 validate 失敗 reason 分佈，調整 coding 題 generate prompt（如 expected_output 格式規則）後對缺題 concept 局部重跑
+- [ ] **題庫 coding 題 validate 通過率偏低**（2026-07-06 實機批次觀察；2026-08-05 修訂）
+  - **v17/v41 掛零已解除**：v17 實查有 8 題（6-3c 批次已補，原記錄過期）；v41 因 `external` 錯字重生後有 5 題
+  - **現況**：批次仍有部分題目 `VALIDATION_RETRY_EXHAUSTED`（v41 重生時 8 題中 3 題 MC 失敗）
+  - **如何處理**：6-4b 檢視 validate 失敗 reason 分佈後調整 generate prompt
 
 ### Learn 頁面視覺化升級
 - [ ] **3-1c 卡片版 ≠ ui-wireframes.md 期望的「節點+箭頭」graph 版** → **併入 roadmap K5 一併評估（2026-07-04）**

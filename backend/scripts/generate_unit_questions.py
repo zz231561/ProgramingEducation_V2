@@ -21,9 +21,9 @@ import asyncio
 import sys
 
 from core.database import async_session
+from scripts._db_guard import require_local_db
 from services.quiz.batch_generator import (
     ConceptBatchResult,
-from scripts._db_guard import require_local_db
     generate_all,
     list_target_concepts,
 )

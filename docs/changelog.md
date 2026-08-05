@@ -1,5 +1,28 @@
 # 變更日誌
 
+## [2026-08-05] — fix(content)：章節 41 `extern` 錯字修正（含兩支批次 script 語法損壞）
+
+### 查證 — 「v17/v41 題庫掛零」是過期記錄
+- tech-debt 那筆寫於 2026-07-06 上午的批次；**同日晚間 6-3c 知識點驅動批次已補**。實查：**v17 有 8 題（7 MC + 1 coding），健康**；v41 只有 2 題
+- **但 v41 的 2 題全都寫成 `external`**（其中 coding 題直接要求「利用 external 宣告」）→ 學生照做**必定編譯失敗**，等於 0 題可用。全庫掃描確認錯誤只在 v41
+- 覆蓋率最低的其餘章節：v03 安裝教學 1 題（無可考點，屬預期）、v61 5 題、v45 6 題
+
+### Fixed — 修正鏈（沿用 6-1e 既有機制，未新寫工具）
+1. `corrections.json` 加 `"external": "extern"` → `apply_corrections --only 41`（替換 3 處）
+2. 刪除 v41 舊 chunks + document → `ingest_transcripts_rag --only 41` 重建 8 chunks（**全庫 `external` 殘留 0**）
+3. 刪除 2 題錯題 → `generate_unit_content --only 41 --force` → `generate_unit_questions --only 41 --force`
+4. **v41 現有 5 題 validated**（4 MC + 1 coding），全部使用正確的 `extern`；3 題 MC 仍 `VALIDATION_RETRY_EXHAUSTED`（可接受，非阻斷）
+5. `promote_unit_content --only 41` → 本機 learning_units 已帶正確內容
+
+### Fixed — 兩支批次 script 自 7-1a-5 起就無法執行（本次才發現）
+- `generate_unit_content.py` / `generate_unit_questions.py` 的 `from scripts._db_guard import require_local_db` 被插進 **`from ... import (` 括號中間** → `SyntaxError`，import 即失敗
+- 加防護那次（2026-08-05 7-1a-5）之後**沒有任何人跑過這兩支**，所以直到今天要重生 v41 才炸出來
+- 修正後對 `scripts/*.py` 全數做 `ast.parse` 檢查，其餘 14 支語法正常
+
+### Added — `scripts/fix_production_video.py`
+- `seed_production_content.py` 是 `on conflict do nothing` 的初次播種，**無法更新既有資料** → 新增單章重播工具（RAG chunks / staging / learning_units / questions 四者整章替換），支援 `--dry-run`
+
+
 ## [2026-08-05] — feat(edf)：時區提醒 + 端點正名 run-help；發現章節 41 教材把 `extern` 寫成 `external`
 
 ### Added — UTC 時區 Coddy 主動提醒（機械判定，零成本）

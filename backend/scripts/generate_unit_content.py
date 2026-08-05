@@ -18,9 +18,9 @@ import asyncio
 import sys
 
 from core.database import async_session
+from scripts._db_guard import require_local_db
 from services.learning.batch_generator import (
     GenerationResult,
-from scripts._db_guard import require_local_db
     generate_all,
     list_target_concepts,
 )

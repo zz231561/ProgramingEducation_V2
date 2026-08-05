@@ -13,7 +13,8 @@
     "IOStream": "iostream",
     "WCHART": "wchar_t",
     "objective oriented": "object-oriented",
-    "objective-oriented": "object-oriented"
+    "objective-oriented": "object-oriented",
+    "external": "extern"
   },
   "per_video": {},
   "_notes": {
@@ -23,6 +24,7 @@
     "Double/Void": "C++ 內建型別 keyword 必須小寫；Whisper 偶會句首大寫化",
     "ioString/iostring/IOStream": "C++ 標頭檔 <iostream> 的中文教學影片中常被 Whisper 音譯為錯誤拼法",
     "WCHART": "C++ wide-char 型別 wchar_t 的錯誤拼寫",
-    "objective oriented": "Whisper 把 'object-oriented' 誤辨為 'objective oriented'（OO 觀念名詞）"
+    "objective oriented": "Whisper 把 'object-oriented' 誤辨為 'objective oriented'（OO 觀念名詞）",
+    "external": "C++ 關鍵字為 extern；逐字稿 v41 [00:35] 誤為 external，會教學生寫出無法編譯的程式（2026-08-05 發現）"
   }
 }

@@ -1,5 +1,14 @@
 # 變更日誌
 
+## [2026-08-05] — feat(runner)：R1 runner service — 沙箱編譯執行 + PCH + 快取 + 並行閘
+
+### Added — `runner/`（獨立 service，B 機部署；本機以 sandbox=none 模式開發測試）
+- **`POST /run`**：批次編譯執行，回應七欄位逐字對齊 `ExecutionResult`、狀態字串沿用 Judge0 慣例（"Accepted" / "Compilation Error" / "Time Limit Exceeded" / "Runtime Error (SIGXXX/NZEC)"）→ R2 映射與前端 `classifyStatus` / `run_help` 零改動；`GET /healthz`（queue/cache 觀測，不驗 token）
+- **模組**（9 檔，皆 <150 行）：`config`（env 參數，server-plan 定案值）/ `models` / `sandbox`（nsjail 旗標包裝，`none` 模式供本機測試）/ `gate`（並行閘 2 + 排隊位置回報 API 供 R3 WS 推送 + 排隊逾時 503 RUNNER_BUSY）/ `cache`（sha256 LRU 256 條，逐出刪檔）/ `compiler`（PCH `-include` 自動偵測 + 快取入庫）/ `executor`（argv shlex + 訊號翻譯 + hardlink 進 workdir）/ `proc`（**串流封頂讀取**——不用 `communicate()` 防 `while(1) cout` 在截斷前 OOM runner；stdin feed + 孫行程佔 pipe 寬限 2s）/ `main`
+- **Dockerfile**：multi-stage——nsjail 自 source 建（不在 apt 庫）+ **PCH 預編 15 個常用標準庫標頭**（旗標與 config 一致否則 g++ 拒用）；`RUNNER_SANDBOX=nsjail` 烘入映像
+- **15 tests 全綠**（真實編譯執行，macOS clang）：hello / stdin / args / 編譯錯誤 / 逾時 / SIGSEGV / NZEC / 快取命中 / 輸出截斷 / 程式碼過大 422 / token 三態 / 閘逾時 / 排隊位置；跑法 `cd runner && ../backend/.venv/bin/python -m pytest tests`
+- **待 R5 實測**：Dockerfile 建置（本機 docker 未啟動）、nsjail 旗標路徑（`sandbox.py` 集中，B 機微調）
+
 ## [2026-08-05] — docs(runner)：7-R 自建互動執行引擎定案（R0），推翻 Batch Terminal 決策
 
 > 起因：使用者驗收 A12（stdin 預填）體驗極差——「貼上按 Run 直接跳結果、必須一次填完 input 不符邏輯」。追根究柢是 Judge0 批次判題天生做不到互動；加上 RapidAPI 50 次/天不敷課堂、自架 Judge0 需 GRUB 切 cgroup v1，整條 Judge0 路線一併重新評估後推翻。

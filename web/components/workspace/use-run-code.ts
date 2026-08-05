@@ -49,12 +49,8 @@ export function useRunCode({
     try {
       const result = await api<ExecuteResponse>("/code/execute", {
         method: "POST",
-        // 批次路徑：程式讀取的輸入必須在送出前一次給完
-        body: JSON.stringify({
-          code: getCode(),
-          stdin: workspace.getStdin(),
-          args: workspace.getArgs(),
-        }),
+        // 降級路徑（runner 不可用時）：無互動能力，讀輸入的程式會拿到 EOF
+        body: JSON.stringify({ code: getCode(), args: workspace.getArgs() }),
       });
       workspace.setExecutionResult({
         stdout: result.stdout,

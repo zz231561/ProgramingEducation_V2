@@ -440,6 +440,8 @@ bash deploy.sh
    | `RUNNER_BACKEND` | `self` |
    | `RUNNER_URL` | `http://<B機IP>:8080` |
    | `RUNNER_TOKEN` | 🔒 Secret，與 B 機 `.env` 同值 |
+
+   ⚠ **設完必須重啟 backend service**，否則變數不會被讀入（實測卡點）。
 3. **web service → Variables**：
    | 變數 | 值 |
    |------|-----|
@@ -475,7 +477,7 @@ B 機無網域故無 TLS 憑證，`RUNNER_TOKEN` 與學生程式碼以明文往�
 
 | 症狀 | 檢查 |
 |------|------|
-| 前端永遠走批次（不進終端機） | `NEXT_PUBLIC_TERMINAL_WS_URL` 是否設了且 **web 已 redeploy**；DevTools Network 看 `/terminal/ticket` 是否 503 |
+| 前端永遠走批次（不進終端機） | ① **backend 是否已重啟**——環境變數要重啟才讀入，這是 2026-08-06 實際卡住的原因 ② `NEXT_PUBLIC_TERMINAL_WS_URL` 是否設了且 **web 已 redeploy** ③ DevTools Network 看 `/terminal/ticket` 是否 503。**快速判別**：B 機 `sudo docker logs codedge-runner` 若連 `POST /run` 都沒有來自 A 機的紀錄，就是 backend 沒讀到 `RUNNER_URL`（因批次路徑也會打 runner） |
 | ticket 200 但 WS 連不上 | backend 是否已綁公開網域；`wss://` 對應 https 前端（混合內容會被瀏覽器擋） |
 | WS 開了但沒有輸出 | B 機 `docker logs codedge-runner`；防火牆是否放行 A 機**實際**出口 IP |
 | 編譯報 nsjail 相關錯誤 | `docker exec codedge-runner nsjail --help`；確認 compose 的 `cap_add: SYS_ADMIN` 與 `apparmor:unconfined` 有生效 |

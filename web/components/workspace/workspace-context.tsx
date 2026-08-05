@@ -13,9 +13,6 @@ type KickoffListener = (reflectionId: string) => void;
 interface WorkspaceContextValue {
   getCode: () => string;
   setCode: (code: string) => void;
-  /** 執行時餵給程式的標準輸入（Judge0 為批次執行，需事先填好） */
-  getStdin: () => string;
-  setStdin: (stdin: string) => void;
   /** 執行參數 argv（章節 58）；以空白分隔，不含程式名 */
   getArgs: () => string;
   setArgs: (args: string) => void;
@@ -58,7 +55,6 @@ interface WorkspaceProviderProps {
  */
 export function WorkspaceProvider({ chatOpen, toggleChat, children }: WorkspaceProviderProps) {
   const codeRef = useRef("");
-  const stdinRef = useRef("");
   const argsRef = useRef("");
   const execRef = useRef<ExecutionResult | null>(null);
   const listenersRef = useRef<Set<ExecutionListener>>(new Set());
@@ -69,8 +65,6 @@ export function WorkspaceProvider({ chatOpen, toggleChat, children }: WorkspaceP
 
   const getCode = useCallback(() => codeRef.current, []);
   const setCode = useCallback((code: string) => { codeRef.current = code; }, []);
-  const getStdin = useCallback(() => stdinRef.current, []);
-  const setStdin = useCallback((v: string) => { stdinRef.current = v; }, []);
   const getArgs = useCallback(() => argsRef.current, []);
   const setArgs = useCallback((v: string) => { argsRef.current = v; }, []);
   const getExecutionResult = useCallback(() => execRef.current, []);
@@ -127,7 +121,7 @@ export function WorkspaceProvider({ chatOpen, toggleChat, children }: WorkspaceP
 
   return (
     <Ctx value={{
-      getCode, setCode, getStdin, setStdin, getArgs, setArgs,
+      getCode, setCode, getArgs, setArgs,
       getExecutionResult, setExecutionResult,
       onExecutionComplete, runs, clearRuns,
       requestChatInjection, onChatInjectionRequest,

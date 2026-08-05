@@ -290,7 +290,8 @@
   - [x] R5b 本機 Docker 實測（nsjail 真實沙箱）：修 3 個只在容器內才會爆的缺陷——① PCH 目錄未綁入 jail ② nsjail 用 execve 故編譯器需絕對路徑（`--really_quiet` 把錯誤吃掉）③ **nsjail 以 128+signal 回報，逾時被誤判 NZEC**（會讓 Coddy 給錯的主動說明）；驗過 hello/stdin/argv/編譯錯誤/逾時/SIGSEGV/`/usr` 唯讀/**PTY 互動提示字先到達**；runner 27 tests
   - [x] R5c-1 **B 機實機部署 ✅**（2026-08-06）：bootstrap 8/8 驗證通過（swap/docker/ufw/DOCKER-USER/systemd unit/SSH 禁密碼）+ 映像建置 + 容器 healthy；實機驗過 hello/stdin/argv/編譯錯誤/逾時/SIGSEGV/快取命中/401/**PTY 互動**；外部直連 8080 已阻斷（Mac 測 000）
     - 修 3 個實機才暴露的缺陷：① `iptables-persistent` 與 ufw 互斥導致 **apt 直接移除 ufw**（改 systemd unit 持久化 DOCKER-USER，purge 該套件）② 驗證函式 `cmd | grep -q` 在 `pipefail` 下收 SIGPIPE 回 141 被誤判 FAIL ③ 🔴 **`/lib64` 未掛入 jail**——amd64 動態載入器在此，execve 報 "No such file or directory"；arm64 loader 在 `/lib` 底下故本機 Apple Silicon 完全測不出來
-  - [ ] R5c-2 **Zeabur 設定（需使用者）**：backend 綁公開子網域 + `RUNNER_BACKEND/RUNNER_URL/RUNNER_TOKEN` + web 設 `NEXT_PUBLIC_TERMINAL_WS_URL` 並 **redeploy**；A 機出口 IP 待實連校正（deployment.md §E 探測法）
+  - [x] R5c-2 **Zeabur 設定 ✅ 生產互動終端上線**（2026-08-06 使用者驗收通過）：backend 綁公開子網域 + 三變數 + **重啟 backend**（環境變數需重啟才讀入，這是唯一卡點）；web `NEXT_PUBLIC_TERMINAL_WS_URL` + redeploy；**A 機出口 IP 實測即 `43.153.167.105`**（與推測值一致，防火牆無需調整）
+  - [x] R5d UI 收斂（使用者回饋「進階：預先餵入很醜」）：`stdin-panel.tsx` 移除 → `args-panel.tsx`（僅 argv 單行，`codeUsesArgs` 為真才渲染）+ 靜態偵測函式移至 `lib/code-detect.ts`（`usesLocalTime` 供 Coddy UTC 說明）；context 移除 orphan `getStdin/setStdin`，批次降級路徑不再送 stdin
 - [ ] R6 收尾：教材健檢解除 20 支/天上限 + 額度文案清理（acceptance-checklist / CLAUDE.md）+ 30 並行壓測 + 文件同步
 
 ---

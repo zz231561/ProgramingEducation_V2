@@ -1,5 +1,18 @@
 # 變更日誌
 
+## [2026-08-06] — feat(runner)：R5c-2 生產互動終端上線 + R5d 移除 stdin 預填 UI
+
+### 🎉 生產環境互動終端已上線（使用者驗收通過）
+- Zeabur：backend 綁公開子網域 + `RUNNER_BACKEND/RUNNER_URL/RUNNER_TOKEN` + web `NEXT_PUBLIC_TERMINAL_WS_URL` + redeploy
+- **唯一卡點＝backend 需重啟才會讀入環境變數**（web 已 redeploy 但 backend 未重啟時，批次與互動都不會打到 B 機——判斷依據：B 機日誌完全沒有來自 A 機的連線）。已寫入 deployment.md §E 疑難排解
+- **A 機出口 IP 實測為 `43.153.167.105`**，與 R5a 依生產 DB 連線字串的推測值一致 → 防火牆規則無需調整，`ufw logging` 探測法未被用上（保留於文件備用）
+
+### Changed — R5d：移除「進階：預先餵入」（使用者回饋視覺不佳）
+- 刪除 `stdin-panel.tsx`；新增 `args-panel.tsx` — **僅保留 argv 單行輸入**（章節 58 `main(int argc, char* argv[])` 沒有互動替代方案：參數在程式啟動當下就要決定），且只在 `codeUsesArgs(code)` 為真時渲染，其餘情況完全不佔版面
+- 靜態偵測函式移至 `lib/code-detect.ts`（`codeUsesArgs` + `usesLocalTime`；後者供 Coddy 的 UTC 時區主動說明，原本一併住在被刪的檔案裡）
+- `workspace-context` 移除 orphan `getStdin/setStdin`；批次降級路徑不再送 stdin（runner 不可用時讀輸入的程式會拿到 EOF——降級路徑本就無互動能力，可接受）
+- tsc 0 錯 / eslint 0 錯 / build 通過
+
 ## [2026-08-06] — fix(runner)：R5c-1 B 機實機部署 — 再修 3 個只有真實硬體才暴露的缺陷
 
 > 本機 Colima（arm64）與 B 機（amd64 Ubuntu 24.04）的差異，以及「腳本靜默失敗」，各貢獻了一個真缺陷。

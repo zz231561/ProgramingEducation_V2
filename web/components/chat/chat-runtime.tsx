@@ -15,7 +15,7 @@
 import { createContext, useContext, useEffect, useRef } from "react";
 
 import { useWorkspace } from "@/components/workspace/workspace-context";
-import { usesLocalTime } from "@/components/workspace/stdin-panel";
+import { usesLocalTime } from "@/lib/code-detect";
 import { useChat } from "@/hooks/use-chat";
 import { useSessions } from "@/hooks/use-sessions";
 

@@ -6,7 +6,8 @@ import { useWorkspace } from "./workspace-context";
 import type { RunRecord } from "./types";
 import { RunBlock, classifyStatus, STATUS_META } from "./run-block";
 import { RunHistoryMenu } from "./run-history-menu";
-import { StdinPanel, codeUsesArgs } from "./stdin-panel";
+import { ArgsPanel } from "./args-panel";
+import { codeUsesArgs } from "@/lib/code-detect";
 import { TerminalPane } from "./terminal-pane";
 import type { TerminalHandle } from "./terminal-view";
 import type { TerminalPhase } from "./use-terminal-session";
@@ -118,7 +119,7 @@ export function OutputPanel({
         />
       ) : (
         <>
-          <StdinPanel showArgs={codeUsesArgs(code)} />
+          {codeUsesArgs(code) && <ArgsPanel />}
           <div className="flex-1 overflow-auto p-2 space-y-2">
             {runs.length === 0 ? (
               <div className="flex h-full items-center justify-center">

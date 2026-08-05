@@ -156,4 +156,10 @@ async def analyze_evidence(
         data = json.loads(raw)
         return EvidenceResult(**data)
     except (json.JSONDecodeError, ValidationError) as e:
+        # finish_reason=length＝輸出被 max_completion_tokens 截斷成壞 JSON——
+        # 生產只看得到 502，沒有這行永遠查不到是預算問題還是 schema 問題
+        logger.warning(
+            "Evidence 回傳解析失敗（finish_reason=%s，前 200 字元）：%s",
+            response.choices[0].finish_reason, raw[:200],
+        )
         raise AppError(502, "LLM_PARSE_ERROR", "AI 回傳格式異常") from e

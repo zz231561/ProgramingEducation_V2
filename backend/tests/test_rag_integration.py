@@ -60,6 +60,27 @@ def test_build_rag_query_fallback_when_all_empty():
     assert q
 
 
+def test_build_rag_query_question_comes_first():
+    # 2026-08-06 修復：學生問句是檢索意圖的第一訊號
+    q = build_rag_query(
+        _evidence(code_analysis="迴圈邊界分析"),
+        student_question="為什麼這裡要用 while 而不是 for",
+    )
+    assert q.startswith("為什麼這裡要用 while 而不是 for")
+    assert "迴圈邊界分析" in q
+
+
+def test_build_rag_query_nav_question_drops_evidence_context():
+    # 課程定位型問句只用問句檢索：實測混入閏年 if-else 分析後，
+    # 模數章節從 top-1 掉出前三（evidence 脈絡把結果拉回當前程式碼的章節）
+    q = build_rag_query(
+        _evidence(code_analysis="閏年判斷的 if-else 結構"),
+        student_question="% 運算子在老師影片的哪一段有講？",
+    )
+    assert q == "% 運算子在老師影片的哪一段有講？"
+    assert "閏年判斷" not in q
+
+
 # === fetch_rag_chunks_safe ===
 
 @pytest.mark.asyncio

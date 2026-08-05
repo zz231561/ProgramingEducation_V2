@@ -6,10 +6,15 @@
   且預設會把 completion 預算燒在 reasoning 上導致空輸出——
   必須 `reasoning_effort="minimal"`（實測 minimal → 0 reasoning tokens、正常輸出）
 - gpt-5.4 / gpt-5.4-mini 接受自訂 temperature，行為同傳統模型
-- gpt-5.6 世代（sol / terra / luna，2026-08-05 實測）：拒收自訂 temperature，
-  **也拒收 `reasoning_effort`**；預設 reasoning_tokens=0，無須壓制
+- gpt-5.6 世代（sol / terra / luna）：拒收自訂 temperature；
+  ~~也拒收 reasoning_effort~~ → **2026-08-06 更正**：只是值域改了
+  （`none/low/medium/high/xhigh`，不收 `minimal`）。預設**會**依提示複雜度
+  燒 reasoning tokens（實測同一 prompt 0～96+ 顆浮動），與 max_completion_tokens
+  同一預算——曾造成 reflection 評分間歇性整包空輸出（finish_reason=length、
+  content 長度 0）且被 fallback 靜默吞掉。必須 `reasoning_effort="none"` 壓制
+  （實測 3/3 reasoning=0、輸出穩定）。
 
-集中此處判斷，13 個呼叫點統一經由 `chat_model_kwargs()` 組參數。
+集中此處判斷，18 個呼叫點統一經由 `chat_model_kwargs()` 組參數。
 """
 
 from __future__ import annotations
@@ -19,8 +24,9 @@ from typing import Any
 # reasoning 系列：gpt-5 本體與 gpt-5-* 衍生（gpt-5.4 系列不屬之）
 _REASONING_PREFIX = "gpt-5-"
 _REASONING_EXACT = "gpt-5"
-# gpt-5.6 世代（sol / terra / luna）：同樣拒收自訂 temperature，
-# 但**也拒收 reasoning_effort**，且預設 reasoning_tokens=0 不需壓制（2026-08-05 實測）
+# gpt-5.6 世代（sol / terra / luna）：拒收自訂 temperature；
+# reasoning_effort 值域為 none/low/…（不收 minimal），必須送 "none" 壓制
+# 浮動的 reasoning 預算（2026-08-06 更正，詳見檔頭）
 _GEN56_PREFIX = "gpt-5.6"
 
 
@@ -50,6 +56,8 @@ def chat_model_kwargs(
     kwargs: dict[str, Any] = {"model": model}
     if _is_reasoning_family(model):
         kwargs["reasoning_effort"] = "minimal"
+    elif model.startswith(_GEN56_PREFIX):
+        kwargs["reasoning_effort"] = "none"
     if _accepts_custom_temperature(model):
         kwargs["temperature"] = temperature
     if max_tokens is not None:

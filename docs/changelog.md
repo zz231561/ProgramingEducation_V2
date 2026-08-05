@@ -1,5 +1,63 @@
 # 變更日誌
 
+## [2026-08-06] — feat(eval) + fix(coddy)：7-C1' 七型學生模擬驗收 harness + 診斷輪修復 9 項
+
+> 使用者指示：扮演多型學生與 Coddy 真實對話、同步白盒檢測後台、驗證 RAG，確認機制符合設計。
+> 兩輪模擬（診斷輪 r1 → 修復 → 驗證輪 r2/r3），約 60 次真實 LLM 互動（成本 < $0.2）。
+
+### Added — `scripts/eval_coddy/` 模擬 harness（6 檔，均 ≤ 175 行）
+- 七型學生：迷惘新手（NZEC+卡住）/ 按部就班（反思→kickoff→提問）/ 答案索取 / 離題+邊界 /
+  進階挑戰（DEV 種高熟練+衰減撥時）/ 對抗注入 / Quiz 連錯→K3 診斷→補救
+- 白盒探針：DEV-7 debug_sink（evidence/strategy/RAG 分數/kgraph）+ DB 直查
+  （dialogue_act / mastery 差分 / coding_events）；`ladder.py` 為前端 hint ladder 的鏡像移植（**兩邊改動必須同步**）
+- 僅限本機 DB（`require_local_db`）；`--only p1,p7` 選型重跑、輸出逐輪 JSON transcript
+
+### Fixed — 診斷輪抓到的缺陷（全部經驗證輪確認）
+1. 🔴 **gpt-5.6 reasoning 預算間歇性吃光輸出**（root cause 級）：`llm_params.py` 2026-08-05
+   「拒收 reasoning_effort」結論**錯誤**——只是值域改為 none/low/…；預設會浮動燒 reasoning
+   （同 prompt 0～96+ tokens），與 max_completion_tokens 同預算 → finish_reason=length、
+   content 整包空。反思評分因此**在生產一直靜默 fail-open**（quality_score=None 放行）。
+   修：gpt-5.6 家族一律 `reasoning_effort="none"`（實測 reasoning=0、3/3 穩定）；
+   反思評分三處裸 swallow 補 logger.warning（違反 backend.md 明文規則）；Evidence parse
+   失敗補 finish_reason+raw 前 200 字 log。驗證輪：quality_score 0.267→有值且追問切題
+2. 🔴 **同一份執行結果被重複計為 BKT 負證據**：對同次執行連續追問 4 輪，confidence
+   0.22→0.12 連降。修：`_is_repeat_evidence`（同 session 上則 user 訊息 code+執行結果
+   全同 → 跳過 mastery）。驗證輪：僅首輪寫入，追問 diff={}
+3. 🔴 **無程式碼的導覽性提問建立精熟度**：「陣列第幾章教的？」從 0 直寫 confidence 0.457。
+   修：code 空白不更新 BKT（純提問無能力佐證）。驗證輪：mastery={}
+4. 🔴 **kgraph 鷹架被當輪雜訊污染**：鷹架標榜「依過往練習紀錄」卻在 mastery 更新後才讀，
+   熟練度 0.9 的學生因當輪誤標 io-streams 拿到新手鷹架。修：kgraph 移到 mastery 更新前讀
+5. 🔴 **答案以散文洩出**：RULE-1 只擋 code block——hint 0 就用文字給完整閏年三條件；
+   hint 4 給「TODO 已填好答案」的框架。修：strategy 層依 hint 等級注入洩答防線
+   （≤2 禁完整解法含條列；3-4 TODO 必須留白）。驗證輪：TODO 真留白、拒絕填答、
+   低 hint 不再出現 `year % 400 == 0` 字面——**殘留**：hint 0 散文仍會描述完整規則
+   （prompt 層防線本質上不保證，已記 tech-debt）
+6. 🟡 **off_topic 回填輸給關鍵字誤標**：「幫我決定晚餐」先被「幫我」標成 asking_hint，
+   僅在 None 時回填 → 離題統計漏記。修：LLM 判定離題一律覆寫。驗證輪：act=off_topic
+7. 🟡 **RAG 查詢不含學生問句**：`build_rag_query` 只用 error+tags+analysis——
+   「% 在影片哪一段」拿閏年程式碼分析去檢索。修：問句放最前；**課程定位型問句**
+   （哪一段/教過/第幾章）只用問句檢索（實測 evidence 脈絡會把模數章節從 top-1 擠出前三）。
+   驗證輪：精準命中「C++的餘數運算子」章節 + 真實時間戳
+8. 🟡 **Coddy 反要學生提供教材連結**：NO_SOURCE_RULE 與 CITATION_RULE 各補一條
+   「教材在系統這邊，找不到就直說」。驗證輪：改為引導至 Learn 頁
+9. 🟡 **索答詞跳級**：「給我答案」原列入卡住訊號跳 2 級——幫答案索取型快速爬梯。
+   修：前端+harness 同步移除；hint 歸零改「僅成功執行（exit 0）」——失敗重跑保持等級
+   （反覆失敗應獲得更多協助，與 OATutor 原設計一致）
+
+### 驗證輪確認正常的機制（設計如實運作）
+- 7-C1 全部生效：Evidence 看見 NZEC、DEBUGGING 分類、階梯 0→1→3→5、hint_request 事件復活
+- 三層注入防護（regex 拒絕/off-topic 分流/程式碼註解隔離）、離題邊界題不誤殺
+- 反思 kickoff **grounding 實證**：正確指出學生反思內容與實際題目不符
+- K3 全鏈：連錯 3 → 前置嫌疑（18/19/15）各附診斷題 → remediate 回應正常
+- citations 全程 0 攔截（無捏造）、教材時間戳真實可點、無來源時誠實
+- SSE 三階段進度全程正常
+- 後端 834 tests 全綠（+7）；tsc/eslint 過
+
+### ⚠ 規範警報
+- `services/chat.py` **299 行超過 250 硬上限**（拆分計畫見報告，待使用者核准）；
+  `services/edf/feedback.py` 247 行貼線
+- 本機 `.env` DEV_MODE_EMAILS 加入 p1~p7@eval.local（僅本機，不影響生產）
+
 ## [2026-08-06] — fix(coddy)：7-C1 P0 批次——接通 Hint Ladder + Evidence 補執行狀態
 
 > 起因：使用者實測 return 1 對話，Coddy 連續反問不升級。審計證實兩個結構性斷線（詳見 tech-debt / roadmap 7-C）。

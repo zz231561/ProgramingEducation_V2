@@ -74,6 +74,26 @@ async def _load_reflection_safely(
         return None
 
 
+def _is_repeat_evidence(
+    code: str,
+    execution_result: dict | None,
+    history_rows: list[ChatMessage],
+) -> bool:
+    """同 session 上一則 user 訊息帶著完全相同的 code + 執行結果 → 同一份證據。
+
+    學生對同一次執行連續追問時，程式碼與執行結果原封不動地隨每則訊息重送；
+    BKT 若每輪都更新，等於同一個錯誤被懲罰 N 次。
+    """
+    last_user = next(
+        (m for m in reversed(history_rows) if m.role == MessageRole.USER), None
+    )
+    if last_user is None:
+        return False
+    return (last_user.code_snapshot or "") == (code or "") and (
+        last_user.execution_result or None
+    ) == (execution_result or None)
+
+
 async def interact(
     db: AsyncSession,
     user_id: uuid.UUID,
@@ -152,25 +172,35 @@ async def interact(
         status_description=status_description,
     )
 
-    # 離題判定回填 dialogue_act（5-2c 啟發式無此訊號）——供評估期統計學生離題比例
-    if not evidence.is_on_topic and user_msg.dialogue_act is None:
+    # 離題判定覆寫 dialogue_act（5-2c）——LLM 判定優先於關鍵字啟發式：
+    # 「幫我決定晚餐」會先被「幫我」誤標 asking_hint，僅在 None 時回填會漏統計
+    if not evidence.is_on_topic:
         user_msg.dialogue_act = DialogueAct.OFF_TOPIC.value
 
-    # 精熟度更新（roadmap 2-3b）— 在 Feedback 之前跑，確保 BKT state 與此次互動同步
-    # 容錯：mastery 失敗不阻擋教學回應（與 RAG 同款處理）
-    # K6a：chat「程式碼無錯」是弱證據 → 用 BKT_CHAT_PARAMS（更新幅度小）
-    try:
-        await update_mastery(db, user_id, evidence, params=BKT_CHAT_PARAMS)
-    except Exception as e:
-        logger.warning("update_mastery failed (non-blocking): %r", e)
-
-    # Decision 層
-    strategy = decide_strategy(evidence, hint_level)
-
-    # K-Graph state（K4a）— 在 mastery 更新後讀取，鷹架依最新狀態調整；best-effort
+    # K-Graph state（K4a）— 在 mastery 更新「之前」讀取：鷹架標榜「依過往練習
+    # 紀錄」，若先更新再讀，本輪 evidence 的 tag 雜訊會當場污染鷹架分級
+    # （實測：熟練度 0.9 的學生因當輪誤標 io-streams 而拿到新手鷹架）
     if on_stage:
         await on_stage(STAGE_RETRIEVING)
     kgraph_block = await fetch_kgraph_block_safe(db, user_id, evidence)
+
+    # 精熟度更新（roadmap 2-3b / K6a chat 弱證據參數）
+    # 容錯：mastery 失敗不阻擋教學回應（與 RAG 同款處理）
+    # 兩種情況跳過：① 無程式碼＝純提問，沒有能力佐證（導覽性問題曾從 0 直寫 0.46）
+    # ② 與上一則訊息完全相同的 code+執行結果＝同一證據，不重複計分
+    # （連續追問同一次執行曾把 confidence 從 0.22 連砍到 0.12）
+    if not code.strip():
+        logger.info("mastery skip: no code artifact (question-only turn)")
+    elif _is_repeat_evidence(code, execution_result, history_rows):
+        logger.info("mastery skip: identical code+execution as previous turn")
+    else:
+        try:
+            await update_mastery(db, user_id, evidence, params=BKT_CHAT_PARAMS)
+        except Exception as e:
+            logger.warning("update_mastery failed (non-blocking): %r", e)
+
+    # Decision 層
+    strategy = decide_strategy(evidence, hint_level)
 
     # DEV-7：dev 帳號收集中間層觀測（RAG 命中由 generate_feedback 補入）
     if debug_sink is not None:

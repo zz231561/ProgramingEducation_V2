@@ -81,10 +81,28 @@ def build_system_prompt(
     `reflection_block`（Phase 2-5e）/ `kgraph_block`（K4a）：
     caller 預先渲染；傳空字串等於不注入。
     """
+    # 防洩答（2026-08-06 模擬驗收發現）：RULE-1 只擋 code block，實測 hint 0 就用
+    # 散文把完整演算法（閏年 400/100/4 三條件）全給了；hint 4 給了「TODO 已被
+    # 填好答案」的框架。依提示等級補上文字層防線
+    if strategy.hint_level <= 2:
+        leak_guard = (
+            "\n洩答防線：目前提示等級低——**禁止**給出完整解法，包括用文字或條列"
+            "把所有判斷條件、步驟一次寫完（那與直接給程式碼無異）。"
+            "最多點出一個方向或一個關鍵概念，其餘留給學生推導。"
+        )
+    elif strategy.hint_level <= 4 and strategy.allow_code_snippet:
+        leak_guard = (
+            "\n洩答防線：框架中的 TODO **必須真的留白**——禁止在註解、條列"
+            "或框架外的文字裡把 TODO 的答案寫出來；被填好答案的 TODO 等於完整解。"
+        )
+    else:
+        # hint 5 = 反覆失敗後的完整解釋層級，矩陣明文允許展示正確用法
+        leak_guard = ""
+
     strategy_block = f"""\
 教學策略指令：{strategy.instruction}
 允許程式碼片段：{"是（最多 8 行，必須含 TODO）" if strategy.allow_code_snippet else "否，不要提供任何程式碼"}
-當前提示等級：{strategy.hint_level}/5\
+當前提示等級：{strategy.hint_level}/5{leak_guard}\
 """
 
     context_block = f"""\
@@ -182,7 +200,9 @@ async def generate_feedback(
     if not evidence.is_on_topic:
         return await generate_off_topic_reply(client, student_message)
 
-    rag_chunks: list[RetrievedChunk] = await fetch_rag_chunks_safe(evidence)
+    rag_chunks: list[RetrievedChunk] = await fetch_rag_chunks_safe(
+        evidence, student_message
+    )
     if debug_sink is not None:
         debug_sink["rag_chunks"] = [
             {"score": round(c.score, 4), "doc_id": c.doc_id, "preview": c.text[:200]}

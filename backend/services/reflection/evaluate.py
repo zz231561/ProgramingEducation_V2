@@ -14,11 +14,14 @@
 """
 
 import json
+import logging
 from dataclasses import dataclass
 from typing import Any
 
 from openai import AsyncOpenAI
 from pydantic import BaseModel, Field, ValidationError
+
+logger = logging.getLogger(__name__)
 
 from core.config import settings
 from core.llm_params import chat_model_kwargs
@@ -185,18 +188,29 @@ async def evaluate_reflection(
                 model=settings.LLM_MODEL, temperature=0.3, max_tokens=400
             ),
         )
-    except Exception:
+    except Exception as e:
+        logger.warning("reflection 評分 LLM 呼叫失敗（fail-open）：%r", e)
         return _empty_evaluation()
 
-    raw = response.choices[0].message.content or "{}"
+    raw = response.choices[0].message.content or ""
+    if not raw:
+        # gpt-5.6 reasoning 燒完預算會回空 content（finish_reason=length）——
+        # 曾被 or "{}" 掩蓋成 ValidationError，根因完全不可見
+        logger.warning(
+            "reflection 評分回空內容（finish_reason=%s），fail-open 放行",
+            response.choices[0].finish_reason,
+        )
+        return _empty_evaluation()
     try:
         data: dict[str, Any] = json.loads(raw)
     except json.JSONDecodeError:
+        logger.warning("reflection 評分 JSON 解析失敗（前 200 字元）：%s", raw[:200])
         return _empty_evaluation()
 
     try:
         parsed = _EvaluatorResponse(**data)
-    except ValidationError:
+    except ValidationError as e:
+        logger.warning("reflection 評分 schema 不符：%s", str(e)[:200])
         return _empty_evaluation()
 
     quality_score = round(

@@ -76,14 +76,32 @@
   - **影響**：查閱成本高；但它是時間序日誌，內容本身沒錯
   - **如何處理**：比照 `roadmap-archive.md` 的做法，把 2026-07 以前的條目移到 `changelog-archive.md`
 
+### 🔴 洩答殘留：prompt 層防線不保證散文不給完整解法（2026-08-06 模擬驗收）
+- [ ] hint 0-2 的洩答防線（strategy 層注入）驗證輪已消除字面條件（`year % 400 == 0`），
+      但**散文描述完整規則組仍會出現**（「能被 400 整除，或能被 4 整除但不能被 100 整除」）
+  - 本質：LLM 指令遵循的軟性極限——模型「想幫忙」的傾向蓋過矩陣第 0 欄的「只提問不給提示」
+  - **升級選項**（皆有成本）：① 輸出端第二次 LLM 檢查（成本翻倍，同 K4e 不常態開啟的理由）
+    ② hint 0-1 改用更強的回應模板約束 ③ 接受現狀——學生仍須自行寫出程式碼
+  - 觀測工具已備：`scripts/eval_coddy/` P3 腳本可隨時重測
+
+### 🟡 Evidence concept tag 雜訊 fan-out 到無關概念（2026-08-06 模擬實證，K2c 已知風險）
+- [ ] hello world 對話被標 `control-flow` → fan-out 寫入 cpp-25-if-else；overflow 程式被標
+      `io-streams`（因有 cout）→ 寫入 cpp-06-io——**單輪就建立無關概念的 mastery 記錄**
+  - 已由 7-C1' 三修（無碼跳過/證據去重/kgraph 先讀）大幅降噪，但 tag 本身的誤標仍在
+  - 重評時機照 K2c 原案：Phase 5 行為資料可檢驗 LLM tagging 可靠度後（pyBKT fit / AST 輔助）
+
 ### 檔案大小超過門檻（⚠ 提醒線 150，硬上限 250）
 > ⚠ **2026-08-06 首次量測的「無任何檔案超過硬上限」是錯的** —— 那次只掃了 7-U 期間動過的檔案，
 > 卻寫成全域結論。同日 8-0 討論時全專案重掃，發現 **4 個非測試檔超過硬上限 250**。
 > 這正是 8-1d 自檢 script 要消滅的錯誤類型（手寫數字沒有東西會在它失真時報錯）。
 
 - [ ] 🚫 **超過硬上限 250**：`api/routes/quiz.py` 347 / `services/quiz/generate.py` 307 /
-      `components/knowledge/concept-detail-panel.tsx` 279 / `services/quiz/batch_generator.py` 267
-  - **處理方式**：不趕在驗收期動刀（改動風險大於收益），列入 Phase 8 由使用者裁決拆分順序
+      **`services/chat.py` 299（2026-08-06 7-C1' 修復後新超標，+91 行）** /
+      `components/knowledge/concept-detail-panel.tsx` 279 / `services/quiz/batch_generator.py` 267 /
+      ⚠ `services/edf/feedback.py` 247 貼線
+  - **處理方式**：不趕在驗收期動刀（改動風險大於收益），列入 Phase 8 由使用者裁決拆分順序；
+    `chat.py` 拆分提案＝把 mastery gating（`_is_repeat_evidence` + skip 邏輯）與
+    dialogue_act 處理抽到 `services/chat_evidence.py`（已列 7-C2）
 - [ ] ⚠ **逼近提醒線 150–250**：`code-files-sidebar.tsx` 207 / `api/routes/chat.py` 208 / `run-block.tsx` 201 /
       `workspace/page.tsx` 190 / `services/workspace_files.py` 174 / `runner/app/terminal.py` 165 /
       `output-panel.tsx` 164 / `use-named-file.ts` 159 / `api/routes/code_files.py` 153

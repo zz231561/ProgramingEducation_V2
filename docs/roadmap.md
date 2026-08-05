@@ -318,7 +318,13 @@
   - `_has_execution_error` 同步看 exit_code/status → NZEC 提問正確分類 DEBUGGING
   - dialogue_act 語意修正：chat 的自動升級階梯≠學生明確要提示，`classify_dialogue_act` 改傳 0 防 asking_hint 過度標記
   - 後端 827 tests 全綠（+5）；前端 tsc/eslint/build 過 + hint-escalation 11 斷言含真實對話重演
-- [ ] 7-C2 **P1 批次**：NZEC 教學語意主動說明（機械判定固定文案，分清 C++ 標準/OS 慣例/平台判定三層）+ `run_help` 逾時文案修正（仍指向已移除的 stdin 欄位）+ Feedback prompt 加「分層說明來源」與「明確認錯」規則 + 429 配額前端顯示（`retry_after_seconds` 消費 + chat 錯誤訊息分流）
+- [x] 7-C1' **七型學生模擬驗收 harness + 診斷輪修復 9 項**（2026-08-06 ✅ 兩輪模擬驗證，詳見 changelog）：
+  `scripts/eval_coddy/`（七型學生 × 真實 LLM × debug_sink+DB 白盒探針）；診斷輪抓到並修復——
+  **gpt-5.6 reasoning 預算間歇吃光輸出**（llm_params 8-05 結論錯誤；反思評分因此生產靜默失效）/
+  同一執行結果重複計 BKT 負證據 / 無碼提問建立精熟度 / kgraph 鷹架被當輪雜訊污染（改先讀後寫）/
+  散文洩答（strategy 層防線，殘留記 tech-debt）/ off_topic 覆寫誤標 / RAG 查詢加問句+導覽型只用問句 /
+  Coddy 反要學生提供連結 / 索答詞跳級與失敗重跑歸零；後端 834 tests；⚠ `chat.py` 299 行超硬上限待拆
+- [ ] 7-C2 **P1 批次**：NZEC 教學語意主動說明（機械判定固定文案，分清 C++ 標準/OS 慣例/平台判定三層）+ `run_help` 逾時文案修正（仍指向已移除的 stdin 欄位）+ Feedback prompt 加「分層說明來源」與「明確認錯」規則 + 429 配額前端顯示（`retry_after_seconds` 消費 + chat 錯誤訊息分流）+ `chat.py`/`feedback.py` 拆分（超門檻）
 - [ ] 7-C3 **2-6 Comprehension 前端 UI**（使用者裁決：建 UI 非降級）：答對後呼叫 `GET /comprehension/trigger-suggestion` → 依 suggested_type 彈出 EPL/預測輸出/變體挑戰作答流程（ui-ux-spec §12.2 modal 線框）；變體挑戰禁用 AI；結果顯示 passed + 回寫 BKT 已在後端
 
 ---

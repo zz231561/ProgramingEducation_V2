@@ -217,8 +217,9 @@ export function useChat(options: UseChatOptions = {}) {
   }, [resetHintLadder]);
 
   const injectExecutionResult = useCallback((result: ExecutionResult) => {
-    // 重新執行＝學生採取了行動，脈絡刷新，hint 階梯歸零重爬
-    resetHintLadder();
+    // 成功執行＝問題解決、脈絡刷新 → 階梯歸零；
+    // 失敗的重跑＝又一次失敗嘗試 → 階梯保持（反覆失敗應獲得更多協助，不是歸零）
+    if (result.exit_code === 0) resetHintLadder();
     const item: ExecutionItem = {
       type: "execution",
       id: crypto.randomUUID(),

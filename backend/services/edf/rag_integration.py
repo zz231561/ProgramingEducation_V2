@@ -9,6 +9,7 @@
 """
 
 import logging
+import re
 
 from services.edf.models import EvidenceResult
 from services.rag import RetrievedChunk, retrieve_chunks
@@ -24,13 +25,27 @@ RAG_TOP_K = 3
 RAG_MIN_SCORE = 0.40
 
 
-def build_rag_query(evidence: EvidenceResult) -> str:
-    """從 Evidence 結果組裝 RAG 檢索 query。
+# 課程定位型問句（「哪一段有講 X」「老師教過 X 嗎」）：檢索意圖與螢幕上的
+# 程式碼無關，混入 evidence 脈絡會把結果拉回當前程式碼的章節
+# （實測：問 % 運算子、混入閏年 if-else 分析後，模數章節從 top-1 掉出前三）
+_NAV_QUESTION_RE = re.compile(r"哪一段|哪段|哪一章|哪個單元|第幾個單元|第幾章|有講|講過|教過|哪部影片")
 
-    結合三類訊號讓 embedding 同時抓到關鍵字（concept tags）與語境（error / analysis）：
-    error_message + concept_tags + code_analysis
+
+def build_rag_query(evidence: EvidenceResult, student_question: str = "") -> str:
+    """從學生問句 + Evidence 結果組裝 RAG 檢索 query。
+
+    學生問句放最前面（2026-08-06 修復）：原本只用 error_message + concept_tags +
+    code_analysis，「% 運算子在影片哪一段有講？」會拿手上程式碼的分析去檢索、
+    完全錯過模數章節——問句才是檢索意圖的第一訊號。
+    課程定位型問句更進一步**只用問句**檢索（evidence 脈絡只會幫倒忙）。
     """
+    question = student_question.strip()
+    if question and _NAV_QUESTION_RE.search(question):
+        return question
+
     parts: list[str] = []
+    if question:
+        parts.append(question)
     if evidence.error_message:
         parts.append(evidence.error_message)
     if evidence.concept_tags:
@@ -40,7 +55,9 @@ def build_rag_query(evidence: EvidenceResult) -> str:
     return ". ".join(parts) or "C++ 程式設計"
 
 
-async def fetch_rag_chunks_safe(evidence: EvidenceResult) -> list[RetrievedChunk]:
+async def fetch_rag_chunks_safe(
+    evidence: EvidenceResult, student_question: str = ""
+) -> list[RetrievedChunk]:
     """安全地檢索教材片段，只回傳相關性達標的 chunks（K4b）。
 
     - 每次互動都檢索（embedding 成本可忽略），由分數決定是否注入 —
@@ -49,7 +66,9 @@ async def fetch_rag_chunks_safe(evidence: EvidenceResult) -> list[RetrievedChunk
     - 任何異常（網路、空索引、API key 失效）都吞掉並回傳空 list
     """
     try:
-        chunks = await retrieve_chunks(build_rag_query(evidence), top_k=RAG_TOP_K)
+        chunks = await retrieve_chunks(
+            build_rag_query(evidence, student_question), top_k=RAG_TOP_K
+        )
     except Exception as e:
         logger.warning("RAG retrieval failed, continuing without RAG: %r", e)
         return []

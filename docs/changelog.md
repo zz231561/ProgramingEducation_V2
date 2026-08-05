@@ -1,5 +1,28 @@
 # 變更日誌
 
+## [2026-08-05] — fix(workspace)：Output 執行歷史不再被側邊欄清空 + page.tsx 拆分（250 行硬線）
+
+> 使用者回報：「開啟側邊欄，先前終端機的輸出會被清空，且沒有歷史記錄可查看。」
+
+### Fixed — 根因是元件樹換根，不是 Output 自己清空
+- `page.tsx` 原本**依側欄開合回傳兩種不同的根節點**（無側欄＝Fragment / 有側欄＝PanelGroup）→ 切換時整棵子樹 unmount，`OutputPanel` 的 local state `blocks` 一併歸零。收合 Output 也是同一類結構切換
+- **修法一：版面單一化**（新檔 `components/workspace/workspace-layout.tsx`）——永遠渲染同一棵水平 PanelGroup，只讓側欄 slot 在有/無之間切換（沿用 `app-shell.tsx` 既有的條件式 Panel 寫法），主欄位置固定不再重建
+- **修法二：歷史移出元件樹**（新檔 `use-run-history.ts`）——module-level store + `useSyncExternalStore`，經 `WorkspaceContext` 提供 `runs` / `clearRuns`。任何 unmount 都不影響，連跨頁導航（Learn ⇄ Workspace）回來也還在
+
+### Added — 執行歷史可查看
+- 保留**最近 20 次**執行（新到舊），寫入 **sessionStorage**：同分頁重整仍看得到，關掉分頁即清除（共用電腦不留下他人的程式輸出）；「清空」鈕維持
+- 展開規則改為無 effect 的推導：預設只展開最新一則，`overrides` 只記使用者手動翻過的例外 → 新結果自動展開、舊的自動收合（原行為不變，但不再需要 setState-in-effect）
+- 型別抽到 `components/workspace/types.ts`（`ExecutionResult` / `RunRecord`），避免 context ⇄ history hook 循環相依；`workspace-context` 仍 re-export `ExecutionResult`，既有 import 不受影響
+
+### Changed — page.tsx 254 → 189 行（經使用者同意拆分）
+- 版面組裝 → `workspace-layout.tsx`；反思 handoff 的兩個 effect（active reflection 訂閱 + Coddy kickoff）→ `use-reflection-handoff.ts`
+- tech-debt 的「超過 250 硬上限」項目消除
+
+### Verified
+- web build + tsc + eslint 綠（`react-hooks/set-state-in-effect` 兩處已用 store / 推導式改寫，非停用規則）
+
+---
+
 ## [2026-08-05] — fix(workspace)：檔名鎖定 .cpp 尾綴 + 點檔名改名 + 首次草稿併發修復（U2e 驗收回饋）
 
 > 使用者生產環境驗收回報三點：①「點資料夾剛開始跳錯誤、之後正常」②「存成 main.md 也能執行，副檔名形同虛設」③「最上方檔名點不動、無法改名」。

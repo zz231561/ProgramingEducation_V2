@@ -12,19 +12,14 @@ import {
   Minus,
   type LucideIcon,
 } from "lucide-react";
-import type { ExecutionResult } from "./workspace-context";
+import type { ExecutionResult, RunRecord } from "./types";
 
 export type RunStatus = "accepted" | "compile-error" | "runtime-error" | "limit-exceeded" | "unknown";
 
-export interface RunBlockData {
-  id: number;
-  timestamp: number;
-  result: ExecutionResult;
-  expanded: boolean;
-}
-
 interface RunBlockProps {
-  block: RunBlockData;
+  block: RunRecord;
+  /** 展開狀態由 OutputPanel 持有（純檢視狀態，不進歷史記錄） */
+  expanded: boolean;
   index: number; // Run #N（顯示用，最新為最大）
   onToggle: () => void;
   onSendToChat: () => void;
@@ -34,8 +29,8 @@ interface RunBlockProps {
  * 單次 Run 結果 block。Header 永遠顯示，body 展開時顯示 stdout/stderr/compile。
  * 視覺規格：design-plan.md §2.3
  */
-export function RunBlock({ block, index, onToggle, onSendToChat }: RunBlockProps) {
-  const { result, timestamp, expanded } = block;
+export function RunBlock({ block, expanded, index, onToggle, onSendToChat }: RunBlockProps) {
+  const { result, timestamp } = block;
   const status = classifyStatus(result);
   const meta = STATUS_META[status];
 

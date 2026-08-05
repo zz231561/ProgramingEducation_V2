@@ -4,9 +4,8 @@
 
 ## ⚠ 待處理
 
-### 檔案大小逼近/超出門檻
-- [ ] **`web/app/(app)/workspace/page.tsx` 254 行超過 250 硬上限**（2026-08-05 U2e 驗收修訂後）：拆分方案＝把 `editorAndOutput` 與左側面板的 PanelGroup 組裝抽成 `components/workspace/workspace-layout.tsx`（可順帶消除「側欄開合造成整棵樹換位置 → CodeEditor remount」的結構問題），page 只留狀態組裝約 150 行。**須經使用者同意後執行**
-- [ ] 同批 ⚠ 提醒（未超硬上限）：`services/workspace_files.py` 174 / `code-files-sidebar.tsx` 207 / `use-named-file.ts` 159 / `api/routes/code_files.py` 153
+### 檔案大小逼近門檻（⚠ 提醒，未超硬上限）
+- [ ] `code-files-sidebar.tsx` 207 / `run-block.tsx` 201 / `services/workspace_files.py` 174 / `use-named-file.ts` 159 / `api/routes/code_files.py` 153 / `toolbar.tsx` 147
 
 ### 延遲驗收（Phase 6-2 → 6-4 必跑）
 - [ ] **6-2 grounded UI 狀態尚未真機驗收** → **6-4a-deferred-ui 必驗（roadmap 已標）**

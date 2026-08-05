@@ -2,16 +2,10 @@
 
 import { createContext, useContext, useRef, useCallback } from "react";
 
-/** 執行結果 */
-export interface ExecutionResult {
-  stdout: string;
-  stderr: string;
-  compile_output: string;
-  exit_code: number;
-  status_description?: string;
-  time?: string;
-  memory?: number;
-}
+import type { ExecutionResult, RunRecord } from "./types";
+import { addRun, clearRuns, useRunHistory } from "./use-run-history";
+
+export type { ExecutionResult, RunRecord } from "./types";
 
 type ExecutionListener = (result: ExecutionResult) => void;
 type KickoffListener = (reflectionId: string) => void;
@@ -23,6 +17,9 @@ interface WorkspaceContextValue {
   setExecutionResult: (result: ExecutionResult | null) => void;
   /** 訂閱「Run 完成」事件（auto-inject 用）。 */
   onExecutionComplete: (listener: ExecutionListener) => () => void;
+  /** 執行歷史（新到舊）；存活於 AppShell 層，不隨面板開合而消失 */
+  runs: RunRecord[];
+  clearRuns: () => void;
   /**
    * 從 Output block 手動「💬 詢問 AI」時呼叫。
    * 若 chat panel 尚未掛載（沒有 listener），會 queue 起來等 listener 註冊時 drain。
@@ -65,10 +62,14 @@ export function WorkspaceProvider({ chatOpen, toggleChat, children }: WorkspaceP
   const getCode = useCallback(() => codeRef.current, []);
   const setCode = useCallback((code: string) => { codeRef.current = code; }, []);
   const getExecutionResult = useCallback(() => execRef.current, []);
+  const runs = useRunHistory();
 
   const setExecutionResult = useCallback((r: ExecutionResult | null) => {
     execRef.current = r;
-    if (r) listenersRef.current.forEach((fn) => fn(r));
+    if (r) {
+      addRun(r); // 歷史存於元件樹外，面板開合不受影響
+      listenersRef.current.forEach((fn) => fn(r));
+    }
   }, []);
 
   const onExecutionComplete = useCallback((listener: ExecutionListener) => {
@@ -115,7 +116,8 @@ export function WorkspaceProvider({ chatOpen, toggleChat, children }: WorkspaceP
   return (
     <Ctx value={{
       getCode, setCode, getExecutionResult, setExecutionResult,
-      onExecutionComplete, requestChatInjection, onChatInjectionRequest,
+      onExecutionComplete, runs, clearRuns,
+      requestChatInjection, onChatInjectionRequest,
       requestReflectionKickoff, onReflectionKickoff,
       chatOpen, toggleChat,
     }}>

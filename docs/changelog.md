@@ -1,5 +1,23 @@
 # 變更日誌
 
+## [2026-08-05] — feat(scripts)：教材程式碼健檢工具 + 每日 20 次配額 + session 開場提醒
+
+> 承 v41 `extern` 事件：**沒有任何機制會驗證教材裡的程式碼真的能編譯**，錯了兩個月沒人發現。
+
+### Added — `scripts/verify_code_snippets.py`（兩層，成本天差地遠）
+1. **靜態掃描（免費、每次都跑）**：拿 `corrections.json` 的 `global_replacements` 當「已知錯誤拼法字典」掃 questions / staging / learning_units。**不另外維護第二份清單**——修正配置本身就是規格
+2. **Judge0 編譯（有配額）**：把 coding 題的 `starter_code`（**125 支**）送去真的編譯。**每天上限 20 次**（免費額度 50/天），未驗過或內容變動的優先、其次最久沒驗的 → 約 7 天跑完一輪，之後自動輪替
+- 狀態寫 `data/teaching_content/snippet_check_state.json`（哪天跑過 / 每支的 hash + 結果 + 時間）；**只有真的編譯過才算「今天跑過」**，靜態掃描不會消掉提醒
+- 教材本身沒有 code fence（U2g 移除範例程式後概念說明是純文字），所以可編譯的實體只有 starter_code
+
+### Added — session 開場提醒
+- `scripts/snippet_check_reminder.py`（純標準函式庫，不經 venv）+ `.claude/settings.json` 的 **SessionStart hook**
+- 今天跑過 → 靜默；沒跑過 → 顯示上次日期、已驗支數、上次殘留問題數與指令
+
+### 今日狀態
+- 依使用者指示**今天先不實測**，只完成程式；靜態掃描已跑過一次：**0 個已知錯誤拼法**（v41 修完後全庫乾淨）
+
+
 ## [2026-08-05] — fix(content)：章節 41 `extern` 錯字修正（含兩支批次 script 語法損壞）
 
 ### 查證 — 「v17/v41 題庫掛零」是過期記錄

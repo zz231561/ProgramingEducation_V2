@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 backend/scripts/snippet_check_reminder.py 2>/dev/null || true",
+            "timeout": 10,
+            "statusMessage": "檢查教材程式碼健檢紀錄"
+          }
+        ]
+      }
+    ]
+  }
+}

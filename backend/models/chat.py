@@ -39,6 +39,10 @@ class DialogueAct(str, enum.Enum):
     VERIFICATION = "verification"
 
 
+# 新 session 的預設標題（首則訊息或主動說明會覆寫）
+DEFAULT_SESSION_TITLE = "新對話"
+
+
 class ChatSession(Base):
     """對話 Session — 一次教學互動上下文。"""
 
@@ -52,7 +56,7 @@ class ChatSession(Base):
         ForeignKey("users.id", ondelete="CASCADE"),
         index=True,
     )
-    title: Mapped[str] = mapped_column(String(200), default="新對話")
+    title: Mapped[str] = mapped_column(String(200), default=DEFAULT_SESSION_TITLE)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),

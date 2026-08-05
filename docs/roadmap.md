@@ -196,6 +196,7 @@
 - [x] K4b RAG 觸發改內容相關性：`TeachingStrategy` 移除 `use_rag`，Feedback 層每次檢索、`RAG_MIN_SCORE=0.40` 分數過濾（原 6-5a）；門檻初始值待 K4d 依實際命中率調整；tests 更新 +2
 - [x] K4c 補救路徑（`services/learning/remedial.py` + `POST /concepts/{tag}/diagnosis/remediate`）：診斷觸發後把嫌疑概念在 default path 的既有 units **重新開放**（completed/locked → available、清 completed_at；系統級動作繞過手動轉移限制）；不新建 row 不動 order 唯一約束；order_index 升冪 = 建議補救順序；未觸發回 409；5 tests
 - [ ] K4d 真人測試驗收（原 6-5c）：比對改動前後語氣 / RAG 命中率（含 RAG_MIN_SCORE 調參）/ 鷹架適切度 / 補救路徑 Learn 頁呈現（2026-07-06：RAG_MIN_SCORE 調參與對話組模型是否升 `gpt-5.4` 併入第 5 批實機批次執行；語氣部分使用者自測）
+- [x] K4f 編譯失敗主動說明（2026-08-05 使用者定案）：`services/compile_error.py` + `POST /chat/compile-error`——平台限制（引用平台沒有的函式庫）機械判定 + 固定文案**不呼叫 LLM**；學生自己的編譯錯誤走 LLM 引導（禁給修好的程式碼）；前端僅編譯失敗觸發 + 錯誤簽章去重（同一錯誤只說明一次，省配額）；+10 tests（793）
 - [x] K4e Coddy 防幻覺三層（2026-08-05 使用者驗收發現時間戳為幻覺後新增）：`services/edf/citations.py`——① `strip_ungrounded_citations` 機械攔截不在檢索結果內的影片連結（容差 ±90s、非 YouTube 連結保留、攔截寫 log 可統計幻覺率）② `NO_SOURCE_RULE` 檢索無命中時明確禁止提及章節時間並誠實告知 ③ `extract_citations` + migration `t6c7d8e9f0a1`（`chat_messages.citations`）+ 前端 `citation-list.tsx` 摺疊顯示 transcript 原文供學生核對；+13 tests（763）。**限制**：出處已鎖死，內容曲解仍需第二次 LLM 比對，成本翻倍故不常態開啟
 
 ### K5 知識圖譜視覺改版（功能五；吸收原 6-6a/c/d）

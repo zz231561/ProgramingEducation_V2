@@ -24,6 +24,7 @@ from api.routes.assignments import (
 )
 from api.routes.auth import router as auth_router
 from api.routes.chat import router as chat_router
+from api.routes.chat_sessions import router as chat_sessions_router
 from api.routes.classes import router as classes_router
 from api.routes.code import router as code_router
 from api.routes.code_files import router as code_files_router
@@ -100,6 +101,7 @@ app.include_router(users_router)
 app.include_router(code_router)
 app.include_router(code_files_router)
 app.include_router(chat_router)
+app.include_router(chat_sessions_router)
 app.include_router(concepts_router)
 app.include_router(classes_router)
 # submissions router 先註冊：/assignments/mine 需優先於 /assignments/{id}

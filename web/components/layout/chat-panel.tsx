@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { PanelRightClose } from "lucide-react";
 import { MessageList } from "@/components/chat/message-list";
 import { ChatInput } from "@/components/chat/chat-input";
@@ -11,6 +11,20 @@ import { useWorkspace } from "@/components/workspace/workspace-context";
 
 interface ChatPanelProps {
   onCollapse: () => void;
+}
+
+/**
+ * 編譯錯誤的去重簽章：取前兩行並抹掉行號欄位。
+ * 學生改了程式碼但錯誤本質相同（同一行號漂移）時視為同一個錯誤，避免重複花配額。
+ */
+function errorSignature(compileOutput: string): string {
+  return compileOutput
+    .split("\n")
+    .slice(0, 2)
+    .join(" ")
+    .replace(/:\d+:\d+:/g, ":")
+    .replace(/^\s*\d+\s*\|/gm, "")
+    .trim();
 }
 
 /**
@@ -25,15 +39,24 @@ export function ChatPanel({ onCollapse }: ChatPanelProps) {
 
   const {
     items, isLoading, sendMessage, loadKickoff, loadSession,
-    startNewSession, injectExecutionResult,
+    startNewSession, injectExecutionResult, requestCompileErrorHelp,
   } = useChat({ getCode, getExecutionResult, onSessionCreated: addSession });
 
-  /* Run 完成時自動注入執行結果卡片 */
+  // 已主動說明過的編譯錯誤（正規化簽章）——學生沒改就重跑不再重複花配額
+  const explainedRef = useRef<Set<string>>(new Set());
+
+  /* Run 完成：注入結果卡片；編譯失敗時 Coddy 主動說明 */
   useEffect(() => {
     return onExecutionComplete((result) => {
       injectExecutionResult(result);
+      const output = result.compile_output;
+      if (!output) return;
+      const signature = errorSignature(output);
+      if (explainedRef.current.has(signature)) return;
+      explainedRef.current.add(signature);
+      void requestCompileErrorHelp(output);
     });
-  }, [onExecutionComplete, injectExecutionResult]);
+  }, [onExecutionComplete, injectExecutionResult, requestCompileErrorHelp]);
 
   /* 從 Output block「💬 詢問 AI」按鈕手動注入（含掛載前 queue drain） */
   useEffect(() => {

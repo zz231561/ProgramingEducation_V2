@@ -2,18 +2,18 @@
 
 import uuid
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.deps import get_current_db_user, get_db, User
 from core.dev_mode import is_dev_email
-from core.errors import AppError
 from core.rate_limit import rate_limit
 from models.coding_event import CodingEventType
 from services.analytics import log_coding_event
-from services.chat import interact, list_sessions, get_session_messages, delete_session
+from services.chat import interact
 from services.chat_kickoff import reflection_kickoff
+from services.compile_error import compile_error_help
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 
@@ -58,30 +58,6 @@ class InteractResponse(BaseModel):
     debug: dict | None = None
 
 
-class SessionOut(BaseModel):
-    """Session 摘要。"""
-
-    id: uuid.UUID
-    title: str
-    updated_at: str
-
-    model_config = {"from_attributes": True}
-
-
-class SessionListResponse(BaseModel):
-    """Session 列表回應。"""
-
-    sessions: list[SessionOut]
-    total: int
-
-
-class SessionDetailResponse(BaseModel):
-    """Session 詳情（含訊息）。"""
-
-    session: SessionOut
-    messages: list[MessageOut]
-
-
 class KickoffRequest(BaseModel):
     """反思開場請求（學生帶反思進 Workspace 時前端呼叫一次）。"""
 
@@ -113,6 +89,51 @@ async def chat_reflection_kickoff(
     return KickoffResponse(
         session_id=session.id,
         session_title=session.title or "",
+        assistant_message=MessageOut(
+            id=msg.id,
+            role=msg.role.value,
+            content=msg.content,
+            code_snapshot=None,
+            evidence=None,
+            created_at=str(msg.created_at),
+        ),
+    )
+
+
+class CompileErrorRequest(BaseModel):
+    """編譯失敗時請 Coddy 主動說明。"""
+
+    code: str = Field(default="", max_length=50_000)
+    compile_output: str = Field(..., min_length=1, max_length=10_000)
+    session_id: uuid.UUID | None = Field(default=None)
+
+
+class CompileErrorResponse(BaseModel):
+    session_id: uuid.UUID
+    session_title: str
+    # True = 平台限制（如引用 Qt），後端以固定文案直接說明、未呼叫 LLM
+    is_platform_limit: bool
+    assistant_message: MessageOut
+
+
+@router.post(
+    "/compile-error",
+    response_model=CompileErrorResponse,
+    dependencies=[Depends(rate_limit("llm"))],
+)
+async def chat_compile_error(
+    body: CompileErrorRequest,
+    user: User = Depends(get_current_db_user),
+    db: AsyncSession = Depends(get_db),
+) -> CompileErrorResponse:
+    """編譯失敗時 Coddy 主動發話：平台限制直說，學生自己的錯誤走引導。"""
+    session, msg, is_platform = await compile_error_help(
+        db, user.id, body.session_id, body.code, body.compile_output
+    )
+    return CompileErrorResponse(
+        session_id=session.id,
+        session_title=session.title or "",
+        is_platform_limit=is_platform,
         assistant_message=MessageOut(
             id=msg.id,
             role=msg.role.value,
@@ -183,61 +204,3 @@ async def chat_interact(
             created_at=str(ai_msg.created_at),
         ),
     )
-
-
-@router.get("/sessions", response_model=SessionListResponse)
-async def get_sessions(
-    user: User = Depends(get_current_db_user),
-    db: AsyncSession = Depends(get_db),
-    page: int = Query(default=1, ge=1),
-    limit: int = Query(default=20, ge=1, le=100),
-) -> SessionListResponse:
-    """取得使用者所有對話 session。"""
-    sessions, total = await list_sessions(db, user.id, page, limit)
-    return SessionListResponse(
-        sessions=[
-            SessionOut(id=s.id, title=s.title, updated_at=str(s.updated_at))
-            for s in sessions
-        ],
-        total=total,
-    )
-
-
-@router.get("/sessions/{session_id}", response_model=SessionDetailResponse)
-async def get_session_detail(
-    session_id: uuid.UUID,
-    user: User = Depends(get_current_db_user),
-    db: AsyncSession = Depends(get_db),
-) -> SessionDetailResponse:
-    """取得特定 session 的訊息歷史。"""
-    session = await get_session_messages(db, user.id, session_id)
-    if not session:
-        raise AppError(404, "NOT_FOUND", "找不到該對話")
-
-    return SessionDetailResponse(
-        session=SessionOut(id=session.id, title=session.title, updated_at=str(session.updated_at)),
-        messages=[
-            MessageOut(
-                id=m.id,
-                role=m.role.value,
-                content=m.content,
-                code_snapshot=m.code_snapshot,
-                evidence=m.evidence,
-                citations=m.citations,
-                created_at=str(m.created_at),
-            )
-            for m in session.messages
-        ],
-    )
-
-
-@router.delete("/sessions/{session_id}", status_code=204)
-async def remove_session(
-    session_id: uuid.UUID,
-    user: User = Depends(get_current_db_user),
-    db: AsyncSession = Depends(get_db),
-) -> None:
-    """刪除對話 session。"""
-    deleted = await delete_session(db, user.id, session_id)
-    if not deleted:
-        raise AppError(404, "NOT_FOUND", "找不到該對話")

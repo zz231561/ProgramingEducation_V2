@@ -1,5 +1,32 @@
 # 變更日誌
 
+## [2026-08-05] — feat(edf)：編譯失敗時 Coddy 主動說明（平台限制直說 / 學生錯誤引導）
+
+> 使用者提問「預設函式庫有哪些、想引用別的怎麼辦」+ 定案「編譯錯誤本來就該由 Coddy 主動分析；系統錯誤直說，學生自己出錯要引導」。
+> **背景事實**：`judge0.py:13` 寫死 `CPP_LANGUAGE_ID=54`，只送單一 `main.cpp` → 可用的僅 C++ 標準函式庫；沙箱無顯示裝置也無網路，Qt 這類 GUI 函式庫**裝了也跑不動**。
+
+### Added — `services/compile_error.py` + `POST /chat/compile-error`
+- **兩類錯誤刻意不同處理**：
+  - **平台限制**（`fatal error: X: No such file or directory` 且 X 不在標準標頭白名單）→ **機械判定 + 固定文案，完全不呼叫 LLM**（零成本；也避免 LLM 亂編「你可以裝一下」這種做不到的建議）。文案說明「不是你寫錯」＋環境只有標準函式庫＋無畫面沙箱＋改用 `cin` 的具體出路
+  - **學生自己的錯誤**（漏分號、型別不符…）→ LLM 引導：白話翻譯錯誤訊息 + 指出從哪裡查起，**prompt 明令不可給修好的程式碼、不可說「第 N 行改成 XXX」**
+- **標準標頭白名單**涵蓋 STL / C 標頭 / 常見 POSIX；`iostream` 找不到會被判為環境異常而非平台限制（不對學生說謊）
+- 訊息寫入現有 session（非另開），保留在對話歷史可回看；LLM 失敗 fail-open 回固定文案
+
+### Added — 前端自動觸發（`chat-panel.tsx`）
+- Run 完成且 `compile_output` 非空才觸發（runtime error 不觸發——那屬於學生該自己除錯的範圍）
+- **去重**：以「前兩行 + 抹掉行號」為簽章，同一個錯誤只主動說明一次 → 學生沒改就重跑不會重複消耗每日 60 次配額
+- 失敗（含配額用盡）靜默，不打擾學生
+
+### Fixed（實作中由測試逼出）
+- `_get_client()` 原本在 try 之外，OpenAI client 建構失敗會 500 → 移入 try，真正 fail-open。**`services/chat_kickoff.py:85` 有同樣結構的潛在問題，未動（不在本次範圍，已記錄）**
+- `models/chat.py` 抽出 `DEFAULT_SESSION_TITLE`：原本判斷 `if not session.title` 永遠為假（新 session 預設就是「新對話」），標題不會被覆寫
+
+### Changed — `api/routes/chat.py` 289 → 206 行（超過 250 硬線）
+- session 歷史三個端點 + 其 schema 拆至 `api/routes/chat_sessions.py`（100 行），比照 assignments 的雙 router 慣例；`MessageOut` 仍由 chat.py 提供，單向 import 無循環
+
+### Tests
+- `tests/test_compile_error.py` +10：標頭偵測 6 例（Qt / tinyfiledialogs / iostream / stdio.h / 語法錯 / 空字串）+ 平台限制路徑**斷言 LLM 未被呼叫** + 學生錯誤走 LLM + 訊息進歷史且標題正確 + LLM 掛掉 fail-open；後端全量 **793 passed**
+
 ## [2026-08-05] — fix(ui)：複製按鈕統一回饋（驗收回饋：複製後沒有任何提示）
 
 - **現況兩處複製、兩種行為**：`run-block.tsx` 複製輸出**完全無回饋**（連 await 都沒有，失敗也不知道）；`class-card.tsx` 複製邀請碼只把圖示換成綠勾、無文字

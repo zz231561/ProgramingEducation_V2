@@ -13,10 +13,10 @@
 - `.venv/bin/alembic current* / heads* / history*`（**唯讀**；`upgrade` / `downgrade` 刻意不放行）
 - `docker exec codedge-postgres-dev psql *`（鎖死本機 dev 容器，語法上碰不到正式環境）
 
-### Added — 全域 PreToolUse 安全網（`~/.claude/hooks/block-prod-db.sh`，未進版控）
-- 任何 Bash 指令字串含正式主機 `43.153.167.105` 一律 deny，**不論命中哪條 allow 規則**
-- 補的是 allow/deny 前綴比對做不到的「字串任意位置比對」；已實測攔截成功
-- 刻意放在 `~/.claude/`（不同步至 GitHub），避免正式環境位址進入版控
+### 評估後不採用 — 正式主機硬擋 hook
+- 曾實作 PreToolUse hook 攔截含正式主機的 Bash 指令（實測可攔），**同日評估後移除**
+- 原因：① 只擋得住寫死的那一台，換主機或改從 `.env` 讀連線字串就失效，安全感不實 ② 正式環境測試是常態需求，硬擋反而礙事
+- **實際防線**：含密碼的 allow 規則已刪除，故連正式 DB 的指令會回到逐次確認，由人眼判斷
 
 ### Changed — `CLAUDE.md` 執行守則新增第 7 條
 - **改檔案一律用 Edit/Write 工具**，禁止 `python3 - <<EOF` / `sed -i` / `cat >` 改動專案檔案

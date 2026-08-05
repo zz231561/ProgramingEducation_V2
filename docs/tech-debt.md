@@ -13,6 +13,39 @@
     且 `allow_code_snippet` 恆為 False。**學生連問四次同一件事也不會升級到直接說明**
   - 這是 `.claude/rules/edf-pipeline.md` 明列的核心設計（Hint Ladder 0-5）在對話裡實際是死的
   - **實例**：學生問「誰定義 return 0 代表正常」，Coddy 連續反問，最後由學生 push back 兩次才逼出正確答案
+  - **下游災情（2026-08-06 全面審計確認，同一根因）**：
+    ① `chat_sse.py:83` `if body.hint_level > 0` 記 hint_request 行為事件——**永不觸發**，
+       5-2 行為資料的 hint 分布在 chat 恆為空（未來 5-3 行為分析直接缺一軸）
+    ② `classify_dialogue_act` 第一優先分支 `hint_level > 0 → ASKING_HINT` 在 chat 是死路，
+       只剩關鍵字啟發式在撐
+    → 修 hint_level 接線後這兩項**自動復活**，不需另外動
+
+### 🔴 Phase 2-6 Comprehension 整個前端不存在——後端閉環完整但學生永遠碰不到（2026-08-06 審計發現）
+- [ ] **`web/` 全目錄 grep `comprehension|epl|predict|variation` 零 API 呼叫**；git 歷史確認前端**從未存在過**
+  - 後端活著的部分：8+ 條路由（EPL generate/grade、Predict、Variation、trigger-suggestion）+
+    `mastery_hook`（通過→BKT 上調）+ `trigger.py` 動態頻率規則 + **約 100 個測試持續維護中**
+  - roadmap 主表把 2-6 勾成 ✅「EPL + Predict + Variation + **動態觸發 + BKT 串接**」——讀起來像整條功能完成；
+    實際 archive 寫的是「**後端**教學引擎…就緒」，且 2-6d 註明「『禁用 AI』屬**前端責任**」——前端從未被任何條目追蹤
+  - **後果**：Post-Solution Comprehension（論文教學設計：EPL/Fowler、Variation Theory/Marton，
+    references.md §5.1 有標）是死功能；其 BKT 強證據訊號源也一併缺席
+  - **處置需使用者裁決**：補前端 UI（量體不小：三種驗證各有作答流程）vs 降級為論文描述「已實作未部署」vs 移除
+
+### 🔴 Evidence 層拿不到 exit_code / status_description——執行結果注入不完整（2026-08-06 審計發現）
+- [ ] `services/chat.py` 只從 execution_result 抽 `stdout / stderr / compile_output` 餵給 `analyze_evidence()`，
+      **`exit_code` 與 `status_description` 被丟棄**（前端明明有送——`ExecutionResult` 型別完整）
+  - **後果**：非零 exit（NZEC）時 stderr 全空 → Evidence LLM **機械上看不到任何異常訊號**；
+    使用者實例中 Coddy 知道 Runtime Error 是因為**學生自己打字說的**，不是管線給的
+  - 同族：`classify_dialogue_act._has_execution_error` 也只看 stderr/compile_output →
+    學生那句「出現了Runtime Error 為什麼？」**沒被分類成 DEBUGGING**（行為資料又失真一筆）
+  - edf-pipeline.md 寫「注入 Judge0 執行結果（stdout/stderr）作為分析脈絡」——文件如實描述了縮水範圍，
+    但 7-R 之後 status_description 已是學生實際看到的主要訊號，管線卻看不到
+
+### 🟡 前端 429 / 5xx 統一攔截宣告了但沒實作（2026-08-06 審計發現）
+- [ ] `web/lib/api.ts` 檔頭註解與 `frontend.md` 皆寫「401 → 重導登入、**429 → 冷卻倒數 toast、5xx → 錯誤 toast**」，
+      實作**只有 401**；後端 429 回的 `retry_after_seconds` 從未被任何前端程式碼消費
+  - `use-chat.ts` 的 `catch {}` 不分辨 `ApiRequestError`：**撞每日 60 次 LLM 配額（6-M3）的學生
+    看到的是「無法取得 AI 回應，請稍後再試」**——把配額誤導成故障，學生會一直重試
+  - 使用者實測對話中那次「無法取得 AI 回應」無法從 UI 分辨是 502 還是 429，正是此缺陷的體現
 
 ### 🔴 執行狀態 `Runtime Error (NZEC)` 對教學情境會誤導
 - [ ] `runner/app/executor.py:67` 非零 exit → `Runtime Error (NZEC)`（沿用 Judge0 判題慣例）

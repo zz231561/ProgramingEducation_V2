@@ -55,7 +55,13 @@ class Settings(BaseSettings):
     def llm_model_content(self) -> str:
         return self.LLM_MODEL_CONTENT or self.LLM_MODEL
 
-    # === Judge0 ===
+    # === 執行引擎（7-R 自建 runner 主路徑）===
+    # "self" = 自建 runner / "judge0" = 手動降級 RapidAPI；RUNNER_URL 未設時自動退 judge0
+    RUNNER_BACKEND: str = "self"
+    RUNNER_URL: str = ""
+    RUNNER_TOKEN: str = ""
+
+    # === Judge0（fallback）===
     JUDGE0_API_URL: str = "https://judge0-ce.p.rapidapi.com"
     JUDGE0_API_KEY: str = ""
     # authn 模式："rapidapi" / "self-hosted"；空字串 = 依 URL 自動判斷（含 rapidapi 網域

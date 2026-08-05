@@ -282,7 +282,7 @@
 > 完整決策記錄見「已確認決策」末條；B 機規格與參數見 `docs/server-plan.md`；拓撲見 `docs/architecture.md` 執行引擎節。
 - [x] R0 決策落地（2026-08-05）：推翻 Batch Terminal 決策 + server-plan / architecture / frontend / backend 規則同步 + tech-debt 記錄
 - [x] R1 runner service ✅（2026-08-05）：`runner/` 9 模組 + Dockerfile（nsjail 自 source 建 + PCH 預編）+ `POST /run` + 15 tests 全綠（Dockerfile 建置與 nsjail 路徑待 R5 B 機實測）
-- [ ] R2 backend 抽換：`services/runner.py` 提供與 `submit_and_poll` 同介面（3 呼叫點：`api/routes/code.py` / `services/analytics/events.py` / `scripts/verify_code_snippets.py`）+ `RUNNER_BACKEND=self|judge0` fallback + 測試
+- [x] R2 backend 抽換 ✅（2026-08-05）：`services/runner.py` dispatcher（RUNNER_URL 未設自動退 Judge0）+ 2 呼叫點換 import + 7 tests；後端 811 全綠
 - [ ] R3 互動層：runner `WS /terminal`（PTY spawn，stdout 行緩衝）+ backend WS 中繼（JWT 於首訊息驗證，15s 未送即斷）+ idle 60s / 硬上限 300s / 同時 session 上限 40
 - [ ] R4 前端：Output 面板終端模式（`@xterm/xterm` + fit addon，非 modal）+ GitHub Dark ANSI 主題 + 排隊提示 + 結束後收合為 RunBlock + stdin textarea 降級「進階：預先餵入」（一併消滅 A12 兩缺陷：提示不即時 / Run 不攔截）
 - [ ] R5 B 機上線：swap 2G + docker + compose 部署 + 防火牆僅放行 A 機 + `X-Runner-Token` + SSH 禁密碼登入 + 健康檢查 + backend 綁 Zeabur 公開子網域（WS 直達）+ 環境變數切換

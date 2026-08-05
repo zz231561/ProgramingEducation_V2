@@ -30,7 +30,7 @@ from pathlib import Path
 from sqlalchemy import text as sa_text
 
 from core.database import async_session
-from services.judge0 import submit_and_poll
+from services.runner import submit_and_poll
 
 _PROJECT_ROOT = Path(__file__).resolve().parents[2]
 CORRECTIONS_FILE = _PROJECT_ROOT / "data" / "teaching_content" / "corrections.json"

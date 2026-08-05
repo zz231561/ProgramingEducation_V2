@@ -1,5 +1,16 @@
 # 變更日誌
 
+## [2026-08-05] — feat(runner)：R2 backend 抽換 — 執行引擎 dispatcher + fallback
+
+### Added — `backend/services/runner.py`
+- `submit_and_poll` 同名同介面 dispatcher：`RUNNER_BACKEND=judge0` 強制降級 / **`RUNNER_URL` 未設自動退 Judge0**（R5 部署前生產不會斷，切換零風險）/ 其餘走自建 runner（`POST /run` + `X-Runner-Token`）
+- 錯誤映射對齊 backend.md：httpx timeout → 504 EXECUTION_TIMEOUT、網路例外 → 503 RUNNER_UNAVAILABLE、排隊滿 → 503 RUNNER_BUSY、401 等配置錯誤 → 502（不對學生洩漏細節）
+- config 加 `RUNNER_BACKEND/RUNNER_URL/RUNNER_TOKEN`（.env.example 同步）；7 tests（分派 2 + 成功映射 + 錯誤 4）
+
+### Changed
+- `api/routes/code.py` 與 `scripts/verify_code_snippets.py` 改 import `services.runner`（`ExecutionResult`/`CPP_LANGUAGE_ID` re-export，模型正本留 judge0.py；`analytics/events.py` 僅用型別不動）
+- 後端 **811 tests 全綠**（804 + 7；既有 code_execute/judge0 測試零改動通過）
+
 ## [2026-08-05] — feat(runner)：R1 runner service — 沙箱編譯執行 + PCH + 快取 + 並行閘
 
 ### Added — `runner/`（獨立 service，B 機部署；本機以 sandbox=none 模式開發測試）

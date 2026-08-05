@@ -1,4 +1,4 @@
-"""程式碼執行 API — 提交至 Judge0 並回傳結果。"""
+"""程式碼執行 API — 提交至執行引擎（自建 runner / Judge0 fallback）並回傳結果。"""
 
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from api.deps import get_current_db_user, get_db, User
 from core.rate_limit import rate_limit
 from services.analytics import log_execution
-from services.judge0 import submit_and_poll, ExecutionResult, CPP_LANGUAGE_ID
+from services.runner import submit_and_poll, ExecutionResult, CPP_LANGUAGE_ID
 
 router = APIRouter(prefix="/code", tags=["code"])
 

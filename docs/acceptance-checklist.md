@@ -6,12 +6,17 @@
 
 ---
 
-## 0. 開始前必做
+## 0. 開始前
 
-- [ ] **重新部署 web 與 backend**。截至 2026-08-06 尚有多批未部署的變更：
-  - backend：SSE 對話串流、課程全解鎖 migration `u7d8e9f0a1b2`（Zeabur 啟動時自動跑 `alembic upgrade head`）
-  - web：互動終端、程式碼補全、教材出處移除、per-file 歷史等
-  - ⚠ `NEXT_PUBLIC_*` 是**建置期**烘入，web 一定要重新部署才生效
+**不需要手動部署**——Zeabur 已連接 GitHub，每次 push 自動觸發重新部署，
+backend 容器啟動時 `start.sh` 會跑 `alembic upgrade head`，所以 7-U2 的
+課程全解鎖 migration（`u7d8e9f0a1b2`）也已套用。截至 `b8d2b9b` 的變更全部在線上。
+
+- [ ] 開始前確認 Zeabur 最新一次部署狀態為成功（若失敗，驗收會看到舊版而誤判）
+
+> ⚠ 唯一需要手動處理的情況：**改環境變數**。變數要重啟服務才會讀入，
+> 這是 2026-08-06 互動終端卡住的原因（web 已 redeploy 但 backend 未重啟）。
+> 本輪驗收沒有新增環境變數，不受影響。
 
 ### 額度限制
 

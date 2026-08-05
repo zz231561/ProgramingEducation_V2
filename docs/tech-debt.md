@@ -17,9 +17,27 @@
   - **影響**：查閱成本高；但它是時間序日誌，內容本身沒錯
   - **如何處理**：比照 `roadmap-archive.md` 的做法，把 2026-07 以前的條目移到 `changelog-archive.md`
 
-### 檔案大小逼近門檻（⚠ 提醒線 150，硬上限 250）
-> 2026-08-06 重新量測。無任何檔案超過硬上限。
-- [ ] `code-files-sidebar.tsx` 207 / `api/routes/chat.py` 208 / `run-block.tsx` 201 / `workspace/page.tsx` 190 / `services/workspace_files.py` 174 / `runner/app/terminal.py` 165 / `output-panel.tsx` 164 / `use-named-file.ts` 159 / `api/routes/code_files.py` 153
+### 檔案大小超過門檻（⚠ 提醒線 150，硬上限 250）
+> ⚠ **2026-08-06 首次量測的「無任何檔案超過硬上限」是錯的** —— 那次只掃了 7-U 期間動過的檔案，
+> 卻寫成全域結論。同日 8-0 討論時全專案重掃，發現 **4 個非測試檔超過硬上限 250**。
+> 這正是 8-1d 自檢 script 要消滅的錯誤類型（手寫數字沒有東西會在它失真時報錯）。
+
+- [ ] 🚫 **超過硬上限 250**：`api/routes/quiz.py` 347 / `services/quiz/generate.py` 307 /
+      `components/knowledge/concept-detail-panel.tsx` 279 / `services/quiz/batch_generator.py` 267
+  - **處理方式**：不趕在驗收期動刀（改動風險大於收益），列入 Phase 8 由使用者裁決拆分順序
+- [ ] ⚠ **逼近提醒線 150–250**：`code-files-sidebar.tsx` 207 / `api/routes/chat.py` 208 / `run-block.tsx` 201 /
+      `workspace/page.tsx` 190 / `services/workspace_files.py` 174 / `runner/app/terminal.py` 165 /
+      `output-panel.tsx` 164 / `use-named-file.ts` 159 / `api/routes/code_files.py` 153
+- 測試檔不計入（`tests/` 最大 574 行，性質為條列案例而非邏輯複雜度）
+
+### 本機 `.venv` 與宣告的依賴脫鉤（2026-08-06 8-0b 量測發現）
+- [ ] `backend/.venv` 裝有 **scipy 81M + pandas 48M + scikit-learn 40M（共 169M）**，
+      但這三個套件**既不在 `pyproject.toml` 也不在 `requirements.lock`**
+  - **推測來源**：早期評估 pyBKT / 5-3 行為分析時試裝，後來未宣告也未移除
+  - **影響**：生產映像不受影響（Docker 內是照 `requirements.lock` 重裝，不會帶到）；
+    純粹是本機磁碟佔用 + 「以為裝了就能用」的錯覺風險
+  - **如何處理**：5-3 開發時若真要用，**必須先寫進 `pyproject.toml` 再重建 lock**；
+    否則重建 venv 即消失。列入 8-2c 盤點
 
 ### 部署相關（待實測）
 - [ ] **A↔B runner 走明文 HTTP**（7-R R5 已知限制）

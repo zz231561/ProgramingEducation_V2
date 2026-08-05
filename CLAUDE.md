@@ -18,7 +18,8 @@
 - **前端**：Next.js 15 + TypeScript + Tailwind CSS（`web/`）
 - **後端**：FastAPI + Python 3.12 + SQLAlchemy 2.0 async（`backend/`）
 - **資料庫**：PostgreSQL + pgvector | **快取**：Redis
-- **程式碼執行**：Judge0 | **LLM**：OpenAI GPT-4o | **RAG**：LlamaIndex + pgvector
+- **程式碼執行**：自建 runner（nsjail + PTY 互動終端，B 機）| fallback：Judge0
+- **LLM**：OpenAI gpt-5.6（`luna` 對話/分析/生成、`terra` 審查/內容）| **RAG**：LlamaIndex + pgvector
 - **Auth**：NextAuth.js (Google OAuth) + JWT | **編輯器**：CodeMirror 6
 - **部署**：Zeabur（Tencent Tokyo VPS）
 
@@ -27,47 +28,21 @@
 > **每次 session 開頭先讀 `docs/dev-setup.md` §1**（Colima + docker-compose 啟動 SOP）。
 > ⚠ **環境前置**：`web/.env.local` `AUTH_SECRET` 必須與 `backend/.env` `NEXTAUTH_SECRET` 同值。
 
-- **Phase 1-4 ✅** 全數完成（學生端閉環 + 容器化 + Zeabur 配置）
-- **🎯 Phase 6 進行中**（NotebookLM grounded 教學內容建構）
-  - 6-1 影片資料整合 ✅（Whisper 62 部 transcript + 861 chunks 入 RAG；2026-05-22 1-3 加 PREREQUISITE 邊回主路徑）
-  - 6-2a/b ✅（grounded prompt + Pydantic + 批次生成 infra + staging 表 + 18 mock+DB tests）
-  - 6-2c ✅程式碼完成 + fallback 已驗（grounded markdown / citation seek 主路徑待 6-4a-deferred-ui 補驗）
-  - 6-2d ✅程式碼完成 + fallback 已驗（grounded card + Workspace handoff 主路徑待 6-4a-deferred-ui 補驗）
-  - 6-2e ✅程式碼完成（2026-07-06 決策：摘要 tab 將移除 U2b，deferred 驗收作廢）
-  - 6-3a-1 ✅`generate_question(video_order=...)` grounded mode（含 grounding prompt 規則 + 4 mock tests；學生現生題 backward compat 保留）
-  - 6-3a-2 ✅批次 service `services/quiz/batch_generator.py` + CLI `scripts/generate_unit_questions.py`（per-concept N 題 × generate+validate + skip_existing；8 mock+DB tests）
-  - 6-3b ✅ExercisesTab 題庫優先（GET /quiz/from-bank → 404 QUESTION_BANK_EMPTY fallback /quiz/generate；6 bank + 5 route tests；前端 Loading 文案分兩階段）
-  - 6-R ✅健壯性強化（2026-07-04 架構審查）：500 traceback logging + token exp 驗證 + per-user rate limit（Redis fail-open）+ Judge0 網路例外 503 + LLM schema 驗證 502 + chat fail-safe 持久化 + user service 節流/race 防護 + 前端 401 重導/proxy timeout
-  - 6-M ✅ LLM 模型選型 v2（2026-07-06 定案 + 6-M1 落地）：任務導向路由——生成 `gpt-5-mini` / 審查 `gpt-5.4` / content `gpt-5.4` / 對話與分析 `gpt-5.4-mini`；6-M1 分組環境變數（GENERATE/VALIDATE/CONTENT fallback LLM_MODEL）+ 11 呼叫點切換 + .env 套用完成；批次費用 ≈ $6.6、儲值 $10（key 已在 .env）
-  - 6-2b/6-3a-3 實機批次 ✅（2026-07-06）：content 62/62 生成 + **全量 promote 上線**（v05/v62 needs_more_source）+ 題庫 138 題 validated（57/62 concept 滿額；v17/v41 掛零記 tech-debt）；途中修 gpt-5 參數相容層 `core/llm_params.py` + quiz batch MissingGreenlet
-  - 6-4a 正式抽查已移除（使用者決策）：品質問題改由實際操作回饋 → 6-4b 局部重跑；6-2c citation 跳轉併入實際操作驗證
-  - 後端 611 tests 全綠；剩 K4d 調參（使用者實測回饋）
-- **🎯 Phase 6-K K-Graph 自適應學習引擎**（2026-07-04 功能規格書新增；原 6-5/6-6 整併入 K4 / K1+K5）
-  - K1 ✅跨章多對多依賴 DAG（migration `i5d6e7f8a9b0` 90 條 curated 邊 + `get_prerequisite_closure` BFS 回溯 + 實機驗證；K1d UI 抽查待使用者）
-  - K2 ✅動態知識狀態（`edf_parent_tag` mapping + 三層 fan-out 讓對話重新驅動 BKT；`/concepts/mastery` 加 last_practiced_at；K2c 決策：暫不引入真 AST）
-  - K3 ✅全數完成（後端連續失敗觸發 + closure 回溯 + `GET /concepts/{tag}/diagnosis`；K3e 前端：答錯自動查診斷 → 嫌疑鏈 + 微測驗 `GET /quiz/questions/{id}` + 補救開放 + 圖譜跳轉）
-  - K4a/b/c ✅（K-Graph 鷹架注入 prompt + Coddy persona 改寫 + RAG 相關性觸發 + 補救路徑 remediate API）；K4d 真人驗收待 API key 實測
-  - K5a/b/c ✅（2026-07-05，六輪迭代）：Cytoscape.js + mastery band 填色 + 路徑 ring（藍=目前/綠=已完成/紅=補救 `?remedial=`）+ **語意縮放全覽**（overview=同批概念節點放大字體/尺寸並重排每章緊湊網格 `overview-layout.ts`；detail=蛇形星系佈局；zoom 門檻 0.45 動畫切換 `graph-mode.ts`）+ 點擊容器/節點皆 zoom in 該章 + GalaxyNav 含全覽鈕 + zoom cap 1.0 + 跨章邊淡出；`knowledge-graph.tsx` 已拆分（212 行 + `use-graph-nav.ts`，第 3 批）
-  - K6 ✅熟練度演算法 v2（2026-07-06 第 3 批）：K6a 訊號分級 BKT 參數（quiz 強/chat 弱證據）+ K6b 遺忘曲線惰性衰減（`services/mastery/decay.py`，floor 0.25 + 半衰期隨練習成長）+ K6c 事件級透明化（effective/raw confidence + due_for_review 提示）；**論文關鍵文獻標注 references.md §5.1**
-  - **下一步（K 系列）**：**K5d 真人驗收**（學生能否從圖讀懂進度與弱項；含 K1d UI 抽查）→ K4d 真人驗收（可與 6-4a 實機批次合併）
-- **🎯 Phase 6-U 學生端修正**（2026-07-06 session 定案）：U1a/b/c ✅（第 1 批）/ U2b/c ✅（第 2 批）/ U2a/d ✅（第 4 批，含重複曝光消除）/ U2e ✅ 程式碼存檔（2026-07-16 第 8 批：`code_files` 草稿+命名檔案、自動存檔 2 秒+keepalive 搶救、我的程式碼選單；738 tests；待 UI 驗收）/ U2f 範例程式（第 6 批）
-- **執行順序 10 批已定案**（2026-07-06；晚間修訂 U2f→U2g）：①~⑥ ✅（U2g 含全量 promote 完成）→ ⑥' 6-3c ✅（2026-07-06 程式碼+實機批次：知識點驅動 436 MC 覆蓋 61/62 片 + 57 coding + 舊題複審刪 15；6-3d 弱項綜合測驗組 10/25 題亦同日完成）→ ⑦ 教師端 ✅ → ⑧ U2e ✅（2026-07-16）+監控 → ⑨ Phase 7 → ⑩ 5-3/5-4；**下一步：7-R R1 runner service**（7-2a/b/c 監控程式碼延後；伺服器規劃見 docs/server-plan.md）（LEARN/citation 品質問題由使用者操作回饋 → 6-4b）
-- **DEV 開發者模式 ✅ 全數完成**（2026-07-05；拆解見 roadmap DEV 節）：後端 gating（`DEV_MODE_ENABLED`+`DEV_MODE_EMAILS`、`require_dev_user`）+ rate limit 豁免 + Settings 六卡（身分切換 / 幽靈解鎖 / 熟練度編輯 / K3 診斷模擬 / 題庫檢視 `/quiz?question=` 深連結 / 分類重置）+ EDF Debug 面板（chat `debug_sink`，dev 才附）；+33 tests；UI 驗收通過（2026-07-12）；DEV-E ✅ 假學生 seeder（`services/dev_seed/` + CLI；三行為原型；4 tests）
-- **Phase 5 教師端 ✅ 完成（5-3/5-4 除外，等真實資料）**（批次 ⑦）：5-1b 全後端完成 ✅（班級 CRUD + profile + 加入班級 + 名冊）；5-1c-1 教師班級管理頁 `/teacher` ✅ **UI 驗收通過**（建班/邀請碼/名冊/停用 + avatar 教師入口；含修 `/users/me` 路由碰撞 + 身分切換即時更新選單 + 精簡選單）；5-1c ✅ 全數 UI 驗收通過；5-1d 身分自選 onboarding（決策：自選師生 + 單一身分 + 設定頁切換＝全清）：5-1d ✅ 全數驗收通過（身分自選 onboarding + 設定切換＝全清）→ **5-1 班級管理全部完成**；🎯 **5-2 行為資料收集進行中**：5-2a ✅ coding_events 表 + 5-2b ✅ event logging service（掛 /code/execute + chat hint）+ 5-2c ✅ chat_messages 加 dialogue_act（StudyChat 6 值；11 tests）+ 5-2d ✅ 行為指標聚合 service（`aggregate_user_behavior`：執行次數/成功率/修復時間/hint+dialogue_act 分布；compute-on-read 不建預聚合表；7 tests）→ **5-2 行為資料收集 5-2a~d 全數完成**；DEV-E ✅ 假學生 seeder；🎯 **5-5 作業指派進行中**（2026-07-07 定案：TronClass 式文件繳交，非題庫 quiz；整班指派；檔案存 Postgres bytea ≤10MB；教師評分+評語；學生雙入口）：5-5a-1 ✅ 3 表 migration `q3f4a5b6c7d8` + models；5-5a-2 ✅ 教師作業 CRUD + 附件 API（`services/assignment/`；擁有權 404 + PATCH 編輯/清除 due_at；bytea 上傳白名單+10MB+下載授權；python-multipart；15 tests）；5-5a-3 ✅ UI 驗收通過（作業建立/編輯含截止/拖曳上傳/附件懶載入）；**5-6 教師端導航與教材檢視 ✅**（2026-07-08 回饋）：5-6a/b/c ✅ UI 驗收通過（2026-07-12）（5-6a 角色化導航——教師＝班級|作業|Workspace|Learn + 移出 avatar + 教師落地班級 + `/teacher` 拆 layout；5-6b Learn 教師全開＝ghostUnlock||teacher；5-6c 單元頁教師「題庫」tab——`GET /quiz/bank` 含正解+解析、解答預設隱藏+切換；720 tests）；**5-5b 作業繳交 ✅ 程式碼全數完成**：5-5b-1/2 後端 + 5-5b-3 學生 UI（作業 tab + `/assignments` 列表/詳情/繳交表單 + Dashboard 待辦卡）+ 5-5b-4 教師交件檢視 UI（作業卡「交件」展開＝名冊×狀態+繳交率 → 檢視文字/下載附件 + 評分+評語；submissions 列表加繳交附件 meta；728 tests）；5-1c-4 學生加入班級 UI ✅（2026-07-12 補缺口：`JoinClassForm` 掛作業頁空狀態 + Settings 我的班級卡 + `GET /classes/mine`；730 tests）；**以上全數 UI 驗收通過（2026-07-12，含繳交狀態徽章 + 教師可點卡片動線修訂）→ Phase 5 除 5-3/5-4（等真實資料）外全部完成**
-- **技術債清償（2026-07-18）**：Judge0 自架 authn 分支（自動判斷 + 可選 `JUDGE0_AUTH_MODE` 覆蓋）+ lazy-seed seed 時帶入 staging approved content + pyproject hatchling packages + uv.lock 入 gitignore；後端 750 tests 全綠
-- **🎯 Phase 7 上線實測進行中**（2026-08-04）：**Zeabur 部署已通**——2C8G ZeaburOS 新機（$6/月，PokerNote 留舊機 2C2G $3 不搬，兩台隔離）+ 四 service 手動建立 + `codedge.zeabur.app` + Google 登入通過；7-1a-1/2/3 完成（lock 缺 python-multipart 阻斷修復 / Judge0 RapidAPI 三路徑實測 / **播種 script + prod_test 完整演練**）
-  - **7-1a-4 實機播種 ✅ 全數完成並複驗**（2026-08-05）：documents 64 / questions 628 / staging 62 approved / RAG 861 / **concepts 影片 ID 62/62** 皆與本機一致；`learning_units` 62 筆 content 全非空（lazy-seed 已帶入 staging）；alembic 已在 `t6c7d8e9f0a1`
-  - **7-1a-6 效能根因排除 ✅**（2026-08-05）：兩個僅生產環境出現的問題疊加致「頁面 10 秒」——① Node DNS IPv6 逾時耗盡 libuv threadpool（web 加 `NODE_OPTIONS=--dns-result-order=ipv4first` + `UV_THREADPOOL_SIZE=32`，**環境變數不在版控，見 deployment.md**）② Zeabur 邊緣宣告 HTTP/3 使瀏覽器走 UDP（`next.config.ts` 加 `Alt-Svc: clear`）；實測 137KB 檔案 **18.50 秒 → 166ms**
-  - ~~Judge0 策略：自架延至 2026-12~~ → **7-R 自建互動執行引擎（2026-08-05 定案，R0 ✅）**：A12 驗收體驗差 + 批次天生無互動 → 推翻 Batch Terminal 決策；nsjail + PTY + WS 互動終端（xterm 嵌 Output 面板）、Judge0 降 fallback；**B 機已租實測全綠**（43.133.7.93，2C2G，cgroup v2 免動 GRUB）；R1 ✅（`runner/` 9 模組 + Dockerfile + 15 tests；狀態字串對齊 Judge0 慣例）→ R2 ✅（`services/runner.py` dispatcher，URL 未設自動退 Judge0）→ R3 ✅（PTY 終端 WS + Redis ticket 認證 + backend 中繼；runner 22 + 後端 818 tests）→ R4 ✅（xterm 嵌 Output 面板 + ANSI 主題 + 退批次 fallback；A12 兩缺陷消滅）→ R5a/b ✅（部署產物 + 本機 Docker 實測 nsjail，修 3 個容器內才爆的缺陷：PCH 未綁 jail / execve 需絕對路徑 / **128+signal 逾時誤判**；PTY 互動實證）→ **R5c-1 B 機實機部署 ✅**（2026-08-06；bootstrap 8/8 + 全路徑實測 + PTY 互動 + 外部阻斷；再修 `/lib64` 未掛 jail「arm64 本機測不出」/ iptables-persistent 移除 ufw / pipefail 誤判）→ **R5c-2 ✅ 生產互動終端上線**（2026-08-06 驗收通過；卡點＝backend 須重啟才讀環境變數；A 機出口 IP 實測 `43.153.167.105` 與推測一致）+ R5d ✅ 移除 stdin 預填 UI（僅留 argv 列）→ R6 收尾（教材健檢解除 20 支/天上限 + 額度文案清理，**使用者要求暫緩**）
-- **🎯 Phase 7-U 上線後體驗優化進行中**（2026-08-06 使用者回饋定案，6 項）：7-U1 ✅ 單元導航只在概念說明 / 7-U2 ✅ **課程全解鎖**（migration `u7d8e9f0a1b2` + 移除 ghostUnlock 整條線路）/ 7-U3 ✅ 教材出處 UI 移除（citations 仍存 DB＋注入 prompt；K4e 防幻覺降為兩層）+ 時間戳改段尾註腳式播放標記 / 7-U4 ✅ 執行歷史 per-file（每檔 20 次、5 檔 LRU）+ 切檔清終端 / 7-U5 ✅ C++ 靜態補全（92 候選含繁中說明 + 當前檔識別字；Tab/Enter 接受；**不接 clangd LSP**——B 機 2GB 撐不住）/ 7-U6 ✅ Coddy 分階段進度（`/chat/interact` 改 SSE：stage×3 → done/error + 三段進度條；`chat.py` 超 250 行 → 抽 `chat_sse.py`）→ **7-U 六項全數完成**
-  - 途中修 **schema 漂移**：`uq_code_files_draft` partial index 只在 migration、model 未宣告 → 測試建不出來、併發保護從未被驗證（生產不受影響）；已補 `__table_args__`
-- **🔜 下一步（2026-08-06 定案）**：① 使用者依 `docs/acceptance-checklist.md`（已全面重寫，0~9 段）走完驗收 ② 進 **Phase 8 專案健檢與整理**——先做 8-0 討論（是否還有新功能 / 專案體積 1.3G / 工作流檢討），再動手清理
-- **部署機制**：Zeabur 連 GitHub，**push 即自動部署**；`backend/start.sh` 啟動時跑 `alembic upgrade head`。**只有改環境變數需要手動重啟服務**
-  - **已知限制**：`zeabur.app` 是公共後綴無法登記 Google 授權網域 → 現用 OAuth 測試模式（**100 人上限**）；2027-01 可用性評估前建議購自訂網域送驗證
-  - **6-M2 模型升級 ✅**（2026-08-05）：全面轉 gpt-5.6 世代——對話/分析/生成＝`gpt-5.6-luna`、審查/內容＝`gpt-5.6-terra`；單次互動省 74%（$0.00316→$0.00081），100 人月成本 $25.3→$6.5（業界基準 CS50.ai $1.90/學生/月）
-  - **7-1b 前修訂批 ✅**（2026-08-05 使用者驗收回饋連續修訂）：檔名鎖 `.cpp` + 就地改名 / Output 執行歷史移出元件樹 + 歷史選單 / 全站滾動條 GitHub Dark / 對話歷史選單溢出 / 複製按鈕統一回饋 / **stdin 輸入介面**（後端本就支援、前端從未送）/ **argv 執行參數**（章節 58 原本教不了）/ Coddy 主動說明三類執行問題（平台限制·逾時·UTC 時區，皆機械判定零成本）/ **收合聊天不再遺失對話**（`ChatRuntimeProvider`）/ 平板 chat bottom sheet / 執行語言鎖死 C++；後端 804 tests
-  - **教材品質防線 ✅**（2026-08-05）：發現章節 41 把 `extern` 教成 `external`（Whisper 逐字稿錯 → grounded 忠實複製 → 兩題全錯且無人察覺）→ 修正鏈跑完並同步生產；新增 `scripts/verify_code_snippets.py`（靜態拼字掃描免費 + Judge0 編譯每日 20 支）+ SessionStart 提醒 hook
-  - **6-M3 成本控制 ✅**：離題分流（搭 Evidence 呼叫零額外成本、Feedback input 省 92%、**不用黑名單避免誤傷「這題老師上課有講嗎」**）+ 每日配額 60 次/人（僅 LLM 端點）；K4e 防幻覺三層（機械攔截未 grounded 引用 + 誠實說教材沒提 + citations 原文核對 UI）
+**已完成（細節一律查 roadmap-archive / changelog，禁止回填此處）**
+Phase 1-4 全數 ✅｜Phase 5 教師端 ✅（5-3/5-4 除外，等真實資料）｜Phase 6 教學內容建構 ✅｜
+Phase 6-K K-Graph 自適應引擎 ✅｜Phase 6-U 學生端修正 ✅｜DEV 開發者模式 ✅｜
+Phase 7-R 自建互動執行引擎 ✅（生產終端已上線）｜Phase 7-U 上線後體驗優化 ✅ 六項
+
+**🎯 進行中**
+- **使用者驗收**：依 `docs/acceptance-checklist.md`（0~9 段）走完 — 目前僅 1-1 互動終端通過。**這是 Phase 8 的前提**
+- **Phase 8 專案健檢**：8-0 討論中 — 8-0b 體積已釐清、8-0c 自檢 script 已定案；**8-0a 是否加新功能待驗收後盤點**
+
+**待辦（未排期）**
+7-R R6 收尾（使用者要求暫緩）／7-2 監控程式碼／7-3 效能 baseline／
+5-3·5-4 行為分析（等真實資料）／6-4b 教材局部重跑（依實際操作回饋）／K1d·K4d·K5d 使用者自測
+
+**部署與營運**：見 `docs/deployment.md`。要點＝**push 即自動部署**、migration 自動跑；
+**唯獨改環境變數必須手動重啟 service**；OAuth 測試模式 100 人上限（Step 6 與已知限制節）。
 
 ## 文件索引
 > 本文件目標 ≤ 60 行。新增內容先判斷歸屬，禁止回填 roadmap/日誌/UI 參數/Schema。

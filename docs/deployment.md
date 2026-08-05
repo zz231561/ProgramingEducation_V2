@@ -162,6 +162,30 @@ curl https://<your-web-domain>/api/health
 3. 撰寫 C++ 程式 → 點擊 Run → Output Panel 顯示結果
 4. 開啟 Chat Panel → 發送訊息 → AI 回覆正常
 
+## Step 6：日常更新機制（2026-08-04 實測確認）
+
+Zeabur 已連接 GitHub repo，**push 到 `main` 即自動觸發部署**，不需任何手動操作：
+
+| 變更類型 | 是否需要手動動作 |
+|----------|------------------|
+| 程式碼（backend / web / runner） | ❌ 不需要，push 即自動部署 |
+| Alembic migration | ❌ 不需要，`backend/start.sh` 啟動時跑 `alembic upgrade head` |
+| **Zeabur 環境變數** | ✅ **必須手動重啟該 service**——變數只在 process 啟動時讀入 |
+
+> ⚠ 環境變數這條是 R5c-2 上線時唯一的卡點：改完 `RUNNER_URL` / `RUNNER_TOKEN` 後 backend 仍讀舊值，
+> 直到手動 restart 才生效。改任何變數後請養成「改完就重啟」的習慣。
+
+## 已知限制：Google OAuth 測試模式 100 人上限
+
+`zeabur.app` 屬於 [公共後綴清單](https://publicsuffix.org/)，**無法登記為 Google Cloud Console 的「已授權網域」**，
+因此 OAuth 同意畫面只能停留在**測試模式**：
+
+- 上限 **100 名測試使用者**，且每位都要手動加進 Google Console 的 Test users 清單
+- 未加入清單的帳號登入會被 Google 直接拒絕
+
+**解法**：購買自訂網域（如 `codedge.tw`）→ 在 Google Console 完成網域驗證 → 送出應用程式驗證後即可解除上限。
+**時機**：2027-01 可用性評估前處理；與 tech-debt「A↔B runner 明文 HTTP」的 TLS 改善可一併規劃。
+
 ## 部署 checklist（實際操作前 dry-run）
 
 - [ ] Google Cloud OAuth Client 已建（先填佔位 redirect URI）

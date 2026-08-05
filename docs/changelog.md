@@ -1,5 +1,41 @@
 # 變更日誌
 
+## [2026-08-06] — docs：Phase 8-0 討論（專案體積釐清 + 工作流自檢定案 + CLAUDE.md 瘦身）
+
+> 本次 session 依使用者指示**只做 8-0 討論、不寫程式**。8-0a（是否加新功能）經裁決延到驗收跑完再盤點。
+
+### 8-0b 專案體積 — 結論：不是問題，數字被誤解了
+- 全量重測：1.3G 中 **1.28G（98%）** 是三個可由版控中 lock 檔完整重建的衍生目錄 ——
+  `web/node_modules` 666M（next 169M + @next 116M + lucide-react 38M + date-fns 38M…）、
+  `backend/.venv` 390M（scipy 81M + pandas 48M + sklearn 40M + llama_index 29M…）、
+  `web/.next` 226M（其中 `.next/dev` 熱重載快取就佔 155M）
+- **實際被版控追蹤的內容：678 個檔案、打包後 378 KB**
+- **生產映像不含這些**：`web/Dockerfile` multi-stage，production 只 COPY `.next/standalone` + `.next/static` + `public`；
+  backend 在容器內依 `requirements.lock` 重裝。兩份 `.dockerignore` 均已正確排除
+- **唯一實質可瘦身處**：`.git` 36M 中 3866 個 loose object 佔 35.38 MiB，而已打包部分僅 378 KB。
+  成因＝`changelog.md`（356 KB）每個 commit 存一份完整壓縮副本 × 295 commits → `git gc` 可解決（列 8-2b）
+- **8-2a 查證後直接關閉**：`.DS_Store` / `.pytest_cache` / `.next` / `.venv` / `node_modules` / `ScreenShot/`
+  經 `git check-ignore` 逐項驗證**全部已被 gitignore 涵蓋**，無事可做
+
+### 8-0c 工作流 — 結論：不改流程，改補自檢 script
+- 量測最近 60 commits：程式碼 +15512/-1994 行、文件 +1719/-300 行 → **文件僅佔約一成 churn**，
+  「文件同步拖慢開發」不成立。真正的成本是**準確度**：文件中的機械事實全靠手寫，失真時沒有任何東西會報錯
+- 當場抓到兩個實例：① tech-debt 2026-08-06 寫「無任何檔案超過硬上限」，實際有 4 個非測試檔超過 250
+  （`quiz.py` 347 / `generate.py` 307 / `concept-detail-panel.tsx` 279 / `batch_generator.py` 267）——
+  那次稽核只掃了 7-U 期間動過的檔案卻寫成全域結論；② `CLAUDE.md` 自訂「≤ 60 行」實際 89 行
+- 裁決：**工作流本身不改**（單一 session 多批 + 每批 commit/push 運作良好），改導入 8-1d 自檢 script
+  （手動跑、**不掛 pre-commit**——會擋下想先存檔的中途 commit）
+
+### Changed — 文件
+- `CLAUDE.md` **89 → 64 行**：「當前狀態」只留現在進行式（已完成階段壓成一行索引，細節一律查 roadmap-archive / changelog）；
+  順修「技術棧」仍寫著 Judge0 / GPT-4o → 改為自建 runner（nsjail + PTY）+ gpt-5.6（luna / terra）
+- `docs/deployment.md` 新增 **Step 6 日常更新機制** 與 **OAuth 測試模式 100 人上限** 兩節 ——
+  這兩條原本**只存在於 `CLAUDE.md`**，是瘦身前必須先搬走的唯一紀錄（含「唯獨改環境變數必須手動重啟 service」）
+- `docs/tech-debt.md`：修正檔案大小那條錯誤結論並補上超標清單；新增「本機 `.venv` 與宣告的依賴脫鉤」——
+  scipy/pandas/sklearn 共 169M **既不在 `pyproject.toml` 也不在 `requirements.lock`**（生產不受影響，
+  但 5-3 若要用必須先宣告，否則重建 venv 即消失）
+- `docs/roadmap.md`：8-0b/8-0c 標記完成並寫入結論；8-1b 關閉；8-1d 補上 script 的三項掃描範圍；8-2 依量測結果縮減範圍
+
 ## [2026-08-06] — feat(chat)：7-U6 Coddy 分階段進度（`/chat/interact` 改 SSE）
 
 > 原本從頭到尾只有一個不動的「Coddy思考中…」。使用者要「像主流 LLM 那樣有進度感」，

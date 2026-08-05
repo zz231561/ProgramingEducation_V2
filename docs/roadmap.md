@@ -316,24 +316,47 @@
 > **下個 session 的順序**：① 先討論（8-0）→ ② 使用者驗收 → ③ 驗收無問題才動手整理。
 > 排序原則：**先談清楚方向，再做不可逆的刪除**；能自動驗證的排前面，需要人判斷的排後面。
 
-### 8-0 討論（不寫程式，下個 session 開場先做）
-- [ ] 8-0a **是否還有新功能要加**——若有，優先排入，因為它會影響「該刪什麼」的判斷
-- [ ] 8-0b **專案體積討論**（1.3G）
-  - 事實已量測（2026-08-06）：`web/node_modules` 666M + `backend/.venv` 390M + `web/.next` 226M + `.git` 36M，**三者皆未進版控**；`git count-objects` 顯示實際追蹤內容僅 **378 KB**
-  - 待討論：這個量級對此類專案是否正常、有無實質可瘦身處（如 `.next` 快取、`.git` 有 3854 個 loose object 未 gc）
-- [ ] 8-0c **工作流檢討**——目前是「單一 session 連續多批 + 每批 commit/push + 文件同步」，討論哪裡好用、哪裡拖慢
+### 8-0 討論（不寫程式）
+- [ ] 8-0a **是否還有新功能要加** — **2026-08-06 使用者裁決：等驗收跑完再盤點**（驗收過程本身可能冒出新需求，先不預設）
+- [x] 8-0b **專案體積討論 ✅ 已釐清**（2026-08-06 全量重測）
+  - **結論：體積不是問題，1.3G 這個數字被誤解了。** 其中 1.28G（98%）是三個**可由版控中的 lock 檔完整重建**的衍生目錄：
+    | 目錄 | 大小 | 內容 | 重建方式 |
+    |------|------|------|----------|
+    | `web/node_modules` | 666M | next 169M + @next 116M + lucide-react 38M + date-fns 38M + typescript 23M… | `npm ci`（依 `package-lock.json`） |
+    | `backend/.venv` | 390M | scipy 81M + pandas 48M + sklearn 40M + llama_index 29M + numpy 24M… | `pip install -r requirements.lock` |
+    | `web/.next` | 226M | `.next/dev` 155M（dev 熱重載快取）+ standalone 41M + server 21M + static 7.3M | `npm run dev` / `npm run build` |
+  - **實際被版控追蹤的內容：678 個檔案、打包後 378 KB**（`git count-objects -vH`）
+  - **生產映像不含這些**：`web/Dockerfile` 是 multi-stage，production 階段只 COPY `.next/standalone` + `.next/static` + `public`；`backend/Dockerfile` 在容器內依 lock 重裝。兩份 `.dockerignore` 已正確排除 `node_modules/` `.next/` `.venv/` `tests/` `.env`
+  - **唯一實質可瘦身處**：`.git` 36M 中有 **3866 個 loose object 佔 35.38 MiB**，而已打包部分僅 378 KB — 成因是 `changelog.md`（單檔 356 KB）每個 commit 存一份完整壓縮副本 × 295 commits。`git gc` 可 delta 壓縮，零風險
+  - **副產物發現**：scipy/pandas/sklearn 169M 未在任何依賴宣告中（見 tech-debt「本機 `.venv` 與宣告的依賴脫鉤」）
+- [x] 8-0c **工作流檢討 ✅ 已定案**（2026-08-06）
+  - **量測**：最近 60 commits — 程式碼 +15512/-1994 行，文件 +1719/-300 行。**文件僅佔約一成churn，「文件同步拖慢開發」不成立**
+  - **真正的成本是準確度而非份量**：文件中的機械事實（行數 / 測試數 / 檔案是否存在 / 是否全綠）全靠手寫敘述，沒有任何機制會在它失真時報錯。已抓到兩個實例 ——
+    ① tech-debt 2026-08-06 寫「無任何檔案超過硬上限」，實際有 4 個檔案超過 250
+    ② `CLAUDE.md` 自訂「目標 ≤ 60 行」，實際 89 行（當前狀態一段就佔 48 行）
+  - **裁決**：工作流本身（單一 session 多批 + 每批 commit/push）運作良好**不改**；改為導入 **8-1d 自檢 script（手動跑，不掛 pre-commit）**
+  - **同場處理**：`CLAUDE.md` 已依裁決瘦身 89 → 64 行（當前狀態只留現在進行式；`push 即自動部署` / OAuth 100 人上限兩條唯一紀錄先遷入 `deployment.md` Step 6 才刪）
 
 ### 8-1 文件一致性全面稽核
 > 2026-08-06 已先修三份（roadmap / 驗收清單 / tech-debt），其餘尚未逐字核對。
 - [ ] 8-1a 逐份核對 `docs/` 其餘 13 份與現況是否相符（重點：`modules.md`、`api-spec.md`、`db-schema.md`、`ui-ux-spec.md` — 這幾份最久沒動）
-- [ ] 8-1b 修正 `CLAUDE.md` 文件索引的過時描述（已知：驗收清單寫「A~E 段」、server-plan 寫「兩台拓撲 2026-07-12 定案」但已改 runner 專用機）
-- [ ] 8-1c `changelog.md` 4500+ 行 → 拆 `changelog-archive.md`（2026-07 以前）
-- [ ] 8-1d 建立防止再度腐化的機制（如 session 結束前的自檢清單，或把「文件提到的檔案是否存在」做成 script）
+- [x] 8-1b ~~修正 `CLAUDE.md` 文件索引的過時描述~~ — 2026-08-06 已隨 8-0c 瘦身處理完（文件索引兩處描述先前已修；同時修 `技術棧` 仍寫 Judge0 / GPT-4o → 改自建 runner + gpt-5.6）
+- [ ] 8-1c `changelog.md` 4500+ 行 → 拆 `changelog-archive.md`（2026-07 以前）；**順帶收斂 `.git` loose object 成長速度**（見 8-0b）
+- [ ] 8-1d **文件自檢 script（2026-08-06 8-0c 定案：寫 script、手動跑、不掛 pre-commit）**
+  - **掛 pre-commit 已評估後否決**：會擋下「想先存檔再整理」的中途 commit，代價大於效益
+  - **掃三件事**（皆為機械可判定，不做語意檢查）：
+    1. 超過 `CLAUDE.md` 門檻的檔案清單（⚠ 150 / 🚫 250，排除 `tests/`）
+    2. 文件中以 backtick 標注的檔案路徑是否真實存在（抓「文件指向已刪除檔案」這類腐化）
+    3. 後端 / runner 測試數（取代手寫的「XXX tests 全綠」）
+  - **輸出格式**：直接可貼進 tech-debt / changelog 的 markdown，杜絕手抄數字
+  - **執行時機**：session 結束前由 AI 自行跑一次，結果併入當次文件同步
 
-### 8-2 專案清理
-- [ ] 8-2a 清除不必要檔案：`.DS_Store`（散落多處）、`.pytest_cache`、`web/.next` 快取；確認 `.gitignore` 涵蓋完整
-- [ ] 8-2b `git gc` 壓縮 loose objects
-- [ ] 8-2c 盤點死程式碼與孤兒檔案（提出清單由使用者裁決，**不自行刪除**）
+### 8-2 專案清理（2026-08-06 依 8-0b 量測結果縮減範圍）
+- [x] 8-2a ~~清除 `.DS_Store` / `.pytest_cache` / `.next` 快取，確認 `.gitignore` 涵蓋完整~~
+  — **已查證無事可做**：8 個 `.DS_Store`、3 個 `.pytest_cache`、`web/.next`、`backend/.venv`、`web/node_modules`、`ScreenShot/`
+  **全部已被 `.gitignore` 涵蓋**（`git check-ignore` 逐項驗證），不影響版控也不進映像。刪與不刪只差本機磁碟
+- [ ] 8-2b `git gc` 壓縮 loose objects（3866 個 / 35.38 MiB → 預期剩數 MB；**8-0b 認定的唯一實質可瘦身處**）
+- [ ] 8-2c 盤點死程式碼與孤兒檔案（提出清單由使用者裁決，**不自行刪除**）；已知納入：`.venv` 未宣告的 scipy/pandas/sklearn、`docker-compose.judge0.yml`（Judge0 自架方案已作廢僅供追溯）
 - [ ] 8-2d `ScreenShot/` 676K 未進版控——確認用途，決定保留或移除
 
 ### 8-3 前端測試基礎設施（tech-debt 🔴）

@@ -1,4 +1,15 @@
 {
+  "permissions": {
+    "allow": [
+      "Bash(.venv/bin/python -m pytest *)",
+      "Bash(.venv/bin/pytest *)",
+      "Bash(source .venv/bin/activate)",
+      "Bash(.venv/bin/alembic current*)",
+      "Bash(.venv/bin/alembic heads*)",
+      "Bash(.venv/bin/alembic history*)",
+      "Bash(docker exec codedge-postgres-dev psql *)"
+    ]
+  },
   "hooks": {
     "SessionStart": [
       {

@@ -11,7 +11,8 @@
    - `docs/roadmap.md` — 勾選 Checkbox（**僅一行摘要**，細節歸 changelog）
    - `CLAUDE.md` 當前狀態 — 反映最新進度
    - `docs/tech-debt.md` — 若產生或消除技術債
-7. **避免重複造輪子（OSS 優先）**：開發新功能前必先查 `docs/references.md` §1 決策矩陣。**禁止移植已有對應套件的演算法**（例：BKT 必用 pyBKT）。**禁止引入 AGPL/GPL 授權套件**（見 references.md §2 黑名單）。
+7. **改檔案一律用 Edit/Write 工具**：**禁止**用 `python3 - <<EOF` / `sed -i` / `cat >` 等 shell 手法改動專案檔案——那是任意程式碼執行、diff 不可見、且會繞過權限確認。批次改動就多呼叫幾次 Edit。
+8. **避免重複造輪子（OSS 優先）**：開發新功能前必先查 `docs/references.md` §1 決策矩陣。**禁止移植已有對應套件的演算法**（例：BKT 必用 pyBKT）。**禁止引入 AGPL/GPL 授權套件**（見 references.md §2 黑名單）。
 
 ## 技術棧（已鎖定）
 - **前端**：Next.js 15 + TypeScript + Tailwind CSS（`web/`）

@@ -1,5 +1,27 @@
 # 變更日誌
 
+## [2026-08-05] — chore(security)：清除設定檔明文 DB 密碼 + 權限收斂 + 正式環境硬擋 hook
+
+> 起因：巡檢 Claude Code 權限設定時，發現 `.claude/settings.local.json` 有一條同時包含**正式環境 DB 明文密碼**與 `.venv/bin/python *` 萬用字元的 allow 規則——等於「連著正式資料庫的任意 Python 執行，永不詢問」。
+
+### Removed — `.claude/settings.local.json`（未進版控，密碼未外洩）
+- 刪除兩條含 `postgresql://postgres:<pw>@43.153.167.105:30148/...` 的 allow 規則
+- 已用 `git grep` / 全樹 `grep` 確認該密碼**僅存在於此檔**，未進 git 歷史或遠端
+
+### Added — `.claude/settings.json` 精確 allow 規則（取代寬鬆萬用字元）
+- `.venv/bin/python -m pytest *`、`.venv/bin/pytest *`、`source .venv/bin/activate`
+- `.venv/bin/alembic current* / heads* / history*`（**唯讀**；`upgrade` / `downgrade` 刻意不放行）
+- `docker exec codedge-postgres-dev psql *`（鎖死本機 dev 容器，語法上碰不到正式環境）
+
+### Added — 全域 PreToolUse 安全網（`~/.claude/hooks/block-prod-db.sh`，未進版控）
+- 任何 Bash 指令字串含正式主機 `43.153.167.105` 一律 deny，**不論命中哪條 allow 規則**
+- 補的是 allow/deny 前綴比對做不到的「字串任意位置比對」；已實測攔截成功
+- 刻意放在 `~/.claude/`（不同步至 GitHub），避免正式環境位址進入版控
+
+### Changed — `CLAUDE.md` 執行守則新增第 7 條
+- **改檔案一律用 Edit/Write 工具**，禁止 `python3 - <<EOF` / `sed -i` / `cat >` 改動專案檔案
+- 巡檢近 19 份 transcript 發現此手法用了 **41 次**且全被 `Bash(python*)` 靜默放行：diff 不可見、繞過權限確認
+
 ## [2026-08-05] — feat(scripts)：教材程式碼健檢工具 + 每日 20 次配額 + session 開場提醒
 
 > 承 v41 `extern` 事件：**沒有任何機制會驗證教材裡的程式碼真的能編譯**，錯了兩個月沒人發現。

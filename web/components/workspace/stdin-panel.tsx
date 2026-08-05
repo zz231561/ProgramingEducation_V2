@@ -18,18 +18,27 @@ export function codeNeedsInput(code: string): boolean {
   return /\bcin\s*>>|\bgetline\s*\(|\bscanf\s*\(|\bcin\.get/.test(code);
 }
 
+/** 程式是否使用 main 的參數（章節 58）— 用於顯示執行參數欄位 */
+export function codeUsesArgs(code: string): boolean {
+  return /\bmain\s*\([^)]*\bargv\b/.test(code);
+}
+
 export function StdinPanel({
   /** 最近一次執行的程式需要輸入 → 預設展開並提示 */
   hintNeeded,
+  /** 程式用了 argv → 一併顯示執行參數欄位（章節 58） */
+  showArgs,
 }: {
   hintNeeded: boolean;
+  showArgs: boolean;
 }) {
-  const { getStdin, setStdin } = useWorkspace();
+  const { getStdin, setStdin, getArgs, setArgs } = useWorkspace();
   const [value, setValue] = useState(getStdin);
+  const [args, setArgsValue] = useState(getArgs);
   // null = 還沒手動開合過，交給 hint 決定
   const [manualOpen, setManualOpen] = useState<boolean | null>(null);
   const showHint = hintNeeded && value === "";
-  const open = manualOpen ?? showHint;
+  const open = manualOpen ?? (showHint || showArgs);
 
   const change = (next: string) => {
     setValue(next);
@@ -75,6 +84,26 @@ export function StdinPanel({
           <p className="mt-1 text-[10px] text-text-muted">
             程式是一次跑完的，不能邊跑邊打字——請先在這裡填好所有 `cin` 要讀的內容，再按 Run。
           </p>
+
+          {showArgs && (
+            <div className="mt-2">
+              <label className="text-[10px] text-text-muted" htmlFor="run-args">
+                執行參數（argv，以空白分隔；argv[0] 固定是程式名）
+              </label>
+              <input
+                id="run-args"
+                value={args}
+                onChange={(e) => {
+                  setArgsValue(e.target.value);
+                  setArgs(e.target.value);
+                }}
+                maxLength={500}
+                spellCheck={false}
+                placeholder="例如：hello world"
+                className="mt-1 h-7 w-full rounded-md border border-border-default bg-bg-inset px-2 font-mono text-xs text-text-primary placeholder:text-text-muted focus:border-accent-blue focus:outline-none"
+              />
+            </div>
+          )}
         </div>
       )}
     </div>

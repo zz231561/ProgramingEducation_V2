@@ -143,7 +143,7 @@ export function useChat(options: UseChatOptions = {}) {
    * 失敗靜默：學生仍可自己提問，不因此看到錯誤訊息。
    */
   const requestCompileErrorHelp = useCallback(
-    async (compileOutput: string) => {
+    async (compileOutput: string, statusDescription = "") => {
       setIsLoading(true);
       try {
         const res = await api<{
@@ -155,6 +155,7 @@ export function useChat(options: UseChatOptions = {}) {
           body: JSON.stringify({
             code: options.getCode?.() ?? "",
             compile_output: compileOutput,
+            status_description: statusDescription,
             session_id: sessionIdRef.current,
           }),
         });

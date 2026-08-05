@@ -1,5 +1,37 @@
 # 變更日誌
 
+## [2026-08-05] — feat(workspace)：62 章程式碼類別 × Judge0 能力矩陣實測，補齊 argv 與逾時說明
+
+> 承 stdin 事件：使用者要求盤點「62 章教材有哪幾類程式碼、是否還有同類問題」。
+
+### 分析方法
+- 掃 62 章標題 + **628 題題庫 + 62 份教材內容**的實際程式碼片段（非 transcript——Whisper 逐字稿不含程式碼字面）
+- **好消息**：教材與題庫**完全沒有** `system("pause")` / `conio.h` / `windows.h` 等 Dev-C++ Windows 專用寫法（grounded 生成產出的是可攜程式碼）
+- 15 支代表程式 + 3 支能力探測**實跑 Judge0**（共 18 次，配額 50/天）
+
+### 實測結果（15 類全數驗證）
+| 類別 | 結果 |
+|---|---|
+| 基本輸出（含中文 UTF-8）/ 數學函式 / 動態記憶體 / 類別+靜態成員 / extern 單檔 / 檔案 I/O / 深遞迴 10 萬層 | ✅ Accepted |
+| `cin >>` / `getline` / `cin>>` 後接 `getline` | ✅ 修好 stdin 後全通 |
+| 時間函式 `time`/`localtime`/`clock` | ✅ 可用（**時區為 UTC**，章節 45 若示範現在時間會與台灣差 8 小時） |
+| 亂數 `srand(time(NULL))` | ✅ 可用（每次不同，屬預期） |
+| 無窮迴圈（章節 33） | ⚠ Time Limit Exceeded，**原本無任何說明** → 本次補 |
+| **main 參數 argc/argv（章節 58）** | ❌ **argc 恆為 1**，學生無法傳參數 → 本次補 |
+| C++ 標準 | `__cplusplus=201402`（**預設 C++14**）、GCC 9.2.0。教材未用 C++17 語法（僅 `nullptr`×3 屬 C++11），**現階段不需調整**；實測 `compiler_options: -std=c++17` 可用，日後需要再開 |
+
+### Added — 執行參數（章節 58）
+- Judge0 的 `command_line_arguments` 實測可用 → `judge0.py` / `ExecuteRequest.args`（≤500 字）/ context `getArgs·setArgs` / `use-run-code` 一路接通
+- 前端：**偵測到 `main(..., argv)` 才顯示**「執行參數」欄位（`codeUsesArgs()`），不干擾其他章節
+
+### Added — 逾時也由 Coddy 主動說明（同樣零成本）
+- `compile_error.py` 加 `is_timeout()` + `_TIMEOUT_TEMPLATE`：固定文案指出兩大主因（迴圈沒有結束條件 / 用 `cin` 但沒給輸入），**並肯定「正在練習無窮迴圈這章的話，這個結果是正確的」**
+- 前端觸發條件擴到 `Time Limit Exceeded`，以狀態字串當去重簽章；session 標題改「執行問題引導」
+
+### Tests
+- `test_compile_error.py` +1（逾時走固定文案、斷言 LLM 未被呼叫）；後端全量 **796 passed**
+
+
 ## [2026-08-05] — feat(workspace)：補上標準輸入介面（`cin` 無處可輸入）+ 修 kickoff fail-open
 
 > 使用者寫了含 `std::cin >> userInput` 的程式，**畫面上沒有任何地方可以輸入**。

@@ -96,7 +96,7 @@ async def test_message_persists_into_session_history(client: AsyncClient):
     session_id = first["session_id"]
     detail = (await client.get(f"/chat/sessions/{session_id}", cookies=_CK)).json()
     assert [m["content"] for m in detail["messages"]] == ["引導內容"]
-    assert detail["session"]["title"] == "編譯錯誤引導"
+    assert detail["session"]["title"] == "執行問題引導"
 
 
 async def test_llm_failure_falls_back(client: AsyncClient):
@@ -112,3 +112,23 @@ async def test_llm_failure_falls_back(client: AsyncClient):
         )
     assert resp.status_code == 200
     assert "錯誤訊息的第一行" in resp.json()["assistant_message"]["content"]
+
+
+async def test_timeout_answers_without_llm(client: AsyncClient):
+    """逾時沒有編譯訊息可分析 → 固定文案直說，同樣不花 LLM。"""
+    with patch(
+        "services.compile_error._generate_guidance", new_callable=AsyncMock
+    ) as llm:
+        resp = await client.post(
+            "/chat/compile-error",
+            json={
+                "code": "while(1){}",
+                "compile_output": "",
+                "status_description": "Time Limit Exceeded",
+            },
+            cookies=_CK,
+        )
+    assert resp.status_code == 200
+    llm.assert_not_called()
+    content = resp.json()["assistant_message"]["content"]
+    assert "迴圈" in content and "輸入" in content

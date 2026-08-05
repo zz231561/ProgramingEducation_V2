@@ -48,7 +48,11 @@ export function useRunCode({
       const result = await api<ExecuteResponse>("/code/execute", {
         method: "POST",
         // Judge0 為批次執行：程式讀取的輸入必須在送出前一次給完
-        body: JSON.stringify({ code, stdin: workspace.getStdin() }),
+        body: JSON.stringify({
+          code,
+          stdin: workspace.getStdin(),
+          args: workspace.getArgs(),
+        }),
       });
 
       workspace.setExecutionResult({

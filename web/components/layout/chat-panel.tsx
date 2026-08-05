@@ -50,11 +50,14 @@ export function ChatPanel({ onCollapse }: ChatPanelProps) {
     return onExecutionComplete((result) => {
       injectExecutionResult(result);
       const output = result.compile_output;
-      if (!output) return;
-      const signature = errorSignature(output);
+      const status = result.status_description ?? "";
+      const timedOut = status.toLowerCase().includes("time limit");
+      if (!output && !timedOut) return;
+      // 逾時沒有編譯訊息，以狀態當簽章
+      const signature = output ? errorSignature(output) : status;
       if (explainedRef.current.has(signature)) return;
       explainedRef.current.add(signature);
-      void requestCompileErrorHelp(output);
+      void requestCompileErrorHelp(output, status);
     });
   }, [onExecutionComplete, injectExecutionResult, requestCompileErrorHelp]);
 

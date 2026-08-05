@@ -61,6 +61,15 @@ _PLATFORM_TEMPLATE = (
     "要顯示結果就用 `cout`。要不要試試看用 `cin` 改寫這段？"
 )
 
+_TIMEOUT_TEMPLATE = (
+    "程式跑太久被系統中止了（執行有時間上限）。\n\n"
+    "最常見的兩個原因：**迴圈沒有結束條件**（或條件永遠成立），"
+    "或是**用 `cin` 等輸入但沒有提供輸入**——這裡是一次跑完的批次執行，"
+    "程式不會停下來等你打字，要先在 Output 上方的「輸入」填好內容。\n\n"
+    "如果你正在練習「無窮迴圈」這章，這個結果其實是正確的：它證明迴圈真的停不下來。"
+    "想讓它結束的話，想想看要在什麼條件下 `break`？"
+)
+
 _FALLBACK_GUIDANCE = (
     "編譯沒有通過。先看錯誤訊息的第一行——它會告訴你是哪一行、哪個符號出問題。"
     "從那一行往前看一行，通常問題就在附近。看完跟我說你覺得是什麼原因，我們一起確認。"
@@ -76,6 +85,11 @@ def _get_client() -> AsyncOpenAI | None:
             return None
         _client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
     return _client
+
+
+def is_timeout(status_description: str) -> bool:
+    """Judge0 的逾時狀態（無編譯訊息可分析，屬於執行層問題）。"""
+    return "time limit" in (status_description or "").lower()
 
 
 def detect_unavailable_header(compile_output: str) -> str | None:
@@ -143,17 +157,26 @@ async def compile_error_help(
     session_id: uuid.UUID | None,
     code: str,
     compile_output: str,
+    status_description: str = "",
 ) -> tuple[ChatSession, ChatMessage, bool]:
-    """寫入一則 Coddy 主動說明；回傳 (session, message, 是否為平台限制)。"""
+    """寫入一則 Coddy 主動說明；回傳 (session, message, 是否為機械判定)。
+
+    機械判定（平台限制 / 執行逾時）走固定文案不呼叫 LLM；其餘走引導。
+    """
     header = detect_unavailable_header(compile_output)
     if header is not None:
         content = _PLATFORM_TEMPLATE.format(header=header)
+        mechanical = True
+    elif is_timeout(status_description):
+        content = _TIMEOUT_TEMPLATE
+        mechanical = True
     else:
         content = await _generate_guidance(code, compile_output)
+        mechanical = False
 
     session = await get_or_create_session(db, user_id, session_id)
     if session.title in (None, "", DEFAULT_SESSION_TITLE):
-        session.title = "編譯錯誤引導"
+        session.title = "執行問題引導"
     message = ChatMessage(
         session_id=session.id, role=MessageRole.ASSISTANT, content=content
     )
@@ -161,4 +184,4 @@ async def compile_error_help(
     await db.commit()
     await db.refresh(session)
     await db.refresh(message)
-    return session, message, header is not None
+    return session, message, mechanical

@@ -69,6 +69,7 @@ async def submit_and_poll(
     source_code: str,
     stdin: str = "",
     language_id: int = CPP_LANGUAGE_ID,
+    command_line_arguments: str = "",
 ) -> ExecutionResult:
     """提交程式碼至 Judge0 並 polling 直到執行完成。
 
@@ -89,6 +90,8 @@ async def submit_and_poll(
                     "source_code": base64.b64encode(source_code.encode()).decode(),
                     "language_id": language_id,
                     "stdin": base64.b64encode(stdin.encode()).decode() if stdin else "",
+                    # 章節 58「main 函式的參數」需要 argv；Judge0 以空白分隔傳入
+                    "command_line_arguments": command_line_arguments,
                 },
             )
         except httpx.HTTPError as e:

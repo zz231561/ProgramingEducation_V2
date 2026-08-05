@@ -104,14 +104,16 @@ class CompileErrorRequest(BaseModel):
     """編譯失敗時請 Coddy 主動說明。"""
 
     code: str = Field(default="", max_length=50_000)
-    compile_output: str = Field(..., min_length=1, max_length=10_000)
+    # 逾時的情況沒有編譯訊息，改由 status_description 判定
+    compile_output: str = Field(default="", max_length=10_000)
+    status_description: str = Field(default="", max_length=200)
     session_id: uuid.UUID | None = Field(default=None)
 
 
 class CompileErrorResponse(BaseModel):
     session_id: uuid.UUID
     session_title: str
-    # True = 平台限制（如引用 Qt），後端以固定文案直接說明、未呼叫 LLM
+    # True = 機械判定（平台限制 / 執行逾時），以固定文案直接說明、未呼叫 LLM
     is_platform_limit: bool
     assistant_message: MessageOut
 
@@ -128,7 +130,12 @@ async def chat_compile_error(
 ) -> CompileErrorResponse:
     """編譯失敗時 Coddy 主動發話：平台限制直說，學生自己的錯誤走引導。"""
     session, msg, is_platform = await compile_error_help(
-        db, user.id, body.session_id, body.code, body.compile_output
+        db,
+        user.id,
+        body.session_id,
+        body.code,
+        body.compile_output,
+        body.status_description,
     )
     return CompileErrorResponse(
         session_id=session.id,

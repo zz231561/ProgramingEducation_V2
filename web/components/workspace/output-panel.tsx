@@ -6,7 +6,7 @@ import { useWorkspace } from "./workspace-context";
 import type { RunRecord } from "./types";
 import { RunBlock, classifyStatus, STATUS_META } from "./run-block";
 import { RunHistoryMenu } from "./run-history-menu";
-import { StdinPanel, codeNeedsInput } from "./stdin-panel";
+import { StdinPanel, codeNeedsInput, codeUsesArgs } from "./stdin-panel";
 
 interface OutputPanelProps {
   /** 是否收合為單行 status bar */
@@ -25,7 +25,8 @@ export function OutputPanel({ collapsed = false, onToggleCollapse }: OutputPanel
   const { runs, clearRuns, requestChatInjection, getCode } = useWorkspace();
   const latestBlock = runs[0];
   // 程式會讀輸入 → StdinPanel 預設展開並提示（避免學生對著「卡住的」輸出困惑）
-  const needsInput = codeNeedsInput(getCode());
+  const code = getCode();
+  const needsInput = codeNeedsInput(code);
   // 預設只展開最新一則（仿 Warp）；這裡只記使用者手動翻過的例外，
   // 因此新結果進來時自動展開、舊的自動收合，不需要 effect 重設狀態。
   const [overrides, setOverrides] = useState<Record<number, boolean>>({});
@@ -94,7 +95,7 @@ export function OutputPanel({ collapsed = false, onToggleCollapse }: OutputPanel
         </button>
       </div>
 
-      <StdinPanel hintNeeded={needsInput} />
+      <StdinPanel hintNeeded={needsInput} showArgs={codeUsesArgs(code)} />
 
       {/* Block 列表 */}
       <div className="flex-1 overflow-auto p-2 space-y-2">

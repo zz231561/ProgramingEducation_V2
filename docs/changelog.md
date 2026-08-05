@@ -1,5 +1,24 @@
 # 變更日誌
 
+## [2026-08-05] — docs(runner)：7-R 自建互動執行引擎定案（R0），推翻 Batch Terminal 決策
+
+> 起因：使用者驗收 A12（stdin 預填）體驗極差——「貼上按 Run 直接跳結果、必須一次填完 input 不符邏輯」。追根究柢是 Judge0 批次判題天生做不到互動；加上 RapidAPI 50 次/天不敷課堂、自架 Judge0 需 GRUB 切 cgroup v1，整條 Judge0 路線一併重新評估後推翻。
+
+### Changed — 決策（roadmap「已確認決策」節，保留原文加註）
+- **推翻「Terminal：Batch 模式」**（原始決策）與「Judge0 上線後自架」（2026-07-12）兩條
+- 新路線：**自建互動 runner**——nsjail 沙箱（不自造輪子）+ **PTY**（stdout 行緩衝，`cout` 提示字即時出現；一併修掉 V1 pipe 緩衝缺陷）+ WebSocket；一律互動終端，`POST /run` 批次僅供題庫驗證/教材健檢/實作題判定
+- 拓撲：Browser `wss` → A 機 backend（需綁公開子網域；Next.js Route Handler 不支援 WS proxy）中繼 → B 機 runner；防火牆僅放行 A 機 + `X-Runner-Token` 縱深；B 機不持有 credential；`ExecutionResult` 欄位不變（EDF / analytics / run_help 零改動）
+- UI：終端機**嵌入 Output 面板**（拒絕 V1 的 modal——寫程式時看不到程式碼）；`@xterm/xterm`；**ANSI 16 色例外核准**（GitHub 官方 dark 色盤，僅限終端畫布，frontend.md R8 白名單）
+- 費用：B 機另租 +$3/月（總 $12），PokerNote 原機不動（避免 DB 搬遷風險與失去 Zeabur 託管）；不再需要 Judge0 付費訂閱（比原路線省 $7+/月）
+
+### Added
+- **B 機已租用並實測全綠**：`43.133.7.93`（2C2G/40G Tokyo；cgroup v2 齊全不需動 GRUB；`ubuntu@` 金鑰登入 + 免密碼 sudo；純裸 VM 無 k3s）；實測 OS 為 24.04（面板顯示 22.04，以實測為準）
+- 資源參數定案：並行編譯閘 2 / swap 2G / 編譯 CPU 10s·RAM 512M / 執行 RAM 256M·pids 64·輸出 8M / session idle 60s·硬上限 300s·同時 40；PCH 加速（本機實測編譯 0.25s→0.09s）
+- roadmap 新增 **7-R 節（R0✅~R6）**；server-plan.md 全文改寫為 Runner 專用機；architecture.md 新增執行引擎節；backend.md 加 `RUNNER_BACKEND/RUNNER_URL/RUNNER_TOKEN`；tech-debt 記「stdin 預填 UI 兩缺陷不修（R4 取代，含回退條款）」
+
+### Removed
+- tech-debt 過期條目「YT video metadata 未補」（6-1 早已完成且生產已同步）；「Judge0 自架 docker-compose 未驗證」標作廢
+
 ## [2026-08-05] — chore(security)：清除設定檔明文 DB 密碼 + 權限收斂 + 正式環境硬擋 hook
 
 > 起因：巡檢 Claude Code 權限設定時，發現 `.claude/settings.local.json` 有一條同時包含**正式環境 DB 明文密碼**與 `.venv/bin/python *` 萬用字元的 allow 規則——等於「連著正式資料庫的任意 Python 執行，永不詢問」。

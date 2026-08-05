@@ -255,7 +255,7 @@
 > ⚠ 上次卡關於 API 串接（前後端 proxy / NextAuth callback URL / CORS / Judge0 endpoint），重啟前先排查 `web/app/api/*` proxy 設定、`backend/app/core/config.py` 環境變數、Zeabur dashboard service 連線狀態。
 
 ### 7-1 Golden path 整合驗證
-- [ ] 7-1a 部署到 Zeabur（web + backend + pgvector + redis）+ Judge0 self-host VPS
+- [ ] 7-1a 部署到 Zeabur（web + backend + pgvector + redis）+ ~~Judge0 self-host VPS~~（2026-08-05 改 7-R 自建 runner，B 機部署列 R5）
   - [x] 7-1a-1 部署前置修復（2026-08-04）：`requirements.lock` 補 python-multipart（生產映像缺此套件會啟動即崩，docker build 實測 81 routes）+ `zeabur.json` 補 6-M 模型變數（原本會 fallback gpt-4o）
   - [x] 7-1a-2 Judge0 RapidAPI 鏈路實測（2026-08-04）：正常執行 / 編譯錯誤 / 503 三路徑通過；`_build_headers()` RapidAPI 分支驗證可用
   - [x] 7-1a-3 **生產資料播種 script**（2026-08-04 規劃缺口補齊）：`scripts/seed_production_content.py`——**關鍵發現＝`concepts` seed 用 `uuid4()` 隨機產生 id，生產庫 UUID 與本機不同**，`unit_content_staging.concept_id` 必須以 tag 為橋樑重映射；`data_codedge_rag` 由 LlamaIndex 執行期建表（不在 migration），需 pg_dump 連 schema 搬。本機建 `prod_test` 庫完整演練通過（62 教材 / 628 題 / 861 chunks / 64 documents，0 孤兒、tag 對應一致）
@@ -275,17 +275,27 @@
 ### 7-3 效能 baseline
 - [ ] 7-3a 首次互動時間（TTFB / LCP）量測
 - [ ] 7-3b LLM p95 延遲量測（EDF interact / Quiz generate / Comprehension grade）
-- [ ] 7-3c Judge0 成功率與佇列等待時間量測
+- [ ] 7-3c Runner 成功率與佇列等待時間量測（原 Judge0，2026-08-05 隨 7-R 改自建）
 - [ ] 7-3d 將上述指標記入 `docs/performance-baseline.md` 作為後續優化基準
+
+### 7-R 自建互動執行引擎（2026-08-05 定案，取代 Judge0 主路徑）
+> 完整決策記錄見「已確認決策」末條；B 機規格與參數見 `docs/server-plan.md`；拓撲見 `docs/architecture.md` 執行引擎節。
+- [x] R0 決策落地（2026-08-05）：推翻 Batch Terminal 決策 + server-plan / architecture / frontend / backend 規則同步 + tech-debt 記錄
+- [ ] R1 runner service（本機開發）：`runner/` Dockerfile（g++ + nsjail）+ `POST /run` + 資源上限（編譯 CPU 10s / RAM 512MB；執行 RAM 256MB / pids 64 / 輸出 8MB 截斷）+ 標準庫 PCH + 編譯雜湊快取 + 並行編譯閘 2（超出排隊並回報位置）+ 測試
+- [ ] R2 backend 抽換：`services/runner.py` 提供與 `submit_and_poll` 同介面（3 呼叫點：`api/routes/code.py` / `services/analytics/events.py` / `scripts/verify_code_snippets.py`）+ `RUNNER_BACKEND=self|judge0` fallback + 測試
+- [ ] R3 互動層：runner `WS /terminal`（PTY spawn，stdout 行緩衝）+ backend WS 中繼（JWT 於首訊息驗證，15s 未送即斷）+ idle 60s / 硬上限 300s / 同時 session 上限 40
+- [ ] R4 前端：Output 面板終端模式（`@xterm/xterm` + fit addon，非 modal）+ GitHub Dark ANSI 主題 + 排隊提示 + 結束後收合為 RunBlock + stdin textarea 降級「進階：預先餵入」（一併消滅 A12 兩缺陷：提示不即時 / Run 不攔截）
+- [ ] R5 B 機上線：swap 2G + docker + compose 部署 + 防火牆僅放行 A 機 + `X-Runner-Token` + SSH 禁密碼登入 + 健康檢查 + backend 綁 Zeabur 公開子網域（WS 直達）+ 環境變數切換
+- [ ] R6 收尾：教材健檢解除 20 支/天上限 + 額度文案清理（acceptance-checklist / CLAUDE.md）+ 30 並行壓測 + 文件同步
 
 ---
 
 ## 已確認決策
 
-- Terminal：Batch 模式，不需即時互動式 terminal
+- ~~Terminal：Batch 模式，不需即時互動式 terminal~~ → **2026-08-05 推翻**：批次模式無法提供本地編譯器體驗（`cin` 必須預先填完、按 Run 不等輸入），且 RapidAPI 50 次/天不敷課堂使用 → 改自建互動 runner（見 7-R 與末條決策）
 - 介面語言：繁體中文為主，暫不做多語系
 - UI：GitHub Dark + VS Code 風格，純 Dark Mode
-- Judge0：開發期 RapidAPI (免費 50 次/天) → 上線後自架
+- ~~Judge0：開發期 RapidAPI (免費 50 次/天) → 上線後自架~~ → **2026-08-05 改自建 runner**：自架 Judge0 需 GRUB 切 cgroup v1（淘汰中機制）+ privileged，且仍是批次判題；Judge0 降為 fallback（`RUNNER_BACKEND` 切換回 RapidAPI）
 - 部署：Zeabur (Tencent Tokyo VPS) | 使用者規模：初期 < 100 人
 - 即時通訊：Phase 1 用 REST + SSE (chat streaming)，未來視需求加 WebSocket
 - 介面借鑑：6 份來源僅貢獻結構模式，視覺基本元素統一為 GitHub Dark（design-plan.md §0.3 七條硬規則）
@@ -300,5 +310,6 @@
 - **題庫策略**（2026-07-06 確認）：不採 NotebookLM（無公開 API、輸出無法對齊題目 schema 與 citation）；成本控制走「批次 grounded 生成 + 題庫優先」；即時生成題目 validated=True 後永久入庫持續擴充題庫（現行機制確認保留）；QUIZ tab 弱項出題改題庫優先列 U2d
 - **LEARN 摘要移除**（2026-07-06 確認）：摘要 tab 直接移除（U2b）；依據＝提供現成摘要的被動學習效益低（Fiorella & Mayer 2015 生成式學習）+ 冗餘效應增加外在認知負荷
 - **反思計畫粒度**（2026-07-06 確認）：現行即為「每題一份」（Quiz 與 Learn 練習皆以 `sourceType="quiz"` + question id 建立），符合預期不需改；Workspace 顯示 gating 問題列 U1c
+- **自建互動執行引擎（2026-08-05 定案，7-R）**：nsjail 沙箱（Google 維護，不自造輪子）+ PTY（stdout 行緩衝，提示字即時出現——修掉 V1 pipe 緩衝缺陷）+ WebSocket；拓撲＝Browser `wss` → A 機 backend（綁公開子網域；Next.js Route Handler 不支援 WS proxy）中繼 → B 機 runner；**一律互動終端**（`POST /run` 批次僅供題庫驗證 / 教材健檢 / 實作題判定）；Judge0 降為 fallback（`RUNNER_BACKEND`）；`ExecutionResult` 欄位不變 → EDF / analytics / run_help 零改動；B 機另租不動 PokerNote（總 $12/月）；「僅放行 A 機」防火牆規則**保留並加 `X-Runner-Token` 縱深**（B 機不持有任何 credential）；已知兩缺陷（stdin 提示不即時 / Run 不攔截）不修、由 R4 取代；UI＝終端機嵌入 Output 面板（非 V1 modal）+ ANSI 16 色例外（僅終端畫布，frontend.md 白名單）
 - **LLM 模型選型 v2**（2026-07-06 確認）：放棄單一 GPT-4o，改任務導向路由（詳見 6-M 節選型表）；cascade 設計 = `gpt-5-mini` 生成 + `gpt-5.4` 審查；Unit content 批次用 `gpt-5.4`（教科書品質優先）；對話/分析組 `gpt-5.4-mini` 起步、K4d 實測後定案；文獻依據 FrugalGPT / RouteLLM（references.md §5.1）；論文記錄實驗當下確切模型版本
 - **實作執行順序**（2026-07-06 session 定案，共 10 批）：① U1a/b/c bug 修正 → ② U2b 移除摘要 + U2c 拔 1-3 範例 → ③ knowledge-graph.tsx 拆分（已核可）+ K6a/b/c → ④ U2d 題庫優先 + U2a QUIZ 美化 + 練習題重複曝光 → ⑤ 6-M1 模型分組 + 6-3a-3/6-4a 實機批次 + deferred-ui + K4d 調參（需 OpenAI 儲值 $10；key 已在 backend/.env） → ⑥ ~~U2f 範例程式~~ **改 U2g tab 重構+移除範例** → ⑥' 6-3c 知識點驅動題庫 → ⑦ 教師端 5-1 → 5-2 → DEV-E → 5-5 → ⑧ U2e Workspace 存檔 + 7-2a/b/c 監控程式碼 → ⑨ Phase 7 部署實測 → ⑩ 5-3/5-4 行為分析（待真實資料）；真人驗收（K1d/K5d/K4d 語氣）改使用者 session 後自測（2026-07-06 晚間修訂：U2f 作廢、新增 U2g/6-3c、簡答題型不做）

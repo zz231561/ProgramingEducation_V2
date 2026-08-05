@@ -13,8 +13,8 @@
 │  └────────────────┘      │  │Pipe │ │Serv. │ │ MW │ │ │
 │                           │  └──┬──┘ └──┬───┘ └────┘ │ │
 │  ┌──────────┐             │     │       │             │ │
-│  │  Judge0   │◀───────────│─────┘       │             │ │
-│  │  (自架)   │            │             ▼             │ │
+│  │  Runner   │◀───────────│─────┘       │             │ │
+│  │  (B 機)   │            │             ▼             │ │
 │  └──────────┘             │  ┌──────────────────────┐ │ │
 │                           │  │    PostgreSQL         │ │ │
 │  ┌──────────┐             │  │  + pgvector (RAG)    │ │ │
@@ -44,6 +44,21 @@ Browser → Next.js API Routes (/app/api/**) → FastAPI (backend)
 - 部署時前端 + API Routes 同一 service，後端可設為 internal 不暴露
 
 **Chat streaming：** Next.js API Route 用 SSE 轉發 FastAPI 的 streaming response
+
+## 程式執行引擎（2026-08-05 改自建 Runner，取代 Judge0 主路徑）
+
+```
+Browser ─wss→ A 機 backend（公開子網域）─中繼→ B 機 runner
+                                            ├─ POST /run（批次：題庫驗證 / 教材健檢 / 實作題判定）
+                                            └─ WS /terminal（互動：PTY + nsjail 沙箱）
+```
+
+- 沙箱：**nsjail**（namespace + cgroup v2 + seccomp，不自造輪子）；**PTY** 使 stdout 行緩衝——`cout` 提示字即時出現，才是本地編譯器體驗（V1 pipe 版的緩衝缺陷已知並修正）
+- 前端 WS **不能走 Next.js proxy**（Route Handler 不支援 WebSocket）→ 直連 backend 公開子網域；JWT 於 WS **首訊息**驗證（不放 URL 避免進日誌；15s 未送即斷）
+- B 機防火牆僅放行 A 機 + `X-Runner-Token` 縱深；B 機不持有任何 credential
+- `ExecutionResult` 欄位不變 → EDF / analytics / run_help 呼叫端零改動
+- fallback：`RUNNER_BACKEND=judge0` 降級回 RapidAPI 批次（B 機故障時）
+- 規格與參數：`docs/server-plan.md`；任務拆解：roadmap 7-R
 
 **標準錯誤回應格式（前後端共用）：**
 ```json
@@ -94,7 +109,7 @@ ProgramingEducation_V2/
 │   ├── services/
 │   │   ├── edf/                  # EDF 教學管線 (evidence, decision, feedback, prompt)
 │   │   ├── analytics/            # 學習行為分析 (event logging, aggregation, clustering)
-│   │   ├── code_executor.py      # Judge0 API client
+│   │   ├── runner.py / judge0.py # 執行引擎 client（自建 runner 主路徑 + Judge0 fallback）
 │   │   ├── rag.py                # RAG 檢索
 │   │   ├── quiz_generator.py     # 智慧出題
 │   │   ├── learning_path.py      # 學習路徑
@@ -103,7 +118,8 @@ ProgramingEducation_V2/
 │   ├── core/                     # config, database, redis
 │   └── alembic/                  # DB Migration
 │
-├── judge0/                       # Judge0 部署配置
+├── runner/                       # 自建執行引擎（B 機部署；R1 建立）
+├── judge0/                       # Judge0 部署配置（fallback，僅供追溯）
 ├── docs/                         # 計畫文件
 └── .claude/rules/                # Claude Code 自動注入規則
 ```

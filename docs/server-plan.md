@@ -1,87 +1,84 @@
 # 伺服器需求規劃（Phase 7 部署）
 
-> 2026-07-12 定案：**兩台伺服器拓撲**。背景：Judge0 RapidAPI 託管成本高（免費 50 次/天不敷課堂使用、
-> 付費 $10+/月訂閱制），改為自架 Judge0；但 Judge0 worker 需要 `privileged: true` + cgroup v1，
-> 不能與主服務混跑於 Zeabur 託管流程，故獨立一台。程式碼零改動（`services/judge0.py` 已支援無 key 自架模式）。
+> 2026-07-12 定案兩台拓撲（B 機自架 Judge0）→ **2026-08-05 修訂：B 機改跑自建互動 runner**
+> （nsjail 沙箱 + PTY + WebSocket），Judge0 降為 fallback（RapidAPI，`RUNNER_BACKEND` 切換）。
+> 修訂理由：① 批次判題無法提供互動 `cin`（使用者定案需求：本地編譯器體驗）② 自架 Judge0
+> 需 GRUB 切 cgroup v1 + privileged——把 B 機釘死在淘汰中機制 ③ RapidAPI 50 次/天不敷課堂。
+> 舊自架 Judge0 SOP 保留於 `docs/deployment.md` §C 供追溯，不再是正式方案。
 
 ## 拓撲總覽
 
 ```
-┌─ 伺服器 A（主機，Zeabur 託管）────────────┐   ┌─ 伺服器 B（Judge0 專用）──────────┐
-│ PokerNote_V2（既有專案）                  │   │ Judge0 CE 1.13.1（docker-compose）│
-│ ProgramingEducation：                     │   │  ├─ server + workers ×2          │
-│  web (Next.js) / backend (FastAPI)        │──▶│  └─ 自帶 postgres + redis        │
-│  PostgreSQL(pgvector) / Redis             │   │ 防火牆：2358 僅允許伺服器 A IP    │
-└───────────────────────────────────────────┘   └───────────────────────────────────┘
-         backend 以 JUDGE0_API_URL + authn token 呼叫 B
+┌─ 伺服器 A（主機，Zeabur 託管）────────────┐   ┌─ 伺服器 B（Runner 專用）───────────┐
+│ ProgramingEducation：                     │   │ codedge-runner（docker compose）   │
+│  web (Next.js) / backend (FastAPI)        │──▶│  FastAPI + g++ + nsjail 沙箱       │
+│  PostgreSQL(pgvector) / Redis             │   │  POST /run（批次）+ WS /terminal   │
+│  backend 另綁公開子網域（WS 入口）        │   │ 防火牆：runner port 僅放行 A 機 IP │
+└───────────────────────────────────────────┘   └────────────────────────────────────┘
+     Browser ─wss→ A 機 backend ─中繼→ B 機（A→B 帶 X-Runner-Token 共享密鑰）
 ```
 
-## 伺服器 A — 主機
+- 前端 WS **不經 Next.js proxy**（Route Handler 不支援 WebSocket）→ backend 需綁 Zeabur 公開子網域，JWT 於 WS 首訊息驗證
+- **PokerNote_V2 留在原機不動**（2026-08-05 決策：搬遷有資料庫 dump/restore 風險，且原機取 VPS 密碼會失去 Zeabur 託管支援；B 機另租，總月費 $6+$3+$3=$12）
+
+## 伺服器 A — 主機（不變）
 
 | 項目 | 內容 |
 |------|------|
-| 用途 | PokerNote_V2 + 本專案 4 個 service（web / backend / postgres / redis） |
-| 建議規格 | **4 vCPU / 8 GB RAM**（最低 2C4G，前提：PokerNote_V2 負載持續輕量） |
-| 區域 | Tokyo（維持與使用者低延遲） |
-| 託管 | **Zeabur dedicated server**，全部 service 走 Zeabur dashboard 部署（`zeabur.json` 現成） |
-| 部署 SOP | `docs/deployment.md` §A |
+| 用途 | 本專案 4 個 service（web / backend / postgres / redis） |
+| 規格 | 2C8G ZeaburOS（實用約 2.5 GB，餘裕充足；編譯負載全在 B 機） |
+| 託管 | Zeabur dashboard 部署，維持完整託管支援（**禁止取 VPS 密碼轉自管**） |
 
-### RAM 預算（穩態）
-
-| 元件 | 估算 |
-|------|------|
-| Zeabur agent（k3s）開銷 | 0.7–1 GB |
-| PokerNote_V2 | 0.5–1 GB |
-| web + backend + PostgreSQL + Redis | 1.3–1.5 GB |
-| 餘裕（LLM 請求尖峰 / OS cache） | 其餘 |
-
-## 伺服器 B — Judge0 專用機
+## 伺服器 B — Runner 專用機（2026-08-05 已租用並實測）
 
 | 項目 | 內容 |
 |------|------|
-| 用途 | 僅跑自架 Judge0 CE（執行任意學生 C++ 程式碼，**與主資料物理隔離**） |
-| 建議規格 | **2 vCPU / 2 GB RAM**，Ubuntu 22.04（cgroup v1 開機參數相容性最佳） |
-| 區域 | Tokyo（與 A 同區降低 polling 延遲） |
-| 租用 | 可透過 Zeabur 租用計費；**部署不走 Zeabur dashboard**（見下） |
-| 部署 SOP | `docs/deployment.md` §C（`judge0.conf.example` 現成） |
+| 用途 | 僅跑自建 runner（執行任意學生 C++，與主資料物理隔離；**壞了即重灌**，不放任何 credential / 資料） |
+| 實機 | `43.133.7.93` — 2 vCPU / 2 GB RAM（實測可用 ~1.5 GB）/ 40 GB disk（餘 33 GB），Tokyo |
+| OS | 實測 Ubuntu 24.04（kernel 6.8 / OpenSSH 9.6p1 / apt 標 24.04.2；Zeabur 面板顯示 22.04，以實測為準） |
+| cgroup | **v2 unified**（cpu / memory / pids / cpuset / io 齊全）→ **不需動 GRUB** |
+| 登入 | `ubuntu@` SSH 金鑰（id_ed25519）+ 免密碼 sudo；密碼登入 R5 收斂禁用；authorized_keys 有重複金鑰一筆，R5 一併清 |
+| 乾淨度 | 實測無 k3s / containerd / Zeabur agent（僅騰訊 tat_agent）＝純裸 VM，資源全歸 runner |
+| 注意 | `apparmor_restrict_unprivileged_userns=1`：runner 容器以 root + `CAP_SYS_ADMIN` 跑 nsjail（不走非特權 userns）；若仍受阻 `sysctl -w kernel.apparmor_restrict_unprivileged_userns=0` |
+| 支援 | 已取 VPS 密碼＝Zeabur 僅提供重灌服務——符合「自管、壞了即重灌」定位 |
 
-### ⚠ 為什麼 B 不能走 Zeabur dashboard 部署
+### Runner 資源參數（2026-08-05 定案）
 
-1. Judge0 worker 需要 `privileged: true`，Zeabur 的 k8s 託管流程不允許 privileged pod。
-2. Judge0 1.13.1 需要主機 GRUB 加 `systemd.unified_cgroup_hierarchy=0`（切回 cgroup v1）並重開機——全機設定，不能只影響單一容器。
+| 參數 | 值 | 依據 |
+|------|-----|------|
+| 並行編譯閘 | **2** | 可用 RAM 1.5 GB 的安全值；超出排隊並向前端回報「排隊中 n/m」 |
+| swap | 2 GB | 吸收編譯尖峰（R5 建立） |
+| 編譯上限 | CPU 10s / RAM 512MB | |
+| 執行上限 | RAM 256MB / pids 64 / 輸出 8MB 截斷 | |
+| 互動 session | idle 60s / 硬上限 300s / 同時上限 40 | 等待輸入時 CPU≈0、RAM 5–15MB/session |
+| 加速 | 標準庫 PCH（本機實測 0.25s→0.09s）+ 編譯結果雜湊快取 | 教學程式 include 高度同質 |
 
-→ 操作方式：SSH 上主機 → 改 GRUB 重開機 → `docker compose up -d`（Zeabur 文件允許
-dedicated server「停用 Zeabur 服務自由使用」）。**租用前必須確認該方案提供 SSH root 權限。**
+### 安全硬性要求
 
-### 安全硬性要求（跑任意學生程式碼）
-
-- [ ] `judge0.conf` 啟用 **authn token**，backend 請求帶 token
-- [ ] 防火牆（騰訊安全群組）：2358 port 僅放行伺服器 A 的 IP，禁止公網存取
-- [ ] SSH 改用金鑰登入、禁密碼
-- [ ] 這台機器上**不放任何其他服務與資料**（定位：壞了即重灌）
+- [ ] 防火牆（騰訊安全群組）：runner port 僅放行伺服器 A IP，禁止公網存取
+- [ ] A→B 請求一律帶 `X-Runner-Token` 共享密鑰（防火牆之外第二道縱深）
+- [ ] SSH 金鑰登入、禁密碼（R5 執行；金鑰已裝妥）
+- [ ] B 機不放任何 credential / 資料（JWT 驗證在 A 機 backend 完成後才中繼）
+- [ ] nsjail：`--network none`、唯讀 rootfs、cap-drop ALL、非特權 uid 執行學生程式
 
 ## 容量假設與依據
 
-- 課堂尖峰：30–60 名學生同時上課，突發 5–10 個並行執行請求。
-- Judge0 2 workers + 佇列可消化（單次編譯+執行約 1–3 秒；backend polling 上限 12 秒）。
-- 每個並行 g++ 編譯瞬時吃 0.2–0.5 GB RAM → B 機 2 GB 對 2 workers 足夠。
-- 若日後規模擴大（多班並行）：B 機升 4C4G 並調高 worker 數即可，A 機不受影響。
+- 課堂尖峰：30–60 名學生；最壞情境＝全班同步按 Run
+- 2 併發編譯 × ~0.3s/支（PCH 後，雲端 x86 估值）→ 30 人序列化最後一人約 6 秒（前端顯示排隊位置）
+- RAM 峰值：30 互動 session ≈ 0.45 GB + 2 併發編譯 ≈ 0.6 GB → 合計 ~1.2 GB < 1.5 GB 可用（swap 兜底）
+- 規模擴大：升 4C4G 並調高編譯閘即可，A 機不受影響
 
-## 環境變數變更（相對 RapidAPI 方案）
+## 環境變數（backend，詳見 `.claude/rules/backend.md`）
 
-| 變數 | RapidAPI（舊） | 自架（新） |
-|------|---------------|-----------|
-| `JUDGE0_API_URL` | `https://judge0-ce.p.rapidapi.com` | `http://<伺服器B IP>:2358` |
-| `JUDGE0_API_KEY` | RapidAPI key | Judge0 authn token（自動送 `X-Auth-Token`） |
+| 變數 | 值 |
+|------|-----|
+| `RUNNER_BACKEND` | `self`（預設）/ `judge0`（B 機故障時降級 RapidAPI 批次） |
+| `RUNNER_URL` | `http://43.133.7.93:<port>` |
+| `RUNNER_TOKEN` | 共享密鑰（Zeabur Secret） |
 
-> ✅ 2026-07-18 已支援：`services/judge0.py` `_build_headers()` 依 URL 自動判斷——含 rapidapi
-> 網域送 `X-RapidAPI-Key`，否則送 `X-Auth-Token`；自動判斷失準時可用 `JUDGE0_AUTH_MODE`
-> （`rapidapi` / `self-hosted`）顯式覆蓋。切換自架**不需改程式碼**。
+## 待辦
 
-## 待辦（租用後）
-
-- [ ] 確認 Zeabur 租用方案含 SSH root 權限（B 機前提）
-- [ ] A 機：Zeabur 部署 PokerNote_V2 + 本專案（deployment.md §A）
-- [ ] B 機：GRUB cgroup v1 + docker-compose Judge0 + authn + 防火牆（deployment.md §C）
-- [x] backend `_build_headers()` 加自架 authn header 分支 + 測試（2026-07-18 完成）
-- [ ] 課堂規模壓測：模擬 30 並行提交，確認 polling 不逾時
+- [x] B 機租用 + SSH 金鑰 + 硬體實測全綠（2026-08-05）
+- [ ] R5：swap + docker + runner 部署 + 防火牆 + 禁密碼 + 健康檢查（見 roadmap 7-R）
+- [ ] backend 綁 Zeabur 公開子網域（WS 直達；使用者已確認可綁）
+- [ ] 課堂規模壓測：30 並行提交（R6）

@@ -37,6 +37,7 @@ Tailwind utility: `bg-surface-1`、`shadow-card`、`shadow-modal`、`border-ai`�
 | Tab inactive | text: #8B949E, hover-text: #E6EDF3 |
 | Code Block | bg: #010409, border: #30363D, font: JetBrains Mono 14px |
 | Toast | bg: #161B22, border-left: 3px accent color, radius: 6px |
+| Terminal (xterm) | **嵌入 Output 面板（非 modal）**；bg: #010409 (--bg-inset), border: 1px #30363D, radius: 6px, font: JetBrains Mono 14px, cursor: #58A6FF；結束後收合為 RunBlock；ANSI 色盤見 R8 白名單例外 |
 
 ## 響應式斷點
 
@@ -102,3 +103,4 @@ Active tab: `border-bottom: 2px solid #F78166`
 - `lucide-react` icon（線條圖示，非 emoji）
 - 邊框實線色 `border-accent-X`（功能性，無填充）
 - ~~Knowledge Graph 星系背景~~（2026-07-05 核准，同日使用者要求移除星雲圖層而撤銷；`/knowledge` 現僅剩灰階星空點與軌道虛線，屬既有灰階白名單）
+- **終端機畫布內 ANSI 16 色**（2026-08-05 使用者核准，7-R）：xterm 主題採 **GitHub 官方 dark ANSI 色盤**（與既有 token 同源；補足 cyan 與 bright 變體）——**僅限 Output 面板終端機畫布內**，供學生程式自行輸出的 ANSI 色碼渲染；UI 其他任何處仍禁用

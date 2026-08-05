@@ -13,8 +13,8 @@ globs: backend/**
 | Token 過期（exp） | 401 | `TOKEN_EXPIRED`，前端統一重導登入頁 |
 | 權限不足 | 403 | 提示訊息 |
 | 輸入驗證失敗 | 422 | `VALIDATION_ERROR` 標準格式（欄位錯誤在 detail.errors） |
-| Judge0 逾時 | 504 | 「編譯/執行逾時」+ 建議縮短程式 |
-| Judge0 不可用 / 網路層例外 | 503 | httpx 連線失敗與 5xx 一律轉 503，禁止冒泡成 500 |
+| Runner / Judge0 逾時 | 504 | 「編譯/執行逾時」+ 建議縮短程式 |
+| Runner / Judge0 不可用 / 網路層例外 | 503 | httpx 連線失敗與 5xx 一律轉 503，禁止冒泡成 500 |
 | OpenAI 失敗 | 502 | 「AI 服務暫時不可用」+ 快取最近回應 |
 | LLM 回傳不符 schema | 502 | `LLM_PARSE_ERROR`（JSON mode 不保證 schema，ValidationError 必須捕捉） |
 | Rate limit | 429 | 回傳剩餘冷卻時間（`core/rate_limit.py`，Redis 掛掉 fail-open） |
@@ -54,7 +54,12 @@ GOOGLE_CLIENT_SECRET=xxx
 NEXTAUTH_SECRET=xxx
 NEXTAUTH_URL=https://your-domain.com
 
-# Judge0
+# 執行引擎（7-R 自建 runner 主路徑，2026-08-05）
+RUNNER_BACKEND=self             # self（預設）/ judge0（B 機故障時降級 RapidAPI 批次）
+RUNNER_URL=http://43.133.7.93:8080  # B 機 runner endpoint（port 以 R1 實作為準）
+RUNNER_TOKEN=xxx                # A→B 共享密鑰（X-Runner-Token；Zeabur Secret）
+
+# Judge0（fallback）
 JUDGE0_API_URL=https://judge0-ce.p.rapidapi.com
 JUDGE0_API_KEY=xxx  # RapidAPI key 或自架 authn token；自架未開 authn 不需要
 JUDGE0_AUTH_MODE=   # 可選：rapidapi / self-hosted；空 = 依 URL 自動判斷

@@ -23,10 +23,14 @@
   - 4-1b 將 `zeabur.json` 的 postgres 從 marketplace `postgresql`（不含 pgvector）改為 `template: PREBUILT` + `source: {type: "IMAGE", image: "pgvector/pgvector:pg16"}`
   - 此 schema 細節依 Zeabur template.json 規範撰寫，但**未經實際部署驗證**
   - **如何處理**：4-2 實際 Zeabur 部署時若 schema 被拒，依 deployment.md §A 的 fallback 改用 marketplace pgvector 或 GIT + 一行 Dockerfile
-- [ ] **Judge0 自架 docker-compose 未在生產驗證**
-  - 4-1c 新增 `docker-compose.judge0.yml` + `judge0.conf.example`，僅在規格層面撰寫
-  - **限制**：Zeabur 等雲平台禁用 `privileged: true` → 自架 Judge0 只能在自己的 VPS 跑
-  - **如何處理**：self-host VPS 部署時實測 stack 啟動 → workers 成功 register languages → backend 能透過 `/about` 與 `/submissions` 對話；若 worker fail 多半是 cgroups / privileged 問題
+- [x] ~~Judge0 自架 docker-compose 未在生產驗證~~ — **2026-08-05 作廢**：正式方案改 7-R 自建 runner（roadmap 7-R / server-plan.md），Judge0 降為 RapidAPI fallback、不再自架；`docker-compose.judge0.yml` 保留僅供追溯
+
+### 7-R 過渡期已知缺陷（刻意不修，由 R4 取代）
+- [ ] **Workspace stdin 預填 UI 兩缺陷**（2026-08-05 A12 驗收發現）
+  - ① `output-panel.tsx` 的 `getCode()` 在 render body 讀值、無編輯器變化訂閱 → 「程式在等待輸入」提示要跑過一次才出現
+  - ② `use-run-code.ts` `run()` 不檢查「程式讀輸入但 stdin 為空」→ 按 Run 直接送出
+  - **不修理由**：7-R R4 互動終端上線後整組 stdin 預填 UI 降級為「進階：預先餵入」，兩缺陷隨之消滅
+  - **回退條款**：若 7-R 中止，必須回頭修這兩處
 
 ### 內容層（教學課綱）
 - [x] ~~🔴 **章節 41 教材把 `extern` 寫成 `external`**~~ — 2026-08-05 全數修畢（corrections + RAG 重建 + 內容題目重生 + promote + **生產同步完成**，四張表殘留皆 0）
@@ -35,11 +39,6 @@
   - **影響**：學生照打 `external int x;` 編譯必失敗；本機與**生產庫皆有**（RAG 2 chunks / staging 1 / learning_units 1 / questions 2）
   - **極可能是 v41 題庫掛零主因**（生成端依錯誤教材出題 → 審查端打回）
   - **修法鏈**：`corrections.json` 加 `"external": "extern"` → `apply_corrections --only 41` → RAG 重 ingest v41 → 重生 v41 content + questions → promote → 生產重播種
-- 🔄 **YT video metadata 未補**（已從 59 → 62 個影片 concept；2026-05-07 教授交付 playlist URL，fetcher script 已產 59 列 CSV，待擴充至 62 列）→ **正式追蹤於 roadmap Phase 6-1**
-  - **影響**：3-1d 學習單元頁的概念說明 tab 無法 embed YT player；只能顯示影片標題與「待補」placeholder
-  - **進度**：6-1a/b 已完成；6-1b+/c/d/e/f 進行中
-  - **如何處理**：fetcher 已寫好（`backend/scripts/fetch_playlist_metadata.py`）；接下來擴充 EXPECTED 1-62、加 video 1-3 migration、PATCH script 寫入 DB、字幕 RAG ingest
-  - **格式**：CSV，欄位 `video_order, youtube_id, duration_seconds, title_zh`，已產出於 `data/teaching_content/videos.csv`
 - [ ] **題庫 coding 題 validate 通過率偏低**（2026-07-06 實機批次觀察；2026-08-05 修訂）
   - **v17/v41 掛零已解除**：v17 實查有 8 題（6-3c 批次已補，原記錄過期）；v41 因 `external` 錯字重生後有 5 題
   - **現況**：批次仍有部分題目 `VALIDATION_RETRY_EXHAUSTED`（v41 重生時 8 題中 3 題 MC 失敗）

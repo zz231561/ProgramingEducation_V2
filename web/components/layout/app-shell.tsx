@@ -14,6 +14,7 @@ import { MobileNav } from "./mobile-nav";
 import { TabletHeader } from "./tablet-header";
 import { useBreakpoint } from "@/hooks/use-breakpoint";
 import { WorkspaceProvider } from "@/components/workspace/workspace-context";
+import { ChatRuntimeProvider } from "@/components/chat/chat-runtime";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const [chatOpen, setChatOpen] = useState(true);
@@ -34,15 +35,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <WorkspaceProvider chatOpen={chatOpen} toggleChat={toggleChat}>
-      <TooltipProvider delay={400}>
-        <ShellLayout
-          breakpoint={breakpoint}
-          chatOpen={chatOpen}
-          toggleChat={toggleChat}
-        >
-          {children}
-        </ShellLayout>
-      </TooltipProvider>
+      {/* Chat 狀態必須在 ShellLayout 之外：ChatPanel 收合會 unmount（A1） */}
+      <ChatRuntimeProvider>
+        <TooltipProvider delay={400}>
+          <ShellLayout
+            breakpoint={breakpoint}
+            chatOpen={chatOpen}
+            toggleChat={toggleChat}
+          >
+            {children}
+          </ShellLayout>
+        </TooltipProvider>
+      </ChatRuntimeProvider>
     </WorkspaceProvider>
   );
 }
@@ -68,7 +72,15 @@ function ShellLayout({ breakpoint, chatOpen, toggleChat, children }: ShellLayout
     return (
       <div className="flex h-full flex-col">
         <TabletHeader onToggleChat={toggleChat} />
-        <main className="flex-1 overflow-auto bg-bg-canvas">{children}</main>
+        <div className="relative flex flex-1 flex-col overflow-hidden">
+          <main className="flex-1 overflow-auto bg-bg-canvas">{children}</main>
+          {/* frontend.md：平板為 bottom sheet（A2 前補了按鈕卻沒有面板） */}
+          {chatOpen && (
+            <div className="absolute inset-x-0 bottom-0 z-30 h-[60%] border-t border-border-default shadow-modal">
+              <ChatPanel onCollapse={toggleChat} />
+            </div>
+          )}
+        </div>
         <StatusBar />
       </div>
     );

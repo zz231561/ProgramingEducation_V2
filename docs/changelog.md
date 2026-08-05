@@ -1,5 +1,24 @@
 # 變更日誌
 
+## [2026-08-05] — fix(chat)：收合聊天不再遺失對話 + 平板補 chat + 執行語言鎖死（A1/A2/A3）
+
+> 上一則問題總結中查證出的三個缺陷，全部修掉。
+
+### Fixed A1 — 收合 Coddy 再展開，對話整個消失（🔴 與「輸出被清空」同源）
+- **根因**：`app-shell.tsx` 的 `{chatOpen && <ChatPanel/>}` 是條件掛載 → 收合即 unmount，而訊息列表、session id、執行結果訂閱**全都住在 ChatPanel 裡**。資料其實在 DB，但畫面空白，學生得自己從歷史選單撈回來
+- **修法**（與 Output 執行歷史同一套）：新增 `components/chat/chat-runtime.tsx`，把 `useChat` / `useSessions` 與三個 workspace 訂閱提到 `ChatRuntimeProvider`（掛在 `WorkspaceProvider` 內、`ShellLayout` 外＝永遠掛載）；`ChatPanel` 降為純呈現層（145 → 95 行）
+- **一併修好的副作用**：① 聊天收合時執行程式，結果卡片不再被丟掉（原本 `onExecutionComplete` 沒有 queue，直接消失）② 編譯錯誤去重簽章不再隨面板開合重置（不會重複花每日配額）
+
+### Fixed A2 — 平板尺寸的聊天按鈕是死的
+- `TabletHeader` 有按鈕呼叫 `onToggleChat`，但 tablet 版面從未渲染 `ChatPanel`。依 frontend.md 規格補上 **bottom sheet**（`inset-x-0 bottom-0 h-[60%]` + `shadow-modal`）
+
+### Fixed A3 — 執行語言可被前端指定
+- `ExecuteRequest.language_id` 有預設值但可被覆寫，打 API 可跑 Python/Java。非安全漏洞（Judge0 沙箱隔離），但本平台只教 C++ → **移除該欄位，路由固定 `CPP_LANGUAGE_ID`**
+
+### Tests
+- `test_code_execute.py` +2：送 `language_id=71` 仍以 54 執行 / `args` 確實轉為 `command_line_arguments`；後端全量 **798 passed**，web build + tsc + eslint 綠
+
+
 ## [2026-08-05] — feat(workspace)：62 章程式碼類別 × Judge0 能力矩陣實測，補齊 argv 與逾時說明
 
 > 承 stdin 事件：使用者要求盤點「62 章教材有哪幾類程式碼、是否還有同類問題」。

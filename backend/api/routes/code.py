@@ -16,7 +16,6 @@ class ExecuteRequest(BaseModel):
     """程式碼執行請求。"""
 
     code: str = Field(..., min_length=1, max_length=50_000)
-    language_id: int = Field(default=CPP_LANGUAGE_ID)
     stdin: str = Field(default="", max_length=10_000)
     # 章節 58「main 函式的參數」：以空白分隔的 argv（不含程式名）
     args: str = Field(default="", max_length=500)
@@ -36,7 +35,8 @@ async def execute_code(
     result = await submit_and_poll(
         source_code=body.code,
         stdin=body.stdin,
-        language_id=body.language_id,
+        # 語言固定 C++：本平台只教 C++，不讓前端指定 language_id
+        language_id=CPP_LANGUAGE_ID,
         command_line_arguments=body.args,
     )
     # 行為事件記錄（best-effort，不擋回應）

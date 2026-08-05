@@ -38,3 +38,32 @@ async def test_stdin_defaults_to_empty(client: AsyncClient):
             "/code/execute", json={"code": "int main(){}"}, cookies=_CK
         )
     assert submit.await_args.kwargs["stdin"] == ""
+
+
+async def test_language_cannot_be_overridden(client: AsyncClient):
+    """本平台只教 C++：前端就算送 language_id 也不採用（A3）。"""
+    fake = ExecutionResult(status_description="Accepted", exit_code=0)
+    with patch(
+        "api.routes.code.submit_and_poll", new=AsyncMock(return_value=fake)
+    ) as submit:
+        resp = await client.post(
+            "/code/execute",
+            json={"code": "print(1)", "language_id": 71},  # 71 = Python
+            cookies=_CK,
+        )
+    assert resp.status_code == 200
+    assert submit.await_args.kwargs["language_id"] == 54  # C++ (GCC 9.2.0)
+
+
+async def test_command_line_arguments_forwarded(client: AsyncClient):
+    """章節 58 main 參數：args 要傳到 Judge0 的 command_line_arguments。"""
+    fake = ExecutionResult(status_description="Accepted", exit_code=0)
+    with patch(
+        "api.routes.code.submit_and_poll", new=AsyncMock(return_value=fake)
+    ) as submit:
+        await client.post(
+            "/code/execute",
+            json={"code": "int main(){}", "args": "hello world"},
+            cookies=_CK,
+        )
+    assert submit.await_args.kwargs["command_line_arguments"] == "hello world"

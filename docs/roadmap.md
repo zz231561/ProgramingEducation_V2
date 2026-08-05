@@ -285,7 +285,10 @@
 - [x] R2 backend 抽換 ✅（2026-08-05）：`services/runner.py` dispatcher（RUNNER_URL 未設自動退 Judge0）+ 2 呼叫點換 import + 7 tests；後端 811 全綠
 - [x] R3 互動層 ✅（2026-08-05）：runner `WS /terminal`（PTY + 看門狗 + session 上限）+ backend `POST /terminal/ticket`（Redis 單次 60s，沿用 execute rate limit）+ `WS /terminal/ws` 中繼 + 行為事件側錄；runner 22 / backend 818 tests 全綠
 - [x] R4 前端 ✅（2026-08-05）：Output 面板終端模式（`@xterm/xterm` 動態載入避 SSR + ANSI 主題 + 排隊提示）+ 結束收合回 RunBlock + stdin 降級「進階：預先餵入」+ runner 不可用自動退批次；tsc/eslint/build 全過（A12 兩缺陷隨之消滅）
-- [ ] R5 B 機上線：swap 2G + docker + compose 部署 + 防火牆僅放行 A 機 + `X-Runner-Token` + SSH 禁密碼登入 + 健康檢查 + backend 綁 Zeabur 公開子網域（WS 直達）+ 環境變數切換
+- [~] R5 B 機上線：**部署產物 + 本機 Docker 實測完成 ✅（2026-08-05）**，實機執行待使用者
+  - [x] R5a 部署產物：`docker-compose.yml`（SYS_ADMIN + apparmor/seccomp unconfined + mem/pids/cpu 天花板 + tmpfs /tmp）/ `bootstrap.sh`（swap+docker+ufw+**DOCKER-USER 補洞**+禁密碼登入）/ `deploy.sh`（build→up→healthy→冒煙）/ `.env.example` / deployment.md **§E 完整 SOP**（含來源 IP 探測法、回滾、疑難排解）
+  - [x] R5b 本機 Docker 實測（nsjail 真實沙箱）：修 3 個只在容器內才會爆的缺陷——① PCH 目錄未綁入 jail ② nsjail 用 execve 故編譯器需絕對路徑（`--really_quiet` 把錯誤吃掉）③ **nsjail 以 128+signal 回報，逾時被誤判 NZEC**（會讓 Coddy 給錯的主動說明）；驗過 hello/stdin/argv/編譯錯誤/逾時/SIGSEGV/`/usr` 唯讀/**PTY 互動提示字先到達**；runner 27 tests
+  - [ ] R5c **實機執行（需使用者）**：rsync → bootstrap → deploy → Zeabur 綁 backend 子網域 + 三個環境變數 + web redeploy → 驗收表
 - [ ] R6 收尾：教材健檢解除 20 支/天上限 + 額度文案清理（acceptance-checklist / CLAUDE.md）+ 30 並行壓測 + 文件同步
 
 ---

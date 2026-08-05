@@ -6,6 +6,7 @@ PCH：若 {pch_header}.gch 存在（Dockerfile 產出）則以 -include 掛上�
 """
 
 import os
+import shutil
 import tempfile
 from dataclasses import dataclass
 
@@ -23,8 +24,17 @@ class CompileResult:
     timed_out: bool
 
 
+def _compiler_path() -> str:
+    """絕對路徑的編譯器。
+
+    nsjail 以 execve 啟動子行程（**不做 PATH 查找**），傳 "g++" 會靜默失敗；
+    2026-08-05 實測踩過，勿改回相對名稱。
+    """
+    return shutil.which(settings.cxx) or settings.cxx
+
+
 def _compile_argv(source_name: str, output_name: str) -> list[str]:
-    argv = [settings.cxx, *settings.cxx_flags]
+    argv = [_compiler_path(), *settings.cxx_flags]
     if os.path.exists(settings.pch_header + ".gch"):
         argv += ["-include", settings.pch_header]
     argv += [source_name, "-o", output_name]
@@ -61,9 +71,15 @@ async def compile_code(code: str) -> CompileResult:
 
     binary = os.path.join(workdir, "app")
     if result.timed_out or result.returncode != 0 or not os.path.exists(binary):
+        # 沙箱本身失敗時 g++ 不會有輸出；帶上 rc 才診斷得出來（勿退回純字串）
+        fallback = (
+            "編譯逾時"
+            if result.timed_out
+            else f"compile failed (sandbox rc={result.returncode})"
+        )
         return CompileResult(
             None,
-            result.stderr or result.stdout or "compile failed",
+            result.stderr or result.stdout or fallback,
             cache_hit=False,
             timed_out=result.timed_out,
         )

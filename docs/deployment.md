@@ -382,3 +382,101 @@ curl http://localhost:2358/about
 | Worker 啟動 fail：privileged 被拒 | 主機 Docker daemon 是否啟用 privileged；雲平台需自己 VPS / 不能用 Zeabur |
 | backend 端 Judge0 timeout | 確認 `JUDGE0_API_URL` 指對；workers 啟動較慢首次需等 30-60s |
 | Submission 結果一直 status=1（in queue） | workers 容器沒起 / cgroups 不可用；查 worker logs |
+
+---
+
+## §E. Runner 自架（7-R 正式方案，2026-08-05 取代 §C）
+
+> B 機 = 互動執行引擎專用機。規格與參數見 `docs/server-plan.md`；
+> 程式碼在 `runner/`。**B 機不放任何 credential，壞了即重灌。**
+
+### Step 0：本機把 runner 送上 B 機
+
+```bash
+# 在專案根目錄（不要 rsync .env / .git）
+rsync -av --exclude '.env' --exclude '__pycache__' --exclude '.pytest_cache' \
+  runner/ ubuntu@<B機IP>:~/runner/
+```
+
+### Step 1：一次性初始化（swap / docker / 防火牆 / SSH 收斂）
+
+先確認 **A 機公網 IP**（Zeabur backend 的對外出口）。若不確定，用下面的
+「來源 IP 探測」取得，不要先開放全網。
+
+```bash
+ssh ubuntu@<B機IP>
+sudo bash ~/runner/bootstrap.sh <A機公網IP>
+```
+
+腳本冪等，內容：swap 2G + `vm.swappiness=10` / 安裝 docker / ufw 只放行 22 與
+「A 機 → 8080」/ **補 `DOCKER-USER` 規則**（docker 會改 iptables 繞過 ufw，這是常見疏漏）
+/ 關閉 SSH 密碼登入 / 清理重複公鑰。
+
+> **來源 IP 探測**（不需開放全網）：先跑 bootstrap 帶一個暫用 IP，
+> 再 `sudo ufw logging on`，從前端觸發一次執行，然後
+> `sudo grep 'DPT=8080' /var/log/ufw.log | tail -3` 讀出真正的 `SRC=`，
+> 以 `sudo ufw allow from <真IP> to any port 8080 proto tcp` 補上、刪掉暫用那條。
+
+### Step 2：設定 token 並部署
+
+```bash
+cd ~/runner
+cp .env.example .env
+openssl rand -hex 32          # 產生 token，記下來（A 機要用同一組）
+nano .env                     # 填入 RUNNER_TOKEN
+bash deploy.sh
+```
+
+`deploy.sh` 會 build → up → 等 healthy → 本機冒煙測試，最後應印出
+`"stdout":"runner ok"`。首次 build 需編譯 nsjail 與 PCH，約 5–10 分鐘。
+
+### Step 3：A 機（Zeabur dashboard）設定
+
+1. **backend service → Domains → Generate Domain**（例如 `api-codedge.zeabur.app`）
+   — WS 必須直連 backend，Next.js Route Handler 無法 proxy WebSocket
+2. **backend service → Variables**：
+   | 變數 | 值 |
+   |------|-----|
+   | `RUNNER_BACKEND` | `self` |
+   | `RUNNER_URL` | `http://<B機IP>:8080` |
+   | `RUNNER_TOKEN` | 🔒 Secret，與 B 機 `.env` 同值 |
+3. **web service → Variables**：
+   | 變數 | 值 |
+   |------|-----|
+   | `NEXT_PUBLIC_TERMINAL_WS_URL` | `wss://api-codedge.zeabur.app/terminal/ws` |
+
+   ⚠ `NEXT_PUBLIC_*` 是**建置期**烘入，設定後必須 **redeploy web service** 才生效。
+4. backend CORS 需允許 web 網域（既有 `NEXTAUTH_URL` 機制，見 §D）
+
+### Step 4：驗收
+
+| 檢查 | 方法 | 預期 |
+|------|------|------|
+| B 機健康 | `curl -s localhost:8080/healthz`（B 機上） | `{"status":"ok","sandbox":"nsjail",...}` |
+| 防火牆生效 | 從自己電腦 `curl http://<B機IP>:8080/healthz` | **連不上**（逾時） |
+| 批次路徑 | 前端跑一支無輸入的程式 | 正常輸出 |
+| **互動路徑** | 跑含 `cin` 的程式 | 終端機出現提示字 → 打字 → 程式收到 |
+| 降級保護 | B 機 `docker compose stop` → 前端再跑一次 | 自動退回批次，學生無感 |
+
+### 回滾
+
+Zeabur backend 設 `RUNNER_BACKEND=judge0`（或清空 `RUNNER_URL`）即刻退回
+RapidAPI 批次，不需重新部署程式碼。
+
+### ⚠ 已知限制：A↔B 走明文 HTTP
+
+B 機無網域故無 TLS 憑證，`RUNNER_TOKEN` 與學生程式碼以明文往返公網。
+現行防線＝雙層防火牆（ufw + 騰訊安全群組）鎖來源 IP + token。
+**風險評估**：B 機不含任何機密、被攻陷即重灌；最壞情況是被當免費算力。
+**改善選項**（記於 tech-debt）：① B 機掛自訂子網域 + Caddy 自動 TLS
+② A↔B 建 WireGuard 隧道並改綁 127.0.0.1。
+
+### 疑難排解
+
+| 症狀 | 檢查 |
+|------|------|
+| 前端永遠走批次（不進終端機） | `NEXT_PUBLIC_TERMINAL_WS_URL` 是否設了且 **web 已 redeploy**；DevTools Network 看 `/terminal/ticket` 是否 503 |
+| ticket 200 但 WS 連不上 | backend 是否已綁公開網域；`wss://` 對應 https 前端（混合內容會被瀏覽器擋） |
+| WS 開了但沒有輸出 | B 機 `docker logs codedge-runner`；防火牆是否放行 A 機**實際**出口 IP |
+| 編譯報 nsjail 相關錯誤 | `docker exec codedge-runner nsjail --help`；確認 compose 的 `cap_add: SYS_ADMIN` 與 `apparmor:unconfined` 有生效 |
+| 執行很慢 / 常排隊 | `curl localhost:8080/healthz` 看 `queue_depth`；必要時調 `RUNNER_GATE_SLOTS`（受 RAM 限制，見 server-plan） |

@@ -1,5 +1,21 @@
 # 變更日誌
 
+## [2026-08-05] — feat(runner)：R5a/b 部署產物 + 本機 Docker 實測（修 3 個容器內才會爆的缺陷）
+
+### Added — 部署產物
+- `runner/docker-compose.yml`：`cap_add: SYS_ADMIN` + apparmor/seccomp unconfined（nsjail 建 namespace 必需）；**容器層天花板** mem 1400m / pids 512 / cpus 1.8（個別程式限制歸 nsjail，這層防「全部 session 加總拖垮 2C2G 主機」）；`/tmp` tmpfs（學生寫檔不落地、重啟自清）；healthcheck
+- `runner/bootstrap.sh`：swap 2G + `vm.swappiness=10` / docker / ufw 僅放行 22 與 A 機→8080 / **補 `DOCKER-USER` iptables 規則**（docker 會繞過 ufw，常見疏漏）/ 禁 SSH 密碼登入 / 清重複公鑰。冪等
+- `runner/deploy.sh`：build → up → 等 healthy → 冒煙測試；`.env.example`（token 產生方式）；`.gitignore`
+- `docs/deployment.md` **§E 完整 SOP**：含「**來源 IP 探測法**」（用 ufw DENY 日誌讀出 A 機真實出口 IP，不需開放全網）、Zeabur 三個環境變數 + `NEXT_PUBLIC_*` 需 redeploy 提醒、驗收表、**一行回滾**（`RUNNER_BACKEND=judge0`）、疑難排解
+
+### Fixed — 本機 Docker 實測抓出的 3 個缺陷（本機 sandbox=none 測不到）
+1. **PCH 目錄未綁入 jail** → `fatal error: /opt/pch/std.h: No such file or directory`；jail 是全新 mount namespace，只有顯式綁定的路徑存在（順帶補 `/etc/ld.so.cache` 與 `TMPDIR=/box`，GCC 需暫存目錄）
+2. **nsjail 以 execve 啟動子行程、不做 PATH 查找** → 傳 `g++` 靜默失敗，且 `--really_quiet` 把錯誤吃掉只剩 "compile failed"；改為 `shutil.which` 解析絕對路徑，並讓失敗訊息帶上 sandbox rc 以便診斷
+3. 🔴 **nsjail 以 `128+signal` 回報，無窮迴圈被誤判成 `Runtime Error (NZEC)`** → 學生會收到錯誤的 Coddy 主動說明（該講逾時卻講執行期錯誤）；`classify_exit` 改為同時處理負數（直接子行程）與 128+N（nsjail）兩種慣例，SIGKILL/SIGXCPU 歸 Time Limit
+
+### Verified — 真實 nsjail 容器內
+hello / stdin / argv / 編譯錯誤（真實 g++ 訊息）/ 逾時→Time Limit Exceeded / SIGSEGV / `/usr` 寫入被擋 / **WS PTY 互動：`cout` 無 endl 的提示字先於輸入到達、kernel 回顯正常**（`'name: ' → 'Alice\r\n' → 'hi Alice\r\n'`）；runner 27 tests（+5 分類）、backend 818 全綠
+
 ## [2026-08-05] — feat(runner)：R4 前端互動終端 — xterm 嵌入 Output 面板
 
 ### Added — `web/`

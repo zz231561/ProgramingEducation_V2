@@ -97,3 +97,41 @@ async def test_code_too_large(client, monkeypatch):
     monkeypatch.setattr(settings, "max_code_bytes", 100)
     resp = await client.post("/run", json={"code": "int main(){}" + "/" * 200})
     assert resp.status_code == 422
+
+
+# === nsjail 128+signal 慣例（2026-08-05 實測修正）===
+
+
+def test_classify_exit_nsjail_sigkill_is_time_limit():
+    from app.executor import classify_exit
+
+    # nsjail CPU/wall 上限 → 128+9；原本被誤判 NZEC 使 Coddy 給錯說明
+    assert classify_exit(137, timed_out=False) == ("Time Limit Exceeded", None)
+
+
+def test_classify_exit_nsjail_sigxcpu_is_time_limit():
+    from app.executor import classify_exit
+
+    assert classify_exit(128 + 24, timed_out=False) == ("Time Limit Exceeded", None)
+
+
+def test_classify_exit_nsjail_sigsegv_stays_runtime_error():
+    from app.executor import classify_exit
+
+    status, code = classify_exit(128 + 11, timed_out=False)
+    assert status == "Runtime Error (SIGSEGV)"
+    assert code == 139
+
+
+def test_classify_exit_direct_child_negative_signal():
+    from app.executor import classify_exit
+
+    assert classify_exit(-11, timed_out=False)[0] == "Runtime Error (SIGSEGV)"
+    assert classify_exit(-9, timed_out=False) == ("Time Limit Exceeded", None)
+
+
+def test_classify_exit_normal_codes():
+    from app.executor import classify_exit
+
+    assert classify_exit(0, timed_out=False) == ("Accepted", 0)
+    assert classify_exit(3, timed_out=False) == ("Runtime Error (NZEC)", 3)

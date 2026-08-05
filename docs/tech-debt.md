@@ -19,6 +19,11 @@
   - **若驗收失敗**：第一優先檢查 `web/lib/pending-workspace-code.ts` 的 `consumePendingWorkspaceCode()` 是否真的有 `removeItem`；其次檢查 `web/app/(app)/workspace/page.tsx` 是否用 `useState` lazy initializer（而非直接呼叫，會導致 re-render 多次 consume）
 
 ### 部署相關（待實測）
+- [ ] **A↔B runner 走明文 HTTP**（7-R R5 已知限制）
+  - B 機無網域故無 TLS；`RUNNER_TOKEN` 與學生程式碼明文往返公網
+  - **現行防線**：ufw + 騰訊安全群組雙層鎖來源 IP + 共享密鑰；B 機不含任何機密、被攻陷即重灌，最壞情況是被當免費算力
+  - **改善選項**：① B 機掛自訂子網域 + Caddy 自動 TLS ② A↔B 建 WireGuard 隧道並改綁 127.0.0.1
+  - **重評時機**：2027-01 可用性評估前（與自訂網域送 Google 驗證一併處理）
 - [ ] **Zeabur PREBUILT + source.type=IMAGE schema 未實測**
   - 4-1b 將 `zeabur.json` 的 postgres 從 marketplace `postgresql`（不含 pgvector）改為 `template: PREBUILT` + `source: {type: "IMAGE", image: "pgvector/pgvector:pg16"}`
   - 此 schema 細節依 Zeabur template.json 規範撰寫，但**未經實際部署驗證**

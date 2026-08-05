@@ -1,0 +1,36 @@
+# codedge-runner — B 機部署（docs/deployment.md §D）
+#
+# nsjail 需要建立 namespace，故給 SYS_ADMIN + 放寬 apparmor/seccomp。
+# 這是「容器內再開沙箱」的必要代價；B 機本身即為隔離單位：不放任何
+# credential、不與資料庫同機、壞了即重灌（docs/server-plan.md）。
+
+services:
+  runner:
+    build: .
+    image: codedge-runner:latest
+    container_name: codedge-runner
+    restart: unless-stopped
+    env_file: .env
+    cap_add:
+      - SYS_ADMIN
+    security_opt:
+      - apparmor:unconfined
+      - seccomp:unconfined
+    # 容器自身的天花板：學生程式的個別限制由 nsjail rlimit 負責，
+    # 這層是「全部 session 加總」不得拖垮主機（2C2G，見 server-plan 容量試算）
+    mem_limit: 1400m
+    pids_limit: 512
+    cpus: 1.8
+    ports:
+      # 對外開放，來源限制交給主機防火牆（ufw）+ 騰訊安全群組雙層
+      - "8080:8080"
+    tmpfs:
+      # 編譯暫存與快取走記憶體檔案系統：學生程式寫檔不落地、重啟自動清空
+      - /tmp:size=512m,exec,mode=1777
+    healthcheck:
+      test: ["CMD", "/venv/bin/python", "-c",
+             "import urllib.request;urllib.request.urlopen('http://127.0.0.1:8080/healthz')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s

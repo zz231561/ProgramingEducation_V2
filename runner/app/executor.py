@@ -43,15 +43,32 @@ def _signal_status(returncode: int) -> str:
     return f"Runtime Error ({name})"
 
 
+# nsjail 以 128+signal 回報「子行程被訊號終止」；CPU/wall 上限觸發的是這兩個
+_LIMIT_SIGNALS = frozenset({signal.SIGKILL, signal.SIGXCPU})
+
+
 def classify_exit(returncode: int | None, timed_out: bool) -> tuple[str, int | None]:
-    """(status_description, exit_code) — 批次與互動終端共用的狀態分類。"""
+    """(status_description, exit_code) — 批次與互動終端共用的狀態分類。
+
+    兩種訊號表示法都要處理：
+    - 直接子行程（sandbox=none）：負數 returncode
+    - nsjail 包裝（生產）：**128+signal 的正數**（2026-08-05 實測，無窮迴圈
+      原本被誤判成 NZEC，導致 Coddy 給錯的主動說明）
+    """
     if timed_out:
         return STATUS_TIME_LIMIT, None
-    if returncode is not None and returncode < 0:
-        return _signal_status(returncode), returncode
-    if returncode == 0:
-        return STATUS_ACCEPTED, 0
-    return STATUS_NZEC, returncode
+    if returncode is None:
+        return STATUS_NZEC, None
+    if returncode < 0:
+        sig = -returncode
+    elif returncode > 128:
+        sig = returncode - 128
+    else:
+        return (STATUS_ACCEPTED, 0) if returncode == 0 else (STATUS_NZEC, returncode)
+
+    if sig in _LIMIT_SIGNALS:
+        return STATUS_TIME_LIMIT, None
+    return _signal_status(-sig), returncode
 
 
 def stage_workdir(binary_path: str) -> str:

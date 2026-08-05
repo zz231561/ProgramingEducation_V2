@@ -1,5 +1,20 @@
 # 變更日誌
 
+## [2026-08-05] — feat(runner)：R3 互動層 — PTY 終端 WS + ticket 認證 + backend 中繼
+
+### Added — runner（`app/pty_exec.py` + `app/terminal.py`）
+- **`WS /terminal`**：PTY 執行（stdout 行緩衝→無 endl 提示字即時出現；kernel 行規範原生處理回顯與 \r→\n，前端免 local echo）；frame 協議 `start/stdin` ⇄ `queue/compiling/compile_error/started/output/exit/error`（協議文件在 terminal.py docstring，R4 依此渲染）
+- 資源紀律：gate slot **僅編譯階段持有**（等待輸入不佔）；看門狗 idle 60s（無輸入且無輸出）/ 硬上限 300s（狀態字串含 "Time Limit" 保持前端分類）/ 同時 session 上限 40（`SESSION_LIMIT` frame）；客端斷線立即 kill 行程；exit frame 帶 `output_summary`（64KB 上限）供 EDF/analytics
+- `executor.py` 抽出 `classify_exit` / `stage_workdir` 供批次與互動共用；healthz 加 `terminal_sessions`
+- 修 2 個設計期 race：master fd 關閉搶在 EOF 回呼前（拆顯式 `close()`）、行程剛結束時寫 stdin（吞 OSError）
+
+### Added — backend（`api/routes/terminal.py`）
+- **ticket 認證**：WS 直連公開子網域帶不到 HttpOnly cookie → `POST /terminal/ticket`（走既有 proxy cookie 認證 + **沿用 execute rate limit**）發 Redis 單次使用 ticket（60s TTL，GETDEL 防重放）；WS 首訊息帶 ticket，15s 未送 4408
+- 中繼：`websockets.connect` 帶 X-Runner-Token 連 B 機，frame 原樣轉發（client→runner 僅放行 stdin）；exit/compile_error 側錄 → `log_execution` 行為事件（best-effort，與批次同管線）；runner 連不上 → `RUNNER_UNAVAILABLE` frame（R4 前端退批次）
+- `pyproject.toml` 顯式宣告 `websockets`（原僅隨 uvicorn 間接安裝，防 7-1a-1 型 lock 脫鉤）+ lock 重產
+- **測試**：runner +7（真實 PTY 互動往返/提示字先於輸入出現/idle 看門狗/session 上限/token）→ 22 全綠；backend +7（ticket 三態/中繼轉發+側錄/ticket 單次性/runner 連線失敗）→ **818 全綠**
+- ⚠ `runner/app/terminal.py` 165 行（>150 提醒線；session 編排單一職責 + 12 行協議文件，暫不拆）
+
 ## [2026-08-05] — feat(runner)：R2 backend 抽換 — 執行引擎 dispatcher + fallback
 
 ### Added — `backend/services/runner.py`

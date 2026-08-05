@@ -44,6 +44,13 @@ class Settings:
     gate_slots: int = field(default_factory=lambda: _int("RUNNER_GATE_SLOTS", 2))
     gate_queue_timeout: int = field(default_factory=lambda: _int("RUNNER_QUEUE_TIMEOUT", 30))
 
+    # 互動 session（R3；server-plan.md 定案值）
+    session_idle_seconds: int = field(default_factory=lambda: _int("RUNNER_SESSION_IDLE", 60))
+    session_hard_seconds: int = field(default_factory=lambda: _int("RUNNER_SESSION_HARD", 300))
+    max_sessions: int = field(default_factory=lambda: _int("RUNNER_MAX_SESSIONS", 40))
+    # 結束時回傳給 backend 做 EDF/analytics 的輸出摘要上限
+    summary_limit_bytes: int = field(default_factory=lambda: _int("RUNNER_SUMMARY_LIMIT", 65_536))
+
     # 編譯結果快取
     cache_dir: str = field(
         default_factory=lambda: os.environ.get(

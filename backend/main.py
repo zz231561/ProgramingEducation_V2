@@ -44,6 +44,7 @@ from api.routes.quiz import router as quiz_router
 from api.routes.quiz_feedback import router as quiz_feedback_router
 from api.routes.quiz_questions import router as quiz_questions_router
 from api.routes.reflection import router as reflection_router
+from api.routes.terminal import router as terminal_router
 from api.routes.users import router as users_router
 
 
@@ -99,6 +100,7 @@ app.include_router(health_router)
 app.include_router(auth_router)
 app.include_router(users_router)
 app.include_router(code_router)
+app.include_router(terminal_router)
 app.include_router(code_files_router)
 app.include_router(chat_router)
 app.include_router(chat_sessions_router)

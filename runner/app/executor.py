@@ -43,15 +43,32 @@ def _signal_status(returncode: int) -> str:
     return f"Runtime Error ({name})"
 
 
-async def execute(binary_path: str, stdin: str, args: str) -> RunResponse:
-    """執行 binary；cwd 用全新空目錄（binary 在快取目錄，不受影響）。"""
+def classify_exit(returncode: int | None, timed_out: bool) -> tuple[str, int | None]:
+    """(status_description, exit_code) — 批次與互動終端共用的狀態分類。"""
+    if timed_out:
+        return STATUS_TIME_LIMIT, None
+    if returncode is not None and returncode < 0:
+        return _signal_status(returncode), returncode
+    if returncode == 0:
+        return STATUS_ACCEPTED, 0
+    return STATUS_NZEC, returncode
+
+
+def stage_workdir(binary_path: str) -> str:
+    """建立全新執行目錄並把 binary 放入（沙箱綁定用），回傳 workdir。"""
     workdir = tempfile.mkdtemp(prefix="run-")
-    # 沙箱模式下 binary 需綁進 /box：hardlink 進 workdir（同檔案系統零成本；跨 fs 退回複製）
+    # hardlink 零成本（快取同檔案系統）；跨 fs 退回複製
     local = os.path.join(workdir, "app")
     try:
         os.link(binary_path, local)
     except OSError:
         shutil.copy2(binary_path, local)
+    return workdir
+
+
+async def execute(binary_path: str, stdin: str, args: str) -> RunResponse:
+    """執行 binary；cwd 用全新空目錄（binary 在快取目錄，不受影響）。"""
+    workdir = stage_workdir(binary_path)
 
     argv = sandbox.wrap(
         ["./app", *split_args(args)],
@@ -69,14 +86,7 @@ async def execute(binary_path: str, stdin: str, args: str) -> RunResponse:
         ram_mb=settings.exec_ram_mb,
     )
 
-    if result.timed_out:
-        status, exit_code = STATUS_TIME_LIMIT, None
-    elif result.returncode is not None and result.returncode < 0:
-        status, exit_code = _signal_status(result.returncode), result.returncode
-    elif result.returncode == 0:
-        status, exit_code = STATUS_ACCEPTED, 0
-    else:
-        status, exit_code = STATUS_NZEC, result.returncode
+    status, exit_code = classify_exit(result.returncode, result.timed_out)
 
     return RunResponse(
         stdout=result.stdout,

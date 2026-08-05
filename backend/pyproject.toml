@@ -11,6 +11,8 @@ dependencies = [
     "fastapi>=0.115,<1",
     "python-multipart>=0.0.18,<1",  # 5-5 作業附件 multipart 上傳
     "uvicorn[standard]>=0.34,<1",
+    # R3 終端中繼直接 import（原僅隨 uvicorn[standard] 間接安裝，顯式宣告防 lock 脫鉤）
+    "websockets>=14,<17",
     "pydantic>=2.10,<3",
     "pydantic-settings>=2.7,<3",
     "sqlalchemy[asyncio]>=2.0,<3",

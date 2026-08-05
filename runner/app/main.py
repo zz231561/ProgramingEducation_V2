@@ -14,9 +14,11 @@ from .config import settings
 from .executor import execute
 from .gate import QueueTimeout, gate
 from .models import STATUS_COMPILE_ERROR, RunRequest, RunResponse
+from .terminal import router as terminal_router
 
 logger = logging.getLogger(__name__)
 app = FastAPI(title="codedge-runner", docs_url=None, redoc_url=None)
+app.include_router(terminal_router)
 
 
 def _check_token(x_runner_token: str | None) -> None:
@@ -26,12 +28,15 @@ def _check_token(x_runner_token: str | None) -> None:
 
 @app.get("/healthz")
 async def healthz() -> dict:
+    from . import terminal  # 延遲取值：回報當下 session 數
+
     return {
         "status": "ok",
         "sandbox": settings.sandbox,
         "active": gate.active,
         "queue_depth": gate.queue_depth,
         "cache_entries": len(binary_cache),
+        "terminal_sessions": terminal.active_sessions,
     }
 
 

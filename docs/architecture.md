@@ -43,7 +43,11 @@ Browser → Next.js API Routes (/app/api/**) → FastAPI (backend)
 - 統一進出口，前端只需 `fetch('/api/...')`，不需管後端 URL
 - 部署時前端 + API Routes 同一 service，後端可設為 internal 不暴露
 
-**Chat streaming：** Next.js API Route 用 SSE 轉發 FastAPI 的 streaming response
+**Chat streaming（7-U6 已落地）：** `/chat/interact` 為 SSE——後端推播 EDF 三層進度
+（`stage`: analyzing → retrieving → composing）後送 `done`。Next.js proxy 直接透傳
+`upstream.body`，SSE 不需改 proxy（WebSocket 則不行，見執行引擎節）。
+串流開始後無法改 HTTP status，管線途中失敗改發 `error` 事件；rate limit / 認證
+屬前置檢查，仍為正常 429 / 401。
 
 ## 程式執行引擎（2026-08-05 改自建 Runner，取代 Judge0 主路徑）
 

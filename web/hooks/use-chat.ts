@@ -2,11 +2,12 @@
 
 import { useState, useCallback, useRef } from "react";
 import { api } from "@/lib/api";
+import { interactStream, type InteractStage } from "@/lib/chat-interact";
 import { getActiveReflectionId } from "@/lib/active-reflection";
 import type { ExecutionResult } from "@/components/workspace/workspace-context";
 import type {
   ChatItem, MessageItem, ExecutionItem,
-  InteractResponse, SessionDetailResponse, ApiMessage,
+  SessionDetailResponse, ApiMessage,
 } from "@/lib/chat-types";
 
 export type { ChatItem, MessageItem, ExecutionItem } from "@/lib/chat-types";
@@ -37,6 +38,8 @@ function toMessageItem(msg: ApiMessage): MessageItem {
 export function useChat(options: UseChatOptions = {}) {
   const [items, setItems] = useState<ChatItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  // 7-U6：EDF 管線目前跑到哪一層（null = 尚未收到第一則進度）
+  const [stage, setStage] = useState<InteractStage | null>(null);
   const sessionIdRef = useRef<string | null>(null);
 
   const sendMessage = useCallback(
@@ -60,20 +63,21 @@ export function useChat(options: UseChatOptions = {}) {
       ]);
 
       setIsLoading(true);
+      setStage(null);
       try {
         // Phase 2-5e：若 sessionStorage 有 active reflection_id，後端注入 EDF prompt
         const reflectionId = getActiveReflectionId();
-        const res = await api<InteractResponse>("/chat/interact", {
-          method: "POST",
-          body: JSON.stringify({
+        const res = await interactStream(
+          {
             code,
             question,
             session_id: sessionIdRef.current,
             hint_level: 0,
             execution_result: options.getExecutionResult?.() ?? null,
             reflection_id: reflectionId,
-          }),
-        });
+          },
+          setStage,
+        );
 
         const isNew = sessionIdRef.current !== res.session_id;
         sessionIdRef.current = res.session_id;
@@ -108,6 +112,7 @@ export function useChat(options: UseChatOptions = {}) {
         ]);
       } finally {
         setIsLoading(false);
+        setStage(null);
       }
     },
     [options],
@@ -204,6 +209,8 @@ export function useChat(options: UseChatOptions = {}) {
   return {
     items,
     isLoading,
+    /** EDF 管線階段（7-U6）；null = 尚未收到進度，顯示通用等待文案 */
+    stage,
     sessionId: sessionIdRef.current,
     sendMessage,
     loadKickoff,

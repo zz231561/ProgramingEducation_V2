@@ -2,6 +2,7 @@
 
 import logging
 import uuid
+from collections.abc import Awaitable, Callable
 
 from sqlalchemy import select, desc, func
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -20,6 +21,13 @@ from services.edf.reflection_context import (
 )
 from services.mastery import BKT_CHAT_PARAMS, update_mastery
 from services.security.sanitizer import sanitize_input, wrap_student_input, wrap_student_code
+
+# EDF 管線階段（7-U6）——值同時是 SSE 事件內容與前端文案的 key，改名需同步前端
+STAGE_ANALYZING = "analyzing"   # Evidence 層：分析程式碼與提問
+STAGE_RETRIEVING = "retrieving"  # 讀 K-Graph 狀態 + Feedback 層檢索教材
+STAGE_COMPOSING = "composing"    # Feedback 層：組織回答
+
+StageCallback = Callable[[str], Awaitable[None]]
 
 logger = logging.getLogger(__name__)
 
@@ -76,6 +84,7 @@ async def interact(
     execution_result: dict | None = None,
     reflection_id: uuid.UUID | None = None,
     debug_sink: dict | None = None,
+    on_stage: StageCallback | None = None,
 ) -> tuple[ChatSession, ChatMessage, ChatMessage]:
     """主要教學互動 — 串接 EDF 三層管線。
 
@@ -83,6 +92,8 @@ async def interact(
     無或載入失敗都不擋流程（容錯，與 mastery / RAG 同款）。
     `debug_sink`（DEV-7）：dev 帳號的中間層觀測 dict——收集 evidence / strategy /
     kgraph / RAG 命中，由 route 附在回應 debug 欄位；None（一般帳號）零開銷。
+    `on_stage`（7-U6）：每進入一個管線階段就回報，供 SSE 推播進度給前端；
+    None 時完全不呼叫（非串流呼叫端零開銷）。
 
     回傳 (session, user_message, assistant_message)。
     """
@@ -128,6 +139,8 @@ async def interact(
     stderr = (execution_result or {}).get("stderr", "")
     compile_output = (execution_result or {}).get("compile_output", "")
 
+    if on_stage:
+        await on_stage(STAGE_ANALYZING)
     evidence = await analyze_evidence(
         code, stdout, stderr, compile_output, reflection_evidence_summary, question
     )
@@ -148,6 +161,8 @@ async def interact(
     strategy = decide_strategy(evidence, hint_level)
 
     # K-Graph state（K4a）— 在 mastery 更新後讀取，鷹架依最新狀態調整；best-effort
+    if on_stage:
+        await on_stage(STAGE_RETRIEVING)
     kgraph_block = await fetch_kgraph_block_safe(db, user_id, evidence)
 
     # DEV-7：dev 帳號收集中間層觀測（RAG 命中由 generate_feedback 補入）
@@ -160,6 +175,8 @@ async def interact(
         })
 
     # Feedback 層（citations_sink 收本次引用的教材出處，供學生核對）
+    if on_stage:
+        await on_stage(STAGE_COMPOSING)
     citations: list[dict] = []
     ai_response = await generate_feedback(
         evidence=evidence,

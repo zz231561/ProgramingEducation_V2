@@ -18,7 +18,7 @@ interface ChatPanelProps {
  */
 export function ChatPanel({ onCollapse }: ChatPanelProps) {
   const {
-    items, isLoading, sendMessage, loadSession, startNewSession,
+    items, isLoading, stage, sendMessage, loadSession, startNewSession,
     sessions, activeId, setActiveId, deleteSession,
   } = useChatRuntime();
 
@@ -50,7 +50,7 @@ export function ChatPanel({ onCollapse }: ChatPanelProps) {
         onNewChat={handleNewChat}
         onCollapse={onCollapse}
       />
-      <MessageList items={items} isLoading={isLoading} />
+      <MessageList items={items} isLoading={isLoading} stage={stage} />
       <ChatInput onSend={sendMessage} disabled={isLoading} />
     </div>
   );

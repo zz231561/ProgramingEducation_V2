@@ -3,15 +3,16 @@
 import uuid
 
 from fastapi import APIRouter, Depends
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.deps import get_current_db_user, get_db, User
+from api.routes.chat_sse import interact_event_stream
 from core.dev_mode import is_dev_email
 from core.rate_limit import rate_limit
 from models.coding_event import CodingEventType
 from services.analytics import log_coding_event
-from services.chat import interact
 from services.chat_kickoff import reflection_kickoff
 from services.run_help import run_help
 
@@ -155,62 +156,53 @@ async def chat_run_help(
     )
 
 
-@router.post(
-    "/interact",
-    response_model=InteractResponse,
-    dependencies=[Depends(rate_limit("llm"))],
-)
+@router.post("/interact", dependencies=[Depends(rate_limit("llm"))])
 async def chat_interact(
     body: InteractRequest,
     user: User = Depends(get_current_db_user),
     db: AsyncSession = Depends(get_db),
-) -> InteractResponse:
-    """主要教學互動 — 串接 EDF Pipeline。"""
+) -> StreamingResponse:
+    """主要教學互動 — 串接 EDF Pipeline，以 SSE 推播階段進度（7-U6）。
+
+    事件：`stage`（analyzing / retrieving / composing）→ `done`（InteractResponse）。
+    管線途中失敗時 header 已送出，無法改 HTTP status，故改發 `error` 事件；
+    rate limit 等前置檢查仍在串流開始前，維持正常的 429 / 401 回應。
+    """
     # DEV-7：dev 帳號才建 sink（後端判定，非前端宣稱）
     debug_sink: dict | None = {} if is_dev_email(user.email) else None
-    session, user_msg, ai_msg = await interact(
-        db=db,
-        user_id=user.id,
-        code=body.code,
-        question=body.question,
-        session_id=body.session_id,
-        hint_level=body.hint_level,
-        execution_result=body.execution_result,
-        reflection_id=body.reflection_id,
-        debug_sink=debug_sink,
-    )
 
-    # 學生明確要求提示（hint_level>0）時記錄 hint_request 事件（best-effort）
-    if body.hint_level > 0:
-        evidence = ai_msg.evidence if isinstance(ai_msg.evidence, dict) else {}
-        await log_coding_event(
-            db,
-            user_id=user.id,
-            event_type=CodingEventType.HINT_REQUEST,
+    def build_payload(session, user_msg, ai_msg) -> dict:
+        return InteractResponse(
+            debug=debug_sink,
             session_id=session.id,
-            hint_level=body.hint_level,
-            concept_tags=evidence.get("concept_tags"),
-            code_snapshot=body.code,
-        )
+            user_message=MessageOut(
+                id=user_msg.id,
+                role=user_msg.role.value,
+                content=user_msg.content,
+                code_snapshot=user_msg.code_snapshot,
+                evidence=None,
+                created_at=str(user_msg.created_at),
+            ),
+            assistant_message=MessageOut(
+                id=ai_msg.id,
+                role=ai_msg.role.value,
+                content=ai_msg.content,
+                code_snapshot=None,
+                evidence=ai_msg.evidence,
+                citations=ai_msg.citations,
+                created_at=str(ai_msg.created_at),
+            ),
+        ).model_dump(mode="json")
 
-    return InteractResponse(
-        debug=debug_sink,
-        session_id=session.id,
-        user_message=MessageOut(
-            id=user_msg.id,
-            role=user_msg.role.value,
-            content=user_msg.content,
-            code_snapshot=user_msg.code_snapshot,
-            evidence=None,
-            created_at=str(user_msg.created_at),
+    return StreamingResponse(
+        interact_event_stream(
+            db=db,
+            user=user,
+            body=body,
+            debug_sink=debug_sink,
+            build_payload=build_payload,
         ),
-        assistant_message=MessageOut(
-            id=ai_msg.id,
-            role=ai_msg.role.value,
-            content=ai_msg.content,
-            code_snapshot=None,
-            evidence=ai_msg.evidence,
-            citations=ai_msg.citations,
-            created_at=str(ai_msg.created_at),
-        ),
+        media_type="text/event-stream",
+        # 反向代理（Zeabur 邊緣）不得緩衝，否則階段事件會被壓到最後一起送達
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )

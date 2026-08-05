@@ -1,5 +1,29 @@
 # 變更日誌
 
+## [2026-08-06] — feat(chat)：7-U6 Coddy 分階段進度（`/chat/interact` 改 SSE）
+
+> 原本從頭到尾只有一個不動的「Coddy思考中…」。使用者要「像主流 LLM 那樣有進度感」，
+> 但**拒絕假進度**——所以做的是後端真實推播 EDF 三層管線的所在階段。
+
+### Changed — 後端
+- `services/chat.py`：`interact()` 新增 `on_stage` 回呼，在 Evidence 前 / K-Graph+RAG 前 / Feedback 前各推一次（`analyzing` / `retrieving` / `composing`）。**None 時完全不呼叫**，非串流呼叫端零開銷
+- `api/routes/chat.py`：`/chat/interact` 改回 `StreamingResponse`（`text/event-stream`），事件序 `stage`×3 → `done`(InteractResponse)；帶 `X-Accel-Buffering: no` 防代理層把事件壓到最後一起送
+- **錯誤處理的真實取捨**：串流一開始 HTTP header 就送出，途中失敗無法再改 status → 改發 `error` 事件。rate limit / 認證屬前置檢查，仍維持正常 429 / 401
+- 為何不做逐字串流：現行輸出防護（阻擋 AI 直接給完整程式碼）是拿到完整回應才檢查，一旦逐字吐出，洩漏的程式碼學生已經看到了。分階段狀態不動這條防線，且資訊量更高（學生知道它在查教材）
+
+### Added — 前端
+- `lib/sse.ts`：SSE 解析器。**不用內建 `EventSource`**——它只支援 GET 且不能帶 body，而本端點是帶 payload 的 POST
+- `lib/chat-interact.ts`：串流呼叫 + 階段文案；串流中途斷線（沒收到 `done`）視為失敗，不會靜默留空
+- `message-list.tsx`：等待指示器顯示當前階段文字 + 三段進度條（已完成填滿／進行中半亮／未開始留白）
+
+### Changed — 檔案拆分（⚠ 觸發硬性約束，使用者核准）
+- 加入串流後 `api/routes/chat.py` 達 **263 行超過 250 硬上限** → 抽出 `api/routes/chat_sse.py`（SSE 組裝、階段推播、錯誤事件、hint 事件記錄）。現為 208 + 95 行
+- 膨脹全來自串流邏輯，抽掉即回復原狀，且相關邏輯聚在一處
+
+### 測試
+- 新增 `tests/test_chat_sse.py` 4 項：階段依序推播且都在 done 之前 / AppError 轉 `error` 事件 / 未預期例外不洩漏內部細節（斷言錯誤訊息不含敏感字串）/ 未登入仍回 HTTP 401
+- 後端 **822 全綠**；前端 tsc 0 錯、eslint 0 錯、build 通過
+
 ## [2026-08-06] — feat(editor)：7-U5 C++ 靜態補全（VSCode 式，不接 LSP）
 
 ### Added

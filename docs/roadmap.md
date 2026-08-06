@@ -330,7 +330,7 @@
 > 審計方法：後端每個 API 欄位 ↔ 前端實際送出值、每個 service ↔ 呼叫端、規範文件 ↔ 實作，逐一比對。
 > 完整缺陷清單見 tech-debt；**驗收策略（使用者裁決）：功能全部修補/新建完成後一律驗收**。
 - [x] 7-C1 **P0 批次**（2026-08-06 ✅ 待實測）：
-  - 接通 Hint Ladder：`hint-escalation.ts` 純函式（**已於 7-C2a 刪除**；同脈絡追問 +1 / 卡住訊號「不懂・沒辦法回答」跳 2 級至少 2 / 致謝歸零 / 新 session・重新執行歸零）+ `use-chat.ts` ref 追蹤送出真實 hint_level（原寫死 0）；下游自動復活＝chat hint_request 行為事件 + 策略矩陣 1-5 欄
+  - 接通 Hint Ladder：hint-escalation.ts 純函式（**已於 7-C2a 刪除**；同脈絡追問 +1 / 卡住訊號「不懂・沒辦法回答」跳 2 級至少 2 / 致謝歸零 / 新 session・重新執行歸零）+ `use-chat.ts` ref 追蹤送出真實 hint_level（原寫死 0）；下游自動復活＝chat hint_request 行為事件 + 策略矩陣 1-5 欄
   - Evidence 補執行狀態：`analyze_evidence` 增 `exit_code`/`status_description`，NZEC 時 prompt 改注入「執行平台狀態」（修復前會對 LLM 說「程式執行成功」而學生螢幕是 Runtime Error）
   - `_has_execution_error` 同步看 exit_code/status → NZEC 提問正確分類 DEBUGGING
   - dialogue_act 語意修正：chat 的自動升級階梯≠學生明確要提示，`classify_dialogue_act` 改傳 0 防 asking_hint 過度標記
@@ -343,8 +343,9 @@
   Coddy 反要學生提供連結 / 索答詞跳級與失敗重跑歸零；後端 834 tests；⚠ `chat.py` 299 行超硬上限待拆
 - [x] 7-C2a **Decision 層重構：累積式揭露階梯 + 動態選層**（方案 B）：36 格矩陣 → 6 級累積指令 + 6 條 Bloom 修飾；
       `reveal_level = min(5, base(error_type) + persistence)`；persistence 搬後端 `services/chat_signals.py`
-      並刪除前端／harness 兩個鏡像檔；RULE-1/2 明文定為階梯之上的不變量 + 新增 RULE-6；後端 856 tests
-      （⚠ 行為驗證 = eval_coddy 七型重跑，屬 7-C4）
+      並刪除前端／harness 兩個鏡像檔；RULE-1/2 明文定為階梯之上的不變量 + 新增 RULE-6；後端 857 tests
+      ＋ P1/P3 真實 LLM 實測（reveal 逐輪吻合公式、四輪施壓未破防）；實測抓到並修掉 hint_request 事件灌水；
+      `edf/feedback.py` 越硬上限 → 拆出 `prompt_blocks.py`（餘下觀察記 tech-debt B7/B8，7-C4 裁決）
 - [ ] 7-C2b **其餘 P1 修正**（對應 tech-debt B1／B2／B4）
   - NZEC 教學語意主動說明：機械判定固定文案（零 LLM），分清 **C++ 標準 / OS 慣例 / 本平台判定**三層，
     並以第一人稱說明「這是本平台的判定方式」（現行回應是「線上評測通常…」的第三人稱迴避）
@@ -358,12 +359,14 @@
   - 變體挑戰須禁用 AI（2-6d 明列為前端責任）；結果顯示 passed，BKT 回寫後端已完成
 - [ ] 7-C4 **Coddy 品質再驗**：`scripts/eval_coddy` 全七型重跑，比對 7-C2/C3 前後；
       B3 洩答殘留在此決定採「條件式二次檢查」或接受現狀（有量測數據才裁決）
+  - 7-C2a 已跑 P1/P3；**尚未跑 P2/P4/P5/P6/P7**（P2 多輪 session 是 B7「persistence 只增不減」的關鍵樣本）
+  - 一併裁決 tech-debt **B7**（歸零條件）與 **B8**（base 每輪重判不單調）
 
 ### 7-D 技術債清償（**排在功能完成之後、使用者驗收之前**；2026-08-06 使用者定序）
 > 清單正本在 `docs/tech-debt.md`，此處只排執行順序。機械事實一律跑 `python3 scripts/doc_selfcheck.py`。
 - [ ] 7-D1 **前端測試基礎設施**（tech-debt C1，原 8-3a）：Vitest + 純函式測試——
       `lib/transcript-timestamps.ts`、`use-run-history.ts`、`cpp-completion-source.ts`
-      （`lib/hint-escalation.ts` 已於 7-C2a 隨 persistence 搬後端刪除，改由後端 pytest 覆蓋）
+      （lib/hint-escalation.ts 已於 7-C2a 隨 persistence 搬後端刪除，改由後端 pytest 覆蓋）
 - [ ] 7-D2 **檔案拆分**（tech-debt C2）：8 個超硬上限檔——`quiz.py` 347 / `generate.py` 307 /
       `chat.py` 299 / `concept-detail-panel.tsx` 279 / `batch_generator.py` 267 /
       `variation.py` 255 / `comprehension.py` 255 / `quiz/feedback.py` 251
@@ -469,7 +472,7 @@
   - **決策三：採方案 B**（6 等級指令 + 6 Bloom 修飾＝12 條，取代 36 格矩陣）。
     理由：累積語意在「36 格互相獨立的字串」裡表達不出來；且 2026-08-06 已被「手寫的東西沒有機制驗證」
     咬過三次（tech-debt 檔案數 / llm_params 結論 / hint_level 寫死），不再新增手寫格子
-  - **決策四：persistence 計算搬後端**，刪除 `hint-escalation.ts` 與其人工鏡像 `eval_coddy/ladder.py`；
+  - **決策四：persistence 計算搬後端**，刪除 hint-escalation.ts 與其人工鏡像 eval_coddy/ladder.py；
     chat 不再由前端傳 `hint_level`（Quiz 的同名欄位語意不同，維持原樣）
   - **洩答的重新界定**（修正 2026-08-06 早先的判斷）：閏年題屬章節 25「if-else」，**學習目標是 if-else
     與模數，「閏年怎麼定義」只是背景設定**——講出規則其實移除了與目標無關的認知負荷，是對的教法。

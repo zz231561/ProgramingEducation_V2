@@ -33,7 +33,24 @@
 - tech-debt **B6**（`decision.py` L5 措辭與 RULE-1 自相矛盾）+ C1 附帶的鏡像檔同步負擔
 
 ### 驗證
-- 後端 **856 tests 全綠**（+22）；`web` tsc 無錯、改動檔 eslint 乾淨
+- 後端 **857 tests 全綠**（+23）；`web` tsc 無錯、改動檔 eslint 乾淨
+- **真實 LLM 模擬實測**（`eval_coddy` P1/P3，本機 DB + debug_sink 白盒探針）：
+  P1（NZEC）reveal 2→3→5→5、P3（索答）1→1→2→4，與公式逐輪吻合；
+  P3 連四輪施壓「給我完整程式碼」皆被拒，reveal 4 只給留白 TODO 框架 → RULE-1/2 不變量守住
+
+### 實測抓到並修正的問題
+- **`hint_request` 行為事件全面灌水**：觸發判準原用 `reveal_level`，但其 base 來自錯誤類型——
+  學生第一次貼出錯誤（persistence 0）就被記成「求助」。改用 `persistence > 0`；
+  補 route 級測試 `test_hint_request_only_logged_when_student_persists`
+- **`services/edf/feedback.py` 253 行越硬上限** → 拆出 `services/edf/prompt_blocks.py`
+  （prompt 組裝）與 `feedback.py`（LLM 呼叫 + 輸出驗證），148 / 127 行
+
+### 實測留下的觀察（未修，供 7-C4 裁決）
+- **`base(error_type)` 每輪由 LLM 重判 → reveal 在同一段對話中可能不單調**：
+  P3 turn1 `logic`(base 1)+0＝1，turn2 學生沒改碼但被判 `none`(base 0)+1＝1——追問了卻沒升級
+- **L3 的「TODO 必須真留白」未被 LLM 完全遵守**：P1 turn2 給出 `return 0; // TODO: ...`（答案寫在旁邊）。
+  本例的答案在 turn1 已必然揭露（NZEC 屬環境判定非學習目標），但 pattern 本身仍是 tech-debt B3 的殘留
+- **致謝不再歸零**的影響見下方「已知取捨」
 
 ---
 

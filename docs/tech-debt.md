@@ -53,6 +53,20 @@
   - 7-C1' 三修（無碼跳過 / 證據去重 / kgraph 先讀）已大幅降噪，但 tag 本身的誤標仍在
   - 重評時機同 K2c：Phase 5 行為資料可檢驗 LLM tagging 可靠度後（pyBKT `fit()` / AST 輔助）
 
+**B7. persistence 在一段對話裡只會累加，唯一歸零條件是「程式跑成功」**（7-C2a 設計的已知取捨）
+- [ ] 純概念問答／查教材的 session 永遠沒有歸零點；學生在同一 session 連問 5 個各自都懂的小問題，
+      最後一個也會拿到 L5（逐行完整解釋）待遇——**過度鷹架**，非洩答（RULE-1/2 實測守得住）
+  - 舊前端階梯的「致謝歸零」已刻意移除：那等於**懲罰有禮貌的學生**（說「謝謝」反而拿到更少幫助），
+    且語言訊號可被操弄，與 7-C2a「只信客觀事實」的原則相衝
+  - **候選解法**（需設計裁決）：① 維持現狀 ② 恢復致謝歸零 ③ 改用客觀訊號歸零
+    （`code_snapshot` 有實質變更＝學生動手了／`concept_tags` 與前輪零交集＝換題目）④ persistence 上限降到 3
+  - **重評時機**：7-C4 七型重跑後看 reveal 分布（特別是 P2 按部就班型多輪 session）
+
+**B8. `base(error_type)` 每輪重判，reveal 在對話中可能不單調**（2026-08-06 實測）
+- [ ] P3 turn1 `logic`(base 1)+persistence 0＝1；turn2 學生沒改碼卻被判 `none`(base 0)+1＝1——追問了但沒升級
+  - 根因是 Evidence 的 error_type 由 LLM 每輪重判，與 B5（concept tag 雜訊）同源
+  - **重評時機**：同 B5
+
 ### 🔴 C. 測試與工程品質
 
 **C1. 前端零自動化測試**
@@ -62,7 +76,7 @@
   - **最小可用起點**：Vitest + 純函式測試（`lib/transcript-timestamps.ts`、
     `components/workspace/use-run-history.ts`、`components/editor/cpp-completion-source.ts`）
   - ✅ **鏡像問題已由 7-C2a 根除**（2026-08-06）：persistence 搬後端，
-    `lib/hint-escalation.ts` 與 `eval_coddy/ladder.py` 兩檔皆刪除，改由後端 pytest 覆蓋
+    lib/hint-escalation.ts 與 eval_coddy/ladder.py 兩檔皆刪除（已不存在），改由後端 pytest 覆蓋
 
 **C2. 檔案大小超過門檻**（⚠ 150 / 🚫 250；數據來自 `scripts/doc_selfcheck.py`，2026-08-06）
 - [ ] 🚫 **超過硬上限 250（9 個）**：`api/routes/quiz.py` 347 / `services/quiz/generate.py` 307 /

@@ -32,31 +32,19 @@
 **已完成（細節一律查 roadmap-archive / changelog，禁止回填此處）**
 Phase 1-4 全數 ✅｜Phase 5 教師端 ✅（5-3/5-4 除外，等真實資料）｜Phase 6 教學內容建構 ✅｜
 Phase 6-K K-Graph 自適應引擎 ✅｜Phase 6-U 學生端修正 ✅｜DEV 開發者模式 ✅｜
-Phase 7-R 自建互動執行引擎 ✅（生產終端已上線）｜Phase 7-U 上線後體驗優化 ✅ 六項
+Phase 7-R 自建互動執行引擎 ✅（生產終端已上線）｜Phase 7-U 上線後體驗優化 ✅ 六項｜
+**Phase 7-C Coddy 教學品質 ✅ 全數完成**（C1/C1'/C2a/C2a'/C2a''/C2b/C3/C4，2026-08-06）——
+核心成果：揭露階梯由「追問次數」改為 **need 需求量估計**（施壓不再有效）、
+2-6 Comprehension 前端補齊（後端從此有流量）、七型模擬驗收全數通過
 
-**🎯 進行中 — 7-C Coddy 教學品質**（2026-08-06 使用者回報對話品質 → 全面審計 → 兩輪模擬驗收）
-- 7-C1 ✅ 接通提示階梯（`hint_level` 原寫死 0，矩陣只用得到第 0 欄）+ Evidence 補 exit_code/status
-- 7-C1' ✅ 七型學生模擬 harness（`backend/scripts/eval_coddy/`）+ 診斷輪修復 9 項；
-  最重大＝**gpt-5.6 reasoning 預算間歇吃光輸出**（8-05「拒收 reasoning_effort」結論錯誤，值域改為 none/low/…），
-  反思評分因此在生產一直靜默 fail-open；已全面改送 `reasoning_effort="none"`
-- 7-C2a ✅ Decision 層重構（累積式揭露階梯 + 動態選層，方案 B）：36 格矩陣 → 6 級累積指令 + 6 Bloom 修飾；
-  `reveal_level = min(5, base(error_type) + need)`；選層輸入搬後端（`services/chat_signals.py`）
-  並刪掉前端／harness 兩個鏡像檔；RULE-1/2 定為階梯之上的不變量 + 新增 RULE-6
-- 7-C2a' ✅ **選層輸入 persistence → need**（「堅持不等於值得」）：need 是需求量估計不是追問次數，
-  理解 −1／沒理解 +1／失敗的實質嘗試 +1／顯式求助 +2／**追問與索答施壓 0**（單輪漲幅上限 2）；
-  訊號由 Evidence 既有呼叫順帶輸出（零額外請求）
-- 7-C2a'' ✅ 收尾：B8 消除（同證據沿用 error_type）＋「我卡住了」按鈕（`explicit_help` 欄位）＋
-  Evidence 容錯解析（欄位越界退保守預設，不再整輪 502）＋ harness 可重跑；
-  **七型全跑通過**（877 tests／前端 build 過／migration 可逆）
-- 7-C2b ✅ 其餘 P1：NZEC 機械文案分三層（C++ 標準／OS 慣例／本平台判定，第一人稱）+ RULE-7/8
-  （禁「通常」含糊帶過、認錯第一句就講）+ 逾時文案改互動終端 + 429 配額與故障分辨
-- 7-C3 ✅ Comprehension 前端 UI（2-6 後端一直沒人用）：`components/comprehension/` 7 檔 +
-  Quiz/Learn 兩處接入；變體挑戰以 AppShell 層 AI 鎖真的停用 Coddy；六端點端對端煙霧測試過
-- 7-C4 ✅ 七型重跑全通過（無含糊措辭、施壓無效、注入全擋）；B3 裁決＝改防線措辭不加二次檢查；
-  量測發現並修掉 comprehension 觸發吸收態（1 筆通過就永久關閉整個機制）。
-  ⏳ **待你裁決**：弱學生連答 10 題會被驗 10 次，要不要加間隔
-- **順序（roadmap 開頭有完整表）**：
-  **7-D 技術債清償** → **7-E 使用者驗收** → Phase 8 / 7-2 監控 / 7-3 效能 / 5-3·5-4
+**🎯 進行中 — 7-D 技術債清償**（功能已全部完成；定序：功能 → **技術債** → 驗收）
+- 7-D1 前端 Vitest ｜ 7-D2 七個超硬上限檔拆分 ｜ 7-D3 changelog 拆檔（近 5000 行）｜
+  7-D4 R6 收尾 ｜ 7-D5 文件稽核 ｜ 7-D6 全站 429/5xx toast
+- ⏳ **待使用者裁決**：comprehension 觸發頻率——修掉吸收態後，弱學生連答 10 題會被驗 10 次
+  （每次 2 呼叫）。屬教學取捨不是 bug，建議 7-E 實際點過再定
+- **7-E 使用者驗收在 7-D 之後**；本 session 新做的 UI（理解驗證 Modal / AI 鎖 / NZEC 說明 /
+  揭露階梯）全部留到那輪驗，清單項已寫入 `docs/acceptance-checklist.md` 4-6~4-9 與 5-5a~g
+- 之後：Phase 8 / 7-2 監控 / 7-3 效能 / 5-3·5-4
 
 **排在驗收之後**：Phase 8 專案健檢（8-0 討論已完成）／6-4b 教材局部重跑（依操作回饋）／K1d·K4d·K5d 使用者自測
 

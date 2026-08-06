@@ -6,25 +6,14 @@
 
 ## ⚠ 待處理
 
-### 🔴 B. Coddy 教學品質（7-C2 排程中）
-
-**B3. ~~洩答殘留~~ → 重新界定為「L0 語意錯誤」**（2026-08-06 設計討論後修正判斷，改由 7-C2a 處理）
-- [ ] **早先把它列為 🔴 洩答是判斷過當**：閏年題屬章節 25「if-else」，**學習目標是 if-else 與模數**，
-      「閏年怎麼定義」只是背景設定——講出規則其實移除了與目標無關的認知負荷，是對的教法。
-      真正不該給的是程式碼結構，而 RULE-1/2 + `validate_output` 本來就守得住（驗證輪實測：
-      hint 3 的 TODO 真留白、hint 4 明確拒絕填答）
-- [ ] **真正的缺陷是 L0 的語意**：現行 L0＝「只問問題不給提示」，但 chat 的 L0 實際是
-      「學生開口的第一句話」（可能是提問／求審閱／查教材），一律反問是類別錯誤 → **7-C2a 重新定義**
-- [ ] **殘留的例外要在 7-C2a 一併處理**：若學生問的正是**本題的目標概念**（如演算法題要學生自己想出
-      判斷法），仍應改為引導而非直述——需靠注入的 `concept_tags` 判斷
-- 觀測工具已備：`scripts/eval_coddy/` P3 腳本可隨時重測，此項**可量測不需憑感覺**
+### 🔴 B. Coddy 教學品質
 
 **B4. 全站 429 / 5xx toast 仍未實作**（7-C2b 已修掉最痛的 chat 路徑，其餘待辦）
 - [x] ~~chat 撞配額被誤導成故障~~ — 7-C2b：`lib/chat-error.ts` 分辨 `DAILY_QUOTA_EXCEEDED`
       （原文照用，已寫明何時恢復）與 `RATE_LIMITED`（消費 `retry_after_seconds` 顯示秒數）
 - [ ] `web/lib/api.ts` 檔頭與 `frontend.md` 寫的是**全站** toast 攔截，目前仍只有 401 重導
   - 其他頁面（quiz / learn / 教師端）撞 429 或 5xx 仍是各自的 catch，訊息不一致
-  - 需先引入 shadcn/ui toast（sonner）基礎設施 → 排 7-D
+  - 需先引入 shadcn/ui toast（sonner）基礎設施 → **排 7-D6**
 
 **B5. Evidence concept tag 雜訊 fan-out 到無關概念**（2026-08-06 模擬實證）
 - [ ] hello world 被標 `control-flow` → 寫入 cpp-25-if-else；overflow 程式被標 `io-streams`（因有 cout）
@@ -47,19 +36,20 @@
       `concept-detail-panel.tsx` 279 / `services/quiz/batch_generator.py` 267 /
       `services/comprehension/variation.py` 255 / `api/routes/comprehension.py` 255 /
       `services/quiz/feedback.py` 251
-  - ⚠ 逼近提醒線者約 73 個（清單跑 script 取得，不在此手抄）
+  - ⚠ 介於 150–250 的檔案數同樣跑 script 取得（會隨每次改動變動，**刻意不手抄數字**）
   - ✅ 2026-08-06（7-C2a'）清掉兩個：`edf/feedback.py` 253 → 拆出 `edf/prompt_blocks.py`（148/127）；
     `services/chat.py` 306 → 拆出 `services/chat_signals.py` 與 `services/chat_sessions.py`（228/196/92）
   - 測試檔不計入（性質為條列案例而非邏輯複雜度）
 
-**C3. OpenAI client lazy-singleton 邏輯重複於 9 個服務模組**
-- [ ] evidence / feedback / quiz×4 / reflection / comprehension×2 / learning 各有一份 `_get_client`
-  - **刻意延後**：各模組測試都對自己的 `_client` 做 monkeypatch，抽共用模組需連動改 9 檔 + 大量測試
+**C3. OpenAI client lazy-singleton 邏輯重複於 14 個服務模組**（2026-08-06 重數：原記 9 個已低估）
+- [ ] `grep -rl "def _get_client" backend/services/` → 14 檔：edf×2 / quiz×5 / comprehension×3 /
+      reflection / learning / run_help / chat_kickoff
+  - **刻意延後**：各模組測試都對自己的 `_client` 做 monkeypatch，抽共用模組需連動改 14 檔 + 大量測試
   - **重評時機**：下次需統一調整 LLM client 行為（retry / timeout）時一併抽取
   - ⚠ 2026-08-06 已見代價：gpt-5.6 reasoning 參數修正雖集中在 `core/llm_params.py`，
     但**空回應的 fail-open 處理散在各模組**，同一個 root cause 要逐處補 log
 
-**C4. `changelog.md` 已 4500+ 行**
+**C4. `changelog.md` 已近 5000 行**（2026-08-06 實測 4977，本 session 又長了約 200 行）
 - [ ] 單檔持續成長，查閱成本高（內容本身沒錯，是時間序日誌）
   - **如何處理**：比照 `roadmap-archive.md`，把 2026-07 以前條目移到 `changelog-archive.md`
 

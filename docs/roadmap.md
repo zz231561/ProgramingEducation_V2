@@ -375,14 +375,19 @@
       `variation.py` 255 / `comprehension.py` 255 / `quiz/feedback.py` 251
       （`edf/feedback.py` 與 `services/chat.py` 已於 7-C2a' 拆完）
 - [ ] 7-D3 **`changelog.md` 拆檔**（tech-debt C4）：2026-07 以前移至 `changelog-archive.md`
-- [ ] 7-D4 **7-R R6 收尾**：教材健檢解除每日 20 支上限（Judge0 額度限制已隨自建 runner 消失）+
-      額度文案清理（hook 提示仍寫 Judge0 50 次/天）+ 30 並行壓測驗證 server-plan 容量假設
+- [ ] 7-D4 **7-R R6 收尾**：教材健檢解除每日上限（`verify_code_snippets.py` `DAILY_BUDGET = 20`，
+      Judge0 額度限制已隨自建 runner 消失）+ 30 並行壓測驗證 server-plan 容量假設
+      （原列的「hook 提示仍寫 Judge0 50 次/天」**2026-08-06 查證已不復現**，session 啟動輸出無此字樣）
 - [ ] 7-D5 **其餘文件稽核**（原 8-1a）：`modules.md` / `api-spec.md` / `db-schema.md` / `ui-ux-spec.md`
       四份最久沒動的逐份核對（`doc_selfcheck.py` 只驗機械事實，語意描述仍需人工讀）
+- [ ] 7-D6 **全站 429 / 5xx toast**（tech-debt B4 剩餘）：引入 sonner，把 quiz / learn / 教師端
+      各自為政的 catch 收斂成統一攔截（chat 路徑已於 7-C2b 單獨修好）
 - 暫不處理（已記錄且有明確重評時機）：tech-debt B5 / C3 / C5 / D1 / D2 / E1–E3
 
 ### 7-E 使用者驗收（**7-C 與 7-D 全數完成後才開始**）
-- [ ] 依 `docs/acceptance-checklist.md` 0~9 段走完；目前僅 1-1 互動終端通過
+- [ ] 依 `docs/acceptance-checklist.md` 0~9 段走完；目前通過：**1-1 互動終端、4-7「我卡住了」按鈕**
+- [ ] **本 session 新做的 UI 一律留到這輪驗**（使用者定序）：4-8 揭露階梯 / 4-9 NZEC 三層說明 /
+      4-6 三種錯誤文案 / **5-5a~g 理解驗證 Modal**（含 5-5d AI 鎖、5-5g 觸發頻率是否惱人）
 - [ ] 驗收發現的問題回饋 → 小問題當輪修（守則 9）、大問題重新排入 7-C
 
 ---

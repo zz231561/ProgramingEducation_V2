@@ -342,10 +342,13 @@
   散文洩答（strategy 層防線，殘留記 tech-debt）/ off_topic 覆寫誤標 / RAG 查詢加問句+導覽型只用問句 /
   Coddy 反要學生提供連結 / 索答詞跳級與失敗重跑歸零；後端 834 tests；⚠ `chat.py` 299 行超硬上限待拆
 - [x] 7-C2a **Decision 層重構：累積式揭露階梯 + 動態選層**（方案 B）：36 格矩陣 → 6 級累積指令 + 6 條 Bloom 修飾；
-      `reveal_level = min(5, base(error_type) + persistence)`；persistence 搬後端 `services/chat_signals.py`
-      並刪除前端／harness 兩個鏡像檔；RULE-1/2 明文定為階梯之上的不變量 + 新增 RULE-6；後端 857 tests
-      ＋ P1/P3 真實 LLM 實測（reveal 逐輪吻合公式、四輪施壓未破防）；實測抓到並修掉 hint_request 事件灌水；
-      `edf/feedback.py` 越硬上限 → 拆出 `prompt_blocks.py`（餘下觀察記 tech-debt B7/B8，7-C4 裁決）
+      `reveal_level = min(5, base(error_type) + need)`；選層輸入搬後端 `services/chat_signals.py`
+      並刪除前端／harness 兩個鏡像檔；RULE-1/2 明文定為階梯之上的不變量 + 新增 RULE-6；
+      `edf/feedback.py` 越硬上限 → 拆出 `prompt_blocks.py`；實測抓到並修掉 hint_request 事件灌水
+- [x] 7-C2a' **選層輸入改寫：persistence（追問次數）→ need（需求量估計）**——「堅持不等於值得」：
+      理解 −1／沒理解 +1／失敗的實質嘗試 +1／顯式求助 +2／**追問與索答施壓 0**，
+      歸零＝跑成功｜換卡點｜閒置 30 分；訊號由 Evidence 既有呼叫順帶輸出（零額外請求）。
+      後端 869 tests ＋ P1/P3/P2 真實 LLM 實測（P3 四輪施壓 need 恆 0）；消除 tech-debt B7
 - [ ] 7-C2b **其餘 P1 修正**（對應 tech-debt B1／B2／B4）
   - NZEC 教學語意主動說明：機械判定固定文案（零 LLM），分清 **C++ 標準 / OS 慣例 / 本平台判定**三層，
     並以第一人稱說明「這是本平台的判定方式」（現行回應是「線上評測通常…」的第三人稱迴避）
@@ -359,17 +362,19 @@
   - 變體挑戰須禁用 AI（2-6d 明列為前端責任）；結果顯示 passed，BKT 回寫後端已完成
 - [ ] 7-C4 **Coddy 品質再驗**：`scripts/eval_coddy` 全七型重跑，比對 7-C2/C3 前後；
       B3 洩答殘留在此決定採「條件式二次檢查」或接受現狀（有量測數據才裁決）
-  - 7-C2a 已跑 P1/P3；**尚未跑 P2/P4/P5/P6/P7**（P2 多輪 session 是 B7「persistence 只增不減」的關鍵樣本）
-  - 一併裁決 tech-debt **B7**（歸零條件）與 **B8**（base 每輪重判不單調）
+  - 7-C2a' 已跑 P1/P3/P2；**尚未跑 P4/P5/P6/P7**
+  - 一併裁決 tech-debt **B8**（base 每輪重判導致 reveal 回退）與 **B3**（reveal 0 仍以散文給出完整規則）
+  - 顯式求助入口（「我卡住了」按鈕）未實作——need 的 +2 訊號目前無來源，前端補完後再驗一次
 
 ### 7-D 技術債清償（**排在功能完成之後、使用者驗收之前**；2026-08-06 使用者定序）
 > 清單正本在 `docs/tech-debt.md`，此處只排執行順序。機械事實一律跑 `python3 scripts/doc_selfcheck.py`。
 - [ ] 7-D1 **前端測試基礎設施**（tech-debt C1，原 8-3a）：Vitest + 純函式測試——
       `lib/transcript-timestamps.ts`、`use-run-history.ts`、`cpp-completion-source.ts`
       （lib/hint-escalation.ts 已於 7-C2a 隨 persistence 搬後端刪除，改由後端 pytest 覆蓋）
-- [ ] 7-D2 **檔案拆分**（tech-debt C2）：8 個超硬上限檔——`quiz.py` 347 / `generate.py` 307 /
-      `chat.py` 299 / `concept-detail-panel.tsx` 279 / `batch_generator.py` 267 /
+- [ ] 7-D2 **檔案拆分**（tech-debt C2）：7 個超硬上限檔——`quiz.py` 347 / `generate.py` 307 /
+      `concept-detail-panel.tsx` 279 / `batch_generator.py` 267 /
       `variation.py` 255 / `comprehension.py` 255 / `quiz/feedback.py` 251
+      （`edf/feedback.py` 與 `services/chat.py` 已於 7-C2a' 拆完）
 - [ ] 7-D3 **`changelog.md` 拆檔**（tech-debt C4）：2026-07 以前移至 `changelog-archive.md`
 - [ ] 7-D4 **7-R R6 收尾**：教材健檢解除每日 20 支上限（Judge0 額度限制已隨自建 runner 消失）+
       額度文案清理（hook 提示仍寫 Judge0 50 次/天）+ 30 並行壓測驗證 server-plan 容量假設

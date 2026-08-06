@@ -53,18 +53,12 @@
   - 7-C1' 三修（無碼跳過 / 證據去重 / kgraph 先讀）已大幅降噪，但 tag 本身的誤標仍在
   - 重評時機同 K2c：Phase 5 行為資料可檢驗 LLM tagging 可靠度後（pyBKT `fit()` / AST 輔助）
 
-**B7. persistence 在一段對話裡只會累加，唯一歸零條件是「程式跑成功」**（7-C2a 設計的已知取捨）
-- [ ] 純概念問答／查教材的 session 永遠沒有歸零點；學生在同一 session 連問 5 個各自都懂的小問題，
-      最後一個也會拿到 L5（逐行完整解釋）待遇——**過度鷹架**，非洩答（RULE-1/2 實測守得住）
-  - 舊前端階梯的「致謝歸零」已刻意移除：那等於**懲罰有禮貌的學生**（說「謝謝」反而拿到更少幫助），
-    且語言訊號可被操弄，與 7-C2a「只信客觀事實」的原則相衝
-  - **候選解法**（需設計裁決）：① 維持現狀 ② 恢復致謝歸零 ③ 改用客觀訊號歸零
-    （`code_snapshot` 有實質變更＝學生動手了／`concept_tags` 與前輪零交集＝換題目）④ persistence 上限降到 3
-  - **重評時機**：7-C4 七型重跑後看 reveal 分布（特別是 P2 按部就班型多輪 session）
-
 **B8. `base(error_type)` 每輪重判，reveal 在對話中可能不單調**（2026-08-06 實測）
-- [ ] P3 turn1 `logic`(base 1)+persistence 0＝1；turn2 學生沒改碼卻被判 `none`(base 0)+1＝1——追問了但沒升級
+- [ ] P3 turn2→turn3 學生沒改碼卻從 `logic`(base 1) 漂到 `none`(base 0)，reveal 因此 1→0；
+      P1 turn4 從 `runtime` 漂到 `semantic`
   - 根因是 Evidence 的 error_type 由 LLM 每輪重判，與 B5（concept tag 雜訊）同源
+  - 7-C2a' 換成 need 後**影響變小**（need 本身穩定，只有 base 在抖），但仍會讓學生看到揭露程度回退
+  - **候選解法**：同一份 code+執行結果未變時沿用上一輪的 error_type（機械、零成本）
   - **重評時機**：同 B5
 
 ### 🔴 C. 測試與工程品質
@@ -79,14 +73,13 @@
     lib/hint-escalation.ts 與 eval_coddy/ladder.py 兩檔皆刪除（已不存在），改由後端 pytest 覆蓋
 
 **C2. 檔案大小超過門檻**（⚠ 150 / 🚫 250；數據來自 `scripts/doc_selfcheck.py`，2026-08-06）
-- [ ] 🚫 **超過硬上限 250（9 個）**：`api/routes/quiz.py` 347 / `services/quiz/generate.py` 307 /
-      `services/chat.py` 292 / `concept-detail-panel.tsx` 279 / `services/quiz/batch_generator.py` 267 /
+- [ ] 🚫 **超過硬上限 250（7 個）**：`api/routes/quiz.py` 347 / `services/quiz/generate.py` 307 /
+      `concept-detail-panel.tsx` 279 / `services/quiz/batch_generator.py` 267 /
       `services/comprehension/variation.py` 255 / `api/routes/comprehension.py` 255 /
-      **`services/edf/feedback.py` 253（7-C2a 新越線，原 247）** / `services/quiz/feedback.py` 251
-  - ⚠ 逼近提醒線者 73 個（清單跑 script 取得，不在此手抄）
-  - **拆分提案**：`edf/feedback.py` → PREAMBLE/PERSONA/`build_system_prompt` 抽為新檔 edf/prompt_blocks.py，
-    本檔只留 `validate_output` + `generate_feedback`（prompt 組裝 vs LLM 呼叫，SRP 乾淨）
-  - `chat.py` 的 mastery gating 已於 7-C2a 抽出至 `services/chat_signals.py`（299 → 292，仍超限）
+      `services/quiz/feedback.py` 251
+  - ⚠ 逼近提醒線者約 73 個（清單跑 script 取得，不在此手抄）
+  - ✅ 2026-08-06（7-C2a'）清掉兩個：`edf/feedback.py` 253 → 拆出 `edf/prompt_blocks.py`（148/127）；
+    `services/chat.py` 306 → 拆出 `services/chat_signals.py` 與 `services/chat_sessions.py`（228/196/92）
   - 測試檔不計入（性質為條列案例而非邏輯複雜度）
 
 **C3. OpenAI client lazy-singleton 邏輯重複於 9 個服務模組**
@@ -138,6 +131,10 @@
 ## ✅ 已消除
 
 ### 2026-08-06（7-C 系列 + 文件稽核）
+- ~~🟡 **persistence 只增不減、唯一歸零是跑成功**（原 B7）~~ — 7-C2a'：選層輸入從「追問次數」
+  換成 need 狀態估計（理解 −1／沒理解 +1／失敗的實質嘗試 +1／**追問與施壓 0**），
+  歸零改為事實或保守二元判定（跑成功／換卡點／閒置 30 分）。三個症狀一次解掉；
+  實測 P3 四輪施壓 need 恆 0、P2 理解訊號自動壓住 need
 - ~~🟡 **`decision.py` L5 措辭與 RULE-1 自相矛盾**（原 B6）~~ — 7-C2a：36 格矩陣整份刪除，
   改累積式階梯；RULE-1／RULE-2 明文寫成「階梯之上的不變量」，L5 的「完整」＝解釋完整非程式碼完整。
   附帶消除「反覆失敗 5+ 次才觸發 L5」這條從未被實作的敘述（persistence 搬後端後才真正有門檻）

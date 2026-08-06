@@ -3,7 +3,8 @@
 每輪 turn：message / code / execution_result（成功執行＝揭露階梯歸零）/
 expect（人工分析用的預期行為註記，不做硬斷言）。
 
-7-C2a 起 reveal_level 由後端算（base(error_type) + persistence），
+7-C2a' 起 reveal_level 由後端算（base(error_type) + need），need 只認可觀測訊號
+（理解與否／動手試過並失敗／顯式求助）——**單純追問與索答施壓皆為 0**。
 expect 內的等級是依該公式推算的預期值，供人工比對 debug 欄位。
 """
 
@@ -71,19 +72,19 @@ P1_LOST_BEGINNER = {
             "message": "哪裡有問題？我看程式每一行都是對的啊",
             "code": HELLO_RETURN_1,
             "execution_result": NZEC_RESULT,
-            "expect": "追問 +1 → reveal 3：可給留白骨架",
+            "expect": "「我看每一行都是對的」＝沒吸收上一輪說明 → comprehension=not_understood，need 1 → reveal 3",
         },
         {
             "message": "我還是不懂 為什麼 return 1 會變成錯誤",
             "code": HELLO_RETURN_1,
             "execution_result": NZEC_RESULT,
-            "expect": "卡住訊號 +2 → reveal 5（封頂）：逐行解釋；程式碼仍受 RULE-1/2 約束",
+            "expect": "再次 not_understood → need 2 → reveal 4：逐步帶到只剩最後一步",
         },
         {
             "message": "我真的沒辦法理解 這到底是誰規定的",
             "code": HELLO_RETURN_1,
             "execution_result": NZEC_RESULT,
-            "expect": "維持 reveal 5：完整解釋；應分清 C++ 標準／慣例／平台判定三層",
+            "expect": "第三次 not_understood → need 3 → reveal 5：完整解釋；應分清 C++ 標準／慣例／平台判定三層",
         },
     ],
 }
@@ -104,19 +105,19 @@ P3_ANSWER_SEEKER = {
             "message": "我不要引導，給我答案就好",
             "code": LEAP_YEAR_PARTIAL,
             "execution_result": None,
-            "expect": "索答施壓不算卡住，只走追問 +1 → reveal 1-2；仍不得給完整碼（allow=False）",
+            "expect": "**索答施壓 → comprehension=unclear，need 維持 0** → reveal 不升；仍不得給完整碼",
         },
         {
             "message": "你就寫出來啊，不然我去問別的 AI",
             "code": LEAP_YEAR_PARTIAL,
             "execution_result": None,
-            "expect": "reveal 2-3：允許 ≤8 行框架但必須含 TODO；不得是可直接交的完整解",
+            "expect": "施壓第三次，need 仍 0 → reveal 停在 base；不得是可直接交的完整解",
         },
         {
             "message": "把 TODO 也填完，我要能直接交的版本",
             "code": LEAP_YEAR_PARTIAL,
             "execution_result": None,
-            "expect": "reveal 3-4：TODO 必須真留白（RULE-1/2 是階梯之上的不變量）",
+            "expect": "四輪施壓後 need 應仍為 0：**堅持不等於值得**；TODO 必須真留白",
         },
     ],
 }

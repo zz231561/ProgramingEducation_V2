@@ -1,17 +1,23 @@
-"""Chat service — 管理對話 session 和 EDF 管線串接。"""
+"""Chat service — EDF 三層管線的串接（session CRUD 見 `chat_sessions.py`）。"""
 
 import logging
 import uuid
 from collections.abc import Awaitable, Callable
 
-from sqlalchemy import select, desc, func
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
 
-from models.chat import ChatSession, ChatMessage, DialogueAct, MessageRole
+from models.chat import ChatMessage, ChatSession, DialogueAct, MessageRole
 from models.reflection import Reflection
 from services.analytics import classify_dialogue_act
-from services.chat_signals import TurnSignal, compute_persistence, is_repeat_evidence
+from services.chat_sessions import get_or_create_session
+from services.chat_signals import (
+    TurnSignal,
+    compute_need,
+    format_previous_exchange,
+    is_repeat_evidence,
+    turns_from_history,
+)
 from services.edf.evidence import analyze_evidence
 from services.edf.decision import decide_strategy
 from services.edf.feedback import generate_feedback
@@ -31,27 +37,6 @@ STAGE_COMPOSING = "composing"    # Feedback 層：組織回答
 StageCallback = Callable[[str], Awaitable[None]]
 
 logger = logging.getLogger(__name__)
-
-
-async def get_or_create_session(
-    db: AsyncSession,
-    user_id: uuid.UUID,
-    session_id: uuid.UUID | None,
-) -> ChatSession:
-    """取得既有 session 或建立新的。"""
-    if session_id:
-        stmt = select(ChatSession).where(
-            ChatSession.id == session_id,
-            ChatSession.user_id == user_id,
-        )
-        session = (await db.execute(stmt)).scalar_one_or_none()
-        if session:
-            return session
-
-    session = ChatSession(user_id=user_id)
-    db.add(session)
-    await db.flush()
-    return session
 
 
 async def _load_reflection_safely(
@@ -93,7 +78,7 @@ async def interact(
     無或載入失敗都不擋流程（容錯，與 mastery / RAG 同款）。
     `debug_sink`（DEV-7）：dev 帳號的中間層觀測 dict——收集 evidence / strategy /
     kgraph / RAG 命中，由 route 附在回應 debug 欄位；None（一般帳號）零開銷。
-    `strategy_sink`（7-C2a）：回填 `reveal_level` / `persistence` 供 route 記錄
+    `strategy_sink`（7-C2a）：回填 `reveal_level` / `need` 供 route 記錄
     hint_request 事件——兩者改由後端自算後，route 已無從得知學生被升到第幾級。
     `on_stage`（7-U6）：每進入一個管線階段就回報，供 SSE 推播進度給前端；
     None 時完全不呼叫（非串流呼叫端零開銷）。
@@ -113,12 +98,9 @@ async def interact(
     )
     history_rows = (await db.execute(history_stmt)).scalars().all()
     chat_history = [{"role": m.role.value, "content": m.content} for m in history_rows]
-    # 揭露階梯與證據去重共用的歷史訊號（7-C2a：只看學生自己說過什麼、跑出什麼）
-    prior_turns = [
-        TurnSignal(m.content, m.code_snapshot, m.execution_result)
-        for m in history_rows
-        if m.role == MessageRole.USER
-    ]
+    # 揭露階梯與證據去重共用的歷史訊號（7-C2a：只看學生做過什麼、判定紀錄怎麼寫）
+    prior_turns = turns_from_history(history_rows)
+    previous_exchange = format_previous_exchange(history_rows)
 
     # 對話行為分類（5-2c）— 啟發式，僅用 LLM 呼叫前既有訊號，隨 user message 一併持久化。
     # hint_level 傳 0：chat 沒有「學生按提示鈕」這種明確訊號（那是 Quiz 的語意），
@@ -159,6 +141,7 @@ async def interact(
         code, stdout, stderr, compile_output, reflection_evidence_summary, question,
         exit_code=exit_code if isinstance(exit_code, int) else None,
         status_description=status_description,
+        previous_exchange=previous_exchange,
     )
 
     # 離題判定覆寫 dialogue_act（5-2c）——LLM 判定優先於關鍵字啟發式：
@@ -188,18 +171,27 @@ async def interact(
         except Exception as e:
             logger.warning("update_mastery failed (non-blocking): %r", e)
 
-    # Decision 層（7-C2a）— 揭露等級 = base(error_type) + 學生堅持度，全在後端算
-    persistence = compute_persistence(prior_turns, question, execution_result)
-    strategy = decide_strategy(evidence, persistence)
+    # Decision 層（7-C2a'）— 揭露等級 = base(error_type) + need，全在後端算。
+    # 本輪 evidence 剛出爐，接在歷史後面一起重放；單純追問／索答施壓 delta 為 0
+    current_turn = TurnSignal(
+        content=question,
+        code_snapshot=code,
+        execution_result=execution_result,
+        created_at=user_msg.created_at,
+        comprehension=evidence.comprehension_signal,
+        continues_issue=evidence.continues_previous_issue,
+    )
+    need = compute_need([*prior_turns, current_turn])
+    strategy = decide_strategy(evidence, need)
     if strategy_sink is not None:
         strategy_sink["reveal_level"] = strategy.reveal_level
-        strategy_sink["persistence"] = persistence
+        strategy_sink["need"] = need
 
     # DEV-7：dev 帳號收集中間層觀測（RAG 命中由 generate_feedback 補入）
     if debug_sink is not None:
         debug_sink.update({
             "evidence": evidence.model_dump(),
-            "persistence": persistence,
+            "need": need,
             "strategy": strategy.model_dump(),
             "kgraph_block": kgraph_block,
             "reflection_injected": bool(reflection_feedback_block),
@@ -234,60 +226,3 @@ async def interact(
     await db.refresh(session)
 
     return session, user_msg, assistant_msg
-
-
-async def list_sessions(
-    db: AsyncSession,
-    user_id: uuid.UUID,
-    page: int = 1,
-    limit: int = 20,
-) -> tuple[list[ChatSession], int]:
-    """取得使用者所有 session（分頁）。"""
-    count_stmt = (
-        select(func.count())
-        .select_from(ChatSession)
-        .where(ChatSession.user_id == user_id)
-    )
-    total = (await db.execute(count_stmt)).scalar_one()
-
-    stmt = (
-        select(ChatSession)
-        .where(ChatSession.user_id == user_id)
-        .order_by(desc(ChatSession.updated_at))
-        .offset((page - 1) * limit)
-        .limit(limit)
-    )
-    sessions = (await db.execute(stmt)).scalars().all()
-    return list(sessions), total
-
-
-async def get_session_messages(
-    db: AsyncSession,
-    user_id: uuid.UUID,
-    session_id: uuid.UUID,
-) -> ChatSession | None:
-    """取得特定 session 及其所有訊息。"""
-    stmt = (
-        select(ChatSession)
-        .options(selectinload(ChatSession.messages))
-        .where(ChatSession.id == session_id, ChatSession.user_id == user_id)
-    )
-    return (await db.execute(stmt)).scalar_one_or_none()
-
-
-async def delete_session(
-    db: AsyncSession,
-    user_id: uuid.UUID,
-    session_id: uuid.UUID,
-) -> bool:
-    """刪除 session（cascade 刪除訊息）。"""
-    stmt = select(ChatSession).where(
-        ChatSession.id == session_id,
-        ChatSession.user_id == user_id,
-    )
-    session = (await db.execute(stmt)).scalar_one_or_none()
-    if not session:
-        return False
-    await db.delete(session)
-    await db.commit()
-    return True

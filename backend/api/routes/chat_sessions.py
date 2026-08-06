@@ -13,7 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from api.deps import get_current_db_user, get_db, User
 from api.routes.chat import MessageOut
 from core.errors import AppError
-from services.chat import delete_session, get_session_messages, list_sessions
+from services.chat_sessions import delete_session, get_session_messages, list_sessions
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 

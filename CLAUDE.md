@@ -40,10 +40,12 @@ Phase 7-R 自建互動執行引擎 ✅（生產終端已上線）｜Phase 7-U �
   最重大＝**gpt-5.6 reasoning 預算間歇吃光輸出**（8-05「拒收 reasoning_effort」結論錯誤，值域改為 none/low/…），
   反思評分因此在生產一直靜默 fail-open；已全面改送 `reasoning_effort="none"`
 - 7-C2a ✅ Decision 層重構（累積式揭露階梯 + 動態選層，方案 B）：36 格矩陣 → 6 級累積指令 + 6 Bloom 修飾；
-  `reveal_level = min(5, base(error_type) + persistence)`；persistence 搬後端（`services/chat_signals.py`）
-  並刪掉前端／harness 兩個鏡像檔；RULE-1/2 定為階梯之上的不變量 + 新增 RULE-6。
-  已跑 **P1/P3 真實 LLM 實測**（實測抓到 hint_request 事件灌水並修正）；
-  ⚠ P2/P4/P5/P6/P7 尚未跑，連同 tech-debt **B7（persistence 只增不減）/ B8（base 不單調）** 留 7-C4 裁決
+  `reveal_level = min(5, base(error_type) + need)`；選層輸入搬後端（`services/chat_signals.py`）
+  並刪掉前端／harness 兩個鏡像檔；RULE-1/2 定為階梯之上的不變量 + 新增 RULE-6
+- 7-C2a' ✅ **選層輸入 persistence → need**（「堅持不等於值得」）：need 是需求量估計不是追問次數，
+  理解 −1／沒理解 +1／失敗的實質嘗試 +1／**追問與索答施壓 0**；訊號由 Evidence 既有呼叫順帶輸出。
+  已跑 **P1/P3/P2 真實 LLM 實測**（P3 四輪施壓 need 恆 0）；
+  ⚠ P4/P5/P6/P7 尚未跑，連同 tech-debt **B8（base 不單調）** 與顯式求助按鈕留 7-C4
 - **順序（roadmap 開頭有完整表）**：7-C2b 其餘 P1 → 7-C3 Comprehension 前端 → 7-C4 再驗 →
   **7-D 技術債清償** → **7-E 使用者驗收** → Phase 8 / 7-2 監控 / 7-3 效能 / 5-3·5-4
 

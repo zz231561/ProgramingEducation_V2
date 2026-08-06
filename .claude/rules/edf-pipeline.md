@@ -14,6 +14,9 @@ globs: backend/services/edf/**
 
 ### Evidence（程式碼分析）
 - LLM 結構化輸出：錯誤分類、ConceptTag、Bloom 認知等級
+- 7-C2a'：另輸出 `comprehension_signal`（understood/not_understood/unclear）與
+  `continues_previous_issue` 供 Decision 的 need 狀態機——**搭在既有那次呼叫上，零額外請求**
+  （同 `is_on_topic` 的作法）。需注入上一輪問答摘要才判得出來
 - 注入 Judge0 執行結果（stdout/stderr）作為分析脈絡
 - 注入 Pre-Coding Reflection 內容（若有）：學生的解題計畫 + 反思品質分數
 
@@ -55,11 +58,22 @@ globs: backend/services/edf/**
 | 4 | ＋逐步帶到只剩最後一步 | ✓ |
 | 5 | ＋逐行完整解釋、修正後**片段** | ✓ |
 
-**動態選層：** `reveal_level = min(5, base(error_type) + persistence)`
+**動態選層：** `reveal_level = min(5, base(error_type) + need)`
 - `base`：none → 0（純提問／程式正確）；syntax・compilation・runtime → 2（學生看不懂錯誤訊息，
   指出位置不算給答案）；logic・semantic → 1（找出邏輯錯在哪本身就是練習，直接指位置等於代寫）
-- `persistence`（`services/chat_signals.py`，**後端從對話歷史自算**）：同脈絡每則追問 +1／
-  明確表示卡住 +2／成功執行（exit 0）歸零。前端不再送 `hint_level`——送得出來的數字就可能被寫死成 0
+- `need`（`services/chat_signals.py`，**後端從對話歷史自算**）＝估計「學生離自己解出來還差多少」，
+  **不是追問次數**——7-C2a' 實測證實計數會讓索答施壓一路爬級（堅持不等於值得）：
+
+  | 訊號 | delta | 來源 |
+  |---|---|---|
+  | 學生展現理解（understood） | −1 | Evidence `comprehension_signal` |
+  | 學生表示沒理解（not_understood） | +1 | 同上 |
+  | 改了程式又跑失敗 | +1 | `code_snapshot` 差異 + 執行結果 |
+  | 顯式求助（按鈕，尚未實作） | +2 | 前端 |
+  | **單純追問／索答施壓** | **0** | comprehension = unclear |
+
+  歸零三途：程式跑成功（事實）／換卡點 `continues_previous_issue=False`（LLM 保守二元判定）／
+  閒置超過 30 分鐘（純時間）。前端不再送 `hint_level`——送得出來的數字就可能被寫死成 0
 
 **Bloom 修飾**與等級正交：等級管揭露多少，Bloom 管講多深（`_BLOOM_DEPTH` 6 條，
 REMEMBER 直接給定義 → CREATE 給可選設計方向）。Feedback 層組裝「累積指令 ＋ 深度修飾」。

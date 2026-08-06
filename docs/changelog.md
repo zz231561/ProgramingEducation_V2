@@ -1,5 +1,57 @@
 # 變更日誌
 
+## [2026-08-06] — 7-C2a' 選層輸入改寫：persistence（追問次數）→ need（需求量估計）
+
+> 使用者要求「跳脫現有規則構思最接近完美的解法」後的重寫。**核心主張：堅持不等於值得。**
+> 舊的 persistence 是「同脈絡追問了幾次」，實測顯示它把三種完全不同的學生混為一談——
+> 認真卡住的、在對話中一直有進展的、單純施壓索答的，全都是 +1。
+
+### Changed
+- `reveal_level = min(5, base(error_type) + need)`，`need` 改為狀態估計而非歷史計數：
+
+  | 訊號 | delta |
+  |---|---|
+  | 學生展現理解（understood） | −1（**舊模型只升不降**） |
+  | 學生表示沒理解（not_understood） | +1 |
+  | 改了程式又跑失敗（努力的存在證明） | +1 |
+  | 顯式求助（按鈕，欄位預留） | +2 |
+  | **單純追問／索答施壓** | **0** |
+
+  歸零三途：程式跑成功（事實）／換卡點（LLM 保守二元判定）／閒置 30 分鐘（純時間）——
+  全部與「學生講話的語氣」無關，不再有關鍵字正規表達式
+- `EvidenceResult` 新增 `comprehension_signal` + `continues_previous_issue`，
+  **搭在既有那次 Evidence 呼叫上，零額外 LLM 請求**（同 `is_on_topic` 的作法）；
+  Evidence prompt 新增上一輪問答摘要，並明文規定「索答施壓＝意願問題不是理解問題 → unclear」
+- `services/chat_signals.py` 改寫成 need 狀態機 + `turns_from_history` ORM 轉接層
+  （每輪判定存在 assistant 訊息的 evidence JSON → 無狀態重算、可事後稽核）
+- 舊資料無這兩個欄位時取保守預設（unclear / True），不影響既有行為
+
+### 實測對照（真實 LLM，同一組 persona 腳本）
+
+| persona | 舊 persistence | 新 need |
+|---|---|---|
+| P1 迷惘新手（真卡住） | reveal 2→3→**5**→5（第 3 輪就封頂） | 2→3→**4**→4（穩定爬升） |
+| P3 答案索取型（四輪施壓） | 1→1→2→**4**（施壓有效） | **1→1→0→0**（need 恆 0，施壓無效） |
+| P2 按部就班型 | — | comprehension 兩輪皆 understood → need 0、reveal 0 |
+
+P3 停在 base **不是靠關鍵字黑名單擋的**，是因為他從未付出可觀測的努力、也從未表示不理解。
+P2 證實不需要脆弱的「致謝歸零」規則：理解訊號本身就會把 need 壓住。
+
+### 消除的技術債
+- tech-debt **B7**（persistence 只增不減、唯一歸零是跑成功）——三個症狀（連問多個小問題、
+  純概念問答無歸零點、換題繼承）由「換單位」一次解掉，不是各補一條規則
+
+### 檔案拆分（依使用者「超過硬上限直接拆」的指示）
+- `services/chat.py` 306 → **228**：session CRUD 抽為 `services/chat_sessions.py`（92 行）——
+  對話容器管理與 EDF 管線本來就沒有共用狀態
+- 超硬上限檔案數 9 → **7**（另一個是同日拆掉的 `edf/feedback.py`）
+
+### 驗證
+- 後端 **869 tests 全綠**（+12，含 need 狀態機 26 支）；`web` tsc / eslint 乾淨
+- `eval_coddy` P1/P3/P2 真實 LLM 重跑（數據如上表）
+
+---
+
 ## [2026-08-06] — 7-C2a 實作：Decision 層改累積式揭露階梯 + 動態選層（方案 B）
 
 > 同日設計定案（見下一節）的實作。行為驗證（`eval_coddy` 七型重跑對照）屬 7-C4，尚未執行。

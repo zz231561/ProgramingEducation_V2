@@ -4,11 +4,12 @@
 不是「講了多少話」——每升一級都是在前一級的基礎上多揭露一點，因此指令是
 **累積**的，不是 6×6 = 36 格互斥的手寫矩陣（舊設計）。
 
-選層：`reveal_level = min(5, base(error_type) + persistence)`
+選層：`reveal_level = min(5, base(error_type) + need)`
 - `base`：無錯誤（純提問／查教材／程式正確）→ L0；syntax / compilation /
   runtime → L2（學生看不懂錯誤訊息，替他指出位置不算給答案）；
   logic / semantic → L1（找出邏輯錯在哪本身就是練習，直接指位置等於代寫）
-- `persistence`：由 `services.chat_signals.compute_persistence` 從對話歷史算出
+- `need`：由 `services.chat_signals.compute_need` 估計「學生離自己解出來還差多少」。
+  **不是追問次數**——7-C2a' 實測證實那會讓索答施壓一路爬級（見該模組檔頭）
 
 結構＝方案 B：**6 條等級指令 ＋ 6 條 Bloom 深度修飾（共 12 條）**，
 由 Feedback 層組裝成「基底行為 ＋ 本級額外揭露 ＋ 依 Bloom 調整深度」。
@@ -90,14 +91,14 @@ def _cumulative_instruction(level: int) -> str:
 
 def decide_strategy(
     evidence: EvidenceResult,
-    persistence: int = 0,
+    need: int = 0,
 ) -> TeachingStrategy:
-    """依錯誤類型與學生堅持度決定揭露等級與教學指令。
+    """依錯誤類型與學生需求量決定揭露等級與教學指令。
 
-    `persistence` 由後端從對話歷史算出（`services.chat_signals`），
+    `need` 由後端從對話歷史算出（`services.chat_signals.compute_need`），
     不接受前端送入的數字。
     """
-    level = base_level(evidence.error_type) + max(0, persistence)
+    level = base_level(evidence.error_type) + max(0, need)
     level = min(MAX_REVEAL_LEVEL, level)
 
     return TeachingStrategy(

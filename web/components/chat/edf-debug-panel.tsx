@@ -3,8 +3,9 @@
 /**
  * EDF Debug 面板（DEV-7）— dev 帳號在 AI 訊息下方展開中間層觀測。
  *
- * 顯示 Evidence（錯誤分類 / Bloom / concept tags）、Decision（hint level /
- * 策略指令）、RAG 命中（cosine 分數 + 片段）、K-Graph 鷹架 block。
+ * 顯示 Evidence（錯誤分類 / Bloom / concept tags / 理解訊號）、
+ * Decision（reveal level / need / 策略指令）、RAG 命中（cosine 分數 + 片段）、
+ * K-Graph 鷹架 block。
  * 灰階 + JetBrains Mono，摺疊預設關閉不干擾一般對話。
  */
 
@@ -24,10 +25,12 @@ export function EdfDebugPanel({ debug }: { debug: Record<string, unknown> }) {
       <div className="space-y-2 border-t border-border-muted px-2 py-2">
         <Row label="evidence">
           error={String(evidence.error_type)} · bloom={String(evidence.bloom_level)} ·
+          comprehension={String(evidence.comprehension_signal ?? "—")} ·
+          same_issue={String(evidence.continues_previous_issue ?? "—")} ·
           tags={(evidence.concept_tags as string[] | undefined)?.join(", ") || "—"}
         </Row>
         <Row label="strategy">
-          reveal={String(strategy.reveal_level)} · code_snippet=
+          reveal={String(strategy.reveal_level)} · need={String(debug.need ?? "—")} · code_snippet=
           {String(strategy.allow_code_snippet)}
           <div className="mt-0.5 whitespace-pre-wrap text-text-muted">
             {String(strategy.instruction ?? "")}

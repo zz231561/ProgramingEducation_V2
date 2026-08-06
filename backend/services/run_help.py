@@ -23,7 +23,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.config import settings
 from core.llm_params import chat_model_kwargs
 from models.chat import DEFAULT_SESSION_TITLE, ChatMessage, ChatSession, MessageRole
-from services.chat import get_or_create_session
+from services.chat_sessions import get_or_create_session
 
 logger = logging.getLogger(__name__)
 

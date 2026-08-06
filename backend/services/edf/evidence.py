@@ -42,11 +42,22 @@ SYSTEM_PROMPT = f"""\
 - bloom_reasoning: 判斷 Bloom 等級的依據（一句話）
 - code_analysis: 程式碼問題的詳細分析（2-3 句話，供教學策略使用）
 - is_on_topic: 布林值 — 學生的提問是否與 C++ 程式學習相關
+- comprehension_signal: "understood" | "not_understood" | "unclear"
+- continues_previous_issue: 布林值 — 本則訊息是否延續上一輪的同一個卡點
 
 判斷規則：
 - is_on_topic 只在提問明顯與程式學習無關時才為 false（閒聊、時事、生活話題等）。
   以下一律視為 true：任何程式問題、對教材/影片/課程的詢問（例如「老師上課有講嗎」）、
   對錯誤訊息的困惑、極簡短但語境上在求助的訊息（例如「?」「這是什麼意思」）
+- comprehension_signal 判「學生吸收了上一輪的說明沒有」，只看本則訊息：
+  - "understood"：複述對了、接著問更深的問題、說明自己接下來要怎麼改
+  - "not_understood"：明說不懂／不會，或把上一輪已經解釋過的同一件事再問一次
+  - "unclear"：看不出來，**以及所有「不要引導、直接給我答案、你就寫出來」這類索答施壓**
+    ——那是意願問題不是理解問題，一律 unclear
+  - 沒有上一輪（本則是開場）→ "unclear"
+- continues_previous_issue 判「還在同一個卡點上嗎」：同一個錯誤、同一段程式碼、
+  或針對上一輪回答的追問／子問題 → true；換一題、換一個無關主題 → false。
+  **不確定時一律 true**（誤判成新卡點會讓正在卡關的學生突然失去協助）
 - bloom_level 根據學生「嘗試做的事」判斷，不是根據錯誤嚴重度
 - concept_tags 最多選 3 個最相關的
 - 若程式碼正確無誤，error_type 為 "none"，仍需分析涉及的概念和 Bloom 等級
@@ -74,13 +85,19 @@ def _build_user_prompt(
     question: str = "",
     exit_code: int | None = None,
     status_description: str = "",
+    previous_exchange: str = "",
 ) -> str:
     """組裝送給 LLM 的使用者 prompt（XML 標籤隔離學生程式碼）。
 
     `reflection_summary` 由 caller 透過 `services.edf.reflection_context` 預先格式化。
     為何加在最後：避免反思內容稀釋 LLM 對程式碼/錯誤訊息的關注（核心仍是程式碼分析）。
+    `previous_exchange`（7-C2a'）：上一輪的問答摘要——`comprehension_signal` 與
+    `continues_previous_issue` 沒有它就無從判斷「比上一輪如何」。
     """
     parts = [wrap_student_code(source_code)]
+
+    if previous_exchange:
+        parts.append(previous_exchange)
 
     # 學生提問是 is_on_topic 判斷的唯一依據；沿用 sanitizer 包裝防 prompt injection
     if question:
@@ -117,6 +134,7 @@ async def analyze_evidence(
     question: str = "",
     exit_code: int | None = None,
     status_description: str = "",
+    previous_exchange: str = "",
 ) -> EvidenceResult:
     """呼叫 LLM 分析程式碼，回傳結構化 Evidence。
 
@@ -124,11 +142,14 @@ async def analyze_evidence(
     傳空字串等於不注入；caller 應透過 `format_reflection_for_evidence` 預先渲染。
     `exit_code` / `status_description`：執行平台的結束狀態——NZEC 這類
     「stderr 全空的失敗」只有這兩個欄位看得到。
+    `previous_exchange`（7-C2a'）：上一輪問答摘要，供判 `comprehension_signal` 與
+    `continues_previous_issue`；空字串＝本則是開場，兩者取保守預設。
     """
     client = _get_client()
     user_prompt = _build_user_prompt(
         source_code, stdout, stderr, compile_output, reflection_summary, question,
         exit_code=exit_code, status_description=status_description,
+        previous_exchange=previous_exchange,
     )
 
     try:

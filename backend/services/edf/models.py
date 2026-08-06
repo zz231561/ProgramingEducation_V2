@@ -15,6 +15,18 @@ class BloomLevel(IntEnum):
     CREATE = 6
 
 
+class ComprehensionSignal(str, Enum):
+    """學生本則訊息顯示他吸收了上一輪說明沒有（7-C2a'）。
+
+    這是 `need` 狀態機的主要輸入：理解 → 下修揭露、沒理解 → 上修。
+    **索答施壓不算沒理解**——那是意願問題不是理解問題，一律 UNCLEAR。
+    """
+
+    UNDERSTOOD = "understood"
+    NOT_UNDERSTOOD = "not_understood"
+    UNCLEAR = "unclear"
+
+
 class ErrorType(str, Enum):
     """程式碼錯誤分類。"""
 
@@ -51,4 +63,14 @@ class EvidenceResult(BaseModel):
     # 預設 True：舊資料與 LLM 未回傳此欄時一律當作課程相關，避免誤判成離題。
     is_on_topic: bool = Field(
         default=True, description="學生訊息是否與 C++ 程式學習相關"
+    )
+    # 7-C2a'（2026-08-06）：Decision 層 `need` 狀態機的兩個輸入，同樣搭在本次
+    # Evidence 呼叫上（零額外請求）。預設值一律偏保守：判不出來就維持現狀，
+    # 不會把卡住的學生打回 L0，也不會替索答者加碼。
+    comprehension_signal: ComprehensionSignal = Field(
+        default=ComprehensionSignal.UNCLEAR,
+        description="學生是否吸收了上一輪說明（understood 下修 / not_understood 上修）",
+    )
+    continues_previous_issue: bool = Field(
+        default=True, description="是否延續上一輪的同一個卡點（False = 換題目，need 歸零）"
     )

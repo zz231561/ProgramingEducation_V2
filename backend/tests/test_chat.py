@@ -78,7 +78,8 @@ async def test_interact_reuses_existing_session():
 @pytest.mark.asyncio
 async def test_list_sessions():
     """list_sessions 回傳使用者的 session。"""
-    from services.chat import interact, list_sessions
+    from services.chat import interact
+    from services.chat_sessions import list_sessions
 
     user_id = uuid.uuid4()
 
@@ -99,7 +100,8 @@ async def test_list_sessions():
 @pytest.mark.asyncio
 async def test_delete_session():
     """delete_session 刪除 session + cascade 刪除訊息。"""
-    from services.chat import interact, delete_session
+    from services.chat import interact
+    from services.chat_sessions import delete_session
 
     user_id = uuid.uuid4()
 

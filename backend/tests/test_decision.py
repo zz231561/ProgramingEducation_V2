@@ -44,21 +44,21 @@ def test_base_level_by_error_type(error_type: ErrorType, expected: int):
     assert decide_strategy(_make_evidence(error_type=error_type)).reveal_level == expected
 
 
-def test_persistence_raises_reveal_level():
-    """堅持度直接加在 base 之上。"""
+def test_need_raises_reveal_level():
+    """需求量直接加在 base 之上。"""
     ev = _make_evidence(error_type=ErrorType.LOGIC)  # base 1
-    assert decide_strategy(ev, persistence=0).reveal_level == 1
-    assert decide_strategy(ev, persistence=2).reveal_level == 3
+    assert decide_strategy(ev, need=0).reveal_level == 1
+    assert decide_strategy(ev, need=2).reveal_level == 3
 
 
 def test_reveal_level_capped_at_max():
     ev = _make_evidence(error_type=ErrorType.RUNTIME)  # base 2
-    assert decide_strategy(ev, persistence=99).reveal_level == MAX_REVEAL_LEVEL
+    assert decide_strategy(ev, need=99).reveal_level == MAX_REVEAL_LEVEL
 
 
-def test_negative_persistence_treated_as_zero():
+def test_negative_need_treated_as_zero():
     ev = _make_evidence(error_type=ErrorType.NONE)
-    assert decide_strategy(ev, persistence=-3).reveal_level == 0
+    assert decide_strategy(ev, need=-3).reveal_level == 0
 
 
 # === 累積式指令 ===
@@ -66,7 +66,7 @@ def test_negative_persistence_treated_as_zero():
 def test_instruction_is_cumulative():
     """L3 的指令必須含 L0-L3 全部行為，不是只有第 3 級那一句。"""
     ev = _make_evidence(error_type=ErrorType.NONE)
-    result = decide_strategy(ev, persistence=3)
+    result = decide_strategy(ev, need=3)
     assert isinstance(result, TeachingStrategy)
     for level in range(4):
         assert f"L{level}：" in result.instruction
@@ -81,11 +81,11 @@ def test_level_zero_instruction_has_no_reveal():
 
 # === 程式碼片段閘門 ===
 
-@pytest.mark.parametrize("persistence,allowed", [(0, False), (1, False), (2, False), (3, True), (5, True)])
-def test_allow_code_snippet_gate(persistence: int, allowed: bool):
+@pytest.mark.parametrize("need,allowed", [(0, False), (1, False), (2, False), (3, True), (5, True)])
+def test_allow_code_snippet_gate(need: int, allowed: bool):
     """L3（給骨架）起才允許程式碼片段。"""
-    ev = _make_evidence(error_type=ErrorType.NONE)  # base 0 → reveal == persistence
-    result = decide_strategy(ev, persistence=persistence)
+    ev = _make_evidence(error_type=ErrorType.NONE)  # base 0 → reveal == need
+    result = decide_strategy(ev, need=need)
     assert result.allow_code_snippet is allowed
     assert (result.reveal_level >= MIN_CODE_LEVEL) is allowed
 

@@ -7,8 +7,10 @@
  * 完整 EDF 回饋（hint_level / 概念補強建議）屬 3-2c 範圍，本頁先做基本版。
  */
 
+import { useState } from "react";
 import { CheckCircle2, XCircle } from "lucide-react";
 
+import { ComprehensionModal } from "@/components/comprehension/comprehension-modal";
 import { Question, SubmitResponse } from "@/lib/quiz";
 
 import { DiagnosisSection } from "./diagnosis-section";
@@ -24,8 +26,18 @@ interface Props {
 }
 
 export function ResultView({ question, result, onNext, onExit, onStartQuestion }: Props) {
+  // 2-6 理解驗證：只在答對後問後端要不要驗（不需要時元件自行不出現）。
+  // 關掉之後不再彈出——同一題重複驗沒有教學意義
+  const [checkDone, setCheckDone] = useState(false);
+
   return (
     <div className="space-y-4">
+      {result.is_correct && !checkDone && (
+        <ComprehensionModal
+          answerId={result.answer_id}
+          onClose={() => setCheckDone(true)}
+        />
+      )}
       <ResultBanner isCorrect={result.is_correct} feedback={result.feedback} />
 
       {result.explanation && (

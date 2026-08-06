@@ -7,6 +7,7 @@ import {
   Separator as PanelResizeHandle,
 } from "react-resizable-panels";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { AiLockProvider } from "@/components/comprehension/ai-lock";
 import { GlobalNav } from "./global-nav";
 import { ChatPanel } from "./chat-panel";
 import { StatusBar } from "./status-bar";
@@ -35,6 +36,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <WorkspaceProvider chatOpen={chatOpen} toggleChat={toggleChat}>
+      {/* AI 鎖要蓋住 ChatPanel 與頁面內容兩邊（變體挑戰進行中禁用 Coddy，2-6d） */}
+      <AiLockProvider>
       {/* Chat 狀態必須在 ShellLayout 之外：ChatPanel 收合會 unmount（A1） */}
       <ChatRuntimeProvider>
         <TooltipProvider delay={400}>
@@ -47,6 +50,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </ShellLayout>
         </TooltipProvider>
       </ChatRuntimeProvider>
+      </AiLockProvider>
     </WorkspaceProvider>
   );
 }

@@ -6,17 +6,6 @@
 
 ## ⚠ 待處理
 
-### 🔴 A. 功能缺口（學生實際碰不到）
-
-**A1. Phase 2-6 Comprehension 整個前端不存在**（2026-08-06 審計發現）
-- [ ] `web/` 全目錄 grep `comprehension|epl|predict|variation` **零 API 呼叫**；git 歷史確認前端從未存在
-  - 後端活著：8+ 條路由（EPL / Predict / Variation / trigger-suggestion）+ `mastery_hook`（通過→BKT 上調）
-    + `trigger.py` 動態頻率規則 + 約 100 個測試持續維護
-  - roadmap 主表把 2-6 勾成 ✅「…動態觸發 + BKT 串接」，讀起來像整條完成；archive 實際寫的是
-    「**後端**教學引擎…就緒」，2-6d 更註明「『禁用 AI』屬**前端責任**」——前端從未被任何條目追蹤
-  - **後果**：論文教學設計（EPL/Fowler、Variation Theory/Marton，references.md §5.1）是死功能
-  - **處置**：使用者 2026-08-06 裁決＝**補前端 UI**（排 roadmap 7-C3）
-
 ### 🔴 B. Coddy 教學品質（7-C2 排程中）
 
 **B3. ~~洩答殘留~~ → 重新界定為「L0 語意錯誤」**（2026-08-06 設計討論後修正判斷，改由 7-C2a 處理）
@@ -112,6 +101,10 @@
 ## ✅ 已消除
 
 ### 2026-08-06（7-C 系列 + 文件稽核）
+- ~~🔴 **Phase 2-6 Comprehension 整個前端不存在**（原 A1）~~ — 7-C3：補上 `lib/comprehension.ts` +
+  `components/comprehension/` 7 檔，接入 Quiz 結果頁與 Learn 觀念題 tab；變體挑戰的「禁用 AI」
+  （2-6d 明列的前端責任）以 AppShell 層級的 AI 鎖實作，不是只把按鈕藏起來。
+  後端 8 條路由與 `mastery_hook` 從此有真實流量
 - ~~🟡 **NZEC 對教學情境會誤導**（原 B1）~~ — 7-C2b：新增機械判定固定文案（`kind="nzec"`，零 LLM），
   分清 **C++ 標準 / OS 慣例 / 本平台判定**三層並以第一人稱交代本平台行為；
   Feedback 另加 RULE-7 讓對話路徑也照這個層次講。

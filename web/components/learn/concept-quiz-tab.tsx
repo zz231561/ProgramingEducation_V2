@@ -10,6 +10,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { CheckCircle2, Loader2, XCircle } from "lucide-react";
 
+import { ComprehensionModal } from "@/components/comprehension/comprehension-modal";
 import { MCQuestion } from "@/components/quiz/mc-question";
 import { ApiRequestError } from "@/lib/api";
 import {
@@ -175,8 +176,17 @@ function QuizResult({
   onNext: () => void;
   isLast: boolean;
 }) {
+  // 2-6 理解驗證：答對才問後端要不要驗；關掉後同一題不再彈
+  const [checkDone, setCheckDone] = useState(false);
+
   return (
     <div className="space-y-3">
+      {result.is_correct && !checkDone && (
+        <ComprehensionModal
+          answerId={result.answer_id}
+          onClose={() => setCheckDone(true)}
+        />
+      )}
       <div
         className={`flex items-center gap-2 text-sm ${
           result.is_correct ? "text-accent-green" : "text-accent-red"

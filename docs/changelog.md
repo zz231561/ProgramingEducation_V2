@@ -1,5 +1,36 @@
 # 變更日誌
 
+## [2026-08-06] — 7-C3 Comprehension 前端 UI（2-6 後端完整但學生一直碰不到）
+
+### Added
+- `web/lib/comprehension.ts`：trigger-suggestion + 三種 type 的 generate/grade API client
+- `components/comprehension/`（7 檔，全部 < 200 行）
+  - `use-comprehension.ts` — 狀態機：答對 → 問後端要不要驗 → 依建議 type 出題 → 作答 → 評分。
+    **任何一步失敗都不擋學生**（出題失敗靜默收掉、評分失敗保留學生打的內容可重送）
+  - `comprehension-modal.tsx` — Modal 殼（ui-ux-spec §12.2）；Esc / 關閉鈕隨時可離開
+  - `epl-step.tsx`（回三項分數：概念正確性／具體程度／因果連結）、
+    `predict-step.tsx`（評分後才揭露正解 —— generate 階段本來就不下發 expected）、
+    `variation-step.tsx`（題幹 + 測資表 + 解答編輯區）
+  - `ai-lock.tsx` — **變體挑戰進行中真的鎖住 Coddy**（2-6d）：Chat 掛在 AppShell、
+    每頁都能 Ctrl+B 叫出來，不鎖等於沒驗到遷移能力。Provider 掛在 AppShell，
+    ChatPanel 讀鎖 → 輸入框 disabled + 顯示原因，離開挑戰（含中途關閉）一律解鎖
+- 接入點：`quiz/result-view.tsx`（Quiz 頁 + 弱項測驗共用）與 `learn/concept-quiz-tab.tsx`
+  —— 兩處行為一致，避免同一件事在不同頁面不同表現
+
+### 驗證
+- **端對端煙霧測試**（本機後端 + 真實 LLM）：六個端點的回傳欄位與前端 client 逐一對上
+  （trigger→epl generate/grade→predict generate/grade→variation generate/grade）。
+  故意送不相關的解答時，變體評分正確指出「你交的是閏年程式但題目要成績表」
+- 後端 880 tests 全綠（本次未動後端）；`web` tsc / eslint / build 通過
+
+### 待觀察（7-C4）
+- 觸發頻率：後端規則是通過率 ≥ 0.8 才不觸發，冷啟動必觸發 EPL。多題連續作答時
+  可能每答對一題就彈一次（每次 2 次 LLM 呼叫）——**刻意先不加前端節流**，
+  以免未經討論就削弱 2-6e 的自適應設計；7-C4 用實際頻率數據裁決
+- 規格線框寫的是 emoji 標題（🧠），實作改用 lucide `Brain`（frontend.md R8.2 禁 emoji）
+
+---
+
 ## [2026-08-06] — 7-C2b 其餘 P1 修正（NZEC 語意 / 逾時文案 / 說明規則 / 429 顯示）
 
 ### Added

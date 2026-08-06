@@ -9,8 +9,8 @@
 |------|------|------|------|
 | ① | ~~**7-C2a** Decision 層重構（累積式揭露階梯 + 動態選層，方案 B）~~ | 架構優化 | ✅ 2026-08-06 |
 | ①' | ~~**7-C2b** 其餘 P1（NZEC 教學語意 / 逾時文案 / 分層說明+認錯規則 / 429 配額顯示）~~ | 功能優化 | ✅ 2026-08-06 |
-| ② | **7-C3** 2-6 Comprehension 前端 UI（後端完整但學生碰不到） | 新建功能 | 🎯 **下一件事** |
-| ③ | **7-C4** Coddy 品質再驗（`eval_coddy` 七型重跑前後對照） | 驗證 | 待辦 |
+| ② | ~~**7-C3** 2-6 Comprehension 前端 UI（後端完整但學生碰不到）~~ | 新建功能 | ✅ 2026-08-06 |
+| ③ | **7-C4** Coddy 品質再驗（`eval_coddy` 七型重跑前後對照） | 驗證 | 🎯 **下一件事** |
 | ④ | **7-D** 技術債清償（前端測試 → 檔案拆分 → changelog 拆檔 → R6 收尾 → 文件稽核） | 技術債 | 待辦 |
 | ⑤ | **7-E** 使用者驗收（acceptance-checklist 0~9 段） | 驗收 | 待辦 |
 | ⑥ | Phase 8 專案健檢整理 → 7-2 監控 → 7-3 效能 baseline → 5-3/5-4 行為分析 | 後續 | 待辦 |
@@ -352,10 +352,10 @@
 - [x] 7-C2b **其餘 P1 修正**（消除 tech-debt B1／B2，B4 消化 chat 路徑）：NZEC 機械文案分三層
       （C++ 標準 / OS 慣例 / 本平台判定，第一人稱）+ PREAMBLE RULE-7/8（禁含糊帶過、認錯先講）
       + 逾時文案改互動終端 + `chat-error.ts` 分辨配額與故障；880 tests，P1 重跑實測措辭已改正
-- [ ] 7-C3 **2-6 Comprehension 前端 UI｜新建功能**（使用者裁決：建 UI 非降級；對應 tech-debt A1）
-  - 答對後呼叫 `GET /comprehension/trigger-suggestion` → 依 `suggested_type` 彈出
-    EPL / 預測輸出 / 變體挑戰三種作答流程（ui-ux-spec §12.2 modal 線框）
-  - 變體挑戰須禁用 AI（2-6d 明列為前端責任）；結果顯示 passed，BKT 回寫後端已完成
+- [x] 7-C3 **2-6 Comprehension 前端 UI｜新建功能**（對應 tech-debt A1）：`lib/comprehension.ts` +
+      `components/comprehension/` 7 檔（狀態機 / Modal / 三種 step / AI 鎖）；接入 Quiz result-view
+      與 Learn 觀念題 tab；變體挑戰**真的鎖住 Coddy**（Provider 掛 AppShell，ChatPanel 讀鎖）；
+      六端點端對端煙霧測試通過。⚠ 觸發頻率待 7-C4 用數據裁決是否加節流
 - [x] 7-C2a'' **收尾**：B8 消除（`stabilize_error_type` 同證據沿用 error_type）＋
       「我卡住了」按鈕（migration `v8e9f0a1b2c3` + need +2 + 單輪漲幅上限 2）＋
       Evidence 容錯解析（欄位越界不再 502）＋ harness 可重跑（P2 反思 upsert）；

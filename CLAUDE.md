@@ -50,7 +50,9 @@ Phase 7-R 自建互動執行引擎 ✅（生產終端已上線）｜Phase 7-U �
   **七型全跑通過**（877 tests／前端 build 過／migration 可逆）
 - 7-C2b ✅ 其餘 P1：NZEC 機械文案分三層（C++ 標準／OS 慣例／本平台判定，第一人稱）+ RULE-7/8
   （禁「通常」含糊帶過、認錯第一句就講）+ 逾時文案改互動終端 + 429 配額與故障分辨
-- **順序（roadmap 開頭有完整表）**：7-C3 Comprehension 前端 → 7-C4 再驗 →
+- 7-C3 ✅ Comprehension 前端 UI（2-6 後端一直沒人用）：`components/comprehension/` 7 檔 +
+  Quiz/Learn 兩處接入；變體挑戰以 AppShell 層 AI 鎖真的停用 Coddy；六端點端對端煙霧測試過
+- **順序（roadmap 開頭有完整表）**：7-C4 再驗 →
   **7-D 技術債清償** → **7-E 使用者驗收** → Phase 8 / 7-2 監控 / 7-3 效能 / 5-3·5-4
 
 **排在驗收之後**：Phase 8 專案健檢（8-0 討論已完成）／6-4b 教材局部重跑（依操作回饋）／K1d·K4d·K5d 使用者自測

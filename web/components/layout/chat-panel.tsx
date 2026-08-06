@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback } from "react";
-import { PanelRightClose } from "lucide-react";
+import { Lock, PanelRightClose } from "lucide-react";
+import { useAiLock } from "@/components/comprehension/ai-lock";
 import { MessageList } from "@/components/chat/message-list";
 import { ChatInput } from "@/components/chat/chat-input";
 import { SessionList } from "@/components/chat/session-list";
@@ -21,6 +22,8 @@ export function ChatPanel({ onCollapse }: ChatPanelProps) {
     items, isLoading, stage, sendMessage, loadSession, startNewSession,
     sessions, activeId, setActiveId, deleteSession,
   } = useChatRuntime();
+  // 變體挑戰進行中禁用 Coddy（2-6d）；非 null 即鎖住並顯示原因
+  const { lockedReason } = useAiLock();
 
   const handleSelectSession = useCallback(
     async (id: string) => { setActiveId(id); await loadSession(id); },
@@ -51,7 +54,13 @@ export function ChatPanel({ onCollapse }: ChatPanelProps) {
         onCollapse={onCollapse}
       />
       <MessageList items={items} isLoading={isLoading} stage={stage} />
-      <ChatInput onSend={sendMessage} disabled={isLoading} />
+      {lockedReason && (
+        <div className="flex shrink-0 items-center gap-1.5 border-t border-border-default px-3 py-2 text-xs text-text-secondary">
+          <Lock className="size-3.5 shrink-0 text-text-muted" />
+          {lockedReason}
+        </div>
+      )}
+      <ChatInput onSend={sendMessage} disabled={isLoading || lockedReason !== null} />
     </div>
   );
 }

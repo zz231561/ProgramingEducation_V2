@@ -18,6 +18,18 @@ def test_system_prompt_contains_strategy():
     assert "說明深度：" in prompt
 
 
+def test_low_reveal_guard_targets_the_learning_objective():
+    """7-C4：低揭露等級要守的是「目標概念的推理」，不是「凡規則都不能講」。
+
+    實測依據：閏年題屬 if-else 章節，閏年定義是背景設定——原措辭「禁止把所有
+    判斷條件一次寫完」與教學意圖衝突，Coddy 照做反而增加無關的認知負荷。
+    """
+    prompt = build_system_prompt(make_evidence(), make_strategy(reveal=1))
+    assert "control-flow" in prompt  # 目標概念要出現在防線裡
+    assert "背景知識" in prompt
+    assert "所有判斷條件" not in prompt  # 舊措辭已移除
+
+
 def test_preamble_requires_layered_sources_and_plain_corrections():
     """7-C2b：規範來源要分層講、認錯要第一句就講。"""
     prompt = build_system_prompt(make_evidence(), make_strategy())

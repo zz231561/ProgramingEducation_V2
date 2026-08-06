@@ -45,17 +45,25 @@ PERSONA = """\
 """
 
 
-def _leak_guard(strategy: TeachingStrategy) -> str:
+def _leak_guard(strategy: TeachingStrategy, concept_tags: list[str]) -> str:
     """依揭露等級補上文字層防洩答防線。
 
-    RULE-1 只擋 code block——2026-08-06 模擬驗收實測：揭露等級 0 就用散文把完整
-    演算法（閏年 400/100/4 三條件）全給了；等級 4 給了「TODO 已被填好答案」的框架。
+    RULE-1 只擋 code block——2026-08-06 模擬驗收實測：等級 4 給了「TODO 已被填好
+    答案」的框架，低等級則用散文把整套判斷條件寫完。
+
+    7-C4 修正措辭：原文寫「禁止把所有判斷條件一次寫完」，但實測顯示這條與教學意圖
+    衝突——閏年題屬「if-else」章節，**閏年的定義是背景設定不是學習目標**，講出來
+    反而移除了與目標無關的認知負荷。該守的界線是「不可代替學生完成**目標概念**的
+    推理」，不是「凡是規則都不能講」。
     """
     if strategy.reveal_level <= 2:
+        focus = "、".join(concept_tags[:3]) or "本題的目標概念"
         return (
-            "\n洩答防線：目前揭露等級低——**禁止**給出完整解法，包括用文字或條列"
-            "把所有判斷條件、步驟一次寫完（那與直接給程式碼無異）。"
-            "最多點出一個方向或一個關鍵概念，其餘留給學生推導。"
+            f"\n洩答防線：目前揭露等級低。本題的學習目標是 **{focus}**——"
+            "**禁止**代替學生完成這部分的推理（例如把該用的控制流程、資料結構或演算法"
+            "步驟直接排好給他）。"
+            "但題目情境裡的**背景知識**（定義、常識規則、題意澄清）可以直接說明，"
+            "那不是他要學的東西，藏著只會增加無關的認知負荷。"
         )
     if strategy.reveal_level <= 4 and strategy.allow_code_snippet:
         return (
@@ -66,7 +74,7 @@ def _leak_guard(strategy: TeachingStrategy) -> str:
     return "\n洩答防線：解釋可以完整，程式碼不可以——片段仍受 RULE-2 約束。"
 
 
-def _strategy_block(strategy: TeachingStrategy) -> str:
+def _strategy_block(strategy: TeachingStrategy, concept_tags: list[str]) -> str:
     allow = (
         "是（最多 8 行，必須含 TODO）"
         if strategy.allow_code_snippet
@@ -76,7 +84,7 @@ def _strategy_block(strategy: TeachingStrategy) -> str:
 教學策略指令（揭露等級 {strategy.reveal_level}/{MAX_REVEAL_LEVEL}）：
 {strategy.instruction}
 說明深度：{strategy.bloom_guidance}
-允許程式碼片段：{allow}{_leak_guard(strategy)}\
+允許程式碼片段：{allow}{_leak_guard(strategy, concept_tags)}\
 """
 
 
@@ -116,7 +124,7 @@ def build_system_prompt(
     blocks = [
         PREAMBLE,
         PERSONA,
-        _strategy_block(strategy),
+        _strategy_block(strategy, evidence.concept_tags),
         _context_block(evidence),
     ]
 

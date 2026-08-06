@@ -18,6 +18,14 @@ def test_system_prompt_contains_strategy():
     assert "說明深度：" in prompt
 
 
+def test_preamble_requires_layered_sources_and_plain_corrections():
+    """7-C2b：規範來源要分層講、認錯要第一句就講。"""
+    prompt = build_system_prompt(make_evidence(), make_strategy())
+    assert "C++ 標準" in prompt and "本平台的判定" in prompt
+    assert "禁止" in prompt and "通常" in prompt  # 明文禁用含糊帶過的措辭
+    assert "我前面說錯了" in prompt
+
+
 def test_system_prompt_contains_evidence():
     prompt = build_system_prompt(make_evidence(), make_strategy())
     assert "infinite loop" in prompt

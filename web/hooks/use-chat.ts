@@ -4,6 +4,7 @@ import { useState, useCallback, useRef } from "react";
 import { api } from "@/lib/api";
 import { interactStream, type InteractStage } from "@/lib/chat-interact";
 import { getActiveReflectionId } from "@/lib/active-reflection";
+import { describeChatError } from "@/lib/chat-error";
 import type { ExecutionResult } from "@/components/workspace/workspace-context";
 import type {
   ChatItem, MessageItem, ExecutionItem,
@@ -101,15 +102,16 @@ export function useChat(options: UseChatOptions = {}) {
           const title = question.length > 50 ? question.slice(0, 50) : question;
           options.onSessionCreated?.(res.session_id, title);
         }
-      } catch {
-        // 樂觀的使用者訊息保留在畫面上，只補一則錯誤回覆
+      } catch (err) {
+        // 樂觀的使用者訊息保留在畫面上，只補一則錯誤回覆。
+        // 配額用盡與系統故障必須分辨得出來——否則學生只會一直重按（7-C2b）
         setItems((prev) => [
           ...prev,
           {
             type: "message",
             id: crypto.randomUUID(),
             role: "assistant",
-            content: "無法取得 AI 回應，請稍後再試。",
+            content: describeChatError(err),
             createdAt: new Date().toISOString(),
           },
         ]);

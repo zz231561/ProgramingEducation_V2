@@ -19,17 +19,6 @@
 
 ### 🔴 B. Coddy 教學品質（7-C2 排程中）
 
-**B1. 執行狀態 `Runtime Error (NZEC)` 對教學情境會誤導**
-- [ ] `runner/app/executor.py` 非零 exit → `Runtime Error (NZEC)`（沿用 Judge0 判題慣例）
-  - 學生程式**正常執行、輸出正確、沒有崩潰**，只因 `return 1` 被標成「執行錯誤」
-  - 對競賽判題正確，對教學平台是**平台自製的困惑**：學生以為 C++ 出錯，實際是本平台的約定
-  - 需與「真的被 signal 打死」區分（`_signal_status` 已有分支，缺的是非零 exit 的教學語意）
-
-**B2. `run_help.py` 逾時固定文案已與互動終端脫節**
-- [ ] `_TIMEOUT_TEMPLATE` 仍寫「這裡是一次跑完的**批次執行**…要先在 Output 上方的『**輸入**』填好內容」
-  - R4 互動終端 + R5d 移除 stdin 預填 UI 之後**這個欄位已不存在**
-  - 零 LLM 的機械固定文案 → 會非常有自信地叫學生去點一個不存在的東西
-
 **B3. ~~洩答殘留~~ → 重新界定為「L0 語意錯誤」**（2026-08-06 設計討論後修正判斷，改由 7-C2a 處理）
 - [ ] **早先把它列為 🔴 洩答是判斷過當**：閏年題屬章節 25「if-else」，**學習目標是 if-else 與模數**，
       「閏年怎麼定義」只是背景設定——講出規則其實移除了與目標無關的認知負荷，是對的教法。
@@ -41,12 +30,12 @@
       判斷法），仍應改為引導而非直述——需靠注入的 `concept_tags` 判斷
 - 觀測工具已備：`scripts/eval_coddy/` P3 腳本可隨時重測，此項**可量測不需憑感覺**
 
-**B4. 前端 429 / 5xx 統一攔截宣告了但沒實作**
-- [ ] `web/lib/api.ts` 檔頭與 `frontend.md` 皆寫「429 → 冷卻倒數 toast、5xx → 錯誤 toast」，實作**只有 401**
-  - 後端 429 回的 `retry_after_seconds` 從未被任何前端程式碼消費
-  - `use-chat.ts` 的 `catch {}` 不分辨 `ApiRequestError`：**撞每日 60 次 LLM 配額的學生看到
-    「無法取得 AI 回應，請稍後再試」**——把配額誤導成故障，學生會一直重試
-  - 相關：429 toast 需先引入 shadcn/ui toast（sonner）基礎設施
+**B4. 全站 429 / 5xx toast 仍未實作**（7-C2b 已修掉最痛的 chat 路徑，其餘待辦）
+- [x] ~~chat 撞配額被誤導成故障~~ — 7-C2b：`lib/chat-error.ts` 分辨 `DAILY_QUOTA_EXCEEDED`
+      （原文照用，已寫明何時恢復）與 `RATE_LIMITED`（消費 `retry_after_seconds` 顯示秒數）
+- [ ] `web/lib/api.ts` 檔頭與 `frontend.md` 寫的是**全站** toast 攔截，目前仍只有 401 重導
+  - 其他頁面（quiz / learn / 教師端）撞 429 或 5xx 仍是各自的 catch，訊息不一致
+  - 需先引入 shadcn/ui toast（sonner）基礎設施 → 排 7-D
 
 **B5. Evidence concept tag 雜訊 fan-out 到無關概念**（2026-08-06 模擬實證）
 - [ ] hello world 被標 `control-flow` → 寫入 cpp-25-if-else；overflow 程式被標 `io-streams`（因有 cout）
@@ -123,6 +112,12 @@
 ## ✅ 已消除
 
 ### 2026-08-06（7-C 系列 + 文件稽核）
+- ~~🟡 **NZEC 對教學情境會誤導**（原 B1）~~ — 7-C2b：新增機械判定固定文案（`kind="nzec"`，零 LLM），
+  分清 **C++ 標準 / OS 慣例 / 本平台判定**三層並以第一人稱交代本平台行為；
+  Feedback 另加 RULE-7 讓對話路徑也照這個層次講。
+  ⚠ runner 的狀態字串**刻意不動**（判題／教材健檢依賴該慣例），改的是教學語意不是判定
+- ~~🟡 **逾時文案叫學生去填已移除的「輸入」欄位**（原 B2）~~ — 7-C2b：改寫成互動終端的實際操作
+  （游標在閃＝在等你打字，直接在終端機輸入再按 Enter）
 - ~~🟡 **`base(error_type)` 每輪重判導致 reveal 回退**（原 B8）~~ — 7-C2a''：`stabilize_error_type`
   同證據沿用上輪判定；實測 P3 由 1→1→0→0 變 1→1→1→1
 - ~~🔴 **Evidence 單一欄位越界毀掉整次互動**~~ — 7-C2a''：LLM 把 ConceptTag 寫進 `error_type`

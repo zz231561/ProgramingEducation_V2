@@ -112,7 +112,7 @@ class RunHelpRequest(BaseModel):
     # 逾時 / 時區的情況沒有編譯訊息，改由 status_description 與 kind 判定
     compile_output: str = Field(default="", max_length=10_000)
     status_description: str = Field(default="", max_length=200)
-    # 前端機械判定出的類型（目前只有 "timezone"）；空＝依編譯訊息判斷
+    # 前端機械判定出的類型（"timezone" / "nzec"）；空＝依編譯訊息判斷
     kind: str = Field(default="", max_length=20)
     session_id: uuid.UUID | None = Field(default=None)
 

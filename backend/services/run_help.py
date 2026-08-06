@@ -8,7 +8,9 @@
 - **學生自己的錯誤**（漏分號、型別不符、變數未宣告…）：屬於可學習的範圍 →
   走 LLM 引導，只點方向不給修好的程式碼
 
-機械判定的種類（皆零成本）：平台限制（無此函式庫）/ 執行逾時 / 伺服器時鐘為 UTC。
+機械判定的種類（皆零成本）：平台限制（無此函式庫）/ 執行逾時 / 伺服器時鐘為 UTC /
+NZEC（結束狀態非 0）。**規範來源固定的事實一律用固定文案**——讓 LLM 每次即興解釋
+「為什麼 return 1 算錯」，講法會漂而且容易混淆標準與慣例。
 
 觸發時機由前端負責：僅編譯失敗、且同一個錯誤只主動一次（見 chat-panel）。
 """
@@ -66,10 +68,27 @@ _PLATFORM_TEMPLATE = (
 _TIMEOUT_TEMPLATE = (
     "程式跑太久被系統中止了（執行有時間上限）。\n\n"
     "最常見的兩個原因：**迴圈沒有結束條件**（或條件永遠成立），"
-    "或是**用 `cin` 等輸入但沒有提供輸入**——這裡是一次跑完的批次執行，"
-    "程式不會停下來等你打字，要先在 Output 上方的「輸入」填好內容。\n\n"
+    "或是**程式停在 `cin` 等你輸入**——終端機是互動的，游標在閃就代表它在等你打字，"
+    "直接在終端機視窗輸入內容再按 Enter 就會繼續。\n\n"
     "如果你正在練習「無窮迴圈」這章，這個結果其實是正確的：它證明迴圈真的停不下來。"
     "想讓它結束的話，想想看要在什麼條件下 `break`？"
+)
+
+# NZEC（non-zero exit code）：畫面輸出可能完全正確，stderr 也全空，
+# 學生看到的只有一句「Runtime Error」。這種困惑不該用 LLM 即興解釋——
+# 三層規範來源是固定事實，寫成固定文案（零成本且每次講法一致）。
+# 用第一人稱說明本平台的判定，不說「線上評測通常…」那種第三人稱迴避。
+_NZEC_TEMPLATE = (
+    "你的程式其實跑完了，輸出也印出來了——被標成 Runtime Error 是因為**結束狀態碼不是 0**。\n\n"
+    "這件事分三層，分清楚就不會覺得莫名其妙：\n\n"
+    "1. **C++ 標準**：`main` 的回傳值會交給執行環境，`0`（或 `EXIT_SUCCESS`）代表正常結束；"
+    "其他數值的意義由實作決定，標準本身沒有規定「非 0 就是錯」。\n"
+    "2. **作業系統慣例**：Unix／Linux 這一系把非 0 的結束狀態當成「異常結束」，"
+    "這是慣例不是 C++ 的規定。\n"
+    "3. **這個平台的判定**：我沿用上面那個慣例——只要結束狀態不是 0，我就標成 "
+    "Runtime Error (NZEC)，**即使你的輸出完全正確**。\n\n"
+    "所以如果你的邏輯本來就是對的，把 `main` 結尾的回傳值改成 `0`（或整行省略，"
+    "C++ 會自動補 0）就會恢復正常。"
 )
 
 _TIMEZONE_TEMPLATE = (
@@ -78,6 +97,12 @@ _TIMEZONE_TEMPLATE = (
     "雲端執行環境（LeetCode 這類線上判題也一樣）通常都跑 UTC。"
     "如果你想顯示台灣時間，想想看：拿到 `time_t` 之後，加上多少秒就會變成台灣時間？"
 )
+
+# 前端機械判定出的種類 → 固定文案（皆零 LLM 呼叫）
+_MECHANICAL_KINDS = {
+    "timezone": _TIMEZONE_TEMPLATE,
+    "nzec": _NZEC_TEMPLATE,
+}
 
 _FALLBACK_GUIDANCE = (
     "編譯沒有通過。先看錯誤訊息的第一行——它會告訴你是哪一行、哪個符號出問題。"
@@ -182,10 +207,8 @@ async def run_help(
 
     機械判定（平台限制 / 執行逾時）走固定文案不呼叫 LLM；其餘走引導。
     """
-    if kind == "timezone":
-        content = _TIMEZONE_TEMPLATE
-        mechanical = True
-        return await _persist(db, user_id, session_id, content, mechanical)
+    if kind in _MECHANICAL_KINDS:
+        return await _persist(db, user_id, session_id, _MECHANICAL_KINDS[kind], True)
 
     header = detect_unavailable_header(compile_output)
     if header is not None:

@@ -162,3 +162,37 @@ async def test_timezone_notice_without_llm(client: AsyncClient):
     llm.assert_not_called()
     content = resp.json()["assistant_message"]["content"]
     assert "UTC" in content and "8 小時" in content
+
+
+async def test_nzec_notice_separates_three_sources(client: AsyncClient):
+    """NZEC 說明必須分清 C++ 標準 / OS 慣例 / 本平台判定，且零 LLM（7-C2b）。
+
+    修的問題：由 LLM 即興解釋時會講成「線上評測通常…」——第三人稱迴避，
+    而且把標準與慣例混為一談。規範來源是固定事實，該用固定文案。
+    """
+    with patch(
+        "services.run_help._generate_guidance", new_callable=AsyncMock
+    ) as llm:
+        resp = await client.post(
+            "/chat/run-help",
+            json={"code": "int main(){return 1;}", "kind": "nzec"},
+            cookies=_CK,
+        )
+    assert resp.status_code == 200
+    llm.assert_not_called()
+    assert resp.json()["is_mechanical"] is True
+    content = resp.json()["assistant_message"]["content"]
+    assert "C++ 標準" in content
+    assert "作業系統慣例" in content
+    assert "這個平台的判定" in content
+    # 第一人稱交代本平台的行為，不用「通常」把來源含糊帶過
+    assert "我沿用" in content
+    assert "通常" not in content
+
+
+def test_timeout_template_does_not_reference_removed_input_field():
+    """R5d 移除了 Output 上方的「輸入」欄位；文案不可再叫學生去填它。"""
+    from services.run_help import _TIMEOUT_TEMPLATE
+
+    assert "「輸入」" not in _TIMEOUT_TEMPLATE
+    assert "終端機" in _TIMEOUT_TEMPLATE  # 改成互動終端的實際操作方式

@@ -63,6 +63,13 @@ export function ChatRuntimeProvider({ children }: { children: React.ReactNode })
       const status = result.status_description ?? "";
       const timedOut = status.toLowerCase().includes("time limit");
       if (!output && !timedOut) {
+        // 結束狀態非 0（NZEC）：輸出可能完全正確、stderr 全空，學生只看到
+        // 一句 Runtime Error → 主動說明三層規範來源（每個 session 一次）
+        if (result.exit_code !== 0 && !explainedRef.current.has("nzec")) {
+          explainedRef.current.add("nzec");
+          void requestRunHelp("", status, "nzec");
+          return;
+        }
         // 跑成功但會印當地時間 → 提醒伺服器時鐘是 UTC（每個 session 一次）
         if (usesLocalTime(getCode()) && !explainedRef.current.has("timezone")) {
           explainedRef.current.add("timezone");

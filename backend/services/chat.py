@@ -93,8 +93,8 @@ async def interact(
     無或載入失敗都不擋流程（容錯，與 mastery / RAG 同款）。
     `debug_sink`（DEV-7）：dev 帳號的中間層觀測 dict——收集 evidence / strategy /
     kgraph / RAG 命中，由 route 附在回應 debug 欄位；None（一般帳號）零開銷。
-    `strategy_sink`（7-C2a）：回填 `reveal_level` 供 route 記錄 hint_request 事件——
-    揭露等級改由後端自算後，route 已無從得知學生被升到第幾級。
+    `strategy_sink`（7-C2a）：回填 `reveal_level` / `persistence` 供 route 記錄
+    hint_request 事件——兩者改由後端自算後，route 已無從得知學生被升到第幾級。
     `on_stage`（7-U6）：每進入一個管線階段就回報，供 SSE 推播進度給前端；
     None 時完全不呼叫（非串流呼叫端零開銷）。
 
@@ -193,6 +193,7 @@ async def interact(
     strategy = decide_strategy(evidence, persistence)
     if strategy_sink is not None:
         strategy_sink["reveal_level"] = strategy.reveal_level
+        strategy_sink["persistence"] = persistence
 
     # DEV-7：dev 帳號收集中間層觀測（RAG 命中由 generate_feedback 補入）
     if debug_sink is not None:

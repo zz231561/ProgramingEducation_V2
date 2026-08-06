@@ -1,6 +1,6 @@
-"""Feedback 層 — 分層 prompt 組裝 + LLM 回應生成 + 輸出驗證。
+"""Feedback 層 — LLM 回應生成 + 輸出驗證。
 
-組裝順序：preamble → persona → strategy → context → kgraph → reflection → rag
+prompt 組裝在 `prompt_blocks.py`（7-C2a 抽出）；本檔只管呼叫 LLM 與把關輸出。
 輸出驗證：阻擋完整程式碼洩漏，保持教學引導。
 RAG（K4b）：每次互動都檢索，由相似度分數決定是否注入（rag_integration 過濾）。
 K-Graph state（K4a）：學生 mastery 狀態 + 鷹架指令，由 caller 預先渲染傳入。
@@ -14,19 +14,14 @@ from openai import AsyncOpenAI
 from core.config import settings
 from core.llm_params import chat_model_kwargs
 from core.errors import AppError
-from services.edf.citations import (
-    CITATION_RULE,
-    NO_SOURCE_RULE,
-    extract_citations,
-    format_rag_chunk,
-    strip_ungrounded_citations,
-)
+from services.edf.citations import extract_citations, strip_ungrounded_citations
 from services.edf.off_topic import generate_off_topic_reply
+from services.edf.prompt_blocks import build_system_prompt
 from services.edf.rag_integration import fetch_rag_chunks_safe
 from services.rag import RetrievedChunk
 from services.security.sanitizer import wrap_student_input
 
-from .decision import MAX_REVEAL_LEVEL, TeachingStrategy
+from .decision import TeachingStrategy
 from .models import EvidenceResult
 
 logger = logging.getLogger(__name__)
@@ -41,106 +36,6 @@ def _get_client() -> AsyncOpenAI:
             raise AppError(503, "LLM_UNAVAILABLE", "OpenAI API Key 未設定")
         _client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
     return _client
-
-
-# === Prompt 各層 ===
-
-PREAMBLE = """\
-你是一位 C++ 程式設計課程的 AI 教學助理。你的目標是引導學生自主理解和解決問題，\
-而不是直接給出答案。
-
-不可違反的規則：
-RULE-1: 絕對不要提供完整的解答程式碼。
-RULE-2: 程式碼片段最多 8 行，且必須包含 TODO 或 FIXME 註解讓學生完成。
-RULE-3: 用繁體中文回覆，技術術語保留英文。
-RULE-4: 回覆控制在 200 字以內，簡潔有力。
-RULE-5: 以自然的下一步收尾 — 可以是引導式提問，也可以是具體的行動建議\
-（如「試著把第 6 行改掉再跑一次」）；不必刻意反問。
-RULE-6: 提問必須是學生用手上已有的資訊答得出來的；\
-若他缺的正是答案本身，就別問，改成具體的行動建議。
-
-RULE-1 與 RULE-2 是揭露階梯**之上**的不變量：無論策略指令允許揭露到哪一級，\
-都不得突破——高等級的「完整」指**解釋**完整，不是**程式碼**完整。\
-"""
-
-PERSONA = """\
-你叫 Coddy，是一位陪學生寫 code 的大學助教。語氣自然口語，像坐在學生旁邊一起看螢幕：\
-先肯定學生做對或想對的部分，再聊卡住的地方。\
-避免制式句型（「你覺得呢？」「你認為會發生什麼？」連續出現會顯得機械），\
-提問要具體到程式碼本身。學生只是確認小事時，直接給答案加一句補充即可，不用硬展開教學。\
-"""
-
-
-def build_system_prompt(
-    evidence: EvidenceResult,
-    strategy: TeachingStrategy,
-    rag_chunks: list[RetrievedChunk] | None = None,
-    reflection_block: str = "",
-    kgraph_block: str = "",
-) -> str:
-    """組裝完整 system prompt。
-
-    順序：preamble → persona → strategy → context → kgraph → reflection → rag
-    （`.claude/rules/edf-pipeline.md` 規範的層次）
-
-    `reflection_block`（Phase 2-5e）/ `kgraph_block`（K4a）：
-    caller 預先渲染；傳空字串等於不注入。
-    """
-    # 防洩答（2026-08-06 模擬驗收發現）：RULE-1 只擋 code block，實測揭露等級 0 就用
-    # 散文把完整演算法（閏年 400/100/4 三條件）全給了；等級 4 給了「TODO 已被
-    # 填好答案」的框架。依揭露等級補上文字層防線
-    if strategy.reveal_level <= 2:
-        leak_guard = (
-            "\n洩答防線：目前揭露等級低——**禁止**給出完整解法，包括用文字或條列"
-            "把所有判斷條件、步驟一次寫完（那與直接給程式碼無異）。"
-            "最多點出一個方向或一個關鍵概念，其餘留給學生推導。"
-        )
-    elif strategy.reveal_level <= 4 and strategy.allow_code_snippet:
-        leak_guard = (
-            "\n洩答防線：框架中的 TODO **必須真的留白**——禁止在註解、條列"
-            "或框架外的文字裡把 TODO 的答案寫出來；被填好答案的 TODO 等於完整解。"
-        )
-    else:
-        # L5 = 學生反覆卡關後的完整解釋層級；RULE-1／RULE-2 仍然約束程式碼本身
-        leak_guard = "\n洩答防線：解釋可以完整，程式碼不可以——片段仍受 RULE-2 約束。"
-
-    strategy_block = f"""\
-教學策略指令（揭露等級 {strategy.reveal_level}/{MAX_REVEAL_LEVEL}）：
-{strategy.instruction}
-說明深度：{strategy.bloom_guidance}
-允許程式碼片段：{"是（最多 8 行，必須含 TODO）" if strategy.allow_code_snippet else "否，不要提供任何程式碼"}{leak_guard}\
-"""
-
-    context_block = f"""\
-程式碼分析結果：
-- 錯誤類型：{evidence.error_type.value}
-- 錯誤摘要：{evidence.error_message}
-- 涉及概念：{", ".join(evidence.concept_tags) or "無"}
-- Bloom 認知等級：{evidence.bloom_level.name} (Level {evidence.bloom_level})
-- 詳細分析：{evidence.code_analysis}\
-"""
-
-    blocks = [PREAMBLE, PERSONA, strategy_block, context_block]
-
-    if kgraph_block:
-        blocks.append(kgraph_block)
-
-    if reflection_block:
-        blocks.append(reflection_block)
-
-    if rag_chunks:
-        rag_lines = [format_rag_chunk(i, c) for i, c in enumerate(rag_chunks, 1)]
-        blocks.append(
-            "教材參考片段（請以這些教材內容為依據引導學生，避免自編未驗證的細節）：\n"
-            + "\n\n".join(rag_lines)
-            + "\n\n"
-            + CITATION_RULE
-        )
-    else:
-        # 檢索無結果時明確告知，避免 Coddy 把自身知識講成教材內容
-        blocks.append(NO_SOURCE_RULE)
-
-    return "\n\n".join(blocks)
 
 
 # === 輸出驗證 ===

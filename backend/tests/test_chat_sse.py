@@ -113,6 +113,49 @@ async def test_unexpected_error_does_not_leak_details(client: AsyncClient):
 
 
 @pytest.mark.asyncio
+async def test_hint_request_only_logged_when_student_persists(client: AsyncClient):
+    """7-C2a：第一次提問不算求助——base(error_type) 撐高的 reveal_level 不得觸發事件。
+
+    2026-08-06 實測發現：改用 reveal_level 當判準時，學生第一次貼出錯誤就被記成
+    hint_request，教師端的 hint 分布會全面灌水。
+    """
+    from sqlalchemy import select
+    from models.coding_event import CodingEvent, CodingEventType
+    from tests.helpers import TestSessionFactory
+
+    await client.get("/users/me", cookies=_CK)
+    runtime_evidence = _evidence().model_copy(update={"error_type": ErrorType.RUNTIME})
+    with (
+        patch("services.chat.analyze_evidence", new=AsyncMock(return_value=runtime_evidence)),
+        patch("services.chat.generate_feedback", new=AsyncMock(return_value="回應內容")),
+    ):
+        first = await _post(client)
+        assert first[-1][0] == "done"  # reveal_level = base 2，但 persistence = 0
+        # 同一 session 追問 → persistence 1（換 session 就等於換脈絡，不算追問）
+        resp = await client.post(
+            "/chat/interact",
+            json={
+                "code": "int main(){}",
+                "question": "那要改哪裡",
+                "session_id": first[-1][1]["session_id"],
+            },
+            cookies=_CK,
+        )
+        assert resp.status_code == 200
+
+    async with TestSessionFactory() as db:
+        rows = (
+            await db.execute(
+                select(CodingEvent).where(
+                    CodingEvent.event_type == CodingEventType.HINT_REQUEST.value
+                )
+            )
+        ).scalars().all()
+    assert len(rows) == 1, "只有第二輪（真的在追問）該被記為 hint_request"
+    assert rows[0].hint_level == 3  # runtime base 2 + persistence 1
+
+
+@pytest.mark.asyncio
 async def test_unauthenticated_still_returns_http_401(client: AsyncClient):
     """串流開始前的檢查仍走正常 HTTP status（不可被 SSE 吃掉）。"""
     resp = await client.post(

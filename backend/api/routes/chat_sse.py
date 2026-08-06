@@ -81,9 +81,11 @@ async def interact_event_stream(
         yield sse("error", {"error": "INTERNAL_ERROR", "message": "系統發生錯誤"})
         return
 
-    # 管線判定學生需要額外揭露（reveal_level>0）時記錄 hint_request 事件（best-effort）
-    reveal_level = strategy_sink.get("reveal_level", 0)
-    if reveal_level > 0:
+    # 學生真的在求助（同脈絡追問／表示卡住）時才記 hint_request（best-effort）。
+    # 判準用 persistence 而非 reveal_level：後者的 base 來自錯誤類型，
+    # 學生第一次貼出編譯錯誤就已經是 2，照記會把每一輪都算成求助（2026-08-06 實測）
+    if strategy_sink.get("persistence", 0) > 0:
+        reveal_level = strategy_sink.get("reveal_level", 0)
         evidence = ai_msg.evidence if isinstance(ai_msg.evidence, dict) else {}
         await log_coding_event(
             db,

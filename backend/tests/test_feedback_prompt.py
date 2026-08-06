@@ -1,6 +1,6 @@
 """Feedback 層 — `build_system_prompt` 單元測試（含 RAG block 注入）。"""
 
-from services.edf.feedback import build_system_prompt
+from services.edf.prompt_blocks import build_system_prompt
 from tests.feedback_factories import make_chunk, make_evidence, make_strategy
 
 

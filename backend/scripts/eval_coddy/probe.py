@@ -7,6 +7,7 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from core.config import settings
+from services.dev_tools import RESET_CATEGORIES, reset_user_data
 
 _engine = create_async_engine(settings.DATABASE_URL, echo=False)
 Session = async_sessionmaker(_engine, class_=AsyncSession, expire_on_commit=False)
@@ -20,6 +21,35 @@ async def user_id_by_email(email: str) -> uuid.UUID | None:
             )
         ).first()
         return row[0] if row else None
+
+
+async def reset_persona_state(email: str) -> dict[str, int]:
+    """把 persona 的學習資料清乾淨，讓每次模擬都從同一個起點開始。
+
+    沒有這一步，harness 的結果會被上一輪殘留污染，而且是**沉默地**污染：
+    - 反思對 (user, source) 唯一 → P2 第二次跑必然 409
+    - 「未答過且 validated」的題目被答光 → P7 第三輪 QUESTION_BANK_EMPTY
+    - mastery / coding_events 跨輪累積 → 改動前後的對照數字不可比
+
+    只清 `@eval.local` 假帳號；`require_local_db` 已擋掉指向生產 DB 的情況。
+    """
+    if not email.endswith("@eval.local"):
+        raise ValueError(f"拒絕重置非模擬帳號：{email}")
+
+    user_id = await user_id_by_email(email)
+    if user_id is None:
+        return {}
+
+    async with Session() as db:
+        deleted = await reset_user_data(db, user_id, set(RESET_CATEGORIES))
+        # coding_events 不在 reset_user_data 的類別內（那是行為分析資料），
+        # 但它是 harness 的觀測對象之一，跨輪累積會讓事件數斷言失去意義
+        result = await db.execute(
+            text("DELETE FROM coding_events WHERE user_id = :u"), {"u": user_id}
+        )
+        deleted["events"] = result.rowcount or 0
+        await db.commit()
+    return deleted
 
 
 async def dialogue_act_of(message_id: str) -> str | None:

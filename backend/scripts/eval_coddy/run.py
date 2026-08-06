@@ -2,6 +2,10 @@
 
 輸出：每 persona 一份 JSON（逐輪 transcript + debug_sink + DB 探針）。
 僅限本機 DB；真實 LLM 呼叫（七型全跑約 25-30 次 interact）。
+
+**每個 persona 開跑前先清空自己的學習資料**（`probe.reset_persona_state`）——
+不重置的話殘留會沉默地扭曲結果：反思 409、題庫被答光、mastery 跨輪累積，
+改動前後的數字也就失去可比性。
 """
 
 import argparse
@@ -87,7 +91,10 @@ async def run_persona(p: dict, out_dir: Path) -> None:
     try:
         # 觸發 get_or_create_user（首個認證請求）
         await client.api("GET", "/users/me")
-        result: dict = {"persona": p["name"], "goal": p["goal"], "email": p["email"]}
+        reset = await probe.reset_persona_state(p["email"])
+        result: dict = {
+            "persona": p["name"], "goal": p["goal"], "email": p["email"], "reset": reset,
+        }
         result["turns"] = await run_dialogue(client, p["turns"])
         uid = await probe.user_id_by_email(p["email"])
         result["coding_events"] = await probe.coding_events_of(uid) if uid else []
@@ -100,7 +107,8 @@ async def run_flow(key: str, name: str, email: str, fn, out_dir: Path) -> None:
     client = PersonaClient(email, name)
     try:
         await client.api("GET", "/users/me")
-        result = {"persona": name, "email": email}
+        reset = await probe.reset_persona_state(email)
+        result = {"persona": name, "email": email, "reset": reset}
         result["flow"] = await fn(client)
         uid = await probe.user_id_by_email(email)
         result["coding_events"] = await probe.coding_events_of(uid) if uid else []

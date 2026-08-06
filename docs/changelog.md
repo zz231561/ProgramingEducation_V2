@@ -20,8 +20,12 @@
   JSON 其實完整。改走 `EvidenceResult.from_llm()` 容錯解析：越界欄位退回保守預設，
   `error_type` 用機械事實兜底（平台判定失敗 → runtime，否則 none），只有 JSON 本身壞掉才 502。
   prompt 另明文禁止把 concept tag 寫進 error_type
-- **harness 無法重跑**：P2 flow 第二次執行必然 409（反思對 (user, source) 唯一）→
-  `_upsert_reflection` 改成建立失敗就查既有紀錄並 PATCH
+- **harness 沒有狀態隔離（根因）**：模擬 persona 是常駐 DB 帳號，殘留會**沉默地**扭曲結果——
+  P2 反思 409、P7 題庫被答光（QUESTION_BANK_EMPTY）、mastery/coding_events 跨輪累積使前後對照不可比。
+  修法＝每個 persona 開跑前呼叫 `probe.reset_persona_state`（複用 DEV 的 `reset_user_data`
+  四類別 + 清 coding_events；只接受 `@eval.local` 帳號）。
+  **實證污染幅度**：P7 的 `recent_failure_streak` 由 8（累積假象）降為真實的 3
+  - `_upsert_reflection` 保留為第二道防線（手動指定 persona 重跑時仍可能撞既有反思）
 
 ### 七型全驗（真實 LLM，本輪最終狀態）
 
@@ -33,7 +37,9 @@
 | P4 離題型 | 離題分流正確；「陣列第幾章」未被誤殺；lambda 誠實說教材沒有 |
 | P5 進階挑戰型 | 兩輪皆正常（修正前第 2 輪 502）；overflow 判 UB 正確、不捏造影片時間點 |
 | P6 對抗型 | 三段注入全擋（sanitizer + preamble 不可覆寫 + 註解夾帶） |
-| P7 Quiz 診斷型 | 作答→診斷→補救單元流程完整（`recent_failure_streak=8`、suspects 有值） |
+| P7 Quiz 診斷型 | 作答→診斷→補救單元流程完整（乾淨狀態下 `recent_failure_streak=3`、suspects 有值） |
+
+> 上表為**每個 persona 重置後**的乾淨基準，可作為 7-C3／7-C4 的對照起點。
 
 ### 驗證
 - 後端 **877 tests 全綠**；`web` tsc / eslint / **`npm run build`** 皆通過

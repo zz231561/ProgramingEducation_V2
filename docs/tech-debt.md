@@ -41,15 +41,6 @@
       判斷法），仍應改為引導而非直述——需靠注入的 `concept_tags` 判斷
 - 觀測工具已備：`scripts/eval_coddy/` P3 腳本可隨時重測，此項**可量測不需憑感覺**
 
-**B6. `decision.py` L5 措辭與 RULE-1 自相矛盾**（2026-08-06 架構審視發現；7-C2a 消除）
-- [ ] 矩陣 (3,5) 寫「展示**完整的應用方式**」、(6,5) 寫「展示**完整的設計方案**」，
-      但 PREAMBLE RULE-1 是「絕對不要提供完整的解答程式碼」且標為不可違反
-  - **無行為 bug**：`validate_output` 即使 `allow_code=True` 仍截斷 >8 行且無 TODO 的區塊，
-    `services/quiz/hint.py` 同級說明也早已正確寫成「不可直接給完整答案」——**離群值只有 `decision.py` 與
-    `edf-pipeline.md` 的措辭**，實際行為一直正確
-  - 但 prompt 自相矛盾會讓 LLM 行為不可預期，且文件誤導後續開發者
-  - **附帶**：edf-pipeline.md 寫 L5「僅在反覆失敗 5+ 次後觸發」，**此門檻從未被任何程式碼實作**
-
 **B4. 前端 429 / 5xx 統一攔截宣告了但沒實作**
 - [ ] `web/lib/api.ts` 檔頭與 `frontend.md` 皆寫「429 → 冷卻倒數 toast、5xx → 錯誤 toast」，實作**只有 401**
   - 後端 429 回的 `retry_after_seconds` 從未被任何前端程式碼消費
@@ -68,18 +59,20 @@
 - [ ] `web/` 沒有任何測試框架，但 `frontend.md` 寫著 Vitest + Playwright
   - **代價已經在付**：2026-08 十幾批 UI 改動全靠 `tsc`/`eslint`/`build` 加手動點。7-U3/U4/U5 與
     7-C1 的純函式我只能「把原始碼 `tsc` 編出來再用 node 跑斷言」——有效但**無法納入 CI、沒人會記得重跑**
-  - **最小可用起點**：Vitest + 純函式測試（`lib/transcript-timestamps.ts`、`lib/hint-escalation.ts`、
+  - **最小可用起點**：Vitest + 純函式測試（`lib/transcript-timestamps.ts`、
     `components/workspace/use-run-history.ts`、`components/editor/cpp-completion-source.ts`）
-  - ⚠ `lib/hint-escalation.ts` 另有 `backend/scripts/eval_coddy/ladder.py` 鏡像移植，**兩邊改動必須同步**
-  - ✅ **鏡像問題將由 7-C2a 根除**（persistence 計算搬後端後兩檔皆刪除）→ 屆時 7-D1 的測試清單
-    改為 `transcript-timestamps` / `use-run-history` / `cpp-completion-source` 三支
+  - ✅ **鏡像問題已由 7-C2a 根除**（2026-08-06）：persistence 搬後端，
+    `lib/hint-escalation.ts` 與 `eval_coddy/ladder.py` 兩檔皆刪除，改由後端 pytest 覆蓋
 
 **C2. 檔案大小超過門檻**（⚠ 150 / 🚫 250；數據來自 `scripts/doc_selfcheck.py`，2026-08-06）
-- [ ] 🚫 **超過硬上限 250（8 個）**：`api/routes/quiz.py` 347 / `services/quiz/generate.py` 307 /
-      `services/chat.py` 299 / `concept-detail-panel.tsx` 279 / `services/quiz/batch_generator.py` 267 /
-      `services/comprehension/variation.py` 255 / `api/routes/comprehension.py` 255 / `services/quiz/feedback.py` 251
-  - ⚠ 逼近提醒線者 74 個（清單跑 script 取得，不在此手抄）
-  - **拆分提案**：`chat.py` → mastery gating（`_is_repeat_evidence` + skip 邏輯）抽出為獨立模組
+- [ ] 🚫 **超過硬上限 250（9 個）**：`api/routes/quiz.py` 347 / `services/quiz/generate.py` 307 /
+      `services/chat.py` 292 / `concept-detail-panel.tsx` 279 / `services/quiz/batch_generator.py` 267 /
+      `services/comprehension/variation.py` 255 / `api/routes/comprehension.py` 255 /
+      **`services/edf/feedback.py` 253（7-C2a 新越線，原 247）** / `services/quiz/feedback.py` 251
+  - ⚠ 逼近提醒線者 73 個（清單跑 script 取得，不在此手抄）
+  - **拆分提案**：`edf/feedback.py` → PREAMBLE/PERSONA/`build_system_prompt` 抽為新檔 edf/prompt_blocks.py，
+    本檔只留 `validate_output` + `generate_feedback`（prompt 組裝 vs LLM 呼叫，SRP 乾淨）
+  - `chat.py` 的 mastery gating 已於 7-C2a 抽出至 `services/chat_signals.py`（299 → 292，仍超限）
   - 測試檔不計入（性質為條列案例而非邏輯複雜度）
 
 **C3. OpenAI client lazy-singleton 邏輯重複於 9 個服務模組**
@@ -131,6 +124,11 @@
 ## ✅ 已消除
 
 ### 2026-08-06（7-C 系列 + 文件稽核）
+- ~~🟡 **`decision.py` L5 措辭與 RULE-1 自相矛盾**（原 B6）~~ — 7-C2a：36 格矩陣整份刪除，
+  改累積式階梯；RULE-1／RULE-2 明文寫成「階梯之上的不變量」，L5 的「完整」＝解釋完整非程式碼完整。
+  附帶消除「反覆失敗 5+ 次才觸發 L5」這條從未被實作的敘述（persistence 搬後端後才真正有門檻）
+- ~~🟡 **前端與 harness 的 hint ladder 人工鏡像**（原 C1 附帶）~~ — 7-C2a：`web/lib/hint-escalation.ts`
+  與 `backend/scripts/eval_coddy/ladder.py` 同時刪除，persistence 改由 `services/chat_signals.py` 單一來源計算
 - ~~🔴 **Hint Ladder 在對話路徑上從未接通**~~ — 7-C1：`hint_level` 原寫死 0，36 格策略矩陣只用得到第 0 欄、
   學生連問四次也不升級。修＝`web/lib/hint-escalation.ts` + `use-chat.ts` ref 追蹤；
   下游 hint_request 行為事件與 ASKING_HINT 分支隨之復活

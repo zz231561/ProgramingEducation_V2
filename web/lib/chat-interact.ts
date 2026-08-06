@@ -26,7 +26,6 @@ export interface InteractPayload {
   code: string;
   question: string;
   session_id: string | null;
-  hint_level: number;
   execution_result: object | null;
   reflection_id: string | null;
 }

@@ -47,7 +47,7 @@ def _parse_sse(text: str) -> list[tuple[str, dict]]:
 async def _post(client: AsyncClient) -> list[tuple[str, dict]]:
     resp = await client.post(
         "/chat/interact",
-        json={"code": "int main(){}", "question": "怎麼寫迴圈", "hint_level": 0},
+        json={"code": "int main(){}", "question": "怎麼寫迴圈"},
         cookies=_CK,
     )
     assert resp.status_code == 200
@@ -116,6 +116,6 @@ async def test_unexpected_error_does_not_leak_details(client: AsyncClient):
 async def test_unauthenticated_still_returns_http_401(client: AsyncClient):
     """串流開始前的檢查仍走正常 HTTP status（不可被 SSE 吃掉）。"""
     resp = await client.post(
-        "/chat/interact", json={"code": "", "question": "hi", "hint_level": 0}
+        "/chat/interact", json={"code": "", "question": "hi"}
     )
     assert resp.status_code == 401

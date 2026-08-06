@@ -35,15 +35,15 @@ Phase 6-K K-Graph 自適應引擎 ✅｜Phase 6-U 學生端修正 ✅｜DEV 開�
 Phase 7-R 自建互動執行引擎 ✅（生產終端已上線）｜Phase 7-U 上線後體驗優化 ✅ 六項
 
 **🎯 進行中 — 7-C Coddy 教學品質**（2026-08-06 使用者回報對話品質 → 全面審計 → 兩輪模擬驗收）
-- 7-C1 ✅ 接通 Hint Ladder（`hint_level` 原寫死 0，36 格策略矩陣只用得到最不給提示的第 0 欄）+ Evidence 補 exit_code/status
+- 7-C1 ✅ 接通提示階梯（`hint_level` 原寫死 0，矩陣只用得到第 0 欄）+ Evidence 補 exit_code/status
 - 7-C1' ✅ 七型學生模擬 harness（`backend/scripts/eval_coddy/`）+ 診斷輪修復 9 項；
   最重大＝**gpt-5.6 reasoning 預算間歇吃光輸出**（8-05「拒收 reasoning_effort」結論錯誤，值域改為 none/low/…），
   反思評分因此在生產一直靜默 fail-open；已全面改送 `reasoning_effort="none"`
-- 🎯 **下個 session 第一件事＝7-C2a Decision 層重構**（2026-08-06 設計已定案、**程式碼未動**）：
-  累積式六層 + 動態選層（`base(error_type) + persistence`）+ 方案 B（12 條指令取代 36 格矩陣）
-  + persistence 搬後端刪鏡像檔 + 消除 L5/RULE-1 矛盾。
-  **可直接執行的規格在 `docs/roadmap.md` 7-C2a**，設計理由在同檔「已確認決策」末條
-- **順序（roadmap 開頭有完整表）**：7-C2a → 7-C2b 其餘 P1 → 7-C3 Comprehension 前端 → 7-C4 再驗 →
+- 7-C2a ✅ Decision 層重構（累積式揭露階梯 + 動態選層，方案 B）：36 格矩陣 → 6 級累積指令 + 6 Bloom 修飾；
+  `reveal_level = min(5, base(error_type) + persistence)`；persistence 搬後端（`services/chat_signals.py`）
+  並刪掉前端／harness 兩個鏡像檔；RULE-1/2 定為階梯之上的不變量 + 新增 RULE-6。
+  ⚠ **行為驗證未做**——`eval_coddy` 七型重跑對照屬 7-C4
+- **順序（roadmap 開頭有完整表）**：7-C2b 其餘 P1 → 7-C3 Comprehension 前端 → 7-C4 再驗 →
   **7-D 技術債清償** → **7-E 使用者驗收** → Phase 8 / 7-2 監控 / 7-3 效能 / 5-3·5-4
 
 **排在驗收之後**：Phase 8 專案健檢（8-0 討論已完成）／6-4b 教材局部重跑（依操作回饋）／K1d·K4d·K5d 使用者自測

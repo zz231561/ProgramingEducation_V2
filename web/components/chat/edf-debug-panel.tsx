@@ -27,7 +27,7 @@ export function EdfDebugPanel({ debug }: { debug: Record<string, unknown> }) {
           tags={(evidence.concept_tags as string[] | undefined)?.join(", ") || "—"}
         </Row>
         <Row label="strategy">
-          hint={String(strategy.hint_level)} · code_snippet=
+          reveal={String(strategy.reveal_level)} · code_snippet=
           {String(strategy.allow_code_snippet)}
           <div className="mt-0.5 whitespace-pre-wrap text-text-muted">
             {String(strategy.instruction ?? "")}

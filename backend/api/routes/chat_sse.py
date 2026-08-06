@@ -42,6 +42,8 @@ async def interact_event_stream(
 ) -> AsyncIterator[str]:
     """跑 EDF 管線並邊跑邊推播階段；結束後推 done 或 error。"""
     queue: asyncio.Queue[str] = asyncio.Queue()
+    # 7-C2a：揭露等級在 service 內算出，回填此處供 hint_request 事件記錄
+    strategy_sink: dict = {}
 
     async def on_stage(stage: str) -> None:
         await queue.put(sse("stage", {"stage": stage}))
@@ -53,10 +55,10 @@ async def interact_event_stream(
             code=body.code,
             question=body.question,
             session_id=body.session_id,
-            hint_level=body.hint_level,
             execution_result=body.execution_result,
             reflection_id=body.reflection_id,
             debug_sink=debug_sink,
+            strategy_sink=strategy_sink,
             on_stage=on_stage,
         )
     )
@@ -79,15 +81,16 @@ async def interact_event_stream(
         yield sse("error", {"error": "INTERNAL_ERROR", "message": "系統發生錯誤"})
         return
 
-    # 學生明確要求提示（hint_level>0）時記錄 hint_request 事件（best-effort）
-    if body.hint_level > 0:
+    # 管線判定學生需要額外揭露（reveal_level>0）時記錄 hint_request 事件（best-effort）
+    reveal_level = strategy_sink.get("reveal_level", 0)
+    if reveal_level > 0:
         evidence = ai_msg.evidence if isinstance(ai_msg.evidence, dict) else {}
         await log_coding_event(
             db,
             user_id=user.id,
             event_type=CodingEventType.HINT_REQUEST,
             session_id=session.id,
-            hint_level=body.hint_level,
+            hint_level=reveal_level,
             concept_tags=evidence.get("concept_tags"),
             code_snapshot=body.code,
         )

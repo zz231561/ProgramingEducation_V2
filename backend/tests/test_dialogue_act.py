@@ -117,7 +117,7 @@ async def test_interact_persists_dialogue_act(client: AsyncClient):
     ):
         resp = await client.post(
             "/chat/interact",
-            json={"code": "int main(){}", "question": "什麼是指標", "hint_level": 0},
+            json={"code": "int main(){}", "question": "什麼是指標"},
             cookies=_cookies(),
         )
     assert resp.status_code == 200

@@ -23,7 +23,7 @@ def _evidence(on_topic: bool) -> EvidenceResult:
 
 def _strategy() -> TeachingStrategy:
     return TeachingStrategy(
-        instruction="引導學生", allow_code_snippet=False, hint_level=0
+        instruction="引導學生", allow_code_snippet=False, reveal_level=0
     )
 
 

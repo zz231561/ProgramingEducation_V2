@@ -26,7 +26,7 @@ from services.edf.rag_integration import fetch_rag_chunks_safe
 from services.rag import RetrievedChunk
 from services.security.sanitizer import wrap_student_input
 
-from .decision import TeachingStrategy
+from .decision import MAX_REVEAL_LEVEL, TeachingStrategy
 from .models import EvidenceResult
 
 logger = logging.getLogger(__name__)
@@ -55,7 +55,12 @@ RULE-2: 程式碼片段最多 8 行，且必須包含 TODO 或 FIXME 註解讓�
 RULE-3: 用繁體中文回覆，技術術語保留英文。
 RULE-4: 回覆控制在 200 字以內，簡潔有力。
 RULE-5: 以自然的下一步收尾 — 可以是引導式提問，也可以是具體的行動建議\
-（如「試著把第 6 行改掉再跑一次」）；不必刻意反問。\
+（如「試著把第 6 行改掉再跑一次」）；不必刻意反問。
+RULE-6: 提問必須是學生用手上已有的資訊答得出來的；\
+若他缺的正是答案本身，就別問，改成具體的行動建議。
+
+RULE-1 與 RULE-2 是揭露階梯**之上**的不變量：無論策略指令允許揭露到哪一級，\
+都不得突破——高等級的「完整」指**解釋**完整，不是**程式碼**完整。\
 """
 
 PERSONA = """\
@@ -81,28 +86,29 @@ def build_system_prompt(
     `reflection_block`（Phase 2-5e）/ `kgraph_block`（K4a）：
     caller 預先渲染；傳空字串等於不注入。
     """
-    # 防洩答（2026-08-06 模擬驗收發現）：RULE-1 只擋 code block，實測 hint 0 就用
-    # 散文把完整演算法（閏年 400/100/4 三條件）全給了；hint 4 給了「TODO 已被
-    # 填好答案」的框架。依提示等級補上文字層防線
-    if strategy.hint_level <= 2:
+    # 防洩答（2026-08-06 模擬驗收發現）：RULE-1 只擋 code block，實測揭露等級 0 就用
+    # 散文把完整演算法（閏年 400/100/4 三條件）全給了；等級 4 給了「TODO 已被
+    # 填好答案」的框架。依揭露等級補上文字層防線
+    if strategy.reveal_level <= 2:
         leak_guard = (
-            "\n洩答防線：目前提示等級低——**禁止**給出完整解法，包括用文字或條列"
+            "\n洩答防線：目前揭露等級低——**禁止**給出完整解法，包括用文字或條列"
             "把所有判斷條件、步驟一次寫完（那與直接給程式碼無異）。"
             "最多點出一個方向或一個關鍵概念，其餘留給學生推導。"
         )
-    elif strategy.hint_level <= 4 and strategy.allow_code_snippet:
+    elif strategy.reveal_level <= 4 and strategy.allow_code_snippet:
         leak_guard = (
             "\n洩答防線：框架中的 TODO **必須真的留白**——禁止在註解、條列"
             "或框架外的文字裡把 TODO 的答案寫出來；被填好答案的 TODO 等於完整解。"
         )
     else:
-        # hint 5 = 反覆失敗後的完整解釋層級，矩陣明文允許展示正確用法
-        leak_guard = ""
+        # L5 = 學生反覆卡關後的完整解釋層級；RULE-1／RULE-2 仍然約束程式碼本身
+        leak_guard = "\n洩答防線：解釋可以完整，程式碼不可以——片段仍受 RULE-2 約束。"
 
     strategy_block = f"""\
-教學策略指令：{strategy.instruction}
-允許程式碼片段：{"是（最多 8 行，必須含 TODO）" if strategy.allow_code_snippet else "否，不要提供任何程式碼"}
-當前提示等級：{strategy.hint_level}/5{leak_guard}\
+教學策略指令（揭露等級 {strategy.reveal_level}/{MAX_REVEAL_LEVEL}）：
+{strategy.instruction}
+說明深度：{strategy.bloom_guidance}
+允許程式碼片段：{"是（最多 8 行，必須含 TODO）" if strategy.allow_code_snippet else "否，不要提供任何程式碼"}{leak_guard}\
 """
 
     context_block = f"""\

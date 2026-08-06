@@ -13,8 +13,9 @@ def test_system_prompt_contains_preamble():
 
 
 def test_system_prompt_contains_strategy():
-    prompt = build_system_prompt(make_evidence(), make_strategy(hint=3))
-    assert "3/5" in prompt
+    prompt = build_system_prompt(make_evidence(), make_strategy(reveal=3))
+    assert "揭露等級 3/5" in prompt
+    assert "說明深度：" in prompt
 
 
 def test_system_prompt_contains_evidence():

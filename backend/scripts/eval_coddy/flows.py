@@ -74,7 +74,7 @@ async def p2_reflection_flow(client: PersonaClient, dialogue) -> dict[str, Any]:
                 "code": LEAP_YEAR_PARTIAL,
                 "execution_result": None,
                 "reflection_id": reflection["id"],
-                "expect": "致謝歸零 → hint 0；模數章節 RAG 命中；不捏造時間點",
+                "expect": "7-C2a 起致謝不再歸零（只有成功執行歸零）→ reveal 隨追問累加；模數章節 RAG 命中；不捏造時間點",
             },
         ],
     )

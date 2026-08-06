@@ -28,7 +28,8 @@ class InteractRequest(BaseModel):
     code: str = Field(default="", max_length=50_000)
     question: str = Field(..., min_length=1, max_length=2_000)
     session_id: uuid.UUID | None = Field(default=None)
-    hint_level: int = Field(default=0, ge=0, le=5)
+    # 7-C2a：原有的 hint_level 已移除——揭露等級改由後端從對話歷史自算，
+    # 前端送得出來的數字就可能被寫死成 0（7-C1 修的正是這個 bug）
     execution_result: dict | None = Field(default=None)
     # Phase 2-5e：若前端帶上當前 active reflection_id，後端會載入並注入 EDF prompt
     reflection_id: uuid.UUID | None = Field(default=None)

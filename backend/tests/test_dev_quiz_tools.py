@@ -74,7 +74,7 @@ async def test_interact_fills_debug_sink():
                 question="為什麼會錯？", debug_sink=sink,
             )
     assert sink["evidence"]["error_type"] == "logic"
-    assert sink["strategy"]["hint_level"] == 0
+    assert sink["strategy"]["reveal_level"] == 1  # logic base 1 + persistence 0
     assert "instruction" in sink["strategy"]
     assert sink["kgraph_block"] == "<kgraph>x</kgraph>"
     assert sink["reflection_injected"] is False

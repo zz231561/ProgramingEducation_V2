@@ -14,7 +14,6 @@ from pathlib import Path
 from scripts._db_guard import require_local_db
 from scripts.eval_coddy import flows, probe
 from scripts.eval_coddy.client import PersonaClient
-from scripts.eval_coddy.ladder import compute_hint_level
 from scripts.eval_coddy.personas import DIALOGUE_PERSONAS
 
 
@@ -29,9 +28,10 @@ def _debug_summary(debug: dict | None) -> dict | None:
         "bloom": ev.get("bloom_level"),
         "concept_tags": ev.get("concept_tags"),
         "is_on_topic": ev.get("is_on_topic"),
-        "hint_level": st.get("hint_level"),
+        "persistence": debug.get("persistence"),
+        "reveal_level": st.get("reveal_level"),
         "allow_code": st.get("allow_code_snippet"),
-        "instruction": st.get("instruction"),
+        "bloom_guidance": st.get("bloom_guidance"),
         "kgraph_head": (debug.get("kgraph_block") or "")[:200] or None,
         "reflection_injected": debug.get("reflection_injected"),
         "rag": [
@@ -43,18 +43,17 @@ def _debug_summary(debug: dict | None) -> dict | None:
 
 
 async def run_dialogue(client: PersonaClient, turns: list[dict]) -> list[dict]:
-    """共用對話迴圈：模擬前端 hint ladder + 每輪後探針。"""
+    """共用對話迴圈：逐輪送出訊息 + 每輪後探針。
+
+    7-C2a 後揭露等級由後端從對話歷史自算，harness 不再模擬前端階梯。
+    """
     uid = await probe.user_id_by_email(client.email)
     records: list[dict] = []
-    hint, fresh = 0, True
     for turn in turns:
-        hint = compute_hint_level(hint, turn["message"], fresh)
-        fresh = False
         before = await probe.mastery_snapshot(uid) if uid else {}
         res = await client.interact(
             question=turn["message"],
             code=turn.get("code", ""),
-            hint_level=hint,
             execution_result=turn.get("execution_result"),
             reflection_id=turn.get("reflection_id"),
         )
@@ -69,7 +68,6 @@ async def run_dialogue(client: PersonaClient, turns: list[dict]) -> list[dict]:
         records.append(
             {
                 "message": turn["message"],
-                "sent_hint_level": hint,
                 "expect": turn.get("expect"),
                 "stages": res.get("stages"),
                 "response": res.get("response"),

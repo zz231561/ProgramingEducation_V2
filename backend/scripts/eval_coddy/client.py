@@ -47,7 +47,6 @@ class PersonaClient:
         self,
         question: str,
         code: str = "",
-        hint_level: int = 0,
         execution_result: dict | None = None,
         reflection_id: str | None = None,
     ) -> dict:
@@ -56,7 +55,6 @@ class PersonaClient:
             "code": code,
             "question": question,
             "session_id": self.session_id,
-            "hint_level": hint_level,
             "execution_result": execution_result,
             "reflection_id": reflection_id,
         }

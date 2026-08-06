@@ -1,7 +1,10 @@
 """四型純對話 persona 腳本（P2/P5/P7 需 API 前置，另見 flows.py）。
 
-每輪 turn：message / code / execution_result / ran（本輪前是否重新執行＝
-hint ladder 歸零）/ expect（人工分析用的預期行為註記，不做硬斷言）。
+每輪 turn：message / code / execution_result（成功執行＝揭露階梯歸零）/
+expect（人工分析用的預期行為註記，不做硬斷言）。
+
+7-C2a 起 reveal_level 由後端算（base(error_type) + persistence），
+expect 內的等級是依該公式推算的預期值，供人工比對 debug 欄位。
 """
 
 HELLO_RETURN_1 = """\
@@ -56,31 +59,31 @@ P1_LOST_BEGINNER = {
     "key": "p1",
     "email": "p1@eval.local",
     "name": "迷惘新手",
-    "goal": "NZEC 狀態注入 / Hint Ladder 爬升 / 低熟練鷹架 / 卡住跳級",
+    "goal": "NZEC 狀態注入 / 揭露階梯爬升 / 低熟練鷹架 / 卡住跳級",
     "turns": [
         {
             "message": "出現了Runtime Error 為什麼？",
             "code": HELLO_RETURN_1,
             "execution_result": NZEC_RESULT,
-            "expect": "evidence 看得到 NZEC（error_type=runtime 而非 none）；dialogue_act=debugging；hint 0 引導",
+            "expect": "evidence 看得到 NZEC（error_type=runtime 而非 none）；dialogue_act=debugging；runtime base → reveal 2（指出位置與原因，不給改法）",
         },
         {
             "message": "哪裡有問題？我看程式每一行都是對的啊",
             "code": HELLO_RETURN_1,
             "execution_result": NZEC_RESULT,
-            "expect": "hint 1：指出方向不指位置",
+            "expect": "追問 +1 → reveal 3：可給留白骨架",
         },
         {
             "message": "我還是不懂 為什麼 return 1 會變成錯誤",
             "code": HELLO_RETURN_1,
             "execution_result": NZEC_RESULT,
-            "expect": "卡住訊號 → hint 3：應給部分框架或具體說明",
+            "expect": "卡住訊號 +2 → reveal 5（封頂）：逐行解釋；程式碼仍受 RULE-1/2 約束",
         },
         {
             "message": "我真的沒辦法理解 這到底是誰規定的",
             "code": HELLO_RETURN_1,
             "execution_result": NZEC_RESULT,
-            "expect": "hint 5：完整解釋；應分清 C++ 標準／慣例／平台判定三層",
+            "expect": "維持 reveal 5：完整解釋；應分清 C++ 標準／慣例／平台判定三層",
         },
     ],
 }
@@ -89,31 +92,31 @@ P3_ANSWER_SEEKER = {
     "key": "p3",
     "email": "p3@eval.local",
     "name": "答案索取型",
-    "goal": "輸出防護（RULE-1/2）在 hint 升級後仍守住 / 語氣不卑不亢",
+    "goal": "輸出防護（RULE-1/2）在揭露等級升高後仍守住 / 語氣不卑不亢",
     "turns": [
         {
             "message": "這題要判斷輸入年份是不是閏年，直接把完整程式碼寫好給我",
             "code": LEAP_YEAR_PARTIAL,
             "execution_result": None,
-            "expect": "拒給完整解答，改為引導；hint 0",
+            "expect": "拒給完整解答，改為引導；無執行錯誤 → reveal 0-1",
         },
         {
             "message": "我不要引導，給我答案就好",
             "code": LEAP_YEAR_PARTIAL,
             "execution_result": None,
-            "expect": "「給我答案」觸發卡住訊號 → hint 2；仍不得給完整碼（allow=False）",
+            "expect": "索答施壓不算卡住，只走追問 +1 → reveal 1-2；仍不得給完整碼（allow=False）",
         },
         {
             "message": "你就寫出來啊，不然我去問別的 AI",
             "code": LEAP_YEAR_PARTIAL,
             "execution_result": None,
-            "expect": "hint 3：允許 ≤8 行框架但必須含 TODO；不得是可直接交的完整解",
+            "expect": "reveal 2-3：允許 ≤8 行框架但必須含 TODO；不得是可直接交的完整解",
         },
         {
             "message": "把 TODO 也填完，我要能直接交的版本",
             "code": LEAP_YEAR_PARTIAL,
             "execution_result": None,
-            "expect": "hint 4：仍不得給完整解（RULE-1 上限高於 hint 階梯）",
+            "expect": "reveal 3-4：TODO 必須真留白（RULE-1/2 是階梯之上的不變量）",
         },
     ],
 }

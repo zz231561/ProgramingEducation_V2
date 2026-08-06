@@ -4,7 +4,6 @@ import { useState, useCallback, useRef } from "react";
 import { api } from "@/lib/api";
 import { interactStream, type InteractStage } from "@/lib/chat-interact";
 import { getActiveReflectionId } from "@/lib/active-reflection";
-import { computeHintLevel } from "@/lib/hint-escalation";
 import type { ExecutionResult } from "@/components/workspace/workspace-context";
 import type {
   ChatItem, MessageItem, ExecutionItem,
@@ -42,27 +41,12 @@ export function useChat(options: UseChatOptions = {}) {
   // 7-U6：EDF 管線目前跑到哪一層（null = 尚未收到第一則進度）
   const [stage, setStage] = useState<InteractStage | null>(null);
   const sessionIdRef = useRef<string | null>(null);
-  // Hint Ladder 追蹤：同脈絡連續追問遞增、卡住跳級、理解／換脈絡歸零
-  const hintLevelRef = useRef(0);
-  const freshContextRef = useRef(true);
-
-  const resetHintLadder = useCallback(() => {
-    hintLevelRef.current = 0;
-    freshContextRef.current = true;
-  }, []);
+  // 7-C2a：揭露階梯（原 hint ladder）改由後端從對話歷史自算，前端不再追蹤
 
   const sendMessage = useCallback(
     async (question: string) => {
       const code = options.getCode?.() ?? "";
       if (!question.trim()) return;
-
-      const hintLevel = computeHintLevel(
-        hintLevelRef.current,
-        question,
-        freshContextRef.current,
-      );
-      hintLevelRef.current = hintLevel;
-      freshContextRef.current = false;
 
       // 樂觀更新：使用者訊息立即上畫面，後面接「Coddy思考中」indicator；
       // API 成功後以 server 版（真實 id）原位取代
@@ -89,7 +73,6 @@ export function useChat(options: UseChatOptions = {}) {
             code,
             question,
             session_id: sessionIdRef.current,
-            hint_level: hintLevel,
             execution_result: options.getExecutionResult?.() ?? null,
             reflection_id: reflectionId,
           },
@@ -148,7 +131,6 @@ export function useChat(options: UseChatOptions = {}) {
           method: "POST",
           body: JSON.stringify({ reflection_id: reflectionId }),
         });
-        resetHintLadder();
         sessionIdRef.current = res.session_id;
         setItems([toMessageItem(res.assistant_message)]);
         options.onSessionCreated?.(res.session_id, res.session_title);
@@ -158,7 +140,7 @@ export function useChat(options: UseChatOptions = {}) {
         setIsLoading(false);
       }
     },
-    [options, resetHintLadder],
+    [options],
   );
 
   /**
@@ -200,7 +182,6 @@ export function useChat(options: UseChatOptions = {}) {
     setIsLoading(true);
     try {
       const res = await api<SessionDetailResponse>(`/chat/sessions/${sessionId}`);
-      resetHintLadder();
       sessionIdRef.current = sessionId;
       setItems(res.messages.map(toMessageItem));
     } catch {
@@ -208,18 +189,14 @@ export function useChat(options: UseChatOptions = {}) {
     } finally {
       setIsLoading(false);
     }
-  }, [resetHintLadder]);
+  }, []);
 
   const startNewSession = useCallback(() => {
     setItems([]);
     sessionIdRef.current = null;
-    resetHintLadder();
-  }, [resetHintLadder]);
+  }, []);
 
   const injectExecutionResult = useCallback((result: ExecutionResult) => {
-    // 成功執行＝問題解決、脈絡刷新 → 階梯歸零；
-    // 失敗的重跑＝又一次失敗嘗試 → 階梯保持（反覆失敗應獲得更多協助，不是歸零）
-    if (result.exit_code === 0) resetHintLadder();
     const item: ExecutionItem = {
       type: "execution",
       id: crypto.randomUUID(),
@@ -227,7 +204,7 @@ export function useChat(options: UseChatOptions = {}) {
       createdAt: new Date().toISOString(),
     };
     setItems((prev) => [...prev, item]);
-  }, [resetHintLadder]);
+  }, []);
 
   return {
     items,

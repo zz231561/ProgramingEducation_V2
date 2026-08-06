@@ -1,6 +1,43 @@
 # 變更日誌
 
-## [2026-08-06] — docs：7-C2a Decision 層重構設計定案（**純設計，本 session 不實作**）
+## [2026-08-06] — 7-C2a 實作：Decision 層改累積式揭露階梯 + 動態選層（方案 B）
+
+> 同日設計定案（見下一節）的實作。行為驗證（`eval_coddy` 七型重跑對照）屬 7-C4，尚未執行。
+
+### Changed
+- `services/edf/decision.py` 整份重寫：6×6＝36 格手寫矩陣 → **6 條累積式等級指令 + 6 條 Bloom 深度修飾**。
+  `TeachingStrategy.hint_level` → `reveal_level`（語意＝本題解法揭露程度），新增 `bloom_guidance`；
+  `decide_strategy(evidence, persistence)` 依 `min(5, base(error_type) + persistence)` 選層，
+  `base`＝none 0／logic·semantic 1／syntax·compilation·runtime 2；L3 起才允許程式碼片段
+- `services/edf/feedback.py`：strategy block 改組裝「累積指令 ＋ 說明深度 ＋ 揭露等級」；
+  洩答防線改看 `reveal_level`，L5 由「無防線」改為「解釋可完整、程式碼不可」
+- PREAMBLE 新增 **RULE-6**（提問必須是學生用手上資訊答得出來的，否則改行動建議）與
+  **不變量宣告**：RULE-1／RULE-2 凌駕階梯，高等級的「完整」指解釋完整非程式碼完整
+- `api/routes/chat_sse.py`：`hint_request` 事件改用後端算出的 `reveal_level`（經 `strategy_sink` 回填）
+- `scripts/eval_coddy/`：harness 不再模擬前端階梯；`run.py` debug 摘要改記 `persistence`/`reveal_level`；
+  persona `expect` 註記依新公式改寫（P2 flow 的「致謝歸零」已不成立，只有成功執行才歸零）
+
+### Added
+- `services/chat_signals.py`：`compute_persistence`（同脈絡追問 +1／明確卡住 +2／成功執行 exit 0 歸零，
+  往回掃到最近一次成功執行為止）+ `is_successful_run`；`_is_repeat_evidence` 由 `chat.py` 遷入此處
+  （改吃純資料 `TurnSignal`，不依賴 ORM，可單測）
+- `tests/test_chat_signals.py` 13 tests；`tests/test_decision.py` 整份重寫（原斷言 36 格矩陣形狀）
+
+### Removed
+- `web/lib/hint-escalation.ts` 與其人工鏡像 `backend/scripts/eval_coddy/ladder.py` — **兩檔皆刪**，
+  persistence 單一來源在後端。`use-chat.ts` 的 `hintLevelRef`/`resetHintLadder` 一併移除
+- `InteractRequest.hint_level`（chat 路徑）— 送不出去的東西就不可能再被寫死成 0。
+  ⚠ Quiz 的 `hint_level`（學生按了 N 次提示鈕）語意不同，維持原樣
+
+### 消除的技術債
+- tech-debt **B6**（`decision.py` L5 措辭與 RULE-1 自相矛盾）+ C1 附帶的鏡像檔同步負擔
+
+### 驗證
+- 後端 **856 tests 全綠**（+22）；`web` tsc 無錯、改動檔 eslint 乾淨
+
+---
+
+## [2026-08-06] — docs：7-C2a Decision 層重構設計定案（**純設計，當時不實作**）
 
 > 使用者指示：本 session 只討論與落檔，實作留到下個 session。以下全是**設計決策紀錄**，
 > 程式碼未動——`decision.py` / `feedback.py` / `hint-escalation.ts` 皆維持現狀。

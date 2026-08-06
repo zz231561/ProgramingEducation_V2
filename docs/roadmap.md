@@ -7,8 +7,8 @@
 
 | 順序 | 項目 | 性質 | 狀態 |
 |------|------|------|------|
-| ① | **7-C2a** Decision 層重構（累積式階梯 + 動態選層，方案 B；設計已定案待實作） | 架構優化 | 🎯 **下個 session 第一件事** |
-| ①' | **7-C2b** 其餘 P1（NZEC 教學語意 / 逾時文案 / 分層說明+認錯規則 / 429 配額顯示） | 功能優化 | 待辦 |
+| ① | ~~**7-C2a** Decision 層重構（累積式揭露階梯 + 動態選層，方案 B）~~ | 架構優化 | ✅ 2026-08-06 |
+| ①' | **7-C2b** 其餘 P1（NZEC 教學語意 / 逾時文案 / 分層說明+認錯規則 / 429 配額顯示） | 功能優化 | 🎯 **下一件事** |
 | ② | **7-C3** 2-6 Comprehension 前端 UI（後端完整但學生碰不到） | 新建功能 | 待辦 |
 | ③ | **7-C4** Coddy 品質再驗（`eval_coddy` 七型重跑前後對照） | 驗證 | 待辦 |
 | ④ | **7-D** 技術債清償（前端測試 → 檔案拆分 → changelog 拆檔 → R6 收尾 → 文件稽核） | 技術債 | 待辦 |
@@ -330,7 +330,7 @@
 > 審計方法：後端每個 API 欄位 ↔ 前端實際送出值、每個 service ↔ 呼叫端、規範文件 ↔ 實作，逐一比對。
 > 完整缺陷清單見 tech-debt；**驗收策略（使用者裁決）：功能全部修補/新建完成後一律驗收**。
 - [x] 7-C1 **P0 批次**（2026-08-06 ✅ 待實測）：
-  - 接通 Hint Ladder：`web/lib/hint-escalation.ts` 純函式（同脈絡追問 +1 / 卡住訊號「不懂・沒辦法回答」跳 2 級至少 2 / 致謝歸零 / 新 session・重新執行歸零）+ `use-chat.ts` ref 追蹤送出真實 hint_level（原寫死 0）；下游自動復活＝chat hint_request 行為事件 + 策略矩陣 1-5 欄
+  - 接通 Hint Ladder：`hint-escalation.ts` 純函式（**已於 7-C2a 刪除**；同脈絡追問 +1 / 卡住訊號「不懂・沒辦法回答」跳 2 級至少 2 / 致謝歸零 / 新 session・重新執行歸零）+ `use-chat.ts` ref 追蹤送出真實 hint_level（原寫死 0）；下游自動復活＝chat hint_request 行為事件 + 策略矩陣 1-5 欄
   - Evidence 補執行狀態：`analyze_evidence` 增 `exit_code`/`status_description`，NZEC 時 prompt 改注入「執行平台狀態」（修復前會對 LLM 說「程式執行成功」而學生螢幕是 Runtime Error）
   - `_has_execution_error` 同步看 exit_code/status → NZEC 提問正確分類 DEBUGGING
   - dialogue_act 語意修正：chat 的自動升級階梯≠學生明確要提示，`classify_dialogue_act` 改傳 0 防 asking_hint 過度標記
@@ -341,42 +341,10 @@
   同一執行結果重複計 BKT 負證據 / 無碼提問建立精熟度 / kgraph 鷹架被當輪雜訊污染（改先讀後寫）/
   散文洩答（strategy 層防線，殘留記 tech-debt）/ off_topic 覆寫誤標 / RAG 查詢加問句+導覽型只用問句 /
   Coddy 反要學生提供連結 / 索答詞跳級與失敗重跑歸零；後端 834 tests；⚠ `chat.py` 299 行超硬上限待拆
-- [ ] 7-C2a **Decision 層重構：累積式階梯 + 動態選層**（2026-08-06 設計定案，方案 B；**下個 session 的第一件事**）
-  > 完整設計理由與架構審視見「已確認決策」末條；本節是可直接執行的規格。
-  - **背景（三個查證過的事實）**
-    1. `decide_strategy` 全專案**只有 `services/chat.py` 呼叫**（其餘皆測試）→ 改動不影響 Quiz
-    2. Quiz 有獨立階梯 `services/quiz/hint.py`（**1–5 無 0**），且檔頭已寫明「不可直接給完整答案」——
-       **與 RULE-1 一致；`decision.py` 的 L5 措辭才是離群值**
-    3. `validate_output` 即使 `allow_code=True` 仍會截斷 >8 行且無 TODO 的區塊 →
-       **機械防線一直照 Quiz 那套執行，只有矩陣文字在說謊**（無行為 bug，是文件/prompt 矛盾）
-  - **① 六層改累積式**（單調維度＝「本題解法被揭露多少」，不是「講了多少話」）
-    | 層 | 累積行為 | code |
-    |---|---|---|
-    | L0 | 回答學生實際問的問題、解釋所需概念、可舉與本題無關的例子；**本題解法揭露 0%** | ✗ |
-    | L1 | ＋指出問題落在哪個區域／哪個概念 | ✗ |
-    | L2 | ＋精確位置（行號）＋為什麼錯 | ✗ |
-    | L3 | ＋解法骨架，**TODO 必須真留白** | ✓ |
-    | L4 | ＋逐步帶到只剩最後一步 | ✓ |
-    | L5 | ＋逐行完整解釋、修正後**片段** | ✓ |
-  - **② 動態選層**：`reveal_level = min(5, base(error_type) + persistence)`
-    - `base`：無錯誤（純提問／查教材／程式正確）→ **L0**；syntax/compilation/runtime → **L2**
-      （學生看不懂錯誤訊息，指出位置不算給答案）；logic/semantic → **L1**
-      （找出邏輯錯在哪本身就是練習，直接指位置等於代寫）
-    - `persistence`：同脈絡連續追問 +1／明確表示卡住 +2／**成功執行（exit 0）歸零**
-  - **③ 結構改為方案 B**：6×6＝36 格手寫矩陣 → **6 條等級指令 ＋ 6 條 Bloom 深度修飾（共 12 條）**，
-    由 Feedback 層組裝「基底行為 ＋ 本級額外揭露 ＋ 依 Bloom 調整深度」。
-    Bloom 在 L0 的展開：REMEMBER 直接給語法定義／UNDERSTAND 概念含義加對比／APPLY 說明適用情境／
-    ANALYZE 給拆解方法論／EVALUATE 給比較面向／CREATE 給可選設計方向
-  - **④ persistence 計算搬到後端**：`chat.py` 已載入 `history_rows`，每則訊息帶 `code_snapshot` 與
-    `execution_result` → 連續追問次數與「上次成功執行」皆可自算。
-    刪除 `web/lib/hint-escalation.ts` 與其鏡像 `backend/scripts/eval_coddy/ladder.py`；
-    `InteractRequest.hint_level` 於 chat 路徑停用（**送不出去的東西就不可能被寫死成 0**）。
-    ⚠ Quiz 的 `hint_level` 語意是「學生按了 N 次提示鈕」，**維持原樣不動**
-  - **⑤ 消除矛盾**（明文寫進 PREAMBLE 與 edf-pipeline.md）：
-    **RULE-1／RULE-2 是階梯之上的不變量，任何等級都不得突破；L5 的「完整」指解釋完整、非程式碼完整**
-  - **⑥ 補一條收尾規則**：提問必須是學生用手上已有資訊答得出來的；否則改行動建議（RULE-5 本就允許）
-  - **驗證**：`scripts/eval_coddy` 七型重跑，與 2026-08-06 基準逐輪對照（P1 迷惘新手、P3 答案索取型差異最明顯）
-  - **連帶影響**：`tests/test_decision.py` 需重寫（現行斷言 36 格矩陣形狀）；tech-debt C1 的鏡像檔項消失
+- [x] 7-C2a **Decision 層重構：累積式揭露階梯 + 動態選層**（方案 B）：36 格矩陣 → 6 級累積指令 + 6 條 Bloom 修飾；
+      `reveal_level = min(5, base(error_type) + persistence)`；persistence 搬後端 `services/chat_signals.py`
+      並刪除前端／harness 兩個鏡像檔；RULE-1/2 明文定為階梯之上的不變量 + 新增 RULE-6；後端 856 tests
+      （⚠ 行為驗證 = eval_coddy 七型重跑，屬 7-C4）
 - [ ] 7-C2b **其餘 P1 修正**（對應 tech-debt B1／B2／B4）
   - NZEC 教學語意主動說明：機械判定固定文案（零 LLM），分清 **C++ 標準 / OS 慣例 / 本平台判定**三層，
     並以第一人稱說明「這是本平台的判定方式」（現行回應是「線上評測通常…」的第三人稱迴避）
@@ -395,7 +363,7 @@
 > 清單正本在 `docs/tech-debt.md`，此處只排執行順序。機械事實一律跑 `python3 scripts/doc_selfcheck.py`。
 - [ ] 7-D1 **前端測試基礎設施**（tech-debt C1，原 8-3a）：Vitest + 純函式測試——
       `lib/transcript-timestamps.ts`、`use-run-history.ts`、`cpp-completion-source.ts`
-      （原列首位的 `lib/hint-escalation.ts` 會在 7-C2a 隨 persistence 搬後端而刪除，改由後端 pytest 覆蓋）
+      （`lib/hint-escalation.ts` 已於 7-C2a 隨 persistence 搬後端刪除，改由後端 pytest 覆蓋）
 - [ ] 7-D2 **檔案拆分**（tech-debt C2）：8 個超硬上限檔——`quiz.py` 347 / `generate.py` 307 /
       `chat.py` 299 / `concept-detail-panel.tsx` 279 / `batch_generator.py` 267 /
       `variation.py` 255 / `comprehension.py` 255 / `quiz/feedback.py` 251
@@ -461,7 +429,7 @@
 - [ ] 8-2d `ScreenShot/` 676K 未進版控——確認用途，決定保留或移除
 
 ### 8-3 前端測試基礎設施（tech-debt C1）
-- [ ] 8-3a Vitest 建置 + 純函式測試固化 → **已前移為 7-D1**（含新增的 `hint-escalation`，與 harness 互為鏡像須釘住）
+- [ ] 8-3a Vitest 建置 + 純函式測試固化 → **已前移為 7-D1**（`hint-escalation` 已於 7-C2a 刪除，不在清單內）
 - [ ] 8-3b 視情況再評估 React 元件測試與 Playwright
 
 ---

@@ -1,15 +1,23 @@
-"""Decision 層單元測試 — 驗證策略矩陣查表邏輯。"""
+"""Decision 層單元測試 — 累積式揭露階梯 + 動態選層（7-C2a）。"""
 
 import pytest
 
-from services.edf.decision import decide_strategy, TeachingStrategy
-from services.edf.models import EvidenceResult, BloomLevel, ErrorType
+from services.edf.decision import (
+    MAX_REVEAL_LEVEL,
+    MIN_CODE_LEVEL,
+    TeachingStrategy,
+    base_level,
+    decide_strategy,
+)
+from services.edf.models import BloomLevel, ErrorType, EvidenceResult
 
 
-def _make_evidence(bloom: int) -> EvidenceResult:
-    """建立指定 Bloom 等級的 EvidenceResult。"""
+def _make_evidence(
+    bloom: int = BloomLevel.APPLY,
+    error_type: ErrorType = ErrorType.LOGIC,
+) -> EvidenceResult:
     return EvidenceResult(
-        error_type=ErrorType.LOGIC,
+        error_type=error_type,
         error_message="test error",
         concept_tags=["control-flow"],
         bloom_level=bloom,
@@ -18,60 +26,92 @@ def _make_evidence(bloom: int) -> EvidenceResult:
     )
 
 
-# === 基本查表 ===
+# === 動態選層：base(error_type) ===
 
-def test_low_bloom_low_hint():
-    """Bloom 1 + Hint 0 → 提問引導，不給程式碼。"""
-    result = decide_strategy(_make_evidence(1), hint_level=0)
+@pytest.mark.parametrize(
+    "error_type,expected",
+    [
+        (ErrorType.NONE, 0),      # 純提問／程式正確：不揭露本題解法
+        (ErrorType.SYNTAX, 2),    # 看不懂錯誤訊息，指出位置不算給答案
+        (ErrorType.COMPILATION, 2),
+        (ErrorType.RUNTIME, 2),
+        (ErrorType.LOGIC, 1),     # 找出邏輯錯在哪本身就是練習
+        (ErrorType.SEMANTIC, 1),
+    ],
+)
+def test_base_level_by_error_type(error_type: ErrorType, expected: int):
+    assert base_level(error_type) == expected
+    assert decide_strategy(_make_evidence(error_type=error_type)).reveal_level == expected
+
+
+def test_persistence_raises_reveal_level():
+    """堅持度直接加在 base 之上。"""
+    ev = _make_evidence(error_type=ErrorType.LOGIC)  # base 1
+    assert decide_strategy(ev, persistence=0).reveal_level == 1
+    assert decide_strategy(ev, persistence=2).reveal_level == 3
+
+
+def test_reveal_level_capped_at_max():
+    ev = _make_evidence(error_type=ErrorType.RUNTIME)  # base 2
+    assert decide_strategy(ev, persistence=99).reveal_level == MAX_REVEAL_LEVEL
+
+
+def test_negative_persistence_treated_as_zero():
+    ev = _make_evidence(error_type=ErrorType.NONE)
+    assert decide_strategy(ev, persistence=-3).reveal_level == 0
+
+
+# === 累積式指令 ===
+
+def test_instruction_is_cumulative():
+    """L3 的指令必須含 L0-L3 全部行為，不是只有第 3 級那一句。"""
+    ev = _make_evidence(error_type=ErrorType.NONE)
+    result = decide_strategy(ev, persistence=3)
     assert isinstance(result, TeachingStrategy)
-    assert result.hint_level == 0
-    assert result.allow_code_snippet is False
+    for level in range(4):
+        assert f"L{level}：" in result.instruction
+    assert "L4：" not in result.instruction
 
 
-def test_low_bloom_high_hint():
-    """Bloom 1 + Hint 5 → 完整解釋 + 程式碼。"""
-    result = decide_strategy(_make_evidence(1), hint_level=5)
-    assert result.allow_code_snippet is True
-    assert result.hint_level == 5
+def test_level_zero_instruction_has_no_reveal():
+    result = decide_strategy(_make_evidence(error_type=ErrorType.NONE))
+    assert "L0：" in result.instruction
+    assert "L1：" not in result.instruction
 
 
-def test_high_bloom_low_hint():
-    """Bloom 6 + Hint 0 → 開放式提問。"""
-    result = decide_strategy(_make_evidence(6), hint_level=0)
-    assert result.allow_code_snippet is False
+# === 程式碼片段閘門 ===
+
+@pytest.mark.parametrize("persistence,allowed", [(0, False), (1, False), (2, False), (3, True), (5, True)])
+def test_allow_code_snippet_gate(persistence: int, allowed: bool):
+    """L3（給骨架）起才允許程式碼片段。"""
+    ev = _make_evidence(error_type=ErrorType.NONE)  # base 0 → reveal == persistence
+    result = decide_strategy(ev, persistence=persistence)
+    assert result.allow_code_snippet is allowed
+    assert (result.reveal_level >= MIN_CODE_LEVEL) is allowed
 
 
-def test_high_bloom_high_hint():
-    """Bloom 5 + Hint 3 → 允許程式碼。"""
-    result = decide_strategy(_make_evidence(5), hint_level=3)
-    assert result.allow_code_snippet is True
+# === Bloom 深度修飾（與等級正交）===
+
+def test_every_bloom_level_has_guidance():
+    for bloom in BloomLevel:
+        result = decide_strategy(_make_evidence(bloom=bloom))
+        assert result.bloom_guidance, f"bloom {bloom} 沒有深度修飾"
+
+
+def test_bloom_does_not_affect_reveal_level():
+    """Bloom 只管講多深，不管揭露多少。"""
+    levels = {
+        decide_strategy(_make_evidence(bloom=b, error_type=ErrorType.LOGIC), 2).reveal_level
+        for b in BloomLevel
+    }
+    assert levels == {3}
 
 
 def test_strategy_has_no_use_rag_field():
     """K4b：RAG 注入改由 Feedback 層依分數決定，策略不再帶 use_rag。"""
-    result = decide_strategy(_make_evidence(BloomLevel.ANALYZE), hint_level=2)
-    assert not hasattr(result, "use_rag")
+    assert not hasattr(decide_strategy(_make_evidence()), "use_rag")
 
 
-# === 邊界值 ===
-
-def test_hint_clamped_below_zero():
-    """hint_level < 0 → clamp 為 0。"""
-    result = decide_strategy(_make_evidence(1), hint_level=-1)
-    assert result.hint_level == 0
-
-
-def test_hint_clamped_above_five():
-    """hint_level > 5 → clamp 為 5。"""
-    result = decide_strategy(_make_evidence(1), hint_level=10)
-    assert result.hint_level == 5
-
-
-# === 所有 36 格都有定義 ===
-
-def test_all_matrix_cells_defined():
-    """確認 6×6 = 36 個策略矩陣格子全部有對應結果。"""
-    for bloom in range(1, 7):
-        for hint in range(0, 6):
-            result = decide_strategy(_make_evidence(bloom), hint_level=hint)
-            assert result.instruction, f"({bloom}, {hint}) instruction is empty"
+def test_strategy_has_no_hint_level_field():
+    """7-C2a：hint_level 是 Quiz 的語意（學生按了幾次提示鈕），chat 端不再有。"""
+    assert not hasattr(decide_strategy(_make_evidence()), "hint_level")

@@ -18,10 +18,11 @@ def make_evidence() -> EvidenceResult:
     )
 
 
-def make_strategy(hint: int = 2, allow_code: bool = True) -> TeachingStrategy:
+def make_strategy(reveal: int = 2, allow_code: bool = True) -> TeachingStrategy:
     return TeachingStrategy(
-        hint_level=hint,
-        instruction="指出具體位置 + 概念名稱",
+        reveal_level=reveal,
+        instruction="L0：回答學生實際問的問題。\nL1：＋指出問題區域。\nL2：＋指出精確位置。",
+        bloom_guidance="學生停在應用層：說明這個概念適用什麼情境。",
         allow_code_snippet=allow_code,
     )
 

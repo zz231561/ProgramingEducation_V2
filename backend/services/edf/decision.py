@@ -1,92 +1,108 @@
-"""Decision 層 — Bloom × Hint Ladder 策略矩陣。
+"""Decision 層 — 累積式揭露階梯 + 動態選層（7-C2a，2026-08-06 改版）。
 
-純邏輯查表，不呼叫 LLM。根據 Evidence 分析結果和當前 hint_level
-決定 Feedback 層應使用的教學策略。
+純邏輯，不呼叫 LLM。單調的維度是「**本題解法被揭露多少**」（reveal_level），
+不是「講了多少話」——每升一級都是在前一級的基礎上多揭露一點，因此指令是
+**累積**的，不是 6×6 = 36 格互斥的手寫矩陣（舊設計）。
+
+選層：`reveal_level = min(5, base(error_type) + persistence)`
+- `base`：無錯誤（純提問／查教材／程式正確）→ L0；syntax / compilation /
+  runtime → L2（學生看不懂錯誤訊息，替他指出位置不算給答案）；
+  logic / semantic → L1（找出邏輯錯在哪本身就是練習，直接指位置等於代寫）
+- `persistence`：由 `services.chat_signals.compute_persistence` 從對話歷史算出
+
+結構＝方案 B：**6 條等級指令 ＋ 6 條 Bloom 深度修飾（共 12 條）**，
+由 Feedback 層組裝成「基底行為 ＋ 本級額外揭露 ＋ 依 Bloom 調整深度」。
+
+⚠ RULE-1／RULE-2（不給完整解答程式碼、片段 ≤ 8 行且含 TODO）是階梯**之上**的
+不變量，任何等級都不得突破：L5 的「完整」指**解釋**完整，不是**程式碼**完整。
 """
 
 from pydantic import BaseModel, Field
 
-from .models import EvidenceResult
+from .models import BloomLevel, ErrorType, EvidenceResult
+
+MAX_REVEAL_LEVEL = 5
+# 到這一級才允許出現程式碼片段（L3 起才給骨架）
+MIN_CODE_LEVEL = 3
 
 
 class TeachingStrategy(BaseModel):
     """Decision 層輸出 — Feedback 層使用的教學指令。
 
     K4b（2026-07-04）：移除 `use_rag` — RAG 注入改由 Feedback 層依檢索
-    相似度分數決定（見 `rag_integration.RAG_MIN_SCORE`），不再由
-    hint/bloom 門檻寫死。
+    相似度分數決定（見 `rag_integration.RAG_MIN_SCORE`）。
+    7-C2a（2026-08-06）：`hint_level` → `reveal_level`（語意改為「解法揭露程度」，
+    且不再由前端送入）；新增 `bloom_guidance`（Bloom 深度修飾，與等級正交）。
     """
 
-    hint_level: int = Field(ge=0, le=5, description="當前提示等級 0-5")
-    instruction: str = Field(description="給 Feedback 層的策略指令")
+    reveal_level: int = Field(ge=0, le=MAX_REVEAL_LEVEL, description="本題解法揭露等級 0-5")
+    instruction: str = Field(description="累積式揭露指令（L0 到本級全部允許）")
+    bloom_guidance: str = Field(default="", description="依 Bloom 等級調整說明深度")
     allow_code_snippet: bool = Field(default=False, description="是否允許回應包含程式碼片段")
 
 
-# === 6×6 策略矩陣 ===
-# 行 = Bloom level (1-6)，列 = Hint level (0-5)
-# 值 = (instruction, allow_code_snippet)
+# === 六層累積式揭露階梯（每層只描述「比前一層多揭露什麼」）===
 
-_STRATEGY_MATRIX: dict[tuple[int, int], tuple[str, bool]] = {
-    # --- REMEMBER (Bloom 1) ---
-    (1, 0): ("用提問引導學生回憶相關語法或定義，不給任何提示。", False),
-    (1, 1): ("指出錯誤與哪個語法規則有關，但不指出具體位置。", False),
-    (1, 2): ("指出具體出錯的行號和相關的語法概念名稱。", False),
-    (1, 3): ("給出正確語法的部分框架，用 TODO 標記需要填寫的部分。", True),
-    (1, 4): ("逐步引導語法修正，只剩最後一步讓學生完成。", True),
-    (1, 5): ("完整解釋語法規則並提供修正後的程式碼片段。", True),
-    # --- UNDERSTAND (Bloom 2) ---
-    (2, 0): ("請學生用自己的話解釋這段程式碼的行為，不給提示。", False),
-    (2, 1): ("指出理解偏差的方向，例如「問題在於你對迴圈條件的理解」。", False),
-    (2, 2): ("指出具體的概念誤解，並提供概念名稱。", False),
-    (2, 3): ("用類比或簡單範例解釋概念，附帶框架程式碼讓學生填空。", True),
-    (2, 4): ("提供詳細的概念解釋，用對比說明正確與錯誤的差異。", True),
-    (2, 5): ("完整解釋概念並展示正確用法。", True),
-    # --- APPLY (Bloom 3) ---
-    (3, 0): ("問學生打算如何應用已知概念來解決這個問題。", False),
-    (3, 1): ("提示應該使用哪類概念，但不說具體怎麼用。", False),
-    (3, 2): ("指出需要用到的具體概念，並提示應用方向。", False),
-    (3, 3): ("給出解題框架（含 TODO），讓學生填入關鍵邏輯。", True),
-    (3, 4): ("逐步引導實作，每步確認學生理解後再進入下一步。", True),
-    (3, 5): ("展示完整的應用方式並解釋每一步的原因。", True),
-    # --- ANALYZE (Bloom 4) ---
-    (4, 0): ("請學生分析程式碼的結構，辨識各部分的職責。", False),
-    (4, 1): ("提示問題出在程式的哪個結構層面（如資料流、控制流）。", False),
-    (4, 2): ("指出具體的結構問題和涉及的設計模式或概念。", False),
-    (4, 3): ("提供重構框架，標記需要學生分析和填入的部分。", True),
-    (4, 4): ("引導學生逐步拆解問題，比較不同結構方案。", True),
-    (4, 5): ("完整分析程式結構並提供改進方案。", True),
-    # --- EVALUATE (Bloom 5) ---
-    (5, 0): ("請學生比較目前的解法和其他可能的做法。", False),
-    (5, 1): ("指出評估的方向（效能？可讀性？正確性？）。", False),
-    (5, 2): ("提供具體的評估標準和當前解法的弱點。", False),
-    (5, 3): ("給出兩種方案的框架，讓學生分析優劣。", True),
-    (5, 4): ("引導逐項比較，協助學生建立評估框架。", True),
-    (5, 5): ("完整比較多種方案的優劣並給出建議。", True),
-    # --- CREATE (Bloom 6) ---
-    (6, 0): ("請學生構思一個新的解決方案，不給方向限制。", False),
-    (6, 1): ("提示可以從哪個方向思考新方案。", False),
-    (6, 2): ("指出可以結合哪些概念來建構解決方案。", False),
-    (6, 3): ("給出高層架構框架，讓學生設計具體實作。", True),
-    (6, 4): ("引導學生逐步設計方案，提供每步的選項。", True),
-    (6, 5): ("展示完整的設計方案並解釋綜合運用的概念。", True),
+_LEVEL_REVEALS: tuple[str, ...] = (
+    "回答學生實際問的問題、解釋他需要的概念，可以舉與本題無關的例子；本題解法揭露 0%。",
+    "＋指出問題落在哪個區域或哪個概念（不給精確位置）。",
+    "＋指出精確位置（行號）並說明為什麼錯。",
+    "＋給出解法骨架，TODO 必須真的留白。",
+    "＋逐步帶到只剩最後一步。",
+    "＋逐行完整解釋，並給修正後的片段。",
+)
+
+# === Bloom 深度修飾（與等級正交：等級管揭露多少，Bloom 管講得多深）===
+
+_BLOOM_DEPTH: dict[BloomLevel, str] = {
+    BloomLevel.REMEMBER: "學生停在回憶層：直接給語法定義或關鍵字用途，別繞圈子。",
+    BloomLevel.UNDERSTAND: "學生停在理解層：解釋概念含義，用正確／錯誤的對比幫他分辨。",
+    BloomLevel.APPLY: "學生停在應用層：說明這個概念適用什麼情境、什麼時候該用它。",
+    BloomLevel.ANALYZE: "學生停在分析層：給拆解問題的方法論（怎麼縮小範圍、怎麼追資料流），別替他拆完。",
+    BloomLevel.EVALUATE: "學生停在評估層：給比較的面向（正確性／效能／可讀性），讓他自己下判斷。",
+    BloomLevel.CREATE: "學生停在創造層：給幾個可選的設計方向，別替他決定選哪一個。",
 }
+
+# === 動態選層的起點 ===
+
+_BASE_LEVEL: dict[ErrorType, int] = {
+    ErrorType.NONE: 0,
+    ErrorType.SYNTAX: 2,
+    ErrorType.COMPILATION: 2,
+    ErrorType.RUNTIME: 2,
+    ErrorType.LOGIC: 1,
+    ErrorType.SEMANTIC: 1,
+}
+
+
+def base_level(error_type: ErrorType) -> int:
+    """錯誤類型決定的起始揭露等級（未知類型保守回 0）。"""
+    return _BASE_LEVEL.get(error_type, 0)
+
+
+def _cumulative_instruction(level: int) -> str:
+    """組出 L0 到 `level` 的累積行為清單。"""
+    lines = "\n".join(
+        f"L{i}：{reveal}" for i, reveal in enumerate(_LEVEL_REVEALS[: level + 1])
+    )
+    return f"本次可揭露到 L{level}，以下每一層都允許（累積生效）：\n{lines}"
 
 
 def decide_strategy(
     evidence: EvidenceResult,
-    hint_level: int,
+    persistence: int = 0,
 ) -> TeachingStrategy:
-    """根據 Evidence 分析結果和 hint_level 查表決定教學策略。
+    """依錯誤類型與學生堅持度決定揭露等級與教學指令。
 
-    hint_level 由前端追蹤（學生同一問題連續求助次數）。
+    `persistence` 由後端從對話歷史算出（`services.chat_signals`），
+    不接受前端送入的數字。
     """
-    clamped_hint = max(0, min(5, hint_level))
-    bloom = evidence.bloom_level
-
-    instruction, allow_code = _STRATEGY_MATRIX[(bloom, clamped_hint)]
+    level = base_level(evidence.error_type) + max(0, persistence)
+    level = min(MAX_REVEAL_LEVEL, level)
 
     return TeachingStrategy(
-        hint_level=clamped_hint,
-        instruction=instruction,
-        allow_code_snippet=allow_code,
+        reveal_level=level,
+        instruction=_cumulative_instruction(level),
+        bloom_guidance=_BLOOM_DEPTH[evidence.bloom_level],
+        allow_code_snippet=level >= MIN_CODE_LEVEL,
     )

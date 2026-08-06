@@ -11,6 +11,7 @@ from sqlalchemy.orm import selectinload
 from models.chat import ChatSession, ChatMessage, DialogueAct, MessageRole
 from models.reflection import Reflection
 from services.analytics import classify_dialogue_act
+from services.chat_signals import TurnSignal, compute_persistence, is_repeat_evidence
 from services.edf.evidence import analyze_evidence
 from services.edf.decision import decide_strategy
 from services.edf.feedback import generate_feedback
@@ -74,36 +75,16 @@ async def _load_reflection_safely(
         return None
 
 
-def _is_repeat_evidence(
-    code: str,
-    execution_result: dict | None,
-    history_rows: list[ChatMessage],
-) -> bool:
-    """同 session 上一則 user 訊息帶著完全相同的 code + 執行結果 → 同一份證據。
-
-    學生對同一次執行連續追問時，程式碼與執行結果原封不動地隨每則訊息重送；
-    BKT 若每輪都更新，等於同一個錯誤被懲罰 N 次。
-    """
-    last_user = next(
-        (m for m in reversed(history_rows) if m.role == MessageRole.USER), None
-    )
-    if last_user is None:
-        return False
-    return (last_user.code_snapshot or "") == (code or "") and (
-        last_user.execution_result or None
-    ) == (execution_result or None)
-
-
 async def interact(
     db: AsyncSession,
     user_id: uuid.UUID,
     code: str,
     question: str,
     session_id: uuid.UUID | None = None,
-    hint_level: int = 0,
     execution_result: dict | None = None,
     reflection_id: uuid.UUID | None = None,
     debug_sink: dict | None = None,
+    strategy_sink: dict | None = None,
     on_stage: StageCallback | None = None,
 ) -> tuple[ChatSession, ChatMessage, ChatMessage]:
     """主要教學互動 — 串接 EDF 三層管線。
@@ -112,6 +93,8 @@ async def interact(
     無或載入失敗都不擋流程（容錯，與 mastery / RAG 同款）。
     `debug_sink`（DEV-7）：dev 帳號的中間層觀測 dict——收集 evidence / strategy /
     kgraph / RAG 命中，由 route 附在回應 debug 欄位；None（一般帳號）零開銷。
+    `strategy_sink`（7-C2a）：回填 `reveal_level` 供 route 記錄 hint_request 事件——
+    揭露等級改由後端自算後，route 已無從得知學生被升到第幾級。
     `on_stage`（7-U6）：每進入一個管線階段就回報，供 SSE 推播進度給前端；
     None 時完全不呼叫（非串流呼叫端零開銷）。
 
@@ -130,10 +113,16 @@ async def interact(
     )
     history_rows = (await db.execute(history_stmt)).scalars().all()
     chat_history = [{"role": m.role.value, "content": m.content} for m in history_rows]
+    # 揭露階梯與證據去重共用的歷史訊號（7-C2a：只看學生自己說過什麼、跑出什麼）
+    prior_turns = [
+        TurnSignal(m.content, m.code_snapshot, m.execution_result)
+        for m in history_rows
+        if m.role == MessageRole.USER
+    ]
 
     # 對話行為分類（5-2c）— 啟發式，僅用 LLM 呼叫前既有訊號，隨 user message 一併持久化。
-    # hint_level 傳 0：chat 的 hint_level 是前端自動升級的階梯位置（連續追問），
-    # 不是學生「明確要提示」的行為訊號——照傳會把一般追問全誤標成 asking_hint
+    # hint_level 傳 0：chat 沒有「學生按提示鈕」這種明確訊號（那是 Quiz 的語意），
+    # 照傳堅持度會把一般追問全誤標成 asking_hint
     dialogue_act = classify_dialogue_act(question, 0, execution_result)
 
     # Fail-safe 持久化：user message 在 LLM 呼叫前先 commit。
@@ -191,7 +180,7 @@ async def interact(
     # （連續追問同一次執行曾把 confidence 從 0.22 連砍到 0.12）
     if not code.strip():
         logger.info("mastery skip: no code artifact (question-only turn)")
-    elif _is_repeat_evidence(code, execution_result, history_rows):
+    elif is_repeat_evidence(prior_turns, code, execution_result):
         logger.info("mastery skip: identical code+execution as previous turn")
     else:
         try:
@@ -199,13 +188,17 @@ async def interact(
         except Exception as e:
             logger.warning("update_mastery failed (non-blocking): %r", e)
 
-    # Decision 層
-    strategy = decide_strategy(evidence, hint_level)
+    # Decision 層（7-C2a）— 揭露等級 = base(error_type) + 學生堅持度，全在後端算
+    persistence = compute_persistence(prior_turns, question, execution_result)
+    strategy = decide_strategy(evidence, persistence)
+    if strategy_sink is not None:
+        strategy_sink["reveal_level"] = strategy.reveal_level
 
     # DEV-7：dev 帳號收集中間層觀測（RAG 命中由 generate_feedback 補入）
     if debug_sink is not None:
         debug_sink.update({
             "evidence": evidence.model_dump(),
+            "persistence": persistence,
             "strategy": strategy.model_dump(),
             "kgraph_block": kgraph_block,
             "reflection_injected": bool(reflection_feedback_block),

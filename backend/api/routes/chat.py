@@ -29,7 +29,10 @@ class InteractRequest(BaseModel):
     question: str = Field(..., min_length=1, max_length=2_000)
     session_id: uuid.UUID | None = Field(default=None)
     # 7-C2a：原有的 hint_level 已移除——揭露等級改由後端從對話歷史自算，
-    # 前端送得出來的數字就可能被寫死成 0（7-C1 修的正是這個 bug）
+    # 前端送得出來的數字就可能被寫死成 0（7-C1 修的正是這個 bug）。
+    # 7-C2a'：`explicit_help` 是例外且不牴觸——它不是前端推算的等級，
+    # 而是「學生按了『我卡住了』」這個後端觀測不到的實際動作
+    explicit_help: bool = Field(default=False)
     execution_result: dict | None = Field(default=None)
     # Phase 2-5e：若前端帶上當前 active reflection_id，後端會載入並注入 EDF prompt
     reflection_id: uuid.UUID | None = Field(default=None)

@@ -26,6 +26,8 @@ export interface InteractPayload {
   code: string;
   question: string;
   session_id: string | null;
+  /** 學生按下「我卡住了」；後端 need 狀態機的顯式求助訊號（7-C2a'） */
+  explicit_help: boolean;
   execution_result: object | null;
   reflection_id: string | null;
 }

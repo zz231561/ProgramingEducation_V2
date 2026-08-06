@@ -159,6 +159,54 @@ async def test_hint_request_logged_only_when_need_rises(client: AsyncClient):
 
 
 @pytest.mark.asyncio
+async def test_explicit_help_button_raises_reveal_level(client: AsyncClient):
+    """7-C2a'：按「我卡住了」是唯一能直接推高揭露等級的前端輸入。
+
+    同一句話、同一份證據，差別只在按鈕——沒按時 need 0，按了 +2。
+    """
+    from sqlalchemy import select
+    from models.chat import ChatMessage
+    from models.coding_event import CodingEvent, CodingEventType
+    from tests.helpers import TestSessionFactory
+
+    await client.get("/users/me", cookies=_CK)
+
+    async def _ask(explicit: bool):
+        with (
+            patch("services.chat.analyze_evidence", new=AsyncMock(return_value=_evidence())),
+            patch("services.chat.generate_feedback", new=AsyncMock(return_value="ok")),
+        ):
+            resp = await client.post(
+                "/chat/interact",
+                json={"code": "", "question": "這題怎麼開始", "explicit_help": explicit},
+                cookies=_CK,
+            )
+        assert resp.status_code == 200
+        return _parse_sse(resp.text)[-1][1]
+
+    await _ask(False)
+    await _ask(True)
+
+    async with TestSessionFactory() as db:
+        flagged = (
+            await db.execute(
+                select(ChatMessage).where(ChatMessage.explicit_help.is_(True))
+            )
+        ).scalars().all()
+        events = (
+            await db.execute(
+                select(CodingEvent).where(
+                    CodingEvent.event_type == CodingEventType.HINT_REQUEST.value
+                )
+            )
+        ).scalars().all()
+
+    assert len(flagged) == 1, "按鈕狀態必須隨學生訊息持久化，否則重放歷史會漏掉"
+    # 沒按的那次 need 0 不記事件；按了的 need 2 → reveal = base(none) 0 + 2
+    assert [e.hint_level for e in events] == [2]
+
+
+@pytest.mark.asyncio
 async def test_unauthenticated_still_returns_http_401(client: AsyncClient):
     """串流開始前的檢查仍走正常 HTTP status（不可被 SSE 吃掉）。"""
     resp = await client.post(

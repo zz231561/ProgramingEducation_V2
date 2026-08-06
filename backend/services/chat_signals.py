@@ -21,7 +21,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 
 from models.chat import ChatMessage, MessageRole
-from services.edf.models import ComprehensionSignal
+from services.edf.models import ComprehensionSignal, ErrorType, EvidenceResult
 
 # 揭露階梯共 6 級（0-5），need 再高也無意義，先行截斷
 MAX_NEED = 5
@@ -30,9 +30,11 @@ MAX_NEED = 5
 IDLE_RESET = timedelta(minutes=30)
 
 _STEP = 1
-# 顯式求助（未來的「我卡住了」按鈕）權重高於推論訊號——學生自己說的最可信。
-# 目前無任何呼叫端會傳 True，欄位先留好位置（7-C2b/7-C3 前端補入口）
+# 顯式求助（「我卡住了」按鈕）權重高於推論訊號——學生自己說的最可信
 _EXPLICIT_STEP = 2
+# 單輪最多漲兩級：訊號可以疊加（按了求助 + 判定沒理解 + 改了還是失敗），
+# 但一次跳三級以上會讓學生從「只給方向」直接掉到「逐行解釋」，階梯就失去意義
+_MAX_TURN_RISE = 2
 
 
 @dataclass(frozen=True)
@@ -50,6 +52,7 @@ class TurnSignal:
     comprehension: ComprehensionSignal = ComprehensionSignal.UNCLEAR
     continues_issue: bool = True
     explicit_help: bool = False
+    error_type: str | None = None
 
 
 def turns_from_history(rows: Sequence[ChatMessage]) -> list[TurnSignal]:
@@ -79,6 +82,8 @@ def turns_from_history(rows: Sequence[ChatMessage]) -> list[TurnSignal]:
                 comprehension=_parse_comprehension(evidence.get("comprehension_signal")),
                 # 舊資料沒這欄 → True（保守：不把歷史全切成新卡點）
                 continues_issue=evidence.get("continues_previous_issue", True),
+                explicit_help=bool(getattr(row, "explicit_help", False)),
+                error_type=evidence.get("error_type"),
             )
         )
     return turns
@@ -119,6 +124,30 @@ def is_repeat_evidence(
     ) == (execution_result or None)
 
 
+def stabilize_error_type(
+    evidence: EvidenceResult,
+    prior_turns: list[TurnSignal],
+    code: str,
+    execution_result: dict | None,
+) -> EvidenceResult:
+    """同一份 code + 執行結果 → 沿用上一輪的 `error_type`（tech-debt B8）。
+
+    `error_type` 由 LLM 每輪重判，實測會在學生一個字沒改的情況下漂移
+    （logic → none、runtime → semantic）。它決定 `base`，漂一次學生就看到
+    揭露程度倒退。證據沒變時判定就不該變——這裡用的是既有的證據去重判斷，
+    零成本、純機械，不引入新的推論。
+    """
+    if not is_repeat_evidence(prior_turns, code, execution_result):
+        return evidence
+    carried = prior_turns[-1].error_type
+    if not carried or carried == evidence.error_type.value:
+        return evidence
+    try:
+        return evidence.model_copy(update={"error_type": ErrorType(carried)})
+    except ValueError:
+        return evidence
+
+
 def _made_failed_attempt(turn: TurnSignal, previous: TurnSignal | None) -> bool:
     """學生真的動手改了程式又跑失敗＝努力過但沒成功，該多給一點。
 
@@ -143,7 +172,7 @@ def _turn_delta(turn: TurnSignal, previous: TurnSignal | None) -> int:
         delta += _STEP
     if turn.explicit_help:
         delta += _EXPLICIT_STEP
-    return delta
+    return min(delta, _MAX_TURN_RISE)
 
 
 def _is_reset_point(turn: TurnSignal, previous: TurnSignal | None) -> bool:

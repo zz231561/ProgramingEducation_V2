@@ -17,6 +17,10 @@ globs: backend/services/edf/**
 - 7-C2a'：另輸出 `comprehension_signal`（understood/not_understood/unclear）與
   `continues_previous_issue` 供 Decision 的 need 狀態機——**搭在既有那次呼叫上，零額外請求**
   （同 `is_on_topic` 的作法）。需注入上一輪問答摘要才判得出來
+- **容錯解析**：一律走 `EvidenceResult.from_llm()`，越界欄位退回保守預設；
+  `error_type` 無害預設不存在（它決定 base），改用機械事實——平台判定失敗取 runtime、否則 none
+- **`error_type` 沿用**：同一份 code + 執行結果沒變就沿用上輪判定（`stabilize_error_type`），
+  避免 LLM 每輪重判導致學生看到揭露程度倒退
 - 注入 Judge0 執行結果（stdout/stderr）作為分析脈絡
 - 注入 Pre-Coding Reflection 內容（若有）：學生的解題計畫 + 反思品質分數
 
@@ -69,8 +73,10 @@ globs: backend/services/edf/**
   | 學生展現理解（understood） | −1 | Evidence `comprehension_signal` |
   | 學生表示沒理解（not_understood） | +1 | 同上 |
   | 改了程式又跑失敗 | +1 | `code_snapshot` 差異 + 執行結果 |
-  | 顯式求助（按鈕，尚未實作） | +2 | 前端 |
+  | 顯式求助（「我卡住了」按鈕） | +2 | `chat_messages.explicit_help`（前端唯一輸入） |
   | **單純追問／索答施壓** | **0** | comprehension = unclear |
+
+  單輪最多漲 **2** 級（訊號可疊加但不得一次跳三級，階梯才有意義）。
 
   歸零三途：程式跑成功（事實）／換卡點 `continues_previous_issue=False`（LLM 保守二元判定）／
   閒置超過 30 分鐘（純時間）。前端不再送 `hint_level`——送得出來的數字就可能被寫死成 0

@@ -53,14 +53,6 @@
   - 7-C1' 三修（無碼跳過 / 證據去重 / kgraph 先讀）已大幅降噪，但 tag 本身的誤標仍在
   - 重評時機同 K2c：Phase 5 行為資料可檢驗 LLM tagging 可靠度後（pyBKT `fit()` / AST 輔助）
 
-**B8. `base(error_type)` 每輪重判，reveal 在對話中可能不單調**（2026-08-06 實測）
-- [ ] P3 turn2→turn3 學生沒改碼卻從 `logic`(base 1) 漂到 `none`(base 0)，reveal 因此 1→0；
-      P1 turn4 從 `runtime` 漂到 `semantic`
-  - 根因是 Evidence 的 error_type 由 LLM 每輪重判，與 B5（concept tag 雜訊）同源
-  - 7-C2a' 換成 need 後**影響變小**（need 本身穩定，只有 base 在抖），但仍會讓學生看到揭露程度回退
-  - **候選解法**：同一份 code+執行結果未變時沿用上一輪的 error_type（機械、零成本）
-  - **重評時機**：同 B5
-
 ### 🔴 C. 測試與工程品質
 
 **C1. 前端零自動化測試**
@@ -131,6 +123,11 @@
 ## ✅ 已消除
 
 ### 2026-08-06（7-C 系列 + 文件稽核）
+- ~~🟡 **`base(error_type)` 每輪重判導致 reveal 回退**（原 B8）~~ — 7-C2a''：`stabilize_error_type`
+  同證據沿用上輪判定；實測 P3 由 1→1→0→0 變 1→1→1→1
+- ~~🔴 **Evidence 單一欄位越界毀掉整次互動**~~ — 7-C2a''：LLM 把 ConceptTag 寫進 `error_type`
+  會讓學生收到 502（實測 P5 撞到）。改走 `EvidenceResult.from_llm()` 容錯解析，
+  只有 JSON 本身壞掉才 502
 - ~~🟡 **persistence 只增不減、唯一歸零是跑成功**（原 B7）~~ — 7-C2a'：選層輸入從「追問次數」
   換成 need 狀態估計（理解 −1／沒理解 +1／失敗的實質嘗試 +1／**追問與施壓 0**），
   歸零改為事實或保守二元判定（跑成功／換卡點／閒置 30 分）。三個症狀一次解掉；

@@ -43,9 +43,11 @@ Phase 7-R 自建互動執行引擎 ✅（生產終端已上線）｜Phase 7-U �
   `reveal_level = min(5, base(error_type) + need)`；選層輸入搬後端（`services/chat_signals.py`）
   並刪掉前端／harness 兩個鏡像檔；RULE-1/2 定為階梯之上的不變量 + 新增 RULE-6
 - 7-C2a' ✅ **選層輸入 persistence → need**（「堅持不等於值得」）：need 是需求量估計不是追問次數，
-  理解 −1／沒理解 +1／失敗的實質嘗試 +1／**追問與索答施壓 0**；訊號由 Evidence 既有呼叫順帶輸出。
-  已跑 **P1/P3/P2 真實 LLM 實測**（P3 四輪施壓 need 恆 0）；
-  ⚠ P4/P5/P6/P7 尚未跑，連同 tech-debt **B8（base 不單調）** 與顯式求助按鈕留 7-C4
+  理解 −1／沒理解 +1／失敗的實質嘗試 +1／顯式求助 +2／**追問與索答施壓 0**（單輪漲幅上限 2）；
+  訊號由 Evidence 既有呼叫順帶輸出（零額外請求）
+- 7-C2a'' ✅ 收尾：B8 消除（同證據沿用 error_type）＋「我卡住了」按鈕（`explicit_help` 欄位）＋
+  Evidence 容錯解析（欄位越界退保守預設，不再整輪 502）＋ harness 可重跑；
+  **七型全跑通過**（877 tests／前端 build 過／migration 可逆）
 - **順序（roadmap 開頭有完整表）**：7-C2b 其餘 P1 → 7-C3 Comprehension 前端 → 7-C4 再驗 →
   **7-D 技術債清償** → **7-E 使用者驗收** → Phase 8 / 7-2 監控 / 7-3 效能 / 5-3·5-4
 

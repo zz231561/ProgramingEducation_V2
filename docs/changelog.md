@@ -1,5 +1,46 @@
 # 變更日誌
 
+## [2026-08-06] — 7-C2a'' 收尾：B8 消除 + 「我卡住了」按鈕 + Evidence 容錯 + 七型全驗
+
+### Added
+- **「我卡住了」按鈕**（`chat-input.tsx`）：need 狀態機唯一的非推論訊號，+2。
+  輸入框有字就連同學生的問題一起送、沒字才用預設句
+  - migration `v8e9f0a1b2c3` 加 `chat_messages.explicit_help`（up/down/up 實跑可逆）
+  - **不借用 `dialogue_act='asking_hint'` 持久化**：那欄也會由關鍵字啟發式產生
+    （「這個怎麼寫」也會中），重放歷史會把普通提問誤讀成按了按鈕、追溯性灌高 need
+  - 與被移除的 `hint_level` 不牴觸：那是前端**推算的等級**（可被寫死成 0），
+    這是使用者的**實際動作**（後端觀測不到）。按下時 `dialogue_act` 直接標 `asking_hint`
+- 單輪漲幅上限 **+2**：訊號可疊加（按鈕 + 沒理解 + 失敗嘗試 = 4）但一次跳三級階梯就沒意義
+
+### Fixed
+- **tech-debt B8**：`stabilize_error_type` — 同一份 code + 執行結果沒變就沿用上輪的 `error_type`。
+  實測 P3 由 `1→1→0→0`（LLM 把 logic 漂成 none，學生看到揭露程度倒退）變成 **`1→1→1→1`**
+- **Evidence 單一欄位越界毀掉整輪**（實測 P5 撞到）：LLM 把 ConceptTag 寫進 `error_type`
+  （`"undefined-behavior"`）→ pydantic raise → 學生收到「AI 服務暫時不可用」。
+  JSON 其實完整。改走 `EvidenceResult.from_llm()` 容錯解析：越界欄位退回保守預設，
+  `error_type` 用機械事實兜底（平台判定失敗 → runtime，否則 none），只有 JSON 本身壞掉才 502。
+  prompt 另明文禁止把 concept tag 寫進 error_type
+- **harness 無法重跑**：P2 flow 第二次執行必然 409（反思對 (user, source) 唯一）→
+  `_upsert_reflection` 改成建立失敗就查既有紀錄並 PATCH
+
+### 七型全驗（真實 LLM，本輪最終狀態）
+
+| persona | 結果 |
+|---|---|
+| P1 迷惘新手 | need 0→1→2→3，reveal **2→3→4→5**：逐級爬升，第 4 輪才到頂 |
+| P2 按部就班型 | 兩輪皆 understood → need 0、reveal 0；反思注入與教材引用正常 |
+| P3 答案索取型 | 四輪施壓 need **恆 0**、reveal **恆 1**；每輪都明確拒絕代寫 |
+| P4 離題型 | 離題分流正確；「陣列第幾章」未被誤殺；lambda 誠實說教材沒有 |
+| P5 進階挑戰型 | 兩輪皆正常（修正前第 2 輪 502）；overflow 判 UB 正確、不捏造影片時間點 |
+| P6 對抗型 | 三段注入全擋（sanitizer + preamble 不可覆寫 + 註解夾帶） |
+| P7 Quiz 診斷型 | 作答→診斷→補救單元流程完整（`recent_failure_streak=8`、suspects 有值） |
+
+### 驗證
+- 後端 **877 tests 全綠**；`web` tsc / eslint / **`npm run build`** 皆通過
+- migration up→down→up 實跑可逆；`doc_selfcheck` 失效路徑 0
+
+---
+
 ## [2026-08-06] — 7-C2a' 選層輸入改寫：persistence（追問次數）→ need（需求量估計）
 
 > 使用者要求「跳脫現有規則構思最接近完美的解法」後的重寫。**核心主張：堅持不等於值得。**

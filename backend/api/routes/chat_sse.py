@@ -57,6 +57,7 @@ async def interact_event_stream(
             session_id=body.session_id,
             execution_result=body.execution_result,
             reflection_id=body.reflection_id,
+            explicit_help=body.explicit_help,
             debug_sink=debug_sink,
             strategy_sink=strategy_sink,
             on_stage=on_stage,

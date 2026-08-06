@@ -16,6 +16,7 @@ from services.chat_signals import (
     compute_need,
     format_previous_exchange,
     is_repeat_evidence,
+    stabilize_error_type,
     turns_from_history,
 )
 from services.edf.evidence import analyze_evidence
@@ -68,6 +69,7 @@ async def interact(
     session_id: uuid.UUID | None = None,
     execution_result: dict | None = None,
     reflection_id: uuid.UUID | None = None,
+    explicit_help: bool = False,
     debug_sink: dict | None = None,
     strategy_sink: dict | None = None,
     on_stage: StageCallback | None = None,
@@ -78,6 +80,9 @@ async def interact(
     無或載入失敗都不擋流程（容錯，與 mastery / RAG 同款）。
     `debug_sink`（DEV-7）：dev 帳號的中間層觀測 dict——收集 evidence / strategy /
     kgraph / RAG 命中，由 route 附在回應 debug 欄位；None（一般帳號）零開銷。
+    `explicit_help`（7-C2a'）：學生按下「我卡住了」。這是前端**唯一**還能影響
+    揭露等級的輸入，因為按鈕事件後端觀測不到——與被移除的 `hint_level` 不同，
+    那是前端自行推算的階梯位置（可被寫死），這是使用者的實際動作。
     `strategy_sink`（7-C2a）：回填 `reveal_level` / `need` 供 route 記錄
     hint_request 事件——兩者改由後端自算後，route 已無從得知學生被升到第幾級。
     `on_stage`（7-U6）：每進入一個管線階段就回報，供 SSE 推播進度給前端；
@@ -103,9 +108,13 @@ async def interact(
     previous_exchange = format_previous_exchange(history_rows)
 
     # 對話行為分類（5-2c）— 啟發式，僅用 LLM 呼叫前既有訊號，隨 user message 一併持久化。
-    # hint_level 傳 0：chat 沒有「學生按提示鈕」這種明確訊號（那是 Quiz 的語意），
-    # 照傳堅持度會把一般追問全誤標成 asking_hint
-    dialogue_act = classify_dialogue_act(question, 0, execution_result)
+    # 按了「我卡住了」＝明確的 hint 請求，直接標記；否則走關鍵字啟發式（hint_level 傳 0，
+    # 那個參數是 Quiz「按了 N 次提示鈕」的語意，chat 端沒有對應物）
+    dialogue_act = (
+        DialogueAct.ASKING_HINT.value
+        if explicit_help
+        else classify_dialogue_act(question, 0, execution_result)
+    )
 
     # Fail-safe 持久化：user message 在 LLM 呼叫前先 commit。
     # OpenAI 偶發失敗是常態，不可讓學生打的問題隨 rollback 蒸發。
@@ -116,6 +125,7 @@ async def interact(
         code_snapshot=code,
         execution_result=execution_result,
         dialogue_act=dialogue_act,
+        explicit_help=explicit_help,
     )
     db.add(user_msg)
     if not history_rows:
@@ -143,6 +153,9 @@ async def interact(
         status_description=status_description,
         previous_exchange=previous_exchange,
     )
+
+    # B8：證據沒變就沿用上輪的 error_type，避免 base 漂移害學生看到揭露程度倒退
+    evidence = stabilize_error_type(evidence, prior_turns, code, execution_result)
 
     # 離題判定覆寫 dialogue_act（5-2c）——LLM 判定優先於關鍵字啟發式：
     # 「幫我決定晚餐」會先被「幫我」誤標 asking_hint，僅在 None 時回填會漏統計
@@ -180,6 +193,8 @@ async def interact(
         created_at=user_msg.created_at,
         comprehension=evidence.comprehension_signal,
         continues_issue=evidence.continues_previous_issue,
+        explicit_help=explicit_help,
+        error_type=evidence.error_type.value,
     )
     need = compute_need([*prior_turns, current_turn])
     strategy = decide_strategy(evidence, need)

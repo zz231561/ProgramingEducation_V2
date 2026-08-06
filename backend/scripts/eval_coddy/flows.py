@@ -27,6 +27,47 @@ async def question_answer_info(question_id: str) -> dict:
     }
 
 
+_REFLECTION_BODY = {
+    "source_type": "quiz",
+    "problem_understanding": "要判斷輸入的年份是不是閏年，輸出 yes 或 no",
+    "planned_steps": ["用 cin 讀入年份", "用 if-else 判斷能否被 4 整除", "輸出結果"],
+    "expected_concepts": "if-else 條件判斷、模數運算",
+}
+
+
+async def _existing_reflection_id(user_email: str, question_id: str) -> str | None:
+    """查既有反思 id。API 只提供 GET by id，這裡走探針直接查 DB。"""
+    async with Session() as db:
+        row = (
+            await db.execute(
+                text(
+                    "SELECT r.id FROM reflections r JOIN users u ON u.id = r.user_id"
+                    " WHERE u.email = :e AND r.source_id = :s"
+                ),
+                {"e": user_email, "s": question_id},
+            )
+        ).first()
+    return str(row[0]) if row else None
+
+
+async def _upsert_reflection(client: PersonaClient, question_id: str) -> dict:
+    """建立反思；同一題已有紀錄（409）就改用 PATCH 更新既有的那筆。
+
+    反思對 (user, source) 唯一，harness 第二次重跑必然撞上——沒有這段，
+    整個 P2 flow 只有在全新資料庫上才跑得起來（2026-08-06 實際被這件事擋下）。
+    """
+    body = {**_REFLECTION_BODY, "source_id": question_id}
+    created = await client.api("POST", "/reflection", json=body)
+    if created.get("id") or created.get("_status") != 409:
+        return created
+
+    reflection_id = await _existing_reflection_id(client.email, question_id)
+    if not reflection_id:
+        return created
+    patched = await client.api("PATCH", f"/reflection/{reflection_id}", json=body)
+    return patched if patched.get("id") else {**body, "id": reflection_id}
+
+
 async def p2_reflection_flow(client: PersonaClient, dialogue) -> dict[str, Any]:
     """按部就班型：題庫抽 coding 題 → 反思 → kickoff → 帶反思提問。"""
     steps: dict[str, Any] = {}
@@ -36,16 +77,7 @@ async def p2_reflection_flow(client: PersonaClient, dialogue) -> dict[str, Any]:
     )
     steps["question"] = {"id": q.get("id"), "type": q.get("type")}
 
-    reflection = await client.api(
-        "POST", "/reflection",
-        json={
-            "source_type": "quiz",
-            "source_id": q["id"],
-            "problem_understanding": "要判斷輸入的年份是不是閏年，輸出 yes 或 no",
-            "planned_steps": ["用 cin 讀入年份", "用 if-else 判斷能否被 4 整除", "輸出結果"],
-            "expected_concepts": "if-else 條件判斷、模數運算",
-        },
-    )
+    reflection = await _upsert_reflection(client, q["id"])
     steps["reflection"] = {
         "id": reflection.get("id"),
         "quality_score": reflection.get("quality_score"),

@@ -15,9 +15,15 @@ from services.chat_signals import (
     format_previous_exchange,
     is_repeat_evidence,
     is_successful_run,
+    stabilize_error_type,
     turns_from_history,
 )
-from services.edf.models import ComprehensionSignal
+from services.edf.models import (
+    BloomLevel,
+    ComprehensionSignal,
+    ErrorType,
+    EvidenceResult,
+)
 
 NZEC = {"exit_code": 1, "status_description": "Runtime Error (NZEC)"}
 OK = {"exit_code": 0, "stdout": "42\n", "compile_output": ""}
@@ -32,6 +38,7 @@ def _turn(
     continues: bool = True,
     at: datetime | None = None,
     explicit: bool = False,
+    error_type: str | None = None,
 ) -> TurnSignal:
     return TurnSignal(
         content=content,
@@ -41,6 +48,17 @@ def _turn(
         comprehension=comprehension,
         continues_issue=continues,
         explicit_help=explicit,
+        error_type=error_type,
+    )
+
+
+def _evidence(error_type: ErrorType) -> EvidenceResult:
+    return EvidenceResult(
+        error_type=error_type,
+        error_message="e",
+        concept_tags=[],
+        bloom_level=BloomLevel.APPLY,
+        code_analysis="a",
     )
 
 
@@ -148,6 +166,21 @@ def test_explicit_help_request_weighs_most():
     assert compute_need([_turn("q"), _turn("我卡住了", explicit=True)]) == 2
 
 
+def test_turn_rise_is_capped_at_two():
+    """訊號可疊加（按鈕 + 沒理解 + 失敗的嘗試），但單輪最多漲兩級。"""
+    turns = [
+        _turn("q", code="a", exec_result=NZEC),
+        _turn(
+            "我卡住了",
+            code="b",
+            exec_result=NZEC,
+            comprehension=ComprehensionSignal.NOT_UNDERSTOOD,
+            explicit=True,
+        ),
+    ]
+    assert compute_need(turns) == 2  # 未截斷會是 4
+
+
 def test_need_capped():
     turns = [
         _turn("不懂", comprehension=ComprehensionSignal.NOT_UNDERSTOOD)
@@ -205,10 +238,60 @@ def test_reset_then_signal_applies_from_zero():
     assert compute_need(turns) == 1
 
 
+# === stabilize_error_type（tech-debt B8）===
+
+def test_error_type_carried_when_evidence_unchanged():
+    """學生一個字沒改，LLM 卻從 logic 漂到 none → 沿用上輪，base 不倒退。"""
+    prior = [_turn(code="same", exec_result=NZEC, error_type="logic")]
+    stabilized = stabilize_error_type(
+        _evidence(ErrorType.NONE), prior, "same", dict(NZEC)
+    )
+    assert stabilized.error_type is ErrorType.LOGIC
+
+
+def test_error_type_not_carried_when_code_changed():
+    """程式碼變了就是新證據，該重判就重判。"""
+    prior = [_turn(code="old", exec_result=NZEC, error_type="logic")]
+    stabilized = stabilize_error_type(
+        _evidence(ErrorType.NONE), prior, "new", dict(NZEC)
+    )
+    assert stabilized.error_type is ErrorType.NONE
+
+
+def test_error_type_carry_ignores_unknown_value():
+    prior = [_turn(code="same", exec_result=NZEC, error_type="banana")]
+    stabilized = stabilize_error_type(
+        _evidence(ErrorType.NONE), prior, "same", dict(NZEC)
+    )
+    assert stabilized.error_type is ErrorType.NONE
+
+
+def test_error_type_carry_keeps_other_fields():
+    prior = [_turn(code="same", error_type="runtime")]
+    original = _evidence(ErrorType.SEMANTIC)
+    stabilized = stabilize_error_type(original, prior, "same", None)
+    assert stabilized.error_type is ErrorType.RUNTIME
+    assert stabilized.bloom_level == original.bloom_level
+    assert stabilized.code_analysis == original.code_analysis
+
+
 # === ORM 轉接層 ===
 
-def _msg(role: MessageRole, content: str = "x", evidence: dict | None = None) -> ChatMessage:
-    return ChatMessage(role=role, content=content, evidence=evidence)
+def _msg(
+    role: MessageRole,
+    content: str = "x",
+    evidence: dict | None = None,
+    explicit_help: bool = False,
+) -> ChatMessage:
+    return ChatMessage(
+        role=role, content=content, evidence=evidence, explicit_help=explicit_help
+    )
+
+
+def test_turns_from_history_reads_explicit_help_flag():
+    """按鈕狀態存在 user 訊息本身——不可從 dialogue_act 反推（關鍵字也會產生 asking_hint）。"""
+    rows = [_msg(MessageRole.USER, "我卡住了", explicit_help=True)]
+    assert turns_from_history(rows)[0].explicit_help is True
 
 
 def test_turns_from_history_pairs_evidence_of_the_reply():

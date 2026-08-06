@@ -59,6 +59,8 @@ SYSTEM_PROMPT = f"""\
   或針對上一輪回答的追問／子問題 → true；換一題、換一個無關主題 → false。
   **不確定時一律 true**（誤判成新卡點會讓正在卡關的學生突然失去協助）
 - bloom_level 根據學生「嘗試做的事」判斷，不是根據錯誤嚴重度
+- **error_type 只能是上面列的 6 個值之一**；概念標籤（如 undefined-behavior）屬於
+  concept_tags，**不可寫進 error_type**
 - concept_tags 最多選 3 個最相關的
 - 若程式碼正確無誤，error_type 為 "none"，仍需分析涉及的概念和 Bloom 等級
 """
@@ -172,11 +174,14 @@ async def analyze_evidence(
 
     raw = response.choices[0].message.content or "{}"
 
-    # JSON mode 只保證合法 JSON，不保證符合 schema（如非法 enum 值）→ 兩段都要防
+    # JSON mode 只保證合法 JSON，不保證符合 schema → `from_llm` 把越界欄位退回
+    # 保守預設（單一欄位寫錯不該讓學生收到 502）；JSON 本身壞掉才放棄
     try:
         data = json.loads(raw)
-        return EvidenceResult(**data)
-    except (json.JSONDecodeError, ValidationError) as e:
+        return EvidenceResult.from_llm(
+            data, execution_failed=_is_failing_status(status_description, exit_code)
+        )
+    except (json.JSONDecodeError, ValidationError, TypeError) as e:
         # finish_reason=length＝輸出被 max_completion_tokens 截斷成壞 JSON——
         # 生產只看得到 502，沒有這行永遠查不到是預算問題還是 schema 問題
         logger.warning(

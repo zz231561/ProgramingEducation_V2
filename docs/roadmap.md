@@ -360,11 +360,14 @@
   - 答對後呼叫 `GET /comprehension/trigger-suggestion` → 依 `suggested_type` 彈出
     EPL / 預測輸出 / 變體挑戰三種作答流程（ui-ux-spec §12.2 modal 線框）
   - 變體挑戰須禁用 AI（2-6d 明列為前端責任）；結果顯示 passed，BKT 回寫後端已完成
-- [ ] 7-C4 **Coddy 品質再驗**：`scripts/eval_coddy` 全七型重跑，比對 7-C2/C3 前後；
+- [x] 7-C2a'' **收尾**：B8 消除（`stabilize_error_type` 同證據沿用 error_type）＋
+      「我卡住了」按鈕（migration `v8e9f0a1b2c3` + need +2 + 單輪漲幅上限 2）＋
+      Evidence 容錯解析（欄位越界不再 502）＋ harness 可重跑（P2 反思 upsert）；
+      **七型全跑通過**（P1 2→3→4→5｜P3 恆 1｜P6 三段注入全擋｜P7 診斷流完整）
+- [ ] 7-C4 **Coddy 品質再驗**：`scripts/eval_coddy` 七型於 7-C3 完成後再跑一次對照；
       B3 洩答殘留在此決定採「條件式二次檢查」或接受現狀（有量測數據才裁決）
-  - 7-C2a' 已跑 P1/P3/P2；**尚未跑 P4/P5/P6/P7**
-  - 一併裁決 tech-debt **B8**（base 每輪重判導致 reveal 回退）與 **B3**（reveal 0 仍以散文給出完整規則）
-  - 顯式求助入口（「我卡住了」按鈕）未實作——need 的 +2 訊號目前無來源，前端補完後再驗一次
+  - ⚠ 已知待觀察：reveal 0-1 時 Coddy 仍會用散文給出完整閏年規則（B3）；
+    使用者 2026-08-06 已裁決該題屬「背景設定非學習目標」可接受，但需確認不擴散到其他題型
 
 ### 7-D 技術債清償（**排在功能完成之後、使用者驗收之前**；2026-08-06 使用者定序）
 > 清單正本在 `docs/tech-debt.md`，此處只排執行順序。機械事實一律跑 `python3 scripts/doc_selfcheck.py`。

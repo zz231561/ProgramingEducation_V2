@@ -5,7 +5,13 @@ import pytest
 from unittest.mock import AsyncMock, patch, MagicMock
 
 from services.edf.evidence import analyze_evidence, _build_user_prompt, SYSTEM_PROMPT
-from services.edf.models import EvidenceResult, BloomLevel, ErrorType, CONCEPT_TAGS
+from services.edf.models import (
+    CONCEPT_TAGS,
+    BloomLevel,
+    ComprehensionSignal,
+    ErrorType,
+    EvidenceResult,
+)
 from core.errors import AppError
 
 
@@ -164,15 +170,21 @@ async def test_analyze_evidence_bad_json():
 
 
 @pytest.mark.asyncio
-async def test_analyze_evidence_schema_mismatch():
-    """LLM 回傳合法 JSON 但不符 schema（非法 enum）→ 502，不可冒泡成 500。"""
+async def test_analyze_evidence_coerces_out_of_enum_fields():
+    """合法 JSON 但欄位越界 → 退回保守預設，不可毀掉整次教學互動。
+
+    2026-08-06 實測：LLM 把 ConceptTag 寫進 `error_type`（"undefined-behavior"），
+    學生因此收到「AI 服務暫時不可用」——JSON 是完整的，沒有理由整輪放棄。
+    """
     bad_data = {
-        "error_type": "not-a-valid-type",
-        "error_message": "",
-        "concept_tags": [],
+        "error_type": "undefined-behavior",  # 這是 concept tag 不是 error type
+        "error_message": "signed overflow",
+        "concept_tags": ["undefined-behavior", "not-a-real-tag"],
         "bloom_level": 99,
         "bloom_reasoning": "",
         "code_analysis": "",
+        "comprehension_signal": "confused",  # 非法值
+        "is_on_topic": "yes",  # 非布林
     }
 
     mock_client = AsyncMock()
@@ -181,8 +193,29 @@ async def test_analyze_evidence_schema_mismatch():
     )
 
     with patch("services.edf.evidence._get_client", return_value=mock_client):
-        with pytest.raises(AppError) as exc_info:
-            await analyze_evidence("int main(){}")
+        result = await analyze_evidence("int main(){}")
 
-    assert exc_info.value.status_code == 502
-    assert exc_info.value.error == "LLM_PARSE_ERROR"
+    assert result.error_type is ErrorType.NONE  # 執行沒失敗 → 保守取 none
+    assert result.bloom_level == BloomLevel.APPLY
+    assert result.concept_tags == ["undefined-behavior"]  # 濾掉不存在的 tag
+    assert result.comprehension_signal is ComprehensionSignal.UNCLEAR
+    assert result.is_on_topic is True
+    assert result.error_message == "signed overflow"  # 合法欄位原封不動
+
+
+@pytest.mark.asyncio
+async def test_analyze_evidence_error_type_fallback_follows_execution_status():
+    """error_type 沒有無害預設（它決定 base）→ 用機械事實：平台判失敗就取 runtime。"""
+    bad_data = {"error_type": "???", "bloom_level": 3}
+
+    mock_client = AsyncMock()
+    mock_client.chat.completions.create = AsyncMock(
+        return_value=_mock_openai_response(bad_data),
+    )
+
+    with patch("services.edf.evidence._get_client", return_value=mock_client):
+        result = await analyze_evidence(
+            "int main(){return 1;}", exit_code=1, status_description="Runtime Error (NZEC)"
+        )
+
+    assert result.error_type is ErrorType.RUNTIME

@@ -16,7 +16,7 @@ globs: backend/**
 | Runner / Judge0 逾時 | 504 | 「編譯/執行逾時」+ 建議縮短程式 |
 | Runner / Judge0 不可用 / 網路層例外 | 503 | httpx 連線失敗與 5xx 一律轉 503，禁止冒泡成 500 |
 | OpenAI 失敗 | 502 | 「AI 服務暫時不可用」+ 快取最近回應 |
-| LLM 回傳不符 schema | 502 | `LLM_PARSE_ERROR`（JSON mode 不保證 schema，ValidationError 必須捕捉） |
+| LLM 回傳不符 schema | 502 | `LLM_PARSE_ERROR`（JSON mode 不保證 schema，ValidationError 必須捕捉）。**但 Evidence 層例外**：單一欄位越界（如 LLM 把 ConceptTag 寫進 error_type）由 `EvidenceResult.from_llm` 退回保守預設 + warning，只有 JSON 本身壞掉才 502——一個欄位不該毀掉整次教學互動 |
 | Rate limit | 429 | 回傳剩餘冷卻時間（`core/rate_limit.py`，Redis 掛掉 fail-open） |
 | 內部錯誤 | 500 | 記錄 traceback，回傳通用錯誤 |
 

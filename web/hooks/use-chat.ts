@@ -44,9 +44,11 @@ export function useChat(options: UseChatOptions = {}) {
   // 7-C2a：揭露階梯（原 hint ladder）改由後端從對話歷史自算，前端不再追蹤
 
   const sendMessage = useCallback(
-    async (question: string) => {
+    async (question: string, sendOptions?: { explicitHelp?: boolean }) => {
       const code = options.getCode?.() ?? "";
       if (!question.trim()) return;
+      // 7-C2a'：學生按下「我卡住了」——need 狀態機唯一的非推論訊號
+      const explicitHelp = sendOptions?.explicitHelp ?? false;
 
       // 樂觀更新：使用者訊息立即上畫面，後面接「Coddy思考中」indicator；
       // API 成功後以 server 版（真實 id）原位取代
@@ -73,6 +75,7 @@ export function useChat(options: UseChatOptions = {}) {
             code,
             question,
             session_id: sessionIdRef.current,
+            explicit_help: explicitHelp,
             execution_result: options.getExecutionResult?.() ?? null,
             reflection_id: reflectionId,
           },

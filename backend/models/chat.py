@@ -5,6 +5,7 @@ import uuid
 from datetime import datetime
 
 from sqlalchemy import (
+    Boolean,
     CheckConstraint,
     String,
     Text,
@@ -13,6 +14,7 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     JSON,
+    false,
     func,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -104,6 +106,11 @@ class ChatMessage(Base):
     # 學生訊息對話行為分類（StudyChat schema，5-2c）；String+CHECK 避開 PG ENUM 雙寫坑，
     # 與 coding_events.event_type 同款；啟發式分類、訊號不足留 NULL（僅 user 訊息填值）
     dialogue_act: Mapped[str | None] = mapped_column(String(24), default=None)
+    # 學生按下「我卡住了」才為 True（7-C2a'）——need 狀態機唯一的非推論訊號。
+    # 不能用 dialogue_act='asking_hint' 代替：那也會由關鍵字啟發式產生
+    explicit_help: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default=false(), default=False
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),

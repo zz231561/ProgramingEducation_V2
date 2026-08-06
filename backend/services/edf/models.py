@@ -74,3 +74,44 @@ class EvidenceResult(BaseModel):
     continues_previous_issue: bool = Field(
         default=True, description="是否延續上一輪的同一個卡點（False = 換題目，need 歸零）"
     )
+
+    @classmethod
+    def from_llm(cls, data: dict, execution_failed: bool = False) -> "EvidenceResult":
+        """容錯解析 LLM 輸出——單一欄位越界不該毀掉整次教學互動。
+
+        2026-08-06 實測：LLM 把 ConceptTag 寫進 `error_type`（"undefined-behavior"），
+        pydantic 直接 raise，學生收到的是「AI 服務暫時不可用」。JSON 本身是完整的，
+        毀掉整輪並不合理。
+
+        越界值一律退回**保守**預設；`error_type` 沒有無害的預設值（它決定 base），
+        因此改用機械事實：平台判定執行失敗 → runtime，否則 none。
+        """
+        clean = dict(data)
+
+        if _as_enum(ErrorType, clean.get("error_type")) is None:
+            clean["error_type"] = ErrorType.RUNTIME if execution_failed else ErrorType.NONE
+
+        bloom = clean.get("bloom_level")
+        if not isinstance(bloom, int) or bloom not in range(1, 7):
+            clean["bloom_level"] = BloomLevel.APPLY  # 中位數，不偏袒任何鷹架強度
+
+        tags = clean.get("concept_tags")
+        clean["concept_tags"] = (
+            [t for t in tags if t in CONCEPT_TAGS][:3] if isinstance(tags, list) else []
+        )
+
+        if _as_enum(ComprehensionSignal, clean.get("comprehension_signal")) is None:
+            clean["comprehension_signal"] = ComprehensionSignal.UNCLEAR
+        for flag, default in (("is_on_topic", True), ("continues_previous_issue", True)):
+            if not isinstance(clean.get(flag), bool):
+                clean[flag] = default
+
+        return cls(**clean)
+
+
+def _as_enum(enum_cls, value):
+    """字串 → enum；非法值回 None（呼叫端決定退回什麼預設）。"""
+    try:
+        return enum_cls(value)
+    except (ValueError, TypeError):
+        return None

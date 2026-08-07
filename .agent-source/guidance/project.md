@@ -49,7 +49,7 @@
 - `backend.md` ↔ `backend/AGENTS.md` — 錯誤處理、安全規範、環境變數
 - `edf-pipeline.md` ↔ `backend/services/edf/AGENTS.md` — EDF 三層管線、ConceptTag、出題
 
-**`.claude/skills/`**（Claude Code 依 description 自動選用；**Codex 請當一般文件直接讀**）
+**Skills**（`.agent-source/skills/` 為唯一來源，同步至 `.claude/skills/` 與 `.agents/skills/`）
 - `code-health/` — 檔案大小與重複的**決策**工作流；改完一個邏輯變更後跑，不在每次 Edit 後跑
 
 **`docs/`**（按需查閱，預設不主動讀）

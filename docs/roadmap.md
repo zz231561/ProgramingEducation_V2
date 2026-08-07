@@ -413,6 +413,13 @@
 - [ ] 7-D7 **無意義／冗餘註解清查**（2026-08-07 使用者提出，獨立一輪執行）：
       linter 做不到——判斷「這行註解有沒有講程式碼本身沒講的事」屬語意判斷。
       掛進 `code-health` skill 當一個階段；會動到大量檔案的註解，值得單獨審
+- [~] 7-D8 **Claude Code / Codex 規則零漂移**（2026-08-08 使用者定案：共同 canonical source + 各自 adapter）
+  - [x] A **canonical guidance + 跨平台同步器**：`.agent-source/` 成為唯一來源，能重建
+        `CLAUDE.md`、`.claude/rules/*` 與根／巢狀 `AGENTS.md`；`--check` 可偵測 drift
+  - [ ] B **project skills 雙端分發**：canonical skill 同步至 `.claude/skills/` 與 `.agents/skills/`
+  - [ ] C **Claude / Codex lifecycle adapters**：雙端 SessionStart check、source edit 後同步、禁止直改生成物
+  - [ ] D **GitHub CI drift check**：PR / push 必跑並設為 required check
+  - [ ] E **跨平台 bootstrap**：macOS / Windows 首次手動安裝後可重建 agent 設定（不含 credential）
 - 暫不處理（已記錄且有明確重評時機）：tech-debt B5 / C3 / C5 / D1 / D2 / E1–E3
 
 ### 7-E 使用者驗收（**7-C 與 7-D 全數完成後才開始**）

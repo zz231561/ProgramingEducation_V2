@@ -15,7 +15,10 @@ ROOT = Path(__file__).resolve().parent.parent
 SOURCE_DIR = ROOT / ".agent-source"
 GUIDANCE_SOURCE = SOURCE_DIR / "guidance/project.md"
 RULES_SOURCE_DIR = SOURCE_DIR / "rules"
+SKILLS_SOURCE_DIR = SOURCE_DIR / "skills"
 CLAUDE_RULES_DIR = ROOT / ".claude/rules"
+CLAUDE_SKILLS_DIR = ROOT / ".claude/skills"
+CODEX_SKILLS_DIR = ROOT / ".agents/skills"
 GENERATED_BANNER = (
     "<!-- 由 scripts/sync_agents_md.py 自動產生，請勿直接編輯；"
     "改動請改來源檔，再重跑同步 -->\n<!-- 來源：{source} -->\n\n"
@@ -70,18 +73,13 @@ def _target_dir_from_glob(rule: Path, body: str) -> Path:
     return target_dir
 
 
-def _generated_files() -> list[GeneratedFile]:
-    """建立所有 Claude Code 與 Codex guidance 的預期輸出。"""
-    project_guidance = _read_source(GUIDANCE_SOURCE)
-    generated = [
-        GeneratedFile(ROOT / "CLAUDE.md", project_guidance),
-        GeneratedFile(ROOT / "AGENTS.md", project_guidance),
-    ]
-
+def _rule_generated_files() -> list[GeneratedFile]:
+    """建立 scoped rules 對應的 Claude 與 Codex 生成檔。"""
     rules = sorted(RULES_SOURCE_DIR.glob("*.md"))
     if not rules:
         raise FileNotFoundError(".agent-source/rules/ 內沒有規則檔")
 
+    generated: list[GeneratedFile] = []
     seen_targets: set[Path] = set()
     for rule in rules:
         body = _read_source(rule)
@@ -96,6 +94,55 @@ def _generated_files() -> list[GeneratedFile]:
         codex_body = GENERATED_BANNER.format(source=source_label) + body
         generated.append(GeneratedFile(codex_target, codex_body))
     return generated
+
+
+def _validate_skill(skill_dir: Path) -> None:
+    """驗證 skill 必要 frontmatter 與目錄命名。"""
+    skill_file = skill_dir / "SKILL.md"
+    body = _read_source(skill_file)
+    frontmatter = body.split("---", 2)
+    if len(frontmatter) < 3:
+        raise ValueError(f"缺少 skill frontmatter：{skill_file.relative_to(ROOT)}")
+
+    name_match = re.search(r"^name:\s*(.+)$", frontmatter[1], re.MULTILINE)
+    description_match = re.search(r"^description:\s*(.+)$", frontmatter[1], re.MULTILINE)
+    if name_match is None or description_match is None:
+        raise ValueError(f"skill 必須包含 name 與 description：{skill_file.relative_to(ROOT)}")
+
+    name = name_match.group(1).strip()
+    if name != skill_dir.name or re.fullmatch(r"[a-z0-9-]{1,64}", name) is None:
+        raise ValueError(f"skill name 必須符合目錄名稱與命名規則：{skill_dir.relative_to(ROOT)}")
+
+
+def _skill_generated_files() -> list[GeneratedFile]:
+    """將 canonical skills 完整分發至 Claude Code 與 Codex 路徑。"""
+    skill_dirs = sorted(path for path in SKILLS_SOURCE_DIR.iterdir() if path.is_dir())
+    if not skill_dirs:
+        raise FileNotFoundError(".agent-source/skills/ 內沒有 skill")
+
+    generated: list[GeneratedFile] = []
+    for skill_dir in skill_dirs:
+        _validate_skill(skill_dir)
+        for source_file in sorted(skill_dir.rglob("*")):
+            if not source_file.is_file():
+                continue
+            if source_file.is_symlink():
+                raise ValueError(f"skill 不接受 symbolic link：{source_file.relative_to(ROOT)}")
+            relative_path = source_file.relative_to(SKILLS_SOURCE_DIR)
+            content = _read_source(source_file)
+            generated.append(GeneratedFile(CLAUDE_SKILLS_DIR / relative_path, content))
+            generated.append(GeneratedFile(CODEX_SKILLS_DIR / relative_path, content))
+    return generated
+
+
+def _generated_files() -> list[GeneratedFile]:
+    """建立所有 Claude Code 與 Codex guidance、rules 與 skills 輸出。"""
+    project_guidance = _read_source(GUIDANCE_SOURCE)
+    generated = [
+        GeneratedFile(ROOT / "CLAUDE.md", project_guidance),
+        GeneratedFile(ROOT / "AGENTS.md", project_guidance),
+    ]
+    return generated + _rule_generated_files() + _skill_generated_files()
 
 
 def _find_drift(generated: list[GeneratedFile]) -> list[GeneratedFile]:

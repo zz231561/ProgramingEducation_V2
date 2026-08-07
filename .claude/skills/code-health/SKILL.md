@@ -100,6 +100,17 @@ cd web && npm test && npx tsc --noEmit && npm run lint && npm run build
 `docs/roadmap.md`（打勾＋一行）、`docs/tech-debt.md`；
 有設計取捨（如豁免判斷的依據）才寫 `docs/decisions.md`。
 
+## 階段 5 — 註解語意稽核（僅 Roadmap／使用者明確要求時）
+
+逐檔閱讀 production code，不能只靠 regex 批次刪除。刪除：① 重述下一行程式的註解；
+② 已失效的 phase／日期／任務編號快照；③ 只重複函式或區塊名稱的 separator。
+
+保留：設計理由與否決方案、安全／相容性／效能限制、非直覺 workaround、public API docstring、
+外部契約、仍可執行且有明確完成條件的 TODO。註解若描述錯誤，依「當場修小問題」直接修正。
+
+輸出以「刪除類型 → 代表例子 → 為何不影響理解」彙整，不逐檔流水帳。若只改註解，驗證至少跑
+formatter／lint、type check／compile 與受影響側完整測試，確保沒有誤刪 pragma 或工具指令。
+
 ---
 
 ## 邊界

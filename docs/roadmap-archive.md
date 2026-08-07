@@ -1,8 +1,8 @@
 # Roadmap Archive — 完整完成細節（凍結快照）
 
 > **本檔用途**：保存每個已完成 sub-task 的實作細節（檔案路徑 / 設計取捨 / 測試數 / 完成日期 / tech-debt 註解）。`docs/roadmap.md` 主檔已精簡為一行摘要，需要回顧某 sub-task 完整 context 時才讀本檔。
-> **不主動更新**：每完成一個 sub-task，細節寫到 `docs/changelog.md`（時間序）；本檔僅在「需要 phase 結構查詢」時手動同步，避免雙重維護。
-> **與 changelog.md 區別**：changelog 按時間（事件流水帳），本檔按 phase 結構（同 phase sub-task 集中）。
+> **狀態：⚫ 凍結**（2026-08-07 起不再更新）。變更明細查 `git log`，決策理由查 `docs/decisions.md`。
+> 本檔保留的價值是「按 phase 結構」的索引視角，與 git log 的時間序互補。
 
 ---
 
@@ -53,13 +53,13 @@
 
 ### 1-6 介面精修（統一視覺協議）
 > 完成標準：6 份設計系統借鑑（Cursor/Warp/Linear/Claude/Vercel/Raycast）僅貢獻結構模式，所有視覺基本元素統一為 GitHub Dark；通過 §5 違和感 7 條檢核。
-> 詳細設計規格與借鑑映射：`docs/design-plan.md`、`docs/design-references/*.md`
-- [x] 1-6a Surface / Shadow / Border / Radius token 增補（design-plan §3.1-3.5）→ 同步 `frontend.md`
-- [x] 1-6b Inter OpenType `cv01, ss03` 全站套用 + 三權重檢核（design-plan §3.4）
-- [x] 1-6c Output Panel Run Block 化（每次 Run 為獨立可摺疊 block + status badge + Run→Chat 按鈕）（design-plan §2.3）
-- [x] 1-6d Chat 訊息氣泡 ring 區分 user/AI + Bloom 等級 badge（design-plan §2.4）
-- [x] 1-6e Toolbar Linear 風格化（高度 48px + 5 頁籤 + 檔名儲存狀態）（design-plan §2.5）
-- [x] 1-6f EDF Pipeline mini timeline（在每則 AI 訊息上方顯示教學決策過程）（design-plan §2.1）
+> 詳細設計規格與借鑑映射：`docs/visual-protocol.md`、`docs/design-references/*.md`
+- [x] 1-6a Surface / Shadow / Border / Radius token 增補（visual-protocol §3.1-3.5）→ 同步 `frontend.md`
+- [x] 1-6b Inter OpenType `cv01, ss03` 全站套用 + 三權重檢核（visual-protocol §3.4）
+- [x] 1-6c Output Panel Run Block 化（每次 Run 為獨立可摺疊 block + status badge + Run→Chat 按鈕）（visual-protocol §2.3）
+- [x] 1-6d Chat 訊息氣泡 ring 區分 user/AI + Bloom 等級 badge（visual-protocol §2.4）
+- [x] 1-6e Toolbar Linear 風格化（高度 48px + 5 頁籤 + 檔名儲存狀態）（visual-protocol §2.5）
+- [x] 1-6f EDF Pipeline mini timeline（在每則 AI 訊息上方顯示教學決策過程）（visual-protocol §2.1）
 
 > 部署原 1-7 已移至 **Phase 4**（容器化 / 配置層，本機可完成）+ **Phase 7**（上線實測，須實際部署）— 功能優先策略
 
@@ -469,7 +469,7 @@
 - Judge0：開發期 RapidAPI (免費 50 次/天) → 上線後自架
 - 部署：Zeabur (Tencent Tokyo VPS) | 使用者規模：初期 < 100 人
 - 即時通訊：Phase 1 用 REST + SSE (chat streaming)，未來視需求加 WebSocket
-- 介面借鑑：6 份來源僅貢獻結構模式，視覺基本元素統一為 GitHub Dark（design-plan.md §0.3 七條硬規則）
+- 介面借鑑：6 份來源僅貢獻結構模式，視覺基本元素統一為 GitHub Dark（visual-protocol.md §0.3 七條硬規則）
 - **OSS 重用**：開發前必查 `docs/references.md` §1 決策矩陣；禁止 AGPL/GPL 套件；禁止移植已有對應套件的演算法（如 BKT 必用 pyBKT）
 - **執行順序**：功能優先（Phase 2 → 3）→ 部署準備程式碼（Phase 4）→ **Phase 5 教師端 ⇄ Phase 6 教學內容建構（兩者可平行 / 先後皆可，依教授資料準備進度決定）** → 上線實測（Phase 7）；所有需要實際部署才能驗證的工作集中在 Phase 7，避免邊開發邊維運耗能
 - **Phase 6 採 NotebookLM grounded 模式**（2026-05-07 確認）：所有 LLM 生成的 unit content / 練習題必須 grounded 在教授實際 YT 影片字幕上，禁止 LLM 自由發揮；source 採 YT 自動字幕（A 方案，零成本），品質不夠的 unit 在 6-4 抽查時評估升級到 Whisper 重 transcribe（B 方案）

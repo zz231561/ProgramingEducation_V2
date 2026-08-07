@@ -1,4 +1,7 @@
-# 介面設計借鑑計畫
+# 統一視覺協議
+
+> **狀態：穩定**（2026-05-07 定案後未再變動）。實作 UI 前閱讀對應章節；
+> 借鑑來源的原始分析屬歷史脈絡，不需維護。
 
 > 參考來源：getdesign.md 收錄之 6 份 DESIGN.md（cursor / warp / linear.app / claude / vercel / raycast），原文存於 `docs/design-references/`。
 > 本計畫的核心：**借鑑「結構模式」，不借鑑「視覺基本元素」**。確保 6 份來源不會讓 UI 產生 Frankenstein 違和感。
@@ -314,7 +317,7 @@ body { font-feature-settings: "cv01", "ss03"; }
 1. **此計畫經確認後**：
    - 在 `docs/roadmap.md` 新增 **Phase 1-6：介面精修**（6 個子任務）
    - 在 `.claude/rules/frontend.md` 增補 §3 全部 token
-   - 在 `docs/changelog.md` 記錄計畫產出
+   - 在 `docs/decisions.md` 記錄計畫產出
    - git commit + push
 2. **每完成一個 1-6 子任務**：跑 §5 檢查清單，確認後請使用者驗收。
 3. **Phase 2 預留任務**：1-6 完成後，Cmd+K + Landing/Login + Dashboard 進入 Phase 2 實作。

@@ -61,9 +61,16 @@
   - ⚠ 2026-08-06 已見代價：gpt-5.6 reasoning 參數修正雖集中在 `core/llm_params.py`，
     但**空回應的 fail-open 處理散在各模組**，同一個 root cause 要逐處補 log
 
-**C4. `changelog.md` 已近 5000 行**（2026-08-06 實測 4977，本 session 又長了約 200 行）
-- [ ] 單檔持續成長，查閱成本高（內容本身沒錯，是時間序日誌）
-  - **如何處理**：比照 `roadmap-archive.md`，把 2026-07 以前條目移到 `changelog-archive.md`
+**C4. `decisions.md`（原 changelog.md）5114 行，其中約 75% 是 git log 已有的複述**
+- [x] ~~拆檔到 changelog-archive~~ — **2026-08-07 否決**（使用者指出）：若新定位是「只記 git log
+      沒有的」，那複述內容本來就不該存在，搬到 archive 只是換地方藏，帳面下降但問題沒解決
+- [ ] **改為依新規範清理內容**（7-D3 階段二）：全檔 243 條、平均 21 行；小節分布
+      `Added` 115 + `Changed` 89 + `Fixed` 24 + `Removed` 11 + `Verified` 40 + `Tests` 39
+      ＝ 318 個「改了什麼／測試幾個」小節 → 全部可刪；`Why` 僅 11 個 → 保留
+  - 抽樣驗證：2026-05-22 條目 45 行中僅約 10 行（Implementation note 兩條）該留
+  - 附帶抓到 `Health metrics` 小節手抄「quiz.py 237 行」（現為 350），**違反 tech-debt
+    自己的「機械事實不手寫」規範** → 清理時一律刪除此類快照
+  - 估清理後 **5114 → 1200-1400 行**，因此不需拆檔
 
 **C6. 5-2b 的 chat 事件記錄已失效**（2026-08-07 由 ruff F401 意外揭露）
 - [ ] `api/routes/chat.py` 曾 import `CodingEventType` / `log_coding_event`，但**全專案無任何呼叫**

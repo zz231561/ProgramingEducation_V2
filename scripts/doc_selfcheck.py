@@ -8,7 +8,7 @@
 **手動跑，不掛 pre-commit**（會擋下想先存檔的中途 commit）：
     python3 scripts/doc_selfcheck.py
 
-輸出為可直接貼進 tech-debt / changelog 的 markdown。
+輸出為可直接貼進 tech-debt / decisions 的 markdown。
 """
 
 from __future__ import annotations
@@ -30,7 +30,9 @@ SOURCE_GLOBS = ("backend/**/*.py", "web/**/*.ts", "web/**/*.tsx", "runner/**/*.p
 PREFIXES = ("", "backend/", "web/", "runner/", "docs/")
 # 歷史日誌不掃路徑：它們如實記錄「當時」的檔案，事後被刪除是正常的
 # （如 R5d 移除的 stdin-panel.tsx），報成失效反而是雜訊
-HISTORICAL = {"docs/changelog.md", "docs/roadmap-archive.md"}
+HISTORICAL = {"docs/decisions.md", "docs/roadmap-archive.md"}
+# 各文檔自訂的行數上限（寫在該檔內，過去無人驗 → CLAUDE.md 曾超標 35% 未被發現）
+SELF_DECLARED_CAPS = {"CLAUDE.md": 60}
 DOC_FILES = ["CLAUDE.md", *sorted(str(p.relative_to(ROOT)) for p in ROOT.glob("docs/*.md"))]
 DOC_FILES += sorted(str(p.relative_to(ROOT)) for p in ROOT.glob(".claude/rules/*.md"))
 DOC_FILES = [d for d in DOC_FILES if d not in HISTORICAL]
@@ -115,6 +117,49 @@ def _live_lines(text: str):
         yield line
 
 
+_ANCHOR_RE = re.compile(r"`?([a-z0-9-]+\.md)`?\s*(?:的\s*)?§\s*([0-9]+(?:\.[0-9]+)*|[A-Z])")
+
+
+def broken_anchors() -> list[tuple[str, str, str]]:
+    """文件互相引用的章節錨點（如 `ui-ux-spec.md §12.2`）是否真的存在 → (doc, 目標, 章節)。
+
+    `missing_paths` 只驗檔案在不在，不驗章節；改名或重構後最容易在此失真。
+    """
+    found: list[tuple[str, str, str]] = []
+    for doc in DOC_FILES:
+        doc_path = ROOT / doc
+        if not doc_path.exists():
+            continue
+        for line in _live_lines(doc_path.read_text(errors="ignore")):
+            for target, section in set(_ANCHOR_RE.findall(line)):
+                tp = next(
+                    (ROOT / f"{p}{target}" for p in PREFIXES if (ROOT / f"{p}{target}").exists()),
+                    None,
+                )
+                if tp is None:
+                    # `_PATH_RE` 不收 .md，所以 missing_paths 不會報 → 這裡必須自己報，
+                    # 否則改名後的失效 .md 引用會兩邊都漏（2026-08-07 實際踩到）
+                    found.append((doc, target, f"{section}（檔案不存在）"))
+                    continue
+                body = tp.read_text(errors="ignore")
+                # 標題可能寫成 `## 12.` / `### 12.2` / `## §E.`
+                if not re.search(rf"^#{{1,4}}\s*§?\s*{re.escape(section)}[.\s]", body, re.M):
+                    found.append((doc, target, section))
+    return sorted(set(found))
+
+
+def over_self_cap() -> list[tuple[str, int, int]]:
+    """自訂行數上限超標 → (doc, 實際, 上限)。"""
+    out = []
+    for doc, cap in SELF_DECLARED_CAPS.items():
+        p = ROOT / doc
+        if p.exists():
+            n = len(p.read_text(errors="ignore").splitlines())
+            if n > cap:
+                out.append((doc, n, cap))
+    return out
+
+
 def test_counts() -> dict[str, int]:
     """各專案的測試函式數（不執行測試，純靜態計數，離線可跑）。"""
     counts: dict[str, int] = {}
@@ -164,8 +209,22 @@ def main() -> int:
     if not missing:
         print("（無）")
 
-    # 超硬上限或有失效路徑時回非零，方便未來接 CI
-    return 1 if (hard or missing) else 0
+    anchors = broken_anchors()
+    print(f"\n### 文件指向不存在的章節（{len(anchors)} 筆）")
+    for doc, target, section in anchors:
+        print(f"- `{doc}` → `{target}` §{section}")
+    if not anchors:
+        print("（無）")
+
+    caps = over_self_cap()
+    print(f"\n### 超過自訂行數上限（{len(caps)} 筆）")
+    for doc, n, cap in caps:
+        print(f"- `{doc}` {n} 行 > 自訂 {cap}")
+    if not caps:
+        print("（無）")
+
+    # 超硬上限或任何失真時回非零，方便未來接 CI
+    return 1 if (hard or missing or anchors or caps) else 0
 
 
 if __name__ == "__main__":

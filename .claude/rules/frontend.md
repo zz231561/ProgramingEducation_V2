@@ -17,7 +17,7 @@ globs: web/**
 字型: Inter (UI) + Noto Sans TC (中文) + JetBrains Mono (程式碼)
 元件庫: shadcn/ui (dark preset, 基於 Radix UI)
 
-### Phase 1-6 統一協議 token（design-plan §3）
+### Phase 1-6 統一協議 token（visual-protocol §3）
 Surface 語義別名: `--surface-0` (=bg-canvas) | `--surface-1` (=bg-default) | `--surface-2` (=bg-subtle) | `--surface-inset` (=bg-inset)
 Shadow（僅 3 階）: flat | `--shadow-card`: `0 1px 3px rgba(0,0,0,0.3)` | `--shadow-modal`: `0 16px 48px rgba(0,0,0,0.5), 0 0 0 1px var(--border-default)`
 Border AI 例外: `--border-ai`: `rgba(188, 140, 255, 0.25)` — 僅 Chat AI 訊息氣泡可用
@@ -69,7 +69,7 @@ Active tab: `border-bottom: 2px solid #F78166`
 
 ## 統一視覺協議（Phase 1-6 借鑑計畫）
 
-**詳見 [docs/design-plan.md](../../docs/design-plan.md)。** 6 份外部借鑑來源（Cursor / Warp / Linear / Claude / Vercel / Raycast）僅貢獻結構模式，**所有 color / font / shadow / border / radius / spacing 一律來自本檔上方既有 GitHub Dark token**。
+**詳見 [docs/visual-protocol.md](../../docs/visual-protocol.md)。** 6 份外部借鑑來源（Cursor / Warp / Linear / Claude / Vercel / Raycast）僅貢獻結構模式，**所有 color / font / shadow / border / radius / spacing 一律來自本檔上方既有 GitHub Dark token**。
 
 ### 違和感檢核 7 條（每元件實作後逐條對照）
 | 規則 | 規格 |
@@ -84,7 +84,7 @@ Active tab: `border-bottom: 2px solid #F78166`
 
 ### 兩處唯一視覺例外
 1. **AI 訊息氣泡** ring：`border: 1px solid var(--border-ai)`（已建立 token，1-6d 套用）
-2. **`.kbd` 鍵帽**：多層 inset 陰影（1-6e 實作時建立 `.kbd` class，規格見 design-plan §2.10）
+2. **`.kbd` 鍵帽**：多層 inset 陰影（1-6e 實作時建立 `.kbd` class，規格見 visual-protocol §2.10）
 
 ### R8 反 AI 感規則（必須遵守）
 拒絕「現代 AI 工具網站」的廉價視覺：彩色半透明 halo / 卡通圓頭像 / emoji 圖示。專業工具（Linear / Stripe / Vercel）皆無此風格。

@@ -1,9 +1,16 @@
 # Roadmap
 
-## 🎯 現在的執行順序（2026-08-06 定序）
+> **狀態：活躍** — 這裡是「現在要做什麼」的**唯一真相來源**（CLAUDE.md 不再重複進度）。
+>
+> **寫法**：每個 sub-task **只寫一行摘要** + 完成日期，理由與數據寫 `decisions.md`、
+> 變更明細查 `git log`。完成就地打勾 `[x]`，不搬走（phase 結構本身就是索引）。
+> **禁止手抄機械事實**（行數／測試數）——以 `doc_selfcheck.py` 產出為準。
 
-> Phase 1–6 全數完成、Phase 7 已上線。**現在的主線是 7-C Coddy 教學品質**，
-> 其餘（Phase 8 健檢、7-2 監控、7-3 效能、5-3/5-4 行為分析）都排在驗收之後。
+## 🎯 現在的執行順序（2026-08-07 更新）
+
+> Phase 1–6 全數完成、Phase 7 已上線、**7-C Coddy 教學品質已全數完成**。
+> 現在的主線是 **7-D 技術債清償**；其餘（Phase 8 健檢、7-2 監控、7-3 效能、
+> 5-3/5-4 行為分析）都排在使用者驗收之後。
 
 | 順序 | 項目 | 性質 | 狀態 |
 |------|------|------|------|
@@ -11,7 +18,7 @@
 | ①' | ~~**7-C2b** 其餘 P1（NZEC 教學語意 / 逾時文案 / 分層說明+認錯規則 / 429 配額顯示）~~ | 功能優化 | ✅ 2026-08-06 |
 | ② | ~~**7-C3** 2-6 Comprehension 前端 UI（後端完整但學生碰不到）~~ | 新建功能 | ✅ 2026-08-06 |
 | ③ | ~~**7-C4** Coddy 品質再驗（`eval_coddy` 七型重跑前後對照）~~ | 驗證 | ✅ 2026-08-06 |
-| ④ | **7-D** 技術債清償（前端測試 → 檔案拆分 → changelog 拆檔 → R6 收尾 → 文件稽核） | 技術債 | 🎯 **下一件事** |
+| ④ | **7-D** 技術債清償（前端測試 → code health → lint → **文檔工作流** → R6 收尾 → toast） | 技術債 | 🎯 **進行中** |
 | ⑤ | **7-E** 使用者驗收（acceptance-checklist 0~9 段） | 驗收 | 待辦 |
 | ⑥ | Phase 8 專案健檢整理 → 7-2 監控 → 7-3 效能 baseline → 5-3/5-4 行為分析 | 後續 | 待辦 |
 
@@ -23,7 +30,8 @@
 > **原始執行策略（歷史脈絡）**：功能優先（Phase 2 → 3）→ 部署準備程式碼（Phase 4）→ **Phase 5 教師端 / Phase 6 教學內容建構（兩者可平行或先後，依教授資料準備進度而定）** → 上線實測（Phase 7）。
 > **核心原則**：需要實際 Zeabur / VPS 部署才能驗證的工作（Golden path / 監控 / 效能 baseline）集中在 Phase 7。本機可完成的程式碼準備全部排在 Phase 7 之前。
 > **OSS 重用**：開發前必查 `docs/references.md` §1 決策矩陣（CLAUDE.md 守則 #7）。
-> **完成細節**：已完成 sub-task 細節已歸檔至 `docs/roadmap-archive.md`（按 phase 結構） / `docs/changelog.md`（按時間）。本檔只保留「現在要做什麼」+「未來地圖」+「已確認決策」。
+> **完成細節**：變更明細查 `git log`；決策理由與實測數據查 `docs/decisions.md`；
+> 按 phase 結構的完成快照查 `docs/roadmap-archive.md`（⚫ 凍結）。
 
 ## Phase 1：基礎建設（MVP）✅
 > 學生可登入、寫 C++、執行、與 AI 對話學習｜對應 Workspace (Page 1)
@@ -146,7 +154,7 @@
 - [ ] 6-3a 用 Phase 2-4 智慧出題管線批次模式為每 unit（4-62 共 59 個）生成至少 2 題；**generate prompt 加 grounding 規則**：題目情境必須與該 video 字幕中出現的範例 / 變數命名一致；validated=True 才入庫
   - [x] 6-3a-1 `generate_question(video_order=...)` grounded mode：grounded RAG 走 `get_chunks_by_video_order` + system prompt 加 grounding 規則 + 4 mock tests（480 全綠）；`video_order=None` 走原 semantic path（backward compat）
   - [x] 6-3a-2 批次 script + service：`services/quiz/batch_generator.py`（per-concept 跑 N 題 × generate+validate × MAX_VALIDATE_RETRIES=2）+ CLI `scripts/generate_unit_questions.py`（--only / --force / --dry-run）+ 8 mock+DB tests（488 全綠）；預設題型 mix multiple_choice + coding；validate fail 自動 retry，generate fail 直接 abort 與 orchestrator 一致
-  - [x] 6-3a-3 實機 LLM 全跑（2026-07-06 ✅）：62 concept 題庫批次 + 補跑 → 138 題 validated（詳見 changelog；v17/v41 掛零 + 3 concept 缺 1 題記 tech-debt 待 6-4b）
+  - [x] 6-3a-3 實機 LLM 全跑（2026-07-06 ✅）：62 concept 題庫批次 + 補跑 → 138 題 validated（詳見 decisions.md；v17/v41 掛零 + 3 concept 缺 1 題記 tech-debt 待 6-4b）
 - [x] 6-3b ExercisesTab 改造：從「按需現生」→「優先讀題庫，題庫不足才現生」(GET /quiz/from-bank + ApiRequestError 404 QUESTION_BANK_EMPTY fallback；6 bank service tests + 5 route integration tests；前端 Loading 文案分「查找題庫題目 (< 1 秒)」/「AI 正在生成 (5-15 秒)」兩階段)
 - [x] 6-3c 知識點驅動題量（2026-07-06 晚間程式碼完成）：知識點萃取 service + 每點 1 MC + coding 固定 1 題（intro 0）+ `QuestionSource.BATCH` 分流（migration `k7f8a9b0c1d2`）+ `GET /quiz/unit-set` LEARN 整組作答 + validate 加 `point_meaningful` 面向 + generate「考點有意義」規則 + LEARN 前端整組逐題（`concept-quiz-tab.tsx`，不呼叫 LLM）+ `rereview_questions.py`；627 tests；實機批次已跑 ✅（同日隨 6-3d：436 MC 覆蓋 61/62 片 + 57 coding + 舊題複審刪 15，見 changelog）
 - [x] 6-3d QUIZ 弱項綜合測驗組（2026-07-06 完成，程式碼 + 實機題庫；文獻標注 references.md §5.1）：multi-concept generate + blueprint/plan（掌握度自適應）+ 題庫優先≤30%並行組裝 + `POST /quiz/weakness-set?count=10|25` + 前端 10/25 選擇逐題作答；程式題強模型 + 審查加考點有意義 + 舊 MC 複審刪 15 + LEARN 資料驅動 tab 隱藏。原始需求規格 ↓
@@ -263,9 +271,9 @@
 - [x] U2d QUIZ tab 題庫優先：`GET /quiz/from-bank` 支援省略 concept_tag（弱項模式，複用 pick_target_concept）+ question_type 過濾；QuizRunner 兩階段 loading + 404 fallback 現生；**練習題重複曝光 tech-debt 一併消除**（bank 一律排除該生已答過的題，Learn/Quiz 兩入口同時生效；全答過 → fallback 現生新題入庫，題庫自然成長）
 - [x] U2e Workspace 程式碼存檔（2026-07-16，決策：DB「我的程式碼」多檔管理）：`code_files` 表（草稿 name NULL 每人一份 + 命名檔案同名覆蓋、上限 50）+ `/code/draft`·`/code/files` API + 前端自動存檔（停輸入 2 秒 + beforeunload/卸載 keepalive 搶救）+ 進頁還原草稿 + Toolbar「我的程式碼」選單（另存/載入/刪除）+ CodeEditor 受控 value（順修 output 收合 remount 掉碼潛在 bug）；+8 tests（738）；2026-07-16 回饋修訂：我的程式碼改左側欄（與反思互斥切換）+ 近實時存檔（0.4s/連續每 2s）+ 修游標跳行（editor 重建依賴）+ Enter 縮排 4 空格；同日再補 Ctrl/Cmd+S（已命名覆寫/未命名另存對話框檔名反白）+ 開新檔案（未存確認）+ 檔名關聯（`opened_name` 存草稿列，重整/再登入停留最後開啟檔案）+ page.tsx 拆分（use-run-code / use-draft-restore）+ 實作題 handoff（自動命名「章節 程式實作題」開檔 + 反思按鈕限定實作題檔案 + 圖示順序調整）；**2026-08-05 生產驗收回饋修訂**：檔名鎖定 `.cpp` 尾綴（後端 `normalize_file_name` + 前端固定尾綴輸入框；副檔名對執行無作用，避免 `main.md` 誤導）+ 點 Toolbar 檔名就地重新命名（`PATCH /code/files`，同列改名不複製、草稿 opened_name 跟隨）+ 修首次草稿併發 INSERT 回 500 + 側欄列表錯誤附原因與重試；+10 tests（783）；**同日再修**：Output 執行歷史移出元件樹（`use-run-history.ts` module store + `useSyncExternalStore` + sessionStorage 最近 20 次）並把版面單一化（`workspace-layout.tsx`）——側欄開合原本會換根節點導致輸出整批消失；`page.tsx` 254→189 行（另拆 `use-reflection-handoff.ts`）— **UI 驗收通過（2026-08-05，含 .cpp 鎖定 / 就地改名 / 輸出歷史與歷史選單 / 滾動條 / 選單溢出全數複驗）**
 - [x] U2i Coddy 反思開場（2026-07-16）：`POST /chat/reflection-kickoff` + handoff 自動展開 chat + 開場訊息（肯定亮點/接手跳過的追問/邀請提問；每反思一次；fail-open）— 待 UI 驗收
-- [x] U2h 反思評分寬容化（2026-07-16 使用者回饋）：追問可跳過+一輪放行、rubric 初學者校準、門檻 0.45+Bloom 自適應、學生端隱藏分數（詳見 changelog）— 待 UI 驗收
+- [x] U2h 反思評分寬容化（2026-07-16 使用者回饋）：追問可跳過+一輪放行、rubric 初學者校準、門檻 0.45+Bloom 自適應、學生端隱藏分數（詳見 decisions.md）— 待 UI 驗收
 - ~~U2f 範例程式製作~~ → **作廢（2026-07-06 晚間決策：範例程式全面移除，見 U2g）**
-- [x] U2g LEARN tab 重構 + 移除範例程式（2026-07-06 晚間完成）：tab 改「概念說明 / 程式實作題 / 觀念題」+ intro 隱藏程式題 + examples 管線/前端全移除 + 全量 promote + 移除題庫提示字樣（詳見 changelog）
+- [x] U2g LEARN tab 重構 + 移除範例程式（2026-07-06 晚間完成）：tab 改「概念說明 / 程式實作題 / 觀念題」+ intro 隱藏程式題 + examples 管線/前端全移除 + 全量 promote + 移除題庫提示字樣（詳見 decisions.md）
 
 ---
 
@@ -335,7 +343,7 @@
   - `_has_execution_error` 同步看 exit_code/status → NZEC 提問正確分類 DEBUGGING
   - dialogue_act 語意修正：chat 的自動升級階梯≠學生明確要提示，`classify_dialogue_act` 改傳 0 防 asking_hint 過度標記
   - 後端 827 tests 全綠（+5）；前端 tsc/eslint/build 過 + hint-escalation 11 斷言含真實對話重演
-- [x] 7-C1' **七型學生模擬驗收 harness + 診斷輪修復 9 項**（2026-08-06 ✅ 兩輪模擬驗證，詳見 changelog）：
+- [x] 7-C1' **七型學生模擬驗收 harness + 診斷輪修復 9 項**（2026-08-06 ✅ 兩輪模擬驗證，詳見 decisions.md）：
   `scripts/eval_coddy/`（七型學生 × 真實 LLM × debug_sink+DB 白盒探針）；診斷輪抓到並修復——
   **gpt-5.6 reasoning 預算間歇吃光輸出**（llm_params 8-05 結論錯誤；反思評分因此生產靜默失效）/
   同一執行結果重複計 BKT 負證據 / 無碼提問建立精熟度 / kgraph 鷹架被當輪雜訊污染（改先讀後寫）/
@@ -377,12 +385,19 @@
 - [x] 7-D2b **後端 lint 首次落地** ✅ 2026-08-07：ruff 早已宣告與設定卻從未安裝（lint 零執行）；
       擴充 rule set 並校準 6900+ 筆中文全形／FastAPI `Depends` 誤判，437 findings → **0**；
       意外揭露 5-2b chat 事件記錄失效（→ tech-debt C6）
-- [ ] 7-D3 **`changelog.md` 拆檔**（tech-debt C4）：2026-07 以前移至 `changelog-archive.md`
+- [~] 7-D3 **文檔工作流重整**（2026-08-07 使用者擴大範圍：原「changelog 拆檔」→ 全文檔清查優化）
+  - [x] 階段一 規則與標題（2026-08-07）：`changelog.md` → **`decisions.md`**（重新定位為決策記錄，
+        變更明細改以 git log 為主）、`design-plan.md` → **`visual-protocol.md`**（名實對齊）、
+        CLAUDE.md 去進度化（進度唯一真相＝roadmap）、守則 6 改為依變更類型決定、
+        文件狀態標記 🔵活躍/⚪穩定/⚫凍結、高頻檔的寫法規範寫進各自檔頭
+  - [ ] 階段二 **內容審核**：依新規範逐條清理 `decisions.md` 243 個條目
+        （刪 git log 已有的 Added/Changed/Tests 快照，留決策理由/否決方案/實測數據；
+        估 5114 → 約 1200-1400 行）＋ ⚪ 穩定文檔逐份核對（原 7-D5）。**分批 commit**
+  - **不拆檔**：清理後行數自然回到合理範圍，拆檔只是把不該存在的內容換地方放
 - [ ] 7-D4 **7-R R6 收尾**：教材健檢解除每日上限（`verify_code_snippets.py` `DAILY_BUDGET = 20`，
       Judge0 額度限制已隨自建 runner 消失）+ 30 並行壓測驗證 server-plan 容量假設
       （原列的「hook 提示仍寫 Judge0 50 次/天」**2026-08-06 查證已不復現**，session 啟動輸出無此字樣）
-- [ ] 7-D5 **其餘文件稽核**（原 8-1a）：`modules.md` / `api-spec.md` / `db-schema.md` / `ui-ux-spec.md`
-      四份最久沒動的逐份核對（`doc_selfcheck.py` 只驗機械事實，語意描述仍需人工讀）
+- ~~7-D5 其餘文件稽核~~ → **已併入 7-D3 階段二**（同一件事，不重複列）
 - [ ] 7-D6 **全站 429 / 5xx toast**（tech-debt B4 剩餘）：引入 sonner，把 quiz / learn / 教師端
       各自為政的 catch 收斂成統一攔截（chat 路徑已於 7-C2b 單獨修好）
 - [ ] 7-D7 **無意義／冗餘註解清查**（2026-08-07 使用者提出，獨立一輪執行）：
@@ -460,7 +475,7 @@
 - ~~Judge0：開發期 RapidAPI (免費 50 次/天) → 上線後自架~~ → **2026-08-05 改自建 runner**：自架 Judge0 需 GRUB 切 cgroup v1（淘汰中機制）+ privileged，且仍是批次判題；Judge0 降為 fallback（`RUNNER_BACKEND` 切換回 RapidAPI）
 - 部署：Zeabur (Tencent Tokyo VPS) | 使用者規模：初期 < 100 人
 - 即時通訊：Phase 1 用 REST + SSE (chat streaming)，未來視需求加 WebSocket
-- 介面借鑑：6 份來源僅貢獻結構模式，視覺基本元素統一為 GitHub Dark（design-plan.md §0.3 七條硬規則）
+- 介面借鑑：6 份來源僅貢獻結構模式，視覺基本元素統一為 GitHub Dark（visual-protocol.md §0.3 七條硬規則）
 - **OSS 重用**：開發前必查 `docs/references.md` §1 決策矩陣；禁止 AGPL/GPL 套件；禁止移植已有對應套件的演算法（如 BKT 必用 pyBKT）
 - **執行順序**：功能優先（Phase 2 → 3）→ 部署準備（Phase 4）→ **Phase 5 教師端 ⇄ Phase 6 教學內容建構（可平行）** → 上線實測（Phase 7）；所有需要實際部署才能驗證的工作集中在 Phase 7
 - **Phase 6 採 NotebookLM grounded 模式**（2026-05-07 確認）：所有 LLM 生成的 unit content / 練習題必須 grounded 在教授實際 YT 影片字幕上，禁止 LLM 自由發揮；source 採 Whisper API（B1 方案，6-1e 已完成 62 部 transcribe），品質不夠的 unit 在 6-4 抽查時局部重跑

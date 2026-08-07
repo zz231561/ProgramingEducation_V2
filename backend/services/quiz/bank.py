@@ -1,4 +1,4 @@
-"""Phase 6-3b：從 questions 題庫隨機抽 validated grounded 題目（避開即時 LLM）。
+"""從 questions 題庫隨機抽 validated grounded 題目（避開即時 LLM）。
 
 設計：
 - 篩選條件：validated=True 且 concept_tags JSON 陣列含目標 tag

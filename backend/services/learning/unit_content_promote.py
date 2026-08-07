@@ -1,4 +1,4 @@
-"""Phase 6-2b：staging → learning_units.content promote helper。
+"""將 staging content promote 至 learning_units.content。
 
 當 6-4 教授抽查通過後，把 `unit_content_staging.content` 寫入該 concept 對應的所有
 `learning_units.content`（多 user 共享）。

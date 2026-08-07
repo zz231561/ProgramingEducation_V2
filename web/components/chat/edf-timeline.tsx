@@ -1,12 +1,6 @@
 "use client";
 
-/**
- * EDF Pipeline mini timeline（design-plan §2.1）：
- * 在每則 AI 訊息上方顯示教學決策過程，把 Evidence → Decision → Feedback → RAG 變成可教學的 UI。
- *
- * Phase 1：3 個必經步驟永遠 active；RAG 顯示為 inactive（Phase 2-1 啟用後才會點亮）。
- * Phase 2-1 完成後可改為依 evidence + strategy 動態切換 RAG active 狀態。
- */
+/** 顯示 EDF 教學決策流程；RAG 是否點亮由該則訊息的實際檢索結果決定。 */
 
 interface EdfTimelineProps {
   ragActive?: boolean;
@@ -54,7 +48,7 @@ export function EdfTimeline({ ragActive = false }: EdfTimelineProps) {
       colorClass: "bg-accent-blue",
       borderColorClass: "border-accent-blue",
       active: ragActive,
-      hint: ragActive ? "已檢索教材片段" : "Phase 2-1 啟用",
+      hint: ragActive ? "已檢索教材片段" : "本次未使用教材檢索",
     },
   ];
 

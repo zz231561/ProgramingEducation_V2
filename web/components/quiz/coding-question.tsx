@@ -1,12 +1,6 @@
 "use client";
 
-/**
- * 程式撰寫題作答 UI（roadmap 3-2a）。
- *
- * Editor 復用 components/editor/code-editor.tsx（CodeMirror 6 + cpp + oneDark theme）。
- * Note：3-2a 範圍提交後的判分結果由後端回傳（coding 題目前 is_correct=False，
- * Judge0 整合屬 Phase 4）— UI 仍會顯示 server feedback + explanation。
- */
+/** 程式撰寫題作答 UI；提交後保存答案，目前不執行自動判分。 */
 
 import { useEffect, useRef, useState } from "react";
 
@@ -50,7 +44,7 @@ export function CodingQuestion({ question, busy, onSubmit }: Props) {
 
       <div className="flex items-center justify-between">
         <p className="text-xs text-text-muted">
-          ⓘ 程式題目前由後端記錄答案；自動判分將於 Phase 4 整合 Judge0
+          ⓘ 程式題會保存答案，目前不自動判分，可由教師檢視
         </p>
         <button
           type="button"

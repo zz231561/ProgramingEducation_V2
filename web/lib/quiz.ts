@@ -1,9 +1,4 @@
-/**
- * Quiz API helpers — Phase 3-1e（Learn 練習 tab 取題）。
- *
- * 對應後端 `/quiz/generate`；schema 與 `backend/api/routes/quiz.py` 一致。
- * 完整 Quiz UI（含作答提交）屬 Phase 3-2；此 lib 僅 generate 部分。
- */
+/** Quiz API 型別與 request helpers；schema 與後端 quiz routes 一致。 */
 
 import { api } from "./api";
 
@@ -40,7 +35,7 @@ export interface Question {
 export interface GenerateQuestionPayload {
   type: QuestionType;
   bloom_level?: number;
-  /** 3-1e：指定 concept 出題；省略則走後端弱項補強邏輯。 */
+  /** 指定 concept 出題；省略則走後端弱項補強邏輯。 */
   concept_tag?: string;
 }
 
@@ -54,7 +49,7 @@ export async function generateQuestion(
 }
 
 /**
- * Phase 6-3b：從題庫隨機抽 validated grounded 題目（不呼叫 LLM）。
+ * 從題庫隨機抽 validated grounded 題目（不呼叫 LLM）。
  *
  * - conceptTag 指定 → 抽該概念（Learn 練習 tab）
  * - conceptTag 省略 → U2d 弱項模式：後端沿用 Select 邏輯挑最弱概念（Quiz 頁）
@@ -81,14 +76,14 @@ export async function getQuestionById(questionId: string): Promise<Question> {
   return api<Question>(`/quiz/questions/${questionId}`);
 }
 
-/** 6-3c：LEARN 單元題組單題（含該學生作答狀態）。 */
+/** LEARN 單元題組單題（含該學生作答狀態）。 */
 export interface UnitQuestionItem {
   question: Question;
   is_answered: boolean;
   is_correct: boolean;
 }
 
-/** 6-3c：LEARN 單元題組回應。 */
+/** LEARN 單元題組回應。 */
 export interface UnitSetResponse {
   concept_tag: string;
   items: UnitQuestionItem[];
@@ -97,7 +92,7 @@ export interface UnitSetResponse {
 }
 
 /**
- * 6-3c：取某概念的預生成題組（source='batch'）+ 作答進度。
+ * 取某概念的預生成題組（source='batch'）與作答進度。
  * LEARN 逐題作答用；不呼叫 LLM。QUIZ 弱項現生題不列入。
  */
 export async function getUnitQuestionSet(
@@ -109,7 +104,7 @@ export async function getUnitQuestionSet(
   return api<UnitSetResponse>(`/quiz/unit-set?${params.toString()}`);
 }
 
-/** 6-3d：弱項綜合測驗組回應。 */
+/** 弱項綜合測驗組回應。 */
 export interface WeaknessSetResponse {
   questions: Question[];
   total: number;
@@ -118,7 +113,7 @@ export interface WeaknessSetResponse {
 }
 
 /**
- * 6-3d：一次生成弱項綜合測驗組（10 或 25 題）。
+ * 一次生成弱項綜合測驗組（10 或 25 題）。
  * 題庫優先重用 + 缺口並行現生；單/綜合 MC 依掌握度自適應 + 1-2 綜合 coding。
  */
 export async function getWeaknessSet(count: 10 | 25): Promise<WeaknessSetResponse> {
@@ -126,8 +121,6 @@ export async function getWeaknessSet(count: 10 | 25): Promise<WeaknessSetRespons
     method: "POST",
   });
 }
-
-// === 3-2a 作答提交 ===
 
 /** 學生作答 payload — 形狀依 question.type 決定。 */
 export type SubmitAnswer =
@@ -139,13 +132,13 @@ export interface SubmitQuestionPayload {
   question_id: string;
   answer: SubmitAnswer;
   time_spent_seconds?: number | null;
-  /** 0-5；3-2b 提示系統未實作前一律 0 */
+  /** 已使用的提示層級，0 代表未使用。 */
   hint_level_used?: number;
 }
 
 /** 提交後 server 回傳 — 含完整 content（含答案）+ feedback + explanation。 */
 export interface SubmitResponse {
-  /** 3-2c：供前端 fetch /quiz/answers/{id}/feedback */
+  /** 供前端取得該次作答的個人化回饋。 */
   answer_id: string;
   is_correct: boolean;
   feedback: string;
@@ -162,8 +155,6 @@ export async function submitAnswer(
     body: JSON.stringify(payload),
   });
 }
-
-// === 3-2b 提示系統 ===
 
 export interface HintRequestPayload {
   question_id: string;
@@ -186,8 +177,6 @@ export async function requestHint(
     body: JSON.stringify(payload),
   });
 }
-
-// === 3-2c 作答後 EDF 回饋 ===
 
 export interface ConceptMasteryItem {
   concept_tag: string;

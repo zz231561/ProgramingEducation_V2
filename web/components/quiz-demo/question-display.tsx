@@ -1,13 +1,13 @@
 "use client";
 
 /**
- * Quiz demo 的題目顯示元件（Phase 2-5c demo）。
+ * Quiz demo 的題目顯示元件。
  *
  * 在 preview / reflecting / ready 三個 phase 共用：題目本體持續顯示，
  * 確保學生有「先讀題、再反思、最後作答」的完整脈絡（PRIMM 強調對「具體題目」反思）。
  *
- * Phase 完整 Quiz UI 屬 Phase 3-2；此處僅為 2-5c 流程驗證。
- * 2-5d：ready phase 加「前往 Workspace」按鈕，把 reflection_id 寫入 sessionStorage。
+ * 此處只驗證反思流程；正式 Quiz UI 位於 `components/quiz/`。
+ * ready phase 的「前往 Workspace」按鈕會把 reflection_id 寫入 sessionStorage。
  */
 
 import Link from "next/link";

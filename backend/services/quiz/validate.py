@@ -37,9 +37,6 @@ def _get_client() -> AsyncOpenAI:
     return _client
 
 
-# === LLM 回應 schema 驗證 ===
-
-
 class _ValidatorResponse(BaseModel):
     answer_correct: bool
     answer_reason: str = Field(default="")
@@ -52,9 +49,6 @@ class _ValidatorResponse(BaseModel):
     point_reason: str = Field(default="")
 
 
-# === 對外回傳結構 ===
-
-
 @dataclass(frozen=True)
 class ValidationReport:
     """四面向審查結果。`passed` 為全部 bool 的 AND。"""
@@ -65,9 +59,6 @@ class ValidationReport:
     bloom_appropriate: bool
     point_meaningful: bool = True
     issues: list[str] = field(default_factory=list)
-
-
-# === Prompt ===
 
 
 def _build_prompt(question: Question) -> str:
@@ -108,9 +99,6 @@ D. **考點有意義 (point_meaningful)**：題目測驗的是概念理解、語
   "point_reason": "..."
 }}
 """
-
-
-# === 主函式 ===
 
 
 async def validate_question(

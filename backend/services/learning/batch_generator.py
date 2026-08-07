@@ -1,4 +1,4 @@
-"""Phase 6-2b：批次生成 unit content → unit_content_staging。
+"""批次生成 unit content → unit_content_staging。
 
 流程：retrieve grounded chunks → generate_unit_content（含 retry max 3）→ UPSERT staging。
 

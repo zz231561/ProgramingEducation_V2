@@ -17,7 +17,6 @@ from services.run_help import run_help
 router = APIRouter(prefix="/chat", tags=["chat"])
 
 
-# === Request / Response schemas ===
 
 class InteractRequest(BaseModel):
     """教學互動請求。"""
@@ -75,7 +74,6 @@ class KickoffResponse(BaseModel):
     assistant_message: MessageOut
 
 
-# === Endpoints ===
 
 @router.post(
     "/reflection-kickoff",

@@ -1,11 +1,6 @@
 "use client";
 
-/**
- * 身分切換卡（DEV-6）— student ⇄ teacher，真改 users.role。
- *
- * 目前教師端 UI 尚未建置（Phase 5），切換後行為差異在後端授權層；
- * 顯示當前角色以確認切換生效。
- */
+/** 身分切換卡 — 直接修改 users.role，以真實角色權限驗證學生端與教師端。 */
 
 import { useEffect, useState } from "react";
 
@@ -57,7 +52,7 @@ export function DevRoleCard() {
     <div className="rounded-md border border-border-default bg-surface-1 p-4">
       <h3 className="text-sm font-medium text-text-primary">身分切換</h3>
       <p className="mt-1 text-xs text-text-muted">
-        真改 DB role（與真實帳號行為一致）；教師端 UI 於 Phase 5 建置，現階段差異在後端授權。
+        直接修改 DB role，切換後可用真實權限驗證學生端與教師端。
       </p>
       <div className="mt-3 flex items-center gap-3">
         <span className="text-sm text-text-secondary">

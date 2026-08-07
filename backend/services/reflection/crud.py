@@ -1,9 +1,9 @@
-"""Reflection CRUD service — 資料操作層（roadmap 2-5a）+ LLM 評分整合（2-5b）。
+"""Reflection CRUD service — 資料操作與 LLM 評分整合。
 
 職責邊界：
 - 本層做 schema 驗證 + DB 讀寫 + 觸發 LLM 評分（evaluate.py）。
-- `source_id` 對 `quiz` 來源驗證指向 questions 表存在；`learning_unit` 來源
-  因 learning_units 表尚未建立（Phase 3-1a），暫不驗證，由 caller 負責。
+- `source_id` 對 `quiz` 來源驗證指向 questions 表存在；`learning_unit` 不提供
+  題目文字給 LLM，因此不在此層載入。
 - 重複建立同一份反思（UNIQUE 衝突）回 409 而非 500。
 - LLM 評分失敗（API down / parse error）→ fallback 為 quality_score=None，
   反思仍寫入；不阻擋學生流程（與 chat / quiz mastery 容錯哲學一致）。
@@ -41,7 +41,7 @@ async def _validate_source_for_create(
 ) -> Question | None:
     """**僅 create 用** — 確認 source_id 指向有效對象，並回傳 Question 供 LLM 評分用。
 
-    learning_unit 暫不驗證（表尚未建立）；回 None 代表「無題目脈絡」。
+    learning_unit 回 None 代表「無題目脈絡」。
 
     Raises:
         AppError 404 REFLECTION_SOURCE_NOT_FOUND — quiz 來源指向不存在的題目

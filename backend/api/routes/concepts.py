@@ -1,6 +1,6 @@
 """Concepts API — 知識圖譜全圖 + 單節點鄰居查詢。
 
-對應 roadmap 2-2b。前端 Cytoscape (2-2c) 與 Concept Detail Panel (2-2d) 消費這些端點。
+前端 Cytoscape 與 Concept Detail Panel 消費這些端點。
 """
 
 import uuid
@@ -22,9 +22,6 @@ from services.graph import (
 from services.mastery import MasterySummaryEntry, get_user_mastery_summary
 
 router = APIRouter(prefix="/concepts", tags=["concepts"])
-
-
-# === Response schemas ===
 
 
 class ConceptOut(BaseModel):
@@ -133,9 +130,6 @@ class MasteryEntryOut(BaseModel):
             days_since_practiced=e.days_since_practiced,
             due_for_review=e.due_for_review,
         )
-
-
-# === Endpoints ===
 
 
 @router.get("/graph", response_model=GraphOut)

@@ -30,7 +30,6 @@ from services.quiz import (
 router = APIRouter(prefix="/quiz", tags=["quiz"])
 
 
-# === Schemas ===
 
 
 def _mask_content_for_student(question_type: str, content: dict[str, Any]) -> dict:
@@ -53,7 +52,7 @@ def _mask_content_for_student(question_type: str, content: dict[str, Any]) -> di
 class GenerateRequest(BaseModel):
     type: str = Field(default=QuestionType.MULTIPLE_CHOICE.value)
     bloom_level: int = Field(default=3, ge=1, le=6)
-    # 3-1e：Learn 練習 tab 指定本單元 concept；None → 走弱項補強邏輯
+    # Learn 練習指定本單元 concept；None 走弱項補強邏輯
     concept_tag: str | None = Field(default=None, max_length=50)
 
 
@@ -115,7 +114,7 @@ class SubmitRequest(BaseModel):
 class SubmitResponse(BaseModel):
     """作答結果 + 完整解答 + LLM 解釋。"""
 
-    answer_id: uuid.UUID  # 3-2c：供前端 fetch /quiz/answers/{id}/feedback
+    answer_id: uuid.UUID  # 供前端取得該次作答的個人化回饋
     is_correct: bool
     feedback: str
     correct_content: dict  # 含答案欄位（提交後才回傳）
@@ -139,7 +138,6 @@ class HistoryResponse(BaseModel):
     limit: int
 
 
-# === Endpoints ===
 
 
 @router.get("/from-bank", response_model=QuestionForStudentOut)
@@ -149,7 +147,7 @@ async def from_bank(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_db_user),
 ) -> QuestionForStudentOut:
-    """Phase 6-3b：從題庫隨機抽 validated grounded 題目（不呼叫 LLM）。
+    """從題庫隨機抽 validated grounded 題目（不呼叫 LLM）。
 
     - `concept_tag` 指定 → 抽該概念題（Learn 練習 tab）
     - `concept_tag` 省略 → **U2d 弱項模式**：沿用出題 Select 邏輯挑最弱概念再抽題庫

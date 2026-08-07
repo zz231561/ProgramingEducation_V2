@@ -114,7 +114,6 @@ async def _call_llm_json(
         return None
 
 
-# === LLM functions ===
 
 
 async def generate_variation(
@@ -163,7 +162,6 @@ async def grade_variation(
     return VariationGradeResult(passed=parsed.passed, feedback=parsed.feedback or None)
 
 
-# === Workflow (DB integration) ===
 
 
 async def start_variation_for_answer(

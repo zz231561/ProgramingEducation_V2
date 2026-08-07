@@ -29,7 +29,6 @@ from services.reflection import (
 router = APIRouter(prefix="/reflection", tags=["reflection"])
 
 
-# === Schemas ===
 
 
 class CreateReflectionRequest(BaseModel):
@@ -81,7 +80,6 @@ class ReflectionOut(BaseModel):
         )
 
 
-# === Endpoints ===
 
 
 @router.post(

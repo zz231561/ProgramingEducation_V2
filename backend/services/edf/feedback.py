@@ -38,7 +38,6 @@ def _get_client() -> AsyncOpenAI:
     return _client
 
 
-# === 輸出驗證 ===
 
 _CODE_BLOCK_RE = re.compile(r"```[\w]*\n(.*?)```", re.DOTALL)
 _GUARD_TOKENS = {"TODO", "FIXME", "// ...", "/* ... */", "___"}
@@ -74,7 +73,6 @@ def validate_output(text: str, allow_code: bool) -> str:
     return _CODE_BLOCK_RE.sub(_check_block, text)
 
 
-# === 主函式 ===
 
 async def generate_feedback(
     evidence: EvidenceResult,

@@ -3,8 +3,7 @@
 設計：
 - multiple_choice：學生送 `{selected_index: int}`，比對 content.answer_index
 - fill_blank：學生送 `{answers: list[str]}`，trim + casefold 後逐項比對 content.answers
-- coding：MVP 暫不判分（is_correct=False，feedback 提示「需教師/Judge0 審核」），
-  Judge0 整合留給後續 task；不阻擋寫入 student_answers
+- coding：目前不自動判分（is_correct=False），但仍寫入 student_answers，讓教師可檢視
 """
 
 from typing import Any
@@ -52,5 +51,4 @@ def grade_answer(
             "答對了！" if is_correct else "答錯了，請對照正解再思考。"
         )
 
-    # coding：MVP 不自動判分（需要 Judge0 整合）
-    return False, "程式撰寫題暫不自動判分；提交已記錄，後續會整合 Judge0 自動評分。"
+    return False, "程式撰寫題目前不自動判分；提交已記錄，可由教師檢視。"

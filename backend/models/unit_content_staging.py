@@ -1,4 +1,4 @@
-"""UnitContentStaging ORM — Phase 6-2b grounded LLM 生成 unit content 中介存放區。
+"""UnitContentStaging ORM — grounded LLM 生成 unit content 的中介存放區。
 
 Schema 對齊 alembic migration `g3b4c5d6e7f8`。
 

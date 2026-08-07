@@ -31,7 +31,6 @@ router = APIRouter(prefix="/classes", tags=["classes"])
 _teacher = require_roles(UserRole.TEACHER)
 
 
-# === Schemas ===
 
 
 class CreateClassRequest(BaseModel):
@@ -96,7 +95,6 @@ class ClassOut(BaseModel):
         )
 
 
-# === Endpoints ===
 
 
 @router.post("", response_model=ClassOut, status_code=201)

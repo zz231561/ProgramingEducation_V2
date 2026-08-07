@@ -1,4 +1,4 @@
-"""Dashboard 統計查詢 + 今日建議（roadmap 3-3a）。
+"""Dashboard 統計查詢與今日建議。
 
 設計：
 - 4 統計卡片：學習路徑進度 / 本週 Quiz / 精熟度概覽 / 反思次數
@@ -7,7 +7,7 @@
   * 有 available unit → 「開始下一單元：xxx」
   * 全部 completed → 「課程完成，挑戰 Quiz」
   * 無 path → fallback「進入 Learn 開始」（但 ensure_default_path 後不會發生）
-- LLM 個人化建議留給 Phase 4+ 或 3-3b/c
+- 今日建議刻意採固定規則，避免每次開啟 Dashboard 都產生 LLM 成本與延遲
 - path 取最早建立的（與 ensure_default_path_exists 行為一致）
 """
 

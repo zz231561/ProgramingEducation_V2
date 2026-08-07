@@ -1,4 +1,4 @@
-"""Decision 層 — 累積式揭露階梯 + 動態選層（7-C2a，2026-08-06 改版）。
+"""Decision 層 — 累積式揭露階梯與動態選層。
 
 純邏輯，不呼叫 LLM。單調的維度是「**本題解法被揭露多少**」（reveal_level），
 不是「講了多少話」——每升一級都是在前一級的基礎上多揭露一點，因此指令是
@@ -9,7 +9,7 @@
   runtime → L2（學生看不懂錯誤訊息，替他指出位置不算給答案）；
   logic / semantic → L1（找出邏輯錯在哪本身就是練習，直接指位置等於代寫）
 - `need`：由 `services.chat_signals.compute_need` 估計「學生離自己解出來還差多少」。
-  **不是追問次數**——7-C2a' 實測證實那會讓索答施壓一路爬級（見該模組檔頭）
+  **不是追問次數**——實測證實那會讓索答施壓一路爬級（見該模組檔頭）
 
 結構＝方案 B：**6 條等級指令 ＋ 6 條 Bloom 深度修飾（共 12 條）**，
 由 Feedback 層組裝成「基底行為 ＋ 本級額外揭露 ＋ 依 Bloom 調整深度」。
@@ -30,9 +30,9 @@ MIN_CODE_LEVEL = 3
 class TeachingStrategy(BaseModel):
     """Decision 層輸出 — Feedback 層使用的教學指令。
 
-    K4b（2026-07-04）：移除 `use_rag` — RAG 注入改由 Feedback 層依檢索
+    `use_rag` 已移除：RAG 注入改由 Feedback 層依檢索
     相似度分數決定（見 `rag_integration.RAG_MIN_SCORE`）。
-    7-C2a（2026-08-06）：`hint_level` → `reveal_level`（語意改為「解法揭露程度」，
+    `hint_level` 改為 `reveal_level`（語意是「解法揭露程度」，
     且不再由前端送入）；新增 `bloom_guidance`（Bloom 深度修飾，與等級正交）。
     """
 

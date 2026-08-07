@@ -1,5 +1,5 @@
 /**
- * Learning Path（結構化學習路徑）型別 + API helpers — Phase 3-1c。
+ * Learning Path（結構化學習路徑）型別與 API helpers。
  *
  * 對應後端 `/learning/paths` endpoints；schema 與 backend `models/learning.py` +
  * `api/routes/learning.py` 一致。
@@ -42,12 +42,12 @@ export interface Unit {
   concept_tag: string;
   concept_name_zh: string;
   concept_difficulty: number;
-  // 6-2c：嵌入 YT IFrame player 與 citation 跳轉所需
+  // 嵌入 YouTube player 與 citation 跳轉所需
   video_youtube_id: string | null;
   video_duration_seconds: number | null;
   // U2c：課程介紹單元隱藏範例程式 tab
   concept_category: string | null;
-  // 6-3c：資料驅動 tab 顯示——無 batch MC → 隱藏觀念題；無 batch coding → 隱藏程式實作題
+  // 無 batch MC 時隱藏觀念題；無 batch coding 時隱藏程式實作題
   has_concept_quiz: boolean;
   has_coding_exercise: boolean;
   order_index: number;

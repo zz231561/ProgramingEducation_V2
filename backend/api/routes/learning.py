@@ -27,7 +27,6 @@ from services.learning import (
 router = APIRouter(prefix="/learning", tags=["learning"])
 
 
-# === Schemas ===
 
 
 class GeneratePathRequest(BaseModel):
@@ -67,7 +66,7 @@ class UnitOut(BaseModel):
     video_duration_seconds: int | None
     # U2c：課程介紹單元前端隱藏範例程式 tab
     concept_category: str | None
-    # 6-3c：資料驅動 tab 顯示——無 batch MC → 隱藏觀念題；無 batch coding → 隱藏程式實作題
+    # 題庫沒有對應題型時，前端隱藏該練習 tab
     has_concept_quiz: bool
     has_coding_exercise: bool
     order_index: int
@@ -87,7 +86,6 @@ class PathDetailOut(BaseModel):
     updated_at: str
 
 
-# === Endpoints ===
 
 
 @router.post("/paths", response_model=PathDetailOut, status_code=status.HTTP_201_CREATED)

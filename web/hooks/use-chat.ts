@@ -39,16 +39,16 @@ function toMessageItem(msg: ApiMessage): MessageItem {
 export function useChat(options: UseChatOptions = {}) {
   const [items, setItems] = useState<ChatItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  // 7-U6：EDF 管線目前跑到哪一層（null = 尚未收到第一則進度）
+  // EDF 管線目前跑到哪一層（null = 尚未收到第一則進度）
   const [stage, setStage] = useState<InteractStage | null>(null);
   const sessionIdRef = useRef<string | null>(null);
-  // 7-C2a：揭露階梯（原 hint ladder）改由後端從對話歷史自算，前端不再追蹤
+  // 揭露階梯由後端從對話歷史計算，前端不自行維護狀態
 
   const sendMessage = useCallback(
     async (question: string, sendOptions?: { explicitHelp?: boolean }) => {
       const code = options.getCode?.() ?? "";
       if (!question.trim()) return;
-      // 7-C2a'：學生按下「我卡住了」——need 狀態機唯一的非推論訊號
+      // 「我卡住了」是 need 狀態機唯一不靠推論的訊號
       const explicitHelp = sendOptions?.explicitHelp ?? false;
 
       // 樂觀更新：使用者訊息立即上畫面，後面接「Coddy思考中」indicator；
@@ -69,7 +69,7 @@ export function useChat(options: UseChatOptions = {}) {
       setIsLoading(true);
       setStage(null);
       try {
-        // Phase 2-5e：若 sessionStorage 有 active reflection_id，後端注入 EDF prompt
+        // 若 sessionStorage 有 active reflection_id，後端會注入 EDF prompt
         const reflectionId = getActiveReflectionId();
         const res = await interactStream(
           {

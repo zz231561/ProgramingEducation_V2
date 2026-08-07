@@ -1,4 +1,4 @@
-"""學習行為分析 service（Module 9 / Phase 5-2）。"""
+"""學習行為分析 service。"""
 
 from services.analytics.aggregate import BehaviorMetrics, aggregate_user_behavior
 from services.analytics.dialogue import classify_dialogue_act

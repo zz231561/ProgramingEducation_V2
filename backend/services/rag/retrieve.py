@@ -65,7 +65,7 @@ async def retrieve_chunks(query: str, top_k: int = 5) -> list[RetrievedChunk]:
 async def get_chunks_by_video_order(video_order: int) -> list[RetrievedChunk]:
     """取出指定 video_order 的所有字幕 chunks，依 start_time_seconds 由早到晚排序。
 
-    Phase 6-2b 用：批次生成 unit content 時需要該 video 完整字幕（不是語意 top-k），
+    批次生成 unit content 時需要該 video 完整字幕（不是語意 top-k），
     避免跨 video 污染與順序錯亂。直接 SQL 查 `data_codedge_rag.metadata_` 而非
     走 LlamaIndex retriever — 不做 embedding，純 metadata filter。
 

@@ -411,9 +411,8 @@
 - ~~7-D5 其餘文件稽核~~ → **已併入 7-D3 階段二**（同一件事，不重複列）
 - [x] 7-D6 **全站 429 / 5xx toast**（2026-08-08）：以 sonner 與統一 API client 收斂
       quiz / learn / 教師端錯誤提示；integration tests 模擬 429 冷卻秒數與 5xx 訊息
-- [ ] 7-D7 **無意義／冗餘註解清查**（2026-08-07 使用者提出，獨立一輪執行）：
-      linter 做不到——判斷「這行註解有沒有講程式碼本身沒講的事」屬語意判斷。
-      掛進 `code-health` skill 當一個階段；會動到大量檔案的註解，值得單獨審
+- [x] 7-D7 **無意義／冗餘註解清查**（2026-08-08）：逐檔移除過時 phase 快照與
+      重複結構名稱的 separator，保留設計理由，並修正教師角色、RAG 與 coding 題誤導文案
 - [~] 7-D8 **Claude Code / Codex 規則零漂移**（2026-08-08 使用者定案：共同 canonical source + 各自 adapter）
   - [x] A **canonical guidance + 跨平台同步器**：`.agent-source/` 成為唯一來源，能重建
         `CLAUDE.md`、`.claude/rules/*` 與根／巢狀 `AGENTS.md`；`--check` 可偵測 drift

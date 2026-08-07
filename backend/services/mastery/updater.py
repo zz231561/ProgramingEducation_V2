@@ -1,9 +1,9 @@
 """精熟度更新 — BKT 線上 Bayes 更新 + EDF Evidence 整合。
 
-設計原則（CLAUDE.md 守則 #7）：
+設計原則：
 - 使用 pyBKT 套件（已 `uv pip install pyBKT`）— 但 pyBKT 的 Model/Roster 需要先用真實學生資料 fit
 - Cold-start 階段（無歷史資料）改用標準 BKT Bayes 公式（Corbett & Anderson 1995，公開數學）
-- 未來 Phase 5 行為分析有真實資料後，跑 `pyBKT.Model.fit(df)` 學出 per-concept 參數，
+- 累積足夠的真實學習資料後，可用 `pyBKT.Model.fit(df)` 學出 per-concept 參數，
   把學到的 P(L0)/P(T)/P(S)/P(G) 餵入此處的 BKTParams 即可，**演算法本身不需改**
 """
 
@@ -30,7 +30,7 @@ class BKTParams:
 
 
 # Cold-start 預設參數（pyBKT 範例 + 教育文獻常用值）
-# 之後 Phase 5 用 pyBKT.fit() 學出 per-concept 參數覆蓋此預設
+# 累積足夠資料後，以 pyBKT.fit() 學出的 per-concept 參數覆蓋此預設
 BKT_DEFAULT_PARAMS = BKTParams(prior=0.3, learn=0.3, slip=0.1, guess=0.2)
 
 # K6a 訊號分級（2026-07-06 定案）：quiz 作答＝強證據（沿用預設）；

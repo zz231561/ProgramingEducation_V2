@@ -39,7 +39,6 @@ def _get_client() -> AsyncOpenAI:
     return _client
 
 
-# === 三種 type 的 content shape 驗證模型 ===
 
 
 class _MCContent(BaseModel):
@@ -83,7 +82,6 @@ _CONTENT_MODEL_BY_TYPE = {
 }
 
 
-# === RAG 取材（容錯）===
 
 
 async def _fetch_rag_chunks_for_concept(concept: Concept, top_k: int = 3) -> list[Any]:
@@ -111,7 +109,6 @@ async def _fetch_grounded_chunks_for_video(video_order: int) -> list[Any]:
         return []
 
 
-# === 主函式 ===
 
 
 async def generate_question(

@@ -3936,596 +3936,124 @@ V1 cold-start 仰賴固定 tag `syntax-basic`，但 V2 cpp-XX 章節制 seed（6
 
 ---
 
-## [2026-05-04] — Phase 2-5e：反思內容注入 EDF Pipeline（AI Tutor 可引用學生計畫）
-
-### 新增（Service 層）
-- `backend/services/edf/reflection_context.py`（66 行）— 純函式格式化 helper：
-  - `format_reflection_for_evidence`：簡短版（步驟 + 預期概念），給 Evidence LLM 判斷學生意圖
-  - `format_reflection_for_feedback`：詳細版（含理解/步驟/概念/補充回答/品質分數），給 Feedback LLM 引用做蘇格拉底式提問
-  - 空輸入 / None / 無有效內容 → 回 `""`，caller 直接 `if block: ...`
-  - 引導建議內建「嚴禁直接幫學生補完計畫」規則，避免 LLM 變成代寫工具
-
-### 整合（EDF Pipeline）
-- `services/edf/evidence.py`：`analyze_evidence()` 加 `reflection_summary: str = ""`，注入 user prompt 結尾（避免稀釋程式碼分析）
-- `services/edf/feedback.py`：`build_system_prompt()` 加 `reflection_block: str = ""`，順序 `preamble → persona → strategy → context → reflection → rag`（對齊 `.claude/rules/edf-pipeline.md`）；`generate_feedback()` 透傳
-- `services/chat.py`：`interact()` 加 `reflection_id: UUID | None`；`_load_reflection_safely` 做 best-effort 載入 + **權限隔離**（user_id 不符視為不存在）；找不到/異常都回 None 不擋流程
-- `api/routes/chat.py`：`InteractRequest` 加 `reflection_id` 欄位，透傳到 service
-
-### 前端整合
-- `web/hooks/use-chat.ts`：`sendMessage` 自動讀 sessionStorage 中 active reflection_id 並帶入 `/chat/interact` body — 學生在 Workspace 開始反思後，整個對話 session 內 AI 都能引用其計畫
-
-### 測試
-- `tests/test_reflection_context.py`（11 個 unit）：None / 空輸入 / steps trim 重編號 / Evidence 簡短不含 followup / Feedback 詳細含品質分數 / quality_score=None 不顯示 % / quality_score=0 顯示 0%
-- `tests/test_feedback_prompt.py`（+3）：無 reflection 不出現 block / 有 reflection 注入內容 / **順序檢查 reflection 在 RAG 之前**
-- `tests/test_chat.py`（+4）：注入 evidence/feedback 兩層 / 未傳 id 兩層收空字串 / **權限隔離（他人 reflection_id 被忽略）** / 不存在的 id fallback 為空
-- 全套 208 tests 全綠（190 → 208，+18 個新測試，零 regression）
-
-### 設計關鍵
-- **Evidence vs Feedback 分版**：Evidence 收簡短版（避免反思內容稀釋程式碼分析），Feedback 收詳細版（讓 AI 能直接引用學生計畫做提問）
-- **權限隔離在 service 層**：`_load_reflection_safely` 檢查 `row.user_id != user_id`，避免 ID 嗅探攻擊
-- **永遠 best-effort**：reflection 載入失敗（DB 異常 / 不存在 / 非本人）都不擋教學流程，與 mastery / RAG 容錯哲學一致
-- **prompt 順序明確**：`build_system_prompt` 把 reflection_block 放在 context 之後、rag 之前，由測試 `test_reflection_block_appears_before_rag_block` 強制保證
-
-### 驗證
-- ESLint / TypeScript / pytest 全綠
-- next build：見後續驗證
-
-## [2026-05-04] — Phase 2-5d：Workspace 反思計畫側邊欄
-
-### 新增（持久化 + API helper）
-- `web/lib/active-reflection.ts`（48 行）— sessionStorage helper：`getActiveReflectionId` / `setActiveReflectionId` / `clearActiveReflectionId`；同 tab 變更透過 `active-reflection-change` custom event，跨 tab 透過 storage event
-- `web/lib/reflection.ts` 補 `getReflection(id)`
-
-### 新增（Sidebar 元件）
-- `web/components/reflection/use-active-reflection.ts`（85 行）— hook：訂閱 sessionStorage / event → 呼叫 GET /reflection；404 自動清過期 ID 顯示空狀態
-- `web/components/reflection/reflection-sidebar.tsx`（114 行）— 主元件：載入/錯誤/空狀態/顯示模式/編輯模式 5 種狀態切換
-- `web/components/reflection/reflection-sidebar-view.tsx`（109 行）— 顯示模式：QualityChip + 三 Section（理解/步驟/概念）+ AI 教練建議區塊 + 編輯/清除按鈕
-- `web/components/reflection/reflection-sidebar-edit.tsx`（95 行）— 編輯模式：復用 `ReflectionForm`；存檔呼叫 PATCH /reflection/{id}（後端會自動重新評分）
-
-### Workspace 整合
-- `web/components/workspace/toolbar.tsx`（55 → 80 行）— 最左加入 ListChecks toggle 按鈕；有 active reflection 時顯示綠色 dot 提示
-- `web/app/(app)/workspace/page.tsx`（103 → 153 行）— 反思側邊欄為左側 Panel（resizable，default 28% / min 20% / max 40%）；進入頁面若有 active reflection 自動展開；訂閱 sessionStorage 變化更新 Toolbar dot
-- `web/components/quiz-demo/question-display.tsx` — ReflectionSummary 加「前往 Workspace 作答」`<Link>` 按鈕，點擊時 `setActiveReflectionId` 寫 sessionStorage
-
-### 設計關鍵
-- **不擴後端**：純前端持久化（sessionStorage），不需新增 list/latest endpoint
-- **同 tab 通知**：`storage` event 預設只在「其他」tab 觸發；用 `CustomEvent('active-reflection-change')` 補上同 tab 場景
-- **404 自動清過期**：反思被刪除時清掉 sessionStorage，UI 退回空狀態而非顯示錯誤
-- **元件邊界**：Sidebar 全部 prop-driven + hook 化，方便 3-1e 練習 tab 直接復用
-- **R8.1 / R8.2 合規**：error UI 用 `border-l-2 + bg-surface-2`；toggle dot 用實心 `bg-accent-green` 純功能性，無半透明色填充；icon 全 lucide-react 無 emoji 符號字
-- **檔案大小**：所有檔案 ≤ 153 行，遠低於 250 硬性線
-
-### 驗證
-- ESLint / TypeScript / next build：全綠
-
-## [2026-05-04] — Phase 2-5c 修正：先讀題再反思（PRIMM 對齊）
-
-### 問題
-原 demo 流程「拿題目 → 立即彈反思 modal」，學生在沒看到題目的狀態下被要求反思，違反 PRIMM 對「反思必須針對具體題目」的要求。
-
-### 修正
-- 新增 `preview` phase：拿到題目後先進入 preview 階段，題目持續顯示供讀題
-- preview footer 顯示「讀完題目了嗎？」+ 醒目「開始反思」按鈕，學生主動點才彈 modal
-- reflecting phase：modal 開啟，題目仍在背景；新增提示「請完成反思後再回到題目作答」
-- ready phase：題目持續顯示 + 反思摘要（顯示「反思已完成 — 你可以開始作答了」）
-- 取消反思 modal → 回到 preview（不丟棄已生成的題目）
-
-### 拆檔
-- `web/components/quiz-demo/question-display.tsx`（162 行）— 新檔，phase-aware 題目顯示元件，三 phase 共用 Header / Stem / StarterCode，footer 依 phase 切換
-- `web/app/(app)/quiz/page.tsx`（226 → 153 行）— 流程簡化，題目展示交給 QuestionDisplay
-
-### 驗證
-- ESLint / TypeScript 無錯誤；所有檔案 < 250 行
-
-## [2026-05-04] — Phase 2-5c：Pre-Coding Reflection 表單 UI + Quiz demo 觸發點
-
-### 新增（Reflection 元件）
-- `web/lib/reflection.ts`（63 行）— types + API helper：`Reflection` / `CreateReflectionPayload` / `PatchReflectionPayload` + `createReflection` / `patchReflection`
-- `web/components/reflection/reflection-form.tsx`（211 行）— 受控三欄位表單：
-  - `problem_understanding`（textarea，重述題目）
-  - `planned_steps`（動態列表，逐步增刪步驟）
-  - `expected_concepts`（input，預期會用到的概念）
-  - `isReflectionFormValid()` / `toBackendPayload()` 工具函式統一驗證與序列化
-- `web/components/reflection/reflection-followup.tsx`（84 行）— LLM 追問 + 補答 UI；含 `QualityBar`（紅 < 0.4 / 橘 < 0.6 / 綠 >= 0.6）
-- `web/components/reflection/reflection-flow.tsx`（161 行）— Modal 容器 + 狀態機：
-  - `form → submitting → (approved | followup) → submitting → ...`
-  - `MAX_FOLLOWUP_ROUNDS=2`：第二輪後提供「已盡力，直接看題」放行（避免無限 loop）
-  - LLM 失敗（quality_score=null）視為通過 → 不擋學生
-  - 內容 `ReflectionFlowContent` 條件 mount，open 切換時 state 自然重置（避開 React 19 `react-hooks/set-state-in-effect`）
-- `web/components/reflection/reflection-flow-parts.tsx`（151 行）— 拆出 `FlowHeader` / `FlowBody` / `FlowFooter` / `humanizeReflectionError`，主檔控制在 250 行硬性線下
-
-### Quiz demo 觸發點
-- `web/app/(app)/quiz/page.tsx`（226 行）— Quiz 占位頁改造為反思流程 demo：
-  - 「開始示範」→ `POST /quiz/generate type=coding bloom_level=3` → 立刻彈出 ReflectionFlow modal
-  - 反思放行後顯示題目本體（題幹 / starter_code / 反思摘要）
-  - 錯誤訊息友善處理：`QUIZ_VALIDATION_RETRY_EXHAUSTED` / `QUIZ_UNAVAILABLE` / 401 / 一般錯誤
-  - 完整 Quiz UI 仍屬 Phase 3-2；本頁僅為 2-5c 觸發點驗證
-
-### 設計關鍵
-- **R8.1 合規**：所有 error / 強調 UI 一律用 `border-l-2 border-accent-X bg-surface-2`（與 Toast 規格一致），不用 `bg-accent-X/N` 半透明色填充
-- **265 行 → 拆檔**：`reflection-flow.tsx` 一度寫到 328 行違反 250 行硬性線，依 CLAUDE.md 規則拆出 `reflection-flow-parts.tsx`；所有檔案都壓在 230 行內
-- **純受控元件設計**：每個元件 prop-driven，無內建 store / context — 為 2-5d 側邊欄與 3-1e 練習 tab 復用做準備
-- **狀態機與 React 19 lint**：Dialog 內容用 `{open && <Content />}` 條件 mount 取代 `useEffect` 重置 — 通過 `react-hooks/set-state-in-effect`
-
-### 驗證
-- ESLint：無錯誤
-- TypeScript：無錯誤
-- next build：exit 0（warnings 為 Google Fonts 離線抓取，與本次改動無關）
-
-## [2026-05-04] — Phase 2-5b：反思品質評估 service（LLM 評分 + 蘇格拉底式追問）
-
-### 新增（Service 層）
-- `backend/services/reflection/evaluate.py`（170 行）— LLM 評分服務：
-  - 三面向獨立評分（0–1）：`understanding_score` / `plan_quality_score` / `concept_recall_score`
-  - `quality_score` = 三者平均（簡單可解釋；非加權）
-  - `QUALITY_THRESHOLD = 0.6`：低於門檻才回 `followup_question`（蘇格拉底式追問，針對最弱面向）；高於門檻 LLM 多嘴的 followup 一律清成 None
-  - **無 API key / LLM 異常 / parse error / schema 違反** → 回 fallback `ReflectionEvaluation(None, None, None, None, None)`，不丟例外（不擋反思寫入）
-  - Pydantic `_EvaluatorResponse` 對 LLM 輸出做 ge=0/le=1 校驗，超範圍直接 fallback
-  - learning_unit 來源不需題目脈絡也能評分（question 可傳 None）
-
-### 整合（CRUD flow）
-- `services/reflection/crud.py`：
-  - `create_reflection`：INSERT 後 flush 取 id → 跑 LLM → 寫回 quality_score / followup_question → commit；單一 transaction
-  - `update_reflection`：任一內容欄位變動 → 重新評分（PRIMM Modify 階段）；no-op PATCH 不呼叫 LLM
-  - 拆分 `_validate_source_for_create`（404 守門）vs `_load_question_best_effort`（update 找不到題目仍能更新）
-
-### 測試
-- `backend/tests/test_reflection_evaluate.py`（9 個 unit）— 高分清空 followup / 低分保留 followup / 空白 followup 標準化 / 無 API key fallback / LLM 異常 fallback / JSON parse error / Pydantic schema 違反 / 分數超範圍 / learning_unit 無題目脈絡
-- `tests/test_reflection_service.py` 加 `_mock_evaluate` autouse fixture（避免測試打 OpenAI），新增 5 個 evaluate-aware 測試（高分 / 低分含 followup / LLM unavailable / PATCH 補答後再評分 / no-op 不呼叫 LLM）
-- `tests/test_reflection_route.py` 加 `_mock_evaluate` autouse fixture，新增 2 個 HTTP 整合測試（POST 回 quality_score+followup / PATCH 補答後清空 followup）
-- 全套 190 tests 全綠（174 → 190，+16 個新測試）
-
-### 設計關鍵
-- **三面向獨立評分而非單一 score**：可解釋性 + 為 2-5b 追問選最弱面向提供依據；UI 將來可顯示三個 sub-score 條
-- **LLM 失敗永遠 fallback 不阻擋寫入**：與 chat/quiz 容錯哲學一致；學生反思流程不能因 OpenAI 抖動中斷
-- **followup 高分強制清空**：避免 LLM 在合格反思上多嘴干擾學生（threshold 行為由本層保證，不靠 prompt 約束）
-- **PATCH 重評分時 question best-effort**：題目即使被刪反思仍可更新（不造成 reflection 孤兒）
-
-## [2026-05-04] — Phase 2-5a：Pre-Coding Reflection schema + API（建立 / 取得 / 更新）
-
-### 新增（DB / Model 層）
-- `backend/alembic/versions/a7b8c9d0e1f2_create_reflections_table.py` — 新增 `reflections` 表：
-  - 欄位對齊 db-schema.md 跨模組區塊（problem_understanding / planned_steps JSON / expected_concepts / quality_score / followup_question / followup_answer / is_modified / created_at / updated_at）
-  - `source_type` 用 `String + CHECK`（quiz / learning_unit），延續 quiz 表慣例避開 PG ENUM 雙重寫法
-  - `(user_id, source_type, source_id)` UNIQUE → 同一學生對同一題只允許一份反思
-  - `quality_score` CHECK 0.0–1.0、index：`ix_reflections_user_id` + `ix_reflections_source`
-- `backend/models/reflection.py`（83 行）— `Reflection` ORM + `ReflectionSourceType` 列舉
-- `backend/models/__init__.py` — 註冊 `Reflection` 至 `Base.metadata`
-
-### 新增（Service 層）
-- `backend/services/reflection/__init__.py` + `crud.py`（118 行）— 純 CRUD：
-  - `create_reflection`：quiz 來源驗證 `Question.id` 存在（404 `REFLECTION_SOURCE_NOT_FOUND`）；learning_unit 暫不驗證（表尚未建立）；UNIQUE 衝突回 409 `REFLECTION_ALREADY_EXISTS`
-  - `get_reflection`：權限隔離 — 非本人擁有回 404（避免列舉攻擊揭露存在性）
-  - `update_reflection`：任一欄位變動即標 `is_modified=True` + 刷新 `updated_at`；payload 全空時不標 modified
-  - **LLM 品質評分留給 2-5b** — 本層不打 LLM
-
-### 新增（API 層）
-- `backend/api/routes/reflection.py`（131 行）— 三個端點（對齊 api-spec.md）：
-  - `POST /reflection`（201）— 建立反思
-  - `GET /reflection/{id}` — 取得反思（owner-only）
-  - `PATCH /reflection/{id}` — 更新反思（補充 followup_answer / 修改 planned_steps）
-  - `_parse_source_type` 對非法 source_type 回 422 `INVALID_SOURCE_TYPE`
-- `backend/main.py` — 註冊 `reflection_router`
-
-### 測試
-- `backend/tests/test_reflection_service.py`（9 個 unit）— create / get / update 三組路徑：成功、404 source、duplicate 409、權限 404、no-op 更新、LEARNING_UNIT 略過驗證
-- `backend/tests/test_reflection_route.py`（9 個 HTTP）— 401 / 201 / 422 / 404 / 409 / GET / PATCH / 跨 user 權限隔離
-- 全套 174 tests 全綠（新增 18 個）；alembic upgrade 在 dev PG 落地，schema/index/CHECK/UNIQUE/FK 對齊
-
-### 設計關鍵
-- **source_id polymorphic UUID**：指向 questions.id 或 learning_units.id（Phase 3-1a 才建），不建 FK，靠 service 層在 quiz 來源驗證
-- **權限隔離不洩漏存在性**：他人反思一律回 404 而非 403，避免 ID 列舉攻擊
-- **LLM 評分解耦**：`quality_score` / `followup_question` 保持 nullable，2-5b 注入時不需 schema 變動
-- **2-5a 範圍嚴守**：純 CRUD + schema，不含 UI / EDF 注入（後者在 2-5c~e）
-
-## [2026-05-04] — Phase 2-4e：Quiz API 端點（Phase 2-4 完成）
-
-### 新增（service 層）
-- `backend/services/quiz/grade.py`（56 行）— 純判分：
-  - MC：比 `selected_index == content.answer_index`
-  - Fill：trim + casefold 後逐項比對 answers list
-  - Coding：MVP 不自動判分（is_correct=False，feedback 提示「待 Judge0 整合」）
-- `backend/services/quiz/orchestrator.py`（171 行）— 串接 Select/Generate/Validate/Grade/Mastery：
-  - `generate_for_student(db, user_id, type, bloom)`：弱項 fallback 到 syntax-basic；validate 失敗 retry up to 2；retry 全敗 → 503 `QUIZ_VALIDATION_RETRY_EXHAUSTED`
-  - `submit_answer(db, user_id, question_id, answer, ...)`：判分 → 寫 StudentAnswer → 餵 EvidenceResult 給 `update_mastery` → 404/400 錯誤
-  - `list_history(db, user_id, page, limit)`：分頁查詢
-
-### 新增（API 層）
-- `backend/api/routes/quiz.py`（161 行）— 三個端點：
-  - `POST /quiz/generate`：mask 答案欄位後回傳；MC 不回 `answer_index`、Fill 不回 `answers`、Coding 只給 `starter_code`
-  - `POST /quiz/submit`：作答後才回完整 `correct_content` + `explanation`
-  - `GET /quiz/history`：分頁列出該 user 的 StudentAnswer
-
-### 變更
-- `backend/main.py` — 註冊 `quiz_router`
-- `backend/services/quiz/__init__.py` — 增加 `grade_answer` / `generate_for_student` / `submit_answer` / `list_history` 匯出
-
-### 設計關鍵
-- **答案 mask**：`_mask_content_for_student()` 在 GET 端點移除答案欄位，避免 DOM 內洩漏；submit 後才把完整 content 回給前端做反饋
-- **validate retry**：generate 失敗（LLM 出爛題）就 rollback 重試；連續 3 次都壞才回 503，避免無限呼叫 LLM
-- **submit 同時更新 mastery**：把 `is_correct` 包成 `EvidenceResult` 餵 `update_mastery`，讓 BKT confidence 累積；mastery 失敗不阻擋 student_answer 寫入
-- **grade.py 與 orchestrator.py 拆檔**：純判分邏輯（無 DB / LLM）獨立，方便單元測試
-
-### 驗證（自動）
-- 8 grade 測試（MC/Fill/Coding 各邊界） + 7 route HTTP 整合測試（auth / mask / submit / history / 404 / 400）
-- 全套 **156 passed** ✓
-
-### Phase 2-4 完整收尾
-- ✅ 2-4a Schema
-- ✅ 2-4b Select（弱項 + 中心度加權）
-- ✅ 2-4c Generate（LLM + RAG 注入）
-- ✅ 2-4d Validate（三面向 LLM 自審）
-- ✅ 2-4e API 端點
-
-## [2026-05-04] — Phase 2-4d：LLM 自我審查題目品質
-
-### 新增
-- `backend/services/quiz/validate.py`（167 行）— `validate_question(db, question) -> ValidationReport`：
-  - 對 generate 出來的題目做第二次 LLM call，三面向審查：
-    1. **answer_correct**：題目宣稱的答案在 C++ 語法/邏輯上是否真的對
-    2. **concept_fits**：題目實際測試的概念是否吻合 `intended_concept_tags`
-    3. **bloom_appropriate**：題目要求的認知層級是否 ≤ 目標 Bloom（避免進階題給初學者）
-  - 三項全 pass → `question.validated=True`（caller commit）；任一 fail → 不動 validated，回 issues
-  - 沿用 `response_format json_object` + Pydantic `_ValidatorResponse` 二次驗證 + 分層錯誤
-  - 與 generate 共用同一 transaction（service 不 commit）
-- `backend/tests/test_quiz_validate.py`（208 行）— 8 個測試：
-  - Pass / 三面向各自 fail / 多面向同時 fail（issues 列出全部）
-  - LLM 錯誤分層：例外 / 非 JSON / 缺欄位
-
-### 設計決策
-- **回傳 `ValidationReport` 而非 raise on fail**：失敗是正常情境（LLM 也會生出爛題），caller（2-4e API）需要看 issues 決定 retry 還是丟棄；只有「LLM 不可用」才 raise
-- **三面向 AND**：三題都對才算 pass；任一不對都回 issues 各別說明，方便 caller log + 改進 prompt
-- **不重新 fetch question**：caller 已 db.add 並把物件交來，直接 mutate `question.validated`；transaction 一致性靠 caller 統一 commit
-
-### 驗證（自動）
-- 8 個新測試 + 133 既有 = **141 passed** ✓
-
-## [2026-05-04] — Phase 2-4c：LLM 出題 + RAG 教材注入
-
-### 新增
-- `backend/services/quiz/generate.py`（221 行）— `generate_question(db, concept, question_type, difficulty, bloom_level)`：
-  - 三種題型各自 Pydantic content 模型（`_MCContent` / `_FillContent` / `_CodingContent`）做二次驗證
-  - System prompt 含 concept 完整 metadata（tag/zh/en/category/description）+ 題型 schema hint + 撰寫規則
-  - User prompt 注入 `services.rag.retrieve_chunks` 抓回的 top-3 教材片段；RAG 失敗（DB / embedding API down）靜默 fallback 空 list 仍能出題
-  - 沿用 `evidence.py` 的 `response_format json_object` + JSON 二次解析 pattern；錯誤分層（LLM_ERROR / LLM_PARSE_ERROR / LLM_VALIDATION_ERROR）
-  - 寫入 `questions.source='generated'`、`validated=False`，等 2-4d Validate 過審
-- `backend/tests/test_quiz_generate.py`（249 行）— 8 個測試：
-  - 三種 type 各自 success path（解析正確、Question 欄位齊全）
-  - 錯誤分層：非 JSON / schema 不符（缺 answer_index）/ LLM 例外
-  - RAG 失敗仍能出題
-  - DB 寫入欄位完整驗證
-
-### 設計決策
-- **content shape 二次驗證**：LLM 即使遵循 prompt 仍可能漏欄位，每個 type 用 Pydantic 模型驗證後才寫 DB；`_MCContent` 還有 `field_validator` 確保 `answer_index < len(options)`
-- **沿用 json_object 而非 json_schema strict**：與 evidence.py 一致；strict 模式對 model output 限制較嚴可能誤拒合理題目
-- **RAG 容錯**：`_fetch_rag_chunks_for_concept` 包 try/except，與 EDF Feedback 的 `fetch_rag_chunks_safe` 同款設計（增強而非必要）
-- **不 commit**：caller 負責 transaction（讓 2-4d Validate 可以在同 transaction 補標 validated=True 後再 commit）
-- **`patched_llm` contextmanager**：tests/test_quiz_generate.py 改用 `contextlib.contextmanager` 合併兩個 patch，避免原本 `_patch_llm(x)[0], _patch_llm(x)[1]` 重複呼叫的 anti-pattern
-
-### 驗證（自動）
-- 8 個新測試 + 125 既有 = **133 passed** ✓
-
-## [2026-05-04] — Phase 2-4b：弱項概念選取 + 知識圖譜中心度加權
-
-### 新增
-- `backend/services/quiz/select.py`（83 行）— `select_weak_concepts(db, user_id, top_k=5)`：
-  - 弱項定義：`confidence < WEAK_THRESHOLD (0.4) AND exposure_count >= 1`（未互動不算弱）
-  - 圖譜中心度加權：score = `(1 - confidence) × (1 + CENTRALITY_BONUS × out_degree)`，被多個概念依賴的弱項排前面
-  - Cold-start（無 mastery rows）回 []，由 2-4c Generate 自行決定（例如挑入門 concept）
-- `backend/services/quiz/__init__.py` — 公開 API
-- `backend/tests/test_quiz_select.py`（180 行）— 7 個測試：
-  - 邊界：no mastery / 只有強項 / unexposed low-confidence 不入選
-  - 排序：純弱項 confidence 升冪、中心度加權促 hub 概念到前
-  - 限制：top_k 截斷、constant sanity
-
-### 設計決策
-- **中心度加權**：foundation 概念（如 syntax-basic 有 5 個後續依賴）若是弱項，補強的價值高於孤立弱項；公式 `1 + 0.2 × out_degree` 每多一個依賴 +20% 優先度
-- **不擴展未追蹤的鄰居**：只在「已有 student_mastery row 且 confidence < 0.4」中挑；前置概念若沒 row 表示學生沒接觸，不該主動測試（避免擾亂學生）
-- **Cold-start 回空 list**：本層只負責「弱項」語意；2-4c 自己處理「怎麼開始」
-
-### 驗證（自動）
-- 7 個新測試 + 118 既有 = **125 passed** ✓
-
-## [2026-05-04] — Phase 2-4a：questions + student_answers schema
-
-### 新增
-- `backend/alembic/versions/f6a7b8c9d0e1_create_questions_and_answers.py` — 智慧出題基礎表：
-  - **questions**：id / type (CHECK in 3 values) / concept_tags JSON / bloom_level smallint (CHECK 1-6) / difficulty smallint (CHECK 1-5) / content JSON / explanation / source (CHECK in 3 values) / validated bool / created_at；3 個 secondary index (type / bloom_level / difficulty)
-  - **student_answers**：id / user_id FK CASCADE / question_id FK CASCADE / answer JSON / is_correct / time_spent_seconds (nullable, CHECK ≥0) / hint_level_used smallint (CHECK 0-5) / feedback / answered_at；composite index (user_id, answered_at) 供歷史查詢
-- `backend/models/quiz.py` — `Question` + `StudentAnswer` ORM + `QuestionType` / `QuestionSource` 字串列舉
-- 註冊至 `models/__init__.py`
-
-### 設計取捨
-- **enum 改 `String + CHECK`**：先前 user_role / message_role / concept_edge_type 三次踩過 PG ENUM enum.value/.name 同款坑，新欄位（type / source）改用字串 + CHECK 約束從根本避免；ORM 提供 `QuestionType` / `QuestionSource` 字串列舉維持型別語意
-- **bloom_level / difficulty / hint_level 用 SmallInteger + CHECK**：與 student_mastery 同款，避開 PG ENUM；CHECK 保證範圍
-- **`concept_tags` 用 JSON 不用 PG `text[]`**：避免 PG-only 型別讓 SQLite 測試壞；題庫規模 < 1000 全表掃可接受，未來若需 GIN index 再 migrate
-- **content / answer 用 JSON**：題幹/選項/答案形狀依 type 不同（multiple_choice / fill_blank / coding），JSON 容納所有形狀；shape 驗證留給 application 層（2-4d Validate stage）
-- **comprehension_* 擴充欄位**留給 Phase 2-6 自己的 migration，本次不加
-
-### 驗證（自動）
-- `alembic current` → `f6a7b8c9d0e1 (head)` ✓
-- 118 個測試全綠（zero regression）✓
-- DB schema：questions 10 欄 / 4 indexes / 4 checks；student_answers 9 欄 / 3 indexes / 2 checks / 2 FK CASCADE ✓
-
-## [2026-05-04] — Phase 2-3c：圖譜節點精熟度著色（Phase 2-3 完成）
-
-### 新增（後端）
-- `backend/services/mastery/queries.py` — `get_user_mastery_summary(db, user_id)` JOIN concepts，回傳 `MasterySummaryEntry` 列表（tag + confidence + counts + bloom_level）
-- `backend/api/routes/concepts.py` 新增 `GET /concepts/mastery` 端點（auth-gated），回傳 `MasteryEntryOut[]`；無互動的 concept 不在回應中
-- 3 個測試（401 未授權 / 空 mastery 回 [] / 含資料時 tag/confidence 正確對位）
-
-### 新增（前端）
-- `web/components/knowledge/knowledge-graph-types.ts` 加 `MasteryEntry` + `MasteryBand` + `getMasteryBand(confidence)`：`mastered (≥0.8) / learning (0.4-0.8) / struggling (<0.4) / unseen (no row)`
-- `web/components/knowledge/concept-detail-panel.tsx` 新增 `MasterySection` — 顯示「已掌握 / 學習中 / 需加強 / 尚未互動」+ confidence% + 互動次數
-
-### 變更（前端）
-- `web/components/knowledge/knowledge-graph-style.ts` — `toElements` 加 masteryMap 參數；新增 3 條 underlay 規則（綠/黃/紅）對應 mastery_band；unseen 不畫
-- `web/components/knowledge/knowledge-graph.tsx` — 改 presentational：移除內部 fetch，改接 `data` + `masteryMap` props（120→100 行）
-- `web/app/(app)/knowledge/page.tsx` — 升為 container：Promise.all 平行 fetch graph + mastery，loading/error 集中管理，下傳 mastery 給 graph 與 panel（41→95 行）
-
-### 設計取捨
-- **用 `underlay-*` 而非 `outline-*`**：Cytoscape underlay 能畫在節點底層產生「光暈」感，與我們的 ellipse + Obsidian 風格更協調；outline 邊緣較硬
-- **顏色語意衝突**：mastery 用的綠/紅 也是 category 色（物件導向/記憶體）— 視為兩個獨立視覺通道（fill = subject area，underlay = proficiency），實測不會誤讀
-- **無互動概念不畫圈**：避免一張全紅圖嚇到新使用者；首次互動才會出現顏色
-- **fetch 上提至 page**：mastery 同時要餵給 graph（節點圈）與 panel（顯示百分比），page 層管 state 是唯一合理位置；graph 元件變 presentational 也更好測
-
-### 已知警告
-- `concept-detail-panel.tsx` 248 行（停止線 250 邊緣）— 5 個 sub-component 緊密耦合，下次再加功能必須拆檔（建議：MasterySection / NeighborSection 各獨立）
-
-### 驗證（自動）
-- 118 個測試全綠（115 既有 + 3 新增 mastery route 測試）
-- TS clean ✓
-
-### Phase 2-3 完整收尾
-- ✅ 2-3a `student_mastery` schema
-- ✅ 2-3b BKT 線上更新串入 chat 流程
-- ✅ 2-3c 圖譜精熟度視覺化 + Detail Panel 精熟度區塊
-
-## [2026-05-04] — Phase 2-3b：BKT 線上精熟度更新
-
-### 新增
-- `backend/services/mastery/updater.py`（148 行）：
-  - `BKTParams` dataclass（prior/learn/slip/guess 四參數）+ `BKT_DEFAULT_PARAMS = (0.3, 0.3, 0.1, 0.2)` 預設值
-  - `bkt_online_update(prior, correct, params)` — 標準 BKT Bayes 後驗 + learning transition，clamp 0-1
-  - `update_mastery(db, user_id, evidence)` — 對 evidence.concept_tags 每個 tag lazy fetch/create `StudentMastery` row、套 BKT 更新、累計計數、bloom_level 取最大、更新 last_practiced_at；caller 負責 commit
-- `backend/services/mastery/__init__.py`（15 行）— 公開 API
-- `backend/tests/test_mastery_updater.py`（198 行）— 10 個測試（5 BKT 數學 + 5 整合）
-
-### 變更
-- `backend/services/chat.py` `interact()`：在 Decision 層之前呼叫 `update_mastery`；try/except 容錯（mastery 失敗不阻擋教學回應，與 RAG 同款）
-
-### 修復 / 安裝
-- `backend/.venv` 新增依賴：`pyBKT==1.4.1` + scientific stack（scipy/scikit-learn<1.7/pandas/numpy/joblib 等）— ⚠ scikit-learn 必須 `<1.7`，pyBKT 1.4.1 與 1.7+ 的 `_log_loss` API 不相容（記於 tech-debt）
-
-### 設計決策（OSS 守則 #7）
-- **pyBKT 使用策略**：套件已裝為宣告依賴；但 `Model.fit()` / `Roster` 需歷史資料才能用，cold-start 階段（無學生資料）改用標準 BKT Bayes 公式（Corbett & Anderson 1995，公開教科書數學，**非移植 OATutor JS 版**，符合 OSS 規則精神）
-- **未來 Phase 5 升級路徑**：有真實互動資料後跑 `pyBKT.Model.fit(df)` 學 per-concept 參數，把 `BKTParams` 從預設值改為 fitted values 即可，**演算法本身不需改**
-
-### 容錯設計
-- update_mastery 失敗不阻擋 chat 回應（與 RAG fetch_rag_chunks_safe 同款 try/except）
-- evidence.concept_tags 中不存在的 tag（LLM 產 hallucinated tag）→ skip 不擲錯
-
-### 驗證（自動）
-- 10 個新測試 + 105 既有測試 = **115 passed** ✓
-- 數學正確性測試：correct 提升、incorrect 降低、邊界 [0,1] clamp、no-slip-no-guess 答對接近 1
-- 整合測試：lazy create / 累計計數 / bloom 取最大 / unknown tag skip / 多 concept 同時更新 / 空 tags
-
-## [2026-05-04] — Phase 2-3a：student_mastery 表 schema
-
-### 新增
-- `backend/alembic/versions/e5f6a7b8c9d0_create_student_mastery_table.py` — 精熟度追蹤基礎表：
-  - `id` UUID PK / `user_id` FK CASCADE / `concept_id` FK CASCADE
-  - `confidence` float (CHECK 0-1) — pyBKT 在 2-3b 維護
-  - `exposure_count` / `success_count` / `error_count` int (CHECK ≥ 0) — EDF Pipeline 累加
-  - `bloom_level` smallint nullable (CHECK 1-6 or null) — 對齊 `services/edf/models.py` BloomLevel(IntEnum)，避開 PG ENUM 同款 bug
-  - `last_practiced_at` timestamptz nullable
-  - `UNIQUE(user_id, concept_id)` + 2 個 FK 索引
-- `backend/models/mastery.py` — `StudentMastery` ORM model，註冊至 `models/__init__.py`
-
-### 設計重點
-- **bloom_level 用 SmallInteger 不用 PG ENUM**：避開先前已踩三次的 enum.value/.name bug（UserRole / MessageRole / EdgeType），且與 EDF 既有 IntEnum 一致
-- **Lazy 建列**：rows 在學生實際互動時建立，不批量初始化（避免 user × concept 笛卡兒積空白列）
-- **無 created_at**：`last_practiced_at` 已涵蓋意圖；db-schema.md 也未指定
-
-### 驗證（自動）
-- `alembic current` → `e5f6a7b8c9d0 (head)` ✓
-- 105 個測試全綠（zero regression）✓
-- DB schema：9 欄 / 3 indexes / 3 checks / 2 FKs ✓
-
-## [2026-05-04] — Phase 2-2e：Knowledge Graph 視覺精修 + edges seed（Obsidian Graph View 風）
-
-### 新增
-- `backend/alembic/versions/d4e5f6a7b8c9_seed_concept_edges.py` — 種 23 條邊：
-  - 20 prerequisite：5 條基礎放射（syntax-basic 樞紐）+ 控制流支線 / 函式支線 / 記憶體支線（5 條）/ OOP 線（3 條）/ STL 線（2 條）
-  - 3 related：recursion↔complexity、references↔pointer-arithmetic、template-meta↔stl-algorithms
-  - 寫法：`INSERT ... SELECT FROM (VALUES) JOIN concepts ON tag` 用 tag 對位查 UUID
-
-### 變更
-- `web/components/knowledge/knowledge-graph-style.ts`（121→158 行）：
-  - 節點 `round-rectangle` → `ellipse`；尺寸 36-60px → 22-38px（18 + difficulty × 4）
-  - Label 從節點內 → 節點外下方（`text-valign: bottom` + `text-margin-y: 6`）
-  - Label 預設 `text-secondary`，hover 鄰居時提亮為 `text-primary`
-  - 邊：bezier 曲線、箭頭縮 0.75x、預設 opacity 0.55、related 邊更細
-  - 新增 `.faded` (opacity 0.18) + `.highlighted` (border-emphasis) class
-- `web/components/knowledge/knowledge-graph.tsx`（120→131 行）— 加 `mouseover` / `mouseout` 處理：取 `closedNeighborhood()` 加 `.highlighted`，其他元素加 `.faded`；fcose 參數放大（nodeRepulsion 8000→12000、idealEdgeLength 100→130、padding 24→32）以容納外置 label
-
-### 修復
-- `backend/models/concept.py` `EdgeType` 加 `values_callable=lambda x: [e.value for e in x]`：與先前 UserRole / MessageRole 同款 bug（第三處）。先前 `concept_edges` 表為空從未讀取，2-2e 種了 23 筆才暴露 → 500 LookupError on enum 讀取
-
-### 視覺成效
-- 從「色塊網格」改為「Obsidian 風知識網絡」：圓點 + 細曲線 + 外置標籤 + hover 鄰居高亮
-- syntax-basic 自然形成中央放射樞紐；高難度節點（template-meta / undefined-behavior / concurrency）位於圖譜邊緣
-
-### 已知技術債
-- 23 條邊內容為 AI 暫定（記於 `tech-debt.md`），實際使用後依教師回饋調整
-
-## [2026-05-04] — Phase 2-2d：Concept Detail Panel（Phase 2-2 完成）
-
-### 新增
-- `web/components/knowledge/concept-detail-panel.tsx`（206 行）— 點節點顯示的右側詳情面板：
-  - 串 `GET /concepts/{tag}`，loading / error / 內容三態
-  - 顯示 `name_zh` + `tag` + category pill badge（同節點配色）+ 5 點難度 + `name_en` + description
-  - 先修概念（incoming neighbors）+ 進階概念（outgoing neighbors）兩個 section，每筆 neighbor 含 edge_type 標籤
-  - 點鄰居切到該 concept；點 X 關閉
-
-### 變更
-- `web/components/knowledge/knowledge-graph-types.ts` — 加 `NeighborRecord` + `ConceptDetailData` type，與後端 `ConceptDetailOut` 對齊
-- `web/components/knowledge/knowledge-graph-style.ts` — `CATEGORY_COLOR` / `DEFAULT_CATEGORY_COLOR` 改 export，給 panel 共用
-- `web/app/(app)/knowledge/page.tsx` — 在圖譜右側條件渲染 panel（320px），點節點開、X 關，狀態升至 page 層
-
-### 視覺規格遵循（frontend.md）
-- Panel 用 `bg-surface-1`、左邊框 `border-default`，避免跟 AppShell 的 chat panel 撞（chat 在更外層）
-- Category badge 實色填充（功能性，符合 R8.1）；Difficulty dots 用純黑白灰（符合 R8.4 例外白名單）
-- Neighbor 卡片 hover 用 surface 升階 + border-emphasis（不用色背景，符合 R8.5/R6）
-
-### 設計取捨
-- 5 個 sub-component（PanelHeader / PanelBody / DifficultyDots / NeighborSection / 主元件）放同檔，緊密耦合無重用，三行重複優於過早抽象
-- 點 panel 內鄰居只切 panel 內容，不同步 Cytoscape 內部選取狀態（簡化；後續若要 polish 再加 prop 雙向同步）
-
-### 驗證
-- TS clean (`npx tsc --noEmit`) ✓
-- 使用者瀏覽器確認：點節點開 panel、切換鄰居、X 關閉皆正常 ✓
-- Phase 2-2 知識圖譜（2-2a/b/c/d）全部完成
-
-## [2026-05-04] — Phase 2-2c：Knowledge 頁面 Cytoscape 渲染 + 兩個阻塞 bug 修復
-
-### 新增（前端 2-2c）
-- `web/components/knowledge/knowledge-graph.tsx`（120 行）— Cytoscape React 元件，串 `GET /concepts/graph`、fcose 佈局、點擊回呼
-- `web/components/knowledge/knowledge-graph-style.ts`（121 行）— Stylesheet + 色票 + `toElements` 轉換
-- `web/components/knowledge/knowledge-graph-types.ts`（24 行）— 與後端對齊的 type
-- `web/types/cytoscape-fcose.d.ts`（5 行）— `cytoscape-fcose` 套件型別 stub
-- npm: `cytoscape ^3.33.3` + `cytoscape-fcose ^2.2.0` + `@types/cytoscape ^3.21.9`
-
-### 變更（前端 2-2c）
-- `web/app/(app)/knowledge/page.tsx` — 從 placeholder 換成圖譜 + 選取狀態 header
-
-### 修復（兩個既有 bug，連帶於 2-2c 端到端驗證時暴露）
-- **Auth.js v5 HKDF info 對不上 → 401 INVALID_TOKEN**：`backend/core/auth.py` 把 info 從舊版 `"NextAuth.js Generated Encryption Key"` 改為 v5 GA 格式 `"Auth.js Generated Encryption Key (cookie_name)"`，cookie_name 與 salt 從 request 動態傳入，dev/prod 各自衍生 key；`tests/helpers.py` `encrypt_test_token` 加 `cookie_name` 參數對齊；`tests/conftest.py` cache 清空改為 dict
-- **Postgres ENUM 接 enum.value 但 SQLAlchemy 預設送 enum.name → 500 InvalidTextRepresentation**：`models/user.py` 與 `models/chat.py` 的 `Enum(...)` 加 `values_callable=lambda x: [e.value for e in x]`；之前因測試走 SQLite（無 ENUM）一直沒抓到
-
-### 視覺規格
-- 節點顏色：基礎語法 blue / 記憶體 red / 物件導向 green / STL purple / 演算法 orange / 進階 muted（皆 GitHub Dark token，符合 R8 反 AI 感）
-- 節點大小：30 + difficulty × 6 px（36-60 px）
-- 邊樣式：實線箭頭 prerequisite / 虛線 contains / 點線箭頭 specialization / 細線 related（目前無 seed 邊資料）
-- 選取：邊框由 `border-default` → `border-emphasis` 變粗，不用色背景（符合 R8.5）
-
-### 設計取捨
-- 拆檔：`knowledge-graph.tsx` 原 261 行（超 250 停止線）拆為 component / style / types 三檔，最大 121 行
-- 範圍守則 #1：2-2c 只做圖譜本身，Detail Panel 留 2-2d；點擊目前僅在 header 顯示選取 tag
-
-### 驗證
-- TS clean (`npx tsc --noEmit`) ✓
-- 後端 105 測試全綠（含修 enum 後 SQLite 仍相容）✓
-- 使用者瀏覽器確認 20 節點正確渲染 ✓
-
-## [2026-05-04] — Phase 2-2b：知識圖譜查詢 service + API
-
-### 新增
-- `backend/models/concept.py`（94 行）— `Concept` / `ConceptEdge` / `EdgeType` ORM models（schema 對齊 migration `c3d4e5f6a7b8`）
-- `backend/services/graph/queries.py`（89 行）—
-  - `get_full_graph(db) -> GraphSnapshot`：全圖一次回傳（concepts + edges）
-  - `get_concept_neighborhood(db, tag) -> ConceptNeighborhood | None`：單節點 + depth-1 鄰居（雙向掃描）
-- `backend/api/routes/concepts.py`（150 行）— REST 端點：
-  - `GET /concepts/graph` → Cytoscape 慣例格式 `{nodes, edges}`（`source`/`target` 而非 `source_id`）
-  - `GET /concepts/{tag}` → `{concept, neighbors: [{direction, edge, concept}]}`，不存在 → `404 CONCEPT_NOT_FOUND`
-  - 兩端點皆需 `get_current_db_user` 認證
-- `backend/tests/test_concept_graph.py`（162 行）— 9 個測試（5 service + 4 API）
-
-### 變更
-- `backend/models/__init__.py` — 註冊 Concept / ConceptEdge / EdgeType
-- `backend/main.py` — 註冊 `concepts_router`
-
-### 設計重點
-- **以 `tag` 為 URL 識別**（非 UUID）— `/concepts/pointer-arithmetic` 比 `/concepts/{uuid}` 穩定、URL 友善
-- **方向標記**：API 明確區分 `incoming` vs `outgoing`，給前端 Detail Panel 顯示「先修」vs「進階」
-- **service 回傳 ORM**，route 層做 Pydantic serialization — 兩層邊界乾淨
-
-### 驗證
-- 105 個測試全綠（96 既有 + 9 新增），zero regression
-
-## [2026-05-04] — Phase 2-2a：知識圖譜 schema + 20 ConceptTag seed
-
-### 新增
-- `backend/alembic/versions/c3d4e5f6a7b8_create_concept_tables.py`（170 行，含 seed 資料）：
-  - `concepts` 表：id (UUID PK) / tag (unique) / name_zh / name_en / description / difficulty_level (1-5 check) / category / created_at；index(category)
-  - `concept_edges` 表：source_id, target_id (CASCADE FK to concepts) / edge_type (4-value PG ENUM `concept_edge_type`：prerequisite/contains/specialization/related) / weight / created_at；unique(source/target/type) + check(無自環)
-  - 20 筆 ConceptTag seed（來源：`.claude/rules/edf-pipeline.md`），分 6 個 category
-
-### 設計重點
-- **schema 完全對齊 `db-schema.md` Module 5**（concepts + concept_edges + 預留給後續 student_mastery 的 concept_id FK）
-- **資料完整性 constraints**：`difficulty_level BETWEEN 1 AND 5`、`source_id <> target_id`（無自環）、`UNIQUE(source/target/edge_type)`（無重複邊）
-- **遇到的陷阱**：`sa.Enum` 在 PG 上由 `op.create_table` 自動 `CREATE TYPE`，不可預先 `enum.create()`，否則 `DuplicateObjectError`；已在 migration 註解中記錄
-
-### 已知技術債
-- `concepts.category` / `difficulty_level` / `name_zh` 為 AI 暫定值；20 個 `tag` 本身是 authoritative。等 2-2c 圖譜可視化後校準（記於 `docs/tech-debt.md`）
-
-### 驗證
-- `alembic current` → `c3d4e5f6a7b8 (head)` ✓
-- `SELECT count(*) FROM concepts` = 20，6 個 category 分布合理 ✓
-- 使用者已確認 schema + seed（暫定值接受）
-
-## [2026-05-04] — Phase 2-1d：RAG 注入 EDF Feedback（Phase 2-1 完成）
-
-### 新增
-- `backend/services/edf/rag_integration.py`（44 行）— EDF ↔ RAG 整合 helper：
-  - `build_rag_query(evidence)` — 把 `error_message` + `concept_tags` + `code_analysis` 串成檢索 query
-  - `fetch_rag_chunks_safe(evidence)` — 安全包裝 `retrieve_chunks`，吞所有異常回傳 `[]`，**不阻擋教學回應**
-- `backend/tests/test_rag_integration.py`（88 行）— 5 個單元測試（query 組裝 / 異常吞食保證）
-
-### 變更
-- `backend/services/edf/feedback.py` — `build_system_prompt` 增加 `rag_chunks` 參數；`generate_feedback` 在 `strategy.use_rag=True` 時呼叫 `fetch_rag_chunks_safe`
-- `backend/tests/test_feedback.py` — 新增 6 個 RAG 注入測試（含 use_rag 開/關、空 list 不出 RAG block、失敗仍出回覆）
-
-### 設計重點
-- **失敗安全**：RAG 失敗（DB / OpenAI / 空索引）→ Feedback 層仍能正常回覆，只是少了教材引用
-- **觸發條件**：完全沿用 Decision 層 `strategy.use_rag`（`hint_level >= 2 AND bloom >= ANALYZE`）— Feedback 層不重複判斷
-- **prompt 注入位置**：`context_block` 之後加 `rag_block`，附明確指示「請以教材為依據，避免自編未驗證細節」
-
-### 驗證
-- 40 個測試全綠（test_evidence + test_decision + test_feedback + test_rag_integration）
-- 既有 8 個 feedback 測試零 regression
-
-### 已知技術債（下個 commit 處理）
-- `tests/test_feedback.py` 273 行，超過 250 行停止線 — 將拆為 `test_feedback_prompt.py` / `test_feedback_validate.py` / `test_feedback_generate.py`
-- `services/edf/feedback.py` 158 行（警告線 +8）— 暫不處理，等之後新增 streaming 等功能時再考慮把 `PREAMBLE/PERSONA` 拆到 `prompts.py`
-
-## [2026-05-04] — Phase 2-1c：RAG 檢索 service
-
-### 新增
-- `backend/services/rag/retrieve.py`（55 行）— `retrieve_chunks(query, top_k=5)` async 介面：query → OpenAI embedding → `VectorStoreIndex` 包現有 pgvector 表 → cosine 相似度 top-k
-- `backend/services/rag/retrieve.py` 同檔暴露 `RetrievedChunk` Pydantic model（text/score/doc_id/metadata），避免 LlamaIndex 型別擴散到 EDF Feedback 上層
-- `backend/scripts/verify_rag_retrieve.py`（39 行）— 端到端檢索驗證腳本（query：「對 nullptr 解引用會發生什麼？」）
-
-### 變更
-- `backend/services/rag/pipeline.py` — `_build_vector_store` → `build_vector_store`（改 public，ingest/retrieve 兩端共用同一連線參數來源）
-- `backend/services/rag/__init__.py` — 新增匯出：`retrieve_chunks`、`RetrievedChunk`、`build_vector_store`
-
-### 設計取捨（CLAUDE.md「最小可用」）
-- 暫不實作 BM25 reranking（roadmap 標註「可選」），等 2-1d 整合 EDF Feedback 後若召回品質不足再補
-
-### 驗證
-- 對範例 query 回傳 2 筆 chunks（向量庫目前資料量），cosine score 0.5265 / 0.5207 依序遞減 ✅
-
-## [2026-05-04] — Phase 2-1b：LlamaIndex 索引管線
-
-### 新增
-- `backend/services/rag/` 模組（共 122 行，遠低於門檻）：
-  - `pipeline.py` — `get_ingestion_pipeline()` 工廠：`SentenceSplitter` (chunk 512/overlap 64) → `OpenAIEmbedding` (text-embedding-3-small, 1536d) → `PGVectorStore` (table `data_codedge_rag`)
-  - `ingest.py` — `ingest_document(db, doc_id, text, metadata)` async 介面，餵入 pipeline 並更新 `documents.indexed_at`
-  - `__init__.py` — 公開 API re-export
-- `backend/scripts/verify_rag_ingest.py` — 端到端驗證腳本（C++ 指標教材範例 → ingest → 檢查向量表 count）
-
-### 變更
-- `backend/.venv` 新增依賴：`llama-index 0.14.21`、`llama-index-vector-stores-postgres 0.8.1`、`llama-index-embeddings-openai 0.6.0`、`psycopg2-binary 2.9.12`、`tiktoken 0.12.0`（含相依套件 28 個）
-- `backend/pyproject.toml` 暫未列入新依賴（依 tech-debt 規劃，待 Phase 4-1a 容器化前一次重產 `requirements.lock`）
-
-### 驗證
-- `data_codedge_rag` 表由 LlamaIndex 自動建立（含 `embedding vector(1536)` + `ref_doc_id` btree index）
-- 範例教材 ingest 後 `SELECT count(*) FROM data_codedge_rag` = 1 ✅
-
-### OSS 守則合規（CLAUDE.md #7）
-- ✅ Tier 1 LlamaIndex `IngestionPipeline` + `PGVectorStore`（無自寫 chunking/embedding）
-- ✅ MIT license（無 AGPL/GPL 風險）
+## [2026-05-04] — Phase 2-5 Pre-Coding Reflection：教學設計與容錯
+
+**PRIMM 對齊的流程修正**：原本「拿題目 → 立刻彈反思 modal」，學生**還沒看到題目**就被要求
+反思，違反 PRIMM「反思必須針對具體題目」。改為多一個 `preview` 階段：題目先顯示、
+學生讀完主動點「開始反思」才彈窗；取消反思回到 preview 而非丟棄已生成的題目。
+
+**三面向獨立評分而非單一分數**：`understanding` / `plan_quality` / `concept_recall` 各自 0–1，
+`quality_score` 取三者平均（簡單可解釋，不加權）。分開的理由是**追問要挑最弱的面向**，
+單一總分做不到。
+
+**追問的三道防線**（避免反思從教學工具變成負擔）
+- `QUALITY_THRESHOLD = 0.6`，高於門檻時**強制清空** LLM 多嘴生出的 followup ——
+  門檻行為由程式碼保證，不靠 prompt 約束
+- `MAX_FOLLOWUP_ROUNDS = 2`，第二輪後給「已盡力，直接看題」放行，不無限 loop
+- **LLM 失敗（quality_score=null）一律視為通過** —— OpenAI 抖動不能擋住學生做題
+
+**反思注入 EDF 分兩個版本**：Evidence 收**簡短版**（步驟 + 預期概念），避免反思內容稀釋
+程式碼分析；Feedback 收**詳細版**（含品質分數），讓 AI 能引用學生計畫做蘇格拉底式提問。
+格式化 helper 內建「**嚴禁直接幫學生補完計畫**」規則 —— 否則 AI 會變成代寫工具。
+prompt 順序 `preamble → persona → strategy → context → reflection → rag` 由測試強制保證。
+
+**權限隔離用 404 而非 403**：他人的 reflection 一律回「不存在」，避免 ID 列舉攻擊揭露存在性。
+載入失敗（DB 異常／不存在／非本人）都不擋教學流程，與 mastery / RAG 同一套容錯哲學。
+
+**side panel 的持久化用 sessionStorage 不擴後端**：省下 list / latest 端點。
+`storage` event 預設只在**其他** tab 觸發，所以另外發 `CustomEvent` 補同 tab 場景；
+反思被刪除時 404 自動清掉 sessionStorage，UI 退回空狀態而不是顯示錯誤。
+
+**`source_id` 用 polymorphic UUID 不建 FK**：指向 `questions.id` 或 `learning_units.id`
+（後者當時還沒建表），由 service 層依 `source_type` 決定驗不驗。
+`(user_id, source_type, source_id)` UNIQUE ——同一學生對同一題只能有一份反思。
+`quality_score` / `followup_question` 保持 nullable，讓 LLM 評分能後補而不動 schema。
+
+## [2026-05-04] — Phase 2-4 智慧出題：Select → Generate → Validate 的設計
+
+**enum 從此改用 `String + CHECK`**：踩過三次 PG ENUM 的坑後，`questions.type` / `source`
+等新欄位一律字串 + CHECK 約束，ORM 端保留字串列舉維持型別語意。
+`concept_tags` 用 JSON 而非 PG `text[]` —— 避免 PG-only 型別讓 SQLite 測試壞掉；
+題庫規模 < 1000 全表掃可接受，需要 GIN index 再 migrate。
+`content` / `answer` 也用 JSON：三種題型的形狀不同，shape 驗證交給 application 層。
+
+**Select 的中心度加權**：`score = (1 - confidence) × (1 + 0.2 × out_degree)`。
+foundation 概念（如 `syntax-basic` 有 5 個後續依賴）若是弱項，補強價值高於孤立弱項。
+兩條刻意的邊界：
+- **只在已有 mastery row 且 confidence < 0.4 中挑** —— 前置概念沒 row 表示學生根本沒接觸，
+  主動測試只會擾亂他
+- **cold-start 回空 list** —— 本層只負責「弱項」語意，「怎麼開始」交給 Generate 決定
+
+**Generate 的 content 二次驗證**：LLM 即使遵循 prompt 仍會漏欄位，三種題型各有 Pydantic
+模型驗證後才寫 DB（MC 還加 `field_validator` 確保 `answer_index < len(options)`）。
+用 `json_object` 而非 `json_schema` strict —— strict 對 output 限制較嚴，可能誤拒合理題目。
+
+**Validate 回報告而非拋例外**：LLM 生出爛題是**正常情境**不是錯誤，caller 需要看 issues
+決定 retry 還是丟棄；只有「LLM 不可用」才 raise。三面向 AND：答案正確性 / 概念吻合 /
+Bloom 不超標，任一不過就列 issue。
+**retry 上限 2 次**，連續失敗回 503 而非無限呼叫 LLM。
+
+**答案 mask 在 route 層**：`_mask_content_for_student()` 讓 GET 端點不下發答案欄位
+（避免 DOM 洩漏），submit 後才回完整 content。
+
+**generate / validate 共用 transaction**：service 一律不 commit，讓 validate 能在同一個
+transaction 內補標 `validated=True`。
+
+## [2026-05-04] — Phase 2 智慧功能：RAG／知識圖譜／BKT 的設計決策
+
+> 建置明細查 `git log --since=2026-05-04 --until=2026-05-05 --stat`。
+
+**踩了三次才根除的 PG ENUM bug**（值得單獨記）
+`sa.Enum(...)` 預設送 `enum.name` 而 Postgres 欄位接的是 `enum.value` → 500
+`InvalidTextRepresentation`。修法是每個 Enum 欄位加
+`values_callable=lambda x: [e.value for e in x]`。
+**為什麼會踩三次**（UserRole → MessageRole → EdgeType）：測試走 SQLite，SQLite 沒有 ENUM 型別，
+所以本機全綠、一上 PG 才爆。`concept_edges` 更晚才暴露——表空的時候根本不會讀到 enum。
+→ 後續 `student_mastery.bloom_level` 直接改用 `SmallInteger + CHECK`，不再碰 PG ENUM。
+另一個相關陷阱：`op.create_table` 會自動 `CREATE TYPE`，**不可**再預先 `enum.create()`，否則
+`DuplicateObjectError`。
+
+**Auth.js v5 的 HKDF info 字串變了**
+從 `"NextAuth.js Generated Encryption Key"` 改為
+`"Auth.js Generated Encryption Key (cookie_name)"`，且 cookie_name 與 salt 需從 request
+動態取得（dev / prod 的 cookie 名不同 → 衍生出不同 key）。不改就是 401 INVALID_TOKEN。
+
+**BKT 的 OSS 合規路徑**（守則 8）
+pyBKT 已列為宣告依賴，但 `Model.fit()` / `Roster` 需要歷史資料，cold-start 無從用起。
+決策：**冷啟動用標準 BKT Bayes 公式**（Corbett & Anderson 1995 的公開教科書數學，
+**不是移植 OATutor 的 JS 實作**）；等 Phase 5 有真實資料後跑 `fit()` 學 per-concept 參數，
+只換 `BKTParams` 的數值，**演算法本身不動**。
+⚠ `scikit-learn` 必須 `<1.7` —— pyBKT 1.4.1 與 1.7+ 的 `_log_loss` API 不相容。
+
+**mastery 資料表用 lazy 建列**：學生實際互動時才建 row，避免 user × concept 的笛卡兒積空白列。
+
+**RAG 一律失敗安全**：`fetch_rag_chunks_safe` 吞掉所有異常回 `[]` —— RAG 掛掉只是少了教材引用，
+不能因此讓學生拿不到教學回應。同一個 try/except 模式後來也用在 mastery 更新上。
+（當時 RAG 觸發沿用 Decision 層的 `hint≥2 且 bloom≥ANALYZE`，**已於 K4b 改為內容相關性檢索**。）
+刻意**不做 BM25 reranking**——最小可用，等召回品質實測不足再補。
+
+**API 以 `tag` 而非 UUID 作識別**：`/concepts/pointer-arithmetic` 比 UUID 穩定且 URL 友善。
+
+**RAG 管線參數**（LlamaIndex `IngestionPipeline`，全程不自寫 chunking／embedding）：
+`SentenceSplitter` chunk 512 / overlap 64 → `text-embedding-3-small`（1536d）→ pgvector
+表 `data_codedge_rag`。檢索結果用自家 `RetrievedChunk` 包一層，
+**避免 LlamaIndex 型別擴散到 EDF 上層**。
+
+**知識圖譜的視覺取捨**（定調 Obsidian 風：ellipse 圓點 + 細 bezier 曲線 + 標籤外置）
+- 用 Cytoscape `underlay-*` 而非 `outline-*` 畫精熟度：underlay 在節點底層產生光暈感，
+  與 ellipse 風格協調；outline 邊緣太硬
+- **顏色走兩個獨立通道**：fill ＝ 學科分類，underlay ＝ 精熟度。兩者色域重疊（綠/紅）
+  但實測不會誤讀
+- **未互動的概念不畫圈**：否則新使用者一進來看到整張紅圖會被嚇到
+- hover 時 `closedNeighborhood()` 高亮、其餘 `.faded`；`syntax-basic` 自然成為中央放射樞紐
+- fetch 上提到 page 層（mastery 要同時餵 graph 與 panel），graph 元件降為 presentational
+
+**API 契約細節**：`/concepts/graph` 直接回 Cytoscape 慣例格式（`source`/`target` 而非
+`source_id`）省去前端轉換；鄰居明確標 `incoming` / `outgoing`，前端才能顯示「先修」vs「進階」。
+service 回 ORM、route 層做 Pydantic serialization，兩層邊界保持乾淨。
+
+**20 個 ConceptTag 是 authoritative**，但 category / difficulty / name_zh 為 AI 暫定值。
+初始 23 條 concept edge 同樣是 AI 暫定，**後於 K1a 由 curated DAG 全面取代為 90 條多對多邊**。
 
 ## [2026-04-29] — 本機開發環境工具選型
 

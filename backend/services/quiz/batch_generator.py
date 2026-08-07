@@ -1,3 +1,6 @@
+# code-health: allow-large — 單一變更軸＝批次生成流程；三個查詢 helper
+# （_validated_questions_for / _has_batch_mc / _has_batch_coding）僅此處使用，
+# 外移違反「單次使用的邏輯不抽象」（Q2/Q3）。
 """6-3c：知識點驅動批次生成 → questions 表（validated=True 才入庫，source='batch'）。
 
 流程：per concept → 知識點萃取（題量 = 知識點數）→ 每知識點 1 題觀念選擇題

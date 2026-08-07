@@ -39,8 +39,10 @@ Phase 7-R 自建互動執行引擎 ✅（生產終端已上線）｜Phase 7-U �
 
 **🎯 進行中 — 7-D 技術債清償**（功能已全部完成；定序：功能 → **技術債** → 驗收）
 - ✅ 7-D1 前端 Vitest（2026-08-07，`cd web && npm test`，31 it）
-- 待辦：7-D2 七個超硬上限檔拆分 ｜ 7-D3 changelog 拆檔（近 5000 行）｜
-  7-D4 R6 收尾 ｜ 7-D5 文件稽核 ｜ 7-D6 全站 429/5xx toast
+- ✅ 7-D2 Code Health 規則改版（2026-08-07）：門檻 250/400 + 舉證豁免 + jscpd 重複偵測；
+  7 檔逐案處置＝1 拆分 6 豁免，🚫/⚠ 歸零。工作流見 `.claude/skills/code-health/`
+- 待辦：7-D3 changelog 拆檔（近 5000 行）｜ 7-D4 R6 收尾 ｜ 7-D5 文件稽核 ｜
+  7-D6 全站 429/5xx toast
 - ⏳ **待使用者裁決**：comprehension 觸發頻率——修掉吸收態後，弱學生連答 10 題會被驗 10 次
   （每次 2 呼叫）。屬教學取捨不是 bug，建議 7-E 實際點過再定
 - **7-E 使用者驗收在 7-D 之後**；本 session 新做的 UI（理解驗證 Modal / AI 鎖 / NZEC 說明 /
@@ -50,6 +52,8 @@ Phase 7-R 自建互動執行引擎 ✅（生產終端已上線）｜Phase 7-U �
 **排在驗收之後**：Phase 8 專案健檢（8-0 討論已完成）／6-4b 教材局部重跑（依操作回饋）／K1d·K4d·K5d 使用者自測
 
 **工具**：`python3 scripts/doc_selfcheck.py` — 文件自檢（超門檻檔案／失效路徑／測試數）；session 結束前跑一次
+**健檢**：`.claude/skills/code-health/` — 檔案大小與重複的**決策**工作流（門檻 250/400、
+三問判斷、舉證豁免、jscpd 重複偵測）。改完一個邏輯變更後跑，**不在每次 Edit 後跑**
 **驗收機制**：`backend/scripts/eval_coddy/` — 七型學生模擬（真實 LLM + debug_sink/DB 白盒探針），改完 Coddy 重跑對照
 
 **部署與營運**：見 `docs/deployment.md`。要點＝**push 即自動部署**、migration 自動跑；

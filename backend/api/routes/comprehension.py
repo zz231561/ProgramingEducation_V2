@@ -1,3 +1,5 @@
+# code-health: allow-large — 三種 type（epl/predict/variation）共用 _parse_type 與
+# ComprehensionOut，按 type 拆需 3 個型別檔 + 1 個共用檔＝改一次開 4 檔（Q3）。
 """Comprehension API — Post-Solution Comprehension Check 端點（roadmap 2-6a/b/c）。
 
 API 設計：

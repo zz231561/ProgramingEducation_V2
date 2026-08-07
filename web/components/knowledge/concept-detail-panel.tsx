@@ -1,5 +1,8 @@
 "use client";
 
+// code-health: allow-large — 單一變更軸＝概念詳情面板的呈現（Q2）；檔內已拆出 7 個子元件，
+// 而它們（DifficultyDots 等）都只用一次，外移違反「單次使用的邏輯不抽象」（Q3）。
+
 /**
  * Concept Detail Panel — 點節點後右側顯示的詳情面板（roadmap 2-2d）。
  *

@@ -369,10 +369,11 @@
 > 清單正本在 `docs/tech-debt.md`，此處只排執行順序。機械事實一律跑 `python3 scripts/doc_selfcheck.py`。
 - [x] 7-D1 **前端測試基礎設施** ✅ 2026-08-07：Vitest(jsdom) + `npm test` + 三支純函式測試共 **31 it**；
       順修 `cpp-completion-source.ts` 永遠不成立的 Ctrl+Space 分支（寫測試才浮現）
-- [ ] 7-D2 **檔案拆分**（tech-debt C2）：7 個超硬上限檔——`quiz.py` 347 / `generate.py` 307 /
-      `concept-detail-panel.tsx` 279 / `batch_generator.py` 267 /
-      `variation.py` 255 / `comprehension.py` 255 / `quiz/feedback.py` 251
-      （`edf/feedback.py` 與 `services/chat.py` 已於 7-C2a' 拆完）
+- [x] 7-D2 **Code Health 規則改版 + 檔案逐案處置** ✅ 2026-08-07（原「拆 7 個超硬上限檔」）：
+      門檻 150/250 → 250/400、判準改「AI 檔名可預測性 + 一次讀得完」、新增舉證豁免與反向約束、
+      新增 jscpd 重複偵測；工作流寫成 `.claude/skills/code-health/SKILL.md`。
+      7 檔逐案判斷結果＝**1 拆分**（`generate.py` → `generate_prompts.py`）＋ **6 舉證豁免**；
+      🚫 與 ⚠ 雙雙歸零。下一個機械命中項＝tech-debt C3（`_get_client` 跨 14 檔）
 - [ ] 7-D3 **`changelog.md` 拆檔**（tech-debt C4）：2026-07 以前移至 `changelog-archive.md`
 - [ ] 7-D4 **7-R R6 收尾**：教材健檢解除每日上限（`verify_code_snippets.py` `DAILY_BUDGET = 20`，
       Judge0 額度限制已隨自建 runner 消失）+ 30 並行壓測驗證 server-plan 容量假設

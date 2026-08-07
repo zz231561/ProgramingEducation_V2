@@ -33,19 +33,29 @@
 - [ ] 元件測試（React Testing Library）同樣未建置——本批刻意不裝 `@vitejs/plugin-react`，
       待真的要測元件互動時再引入
 
-**C2. 檔案大小超過門檻**（⚠ 150 / 🚫 250；數據來自 `scripts/doc_selfcheck.py`，2026-08-06）
-- [ ] 🚫 **超過硬上限 250（7 個）**：`api/routes/quiz.py` 347 / `services/quiz/generate.py` 307 /
-      `concept-detail-panel.tsx` 279 / `services/quiz/batch_generator.py` 267 /
-      `services/comprehension/variation.py` 255 / `api/routes/comprehension.py` 255 /
-      `services/quiz/feedback.py` 251
-  - ⚠ 介於 150–250 的檔案數同樣跑 script 取得（會隨每次改動變動，**刻意不手抄數字**）
-  - ✅ 2026-08-06（7-C2a'）清掉兩個：`edf/feedback.py` 253 → 拆出 `edf/prompt_blocks.py`（148/127）；
-    `services/chat.py` 306 → 拆出 `services/chat_signals.py` 與 `services/chat_sessions.py`（228/196/92）
+**C2. 檔案大小超過門檻** — ✅ **已清空（2026-08-07）**，規則同日改版
+- [x] ~~🚫 超過硬上限的 7 個檔~~ — 依新規則逐案判斷後：**1 拆分 + 6 舉證豁免**
+  - **拆分**：`services/quiz/generate.py` 307 → 拆出 `generate_prompts.py`（205 / 110）。
+    理由＝prompt 內容與生成流程是兩個獨立變更軸（7-C 期間大量調 prompt 完全不動流程），
+    與既有慣例 `variation_prompts.py`、`edf/prompt_blocks.py` 一致
+  - **豁免**（檔頭寫 `code-health: allow-large` + 對應三問的理由）：`api/routes/quiz.py`、
+    `api/routes/comprehension.py`、`batch_generator.py`、`comprehension/variation.py`、
+    `quiz/feedback.py`、`concept-detail-panel.tsx`
+  - 現況 🚫 0 個 / ⚠ 0 個 / 已豁免 6 個（跑 `doc_selfcheck.py` 取得，**刻意不手抄**）
+  - ✅ 2026-08-06（7-C2a'）先清掉兩個：`edf/feedback.py`、`services/chat.py`
   - 測試檔不計入（性質為條列案例而非邏輯複雜度）
+
+> **規則已於 2026-08-07 改版**（全域 + 專案 CLAUDE.md + `.claude/skills/code-health/`）：
+> 門檻 150/250 → **250/400**（原 150 產生 78 個警告＝警告失效），判準改為
+> 「AI 能否用檔名預測內容 + 能否一次讀完」，超標須逐案回答三問後三選一，並新增舉證豁免出口。
 
 **C3. OpenAI client lazy-singleton 邏輯重複於 14 個服務模組**（2026-08-06 重數：原記 9 個已低估）
 - [ ] `grep -rl "def _get_client" backend/services/` → 14 檔：edf×2 / quiz×5 / comprehension×3 /
       reflection / learning / run_help / chat_kickoff
+  - **2026-08-07 起由機械檢查抓得到**：`jscpd --min-lines 5 --min-tokens 30` 命中（跨 ≥3 檔，
+    達到 code-health skill 的處理門檻）。實際是兩個變體各複製 7 行——
+    `raise AppError(503)` 版與 `return None` 版。**這 14 個檔全部通過行數檢查**，
+    正是「AI 看不到既有實作就重寫」這類債完全逃過大小規則的實例
   - **刻意延後**：各模組測試都對自己的 `_client` 做 monkeypatch，抽共用模組需連動改 14 檔 + 大量測試
   - **重評時機**：下次需統一調整 LLM client 行為（retry / timeout）時一併抽取
   - ⚠ 2026-08-06 已見代價：gpt-5.6 reasoning 參數修正雖集中在 `core/llm_params.py`，

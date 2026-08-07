@@ -1,5 +1,61 @@
 # 變更日誌
 
+## [2026-08-07] — 7-D2 Code Health 規則改版（固定行數上限 → 決策式健檢）
+
+### 背景：實測推翻了原規則，也推翻了我最初的兩個替代提案
+- 原規則（⚠150 / 🚫250）的缺陷：**150 產生 78 個警告＝警告失效**；且與全域規則
+  「單次使用的邏輯不抽象」直接打架——`concept-detail-panel.tsx` 要達標只能把
+  只用一次的 `DifficultyDots`（15 行）外移
+- 提案一（CodeScene hotspot ＝ 複雜度 × 變更頻率）**經使用者 push back 後放棄**：
+  它假設 churn 反映「維護力氣」，但單人 + AI 開發下 churn 反映的是「最近在做哪個 feature」
+  （`services/chat.py` churn 18 是因為 7-C 在做 Coddy，不是它難維護）
+- 提案二（只計邏輯行、排除 schema/prompt/JSX）**同樣放棄**：對 AI 而言成本是 token 與
+  檢索粒度，100 行 Pydantic schema 與 100 行分支邏輯載入成本相同，折算反而失真
+
+### Changed — 新規則（全域 `~/.claude/CLAUDE.md` + 專案 CLAUDE.md，兩邊已對齊）
+- 門檻 **150/250 → 250/400**，維持**原始行數**；判準改為「AI 能否用檔名預測內容 +
+  能否一次讀完」，與可維護性理論脫鉤
+- **超標不等於必拆**：逐案回答三問後三選一（拆分／豁免／記債）
+  ① 檔名能不能預測內容（不能 → 必拆，與行數無關）② 有幾個變更理由（≥2 → 拆）
+  ③ 拆完一次典型修改要開幾個檔（**≥3 → 判定拆錯，此題有否決權**）
+- **新增反向約束**：禁 `utils.*`/`helpers.*`/`xxx-part2.*` 無語意檔名、禁為過門檻硬切、
+  禁外移「只被一處呼叫且不獨立可測」的函式
+- **新增重複偵測**：jscpd，**跨 ≥3 檔才處理**（只跨 2 檔沿用「三行重複優於過早抽象」）
+- 函式層級加例外：主體以單一字串常數為主者（LLM prompt 組裝）以邏輯行判斷
+
+### Added
+- `.claude/skills/code-health/SKILL.md` — 五階段工作流（蒐集 → 分流 → 逐案判斷 →
+  執行拆分 → 豁免收尾）。**刻意不做 hook 即時攔截**：寫到一半暫時超標屬正常，
+  即時擋會逼出為了過門檻的病態拆分
+- `scripts/doc_selfcheck.py`：新門檻 + 讀檔頭前 5 行的 `code-health: allow-large` 豁免標記，
+  報告新增「已舉證豁免」區塊
+- `backend/services/quiz/generate_prompts.py`（110 行）— 自 `generate.py` 拆出
+
+### 7 個原「超硬上限」檔的逐案結果：1 拆分 + 6 豁免
+| 檔案 | 結論 | 依據 |
+|---|---|---|
+| `services/quiz/generate.py` 307 → **205** | **拆分** | prompt 與流程是獨立變更軸（Q2） |
+| `api/routes/quiz.py` 347 | 豁免 | 10 個 schema 為 7 端點共用，拆完改一端點要開 2 檔（Q3） |
+| `api/routes/comprehension.py` 255 | 豁免 | 三 type 共用 `_parse_type`，按 type 拆需 4 檔（Q3） |
+| `batch_generator.py` 267 | 豁免 | 單一變更軸，查詢 helper 僅此處使用（Q2/Q3） |
+| `comprehension/variation.py` 255 | 豁免 | 二軸但互相直呼，拆後仍 2 檔連動；超標 5 行（Q3） |
+| `services/quiz/feedback.py` 251 | 豁免 | 單一變更軸，**超標 1 行**（Q2） |
+| `concept-detail-panel.tsx` 279 | 豁免 | 已內拆 7 子元件且都只用一次（Q2/Q3） |
+
+結果：🚫 **0 個** / ⚠ **0 個** / 已舉證豁免 6 個。
+
+### 實測數據（本次決策依據，非引用）
+- jscpd 全專案重複率 **0.28%**（276 檔）——遠低於業界 3–5% 警戒值，
+  「vibe coding 必然產生大量重複」在本專案**不成立**
+- 但預設門檻漏掉 tech-debt C3：`--min-lines 5 --min-tokens 30` 才抓到 `_get_client`
+  跨 14 檔的 7 行 near-duplicate。**那 14 檔全部通過行數檢查**——已回填 C3
+
+### 驗證
+- backend **883 passed**｜`tsc --noEmit` 無錯｜`npm run lint` 僅既有 `<img>` warning｜
+  `doc_selfcheck.py` 🚫/⚠ 歸零、失效路徑 0
+
+---
+
 ## [2026-08-07] — 7-D1 前端測試基礎設施（`web/` 從零到有）
 
 ### Added

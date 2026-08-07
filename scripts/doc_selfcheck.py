@@ -19,7 +19,12 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-WARN_LINES, HARD_LINES = 150, 250
+# 2026-08-07 重新校準：判準是「AI 能否用檔名預測內容 + 能否一次讀完」，
+# 不是人類認知負荷，故用原始行數。原 150/250 的 150 產生 78 個警告＝警告失效。
+WARN_LINES, HARD_LINES = 250, 400
+# 檔案前幾行內出現此標記即視為已舉證豁免（理由須對應 code-health skill 的三問）
+EXEMPT_MARKER = "code-health: allow-large"
+EXEMPT_SCAN_LINES = 5
 SOURCE_GLOBS = ("backend/**/*.py", "web/**/*.ts", "web/**/*.tsx", "runner/**/*.py")
 # 路徑解析的搜尋根（文件常以各專案內的相對路徑書寫）
 PREFIXES = ("", "backend/", "web/", "runner/", "docs/")
@@ -45,22 +50,32 @@ def _git_files(include_untracked: bool = False) -> list[str]:
     return out.stdout.splitlines()
 
 
-def oversized() -> tuple[list[tuple[int, str]], list[tuple[int, str]]]:
-    """(超硬上限, 逼近提醒線)；測試檔不計（性質為條列案例非邏輯複雜度）。"""
+def oversized() -> tuple[list[tuple[int, str]], list[tuple[int, str]], list[tuple[int, str]]]:
+    """(超硬上限, 提醒線, 已舉證豁免)；測試檔不計（性質為條列案例非邏輯複雜度）。"""
     tracked = set(_git_files())
     hard: list[tuple[int, str]] = []
     warn: list[tuple[int, str]] = []
+    exempt: list[tuple[int, str]] = []
     for pattern in SOURCE_GLOBS:
         for path in ROOT.glob(pattern):
             rel = str(path.relative_to(ROOT))
             if rel not in tracked or "/tests/" in rel or "/node_modules/" in rel:
                 continue
-            n = len(path.read_text(errors="ignore").splitlines())
-            if n > HARD_LINES:
+            lines = path.read_text(errors="ignore").splitlines()
+            n = len(lines)
+            if n <= WARN_LINES:
+                continue
+            if any(EXEMPT_MARKER in line for line in lines[:EXEMPT_SCAN_LINES]):
+                exempt.append((n, rel))
+            elif n > HARD_LINES:
                 hard.append((n, rel))
-            elif n > WARN_LINES:
+            else:
                 warn.append((n, rel))
-    return sorted(hard, reverse=True), sorted(warn, reverse=True)
+    return (
+        sorted(hard, reverse=True),
+        sorted(warn, reverse=True),
+        sorted(exempt, reverse=True),
+    )
 
 
 def missing_paths() -> list[tuple[str, str]]:
@@ -123,7 +138,7 @@ def test_counts() -> dict[str, int]:
 
 
 def main() -> int:
-    hard, warn = oversized()
+    hard, warn, exempt = oversized()
     missing = missing_paths()
 
     print("## 文件自檢報告\n")
@@ -134,9 +149,14 @@ def main() -> int:
     print(f"\n### 🚫 超過硬上限 {HARD_LINES} 行（{len(hard)} 個）")
     for n, rel in hard:
         print(f"- `{rel}` {n}")
+    if not hard:
+        print("（無）")
 
-    print(f"\n### ⚠ 介於 {WARN_LINES}–{HARD_LINES} 行（{len(warn)} 個）")
+    print(f"\n### ⚠ 介於 {WARN_LINES}–{HARD_LINES} 行，待逐案判斷（{len(warn)} 個）")
     print(", ".join(f"`{rel}` {n}" for n, rel in warn) or "（無）")
+
+    print(f"\n### ✅ 已舉證豁免（{len(exempt)} 個）")
+    print(", ".join(f"`{rel}` {n}" for n, rel in exempt) or "（無）")
 
     print(f"\n### 文件指向不存在的檔案（{len(missing)} 筆）")
     for doc, path in missing:

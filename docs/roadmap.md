@@ -420,7 +420,8 @@
         `.claude/skills/` 與 `.agents/skills/`，兩端 validator 與 drift 測試通過
   - [x] C **Claude / Codex lifecycle adapters**（2026-08-08）：雙端 SessionStart check、source edit 後同步、禁止直改生成物皆已實機驗收
   - [x] D **GitHub CI drift check**（2026-08-08）：PR / push 必跑，`Agent config drift` 已設為 `main` required check
-  - [ ] E **跨平台 bootstrap**：macOS / Windows 首次手動安裝後可重建 agent 設定（不含 credential）
+  - [x] E **跨平台 bootstrap**（2026-08-08）：macOS 實機與隔離重建測試通過；Windows 原生命令已納入（不含 credential）
+  - [ ] E-WIN **Windows 實機驗收**：於 PowerShell 執行 bootstrap 並重開 Codex，待有 Windows 環境時確認 lifecycle hooks
 - 暫不處理（已記錄且有明確重評時機）：tech-debt B5 / C3 / C5 / D1 / D2 / E1–E3
 
 ### 7-E 使用者驗收（**7-C 與 7-D 全數完成後才開始**）

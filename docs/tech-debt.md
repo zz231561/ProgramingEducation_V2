@@ -65,7 +65,19 @@
 - [ ] 單檔持續成長，查閱成本高（內容本身沒錯，是時間序日誌）
   - **如何處理**：比照 `roadmap-archive.md`，把 2026-07 以前條目移到 `changelog-archive.md`
 
+**C6. 5-2b 的 chat 事件記錄已失效**（2026-08-07 由 ruff F401 意外揭露）
+- [ ] `api/routes/chat.py` 曾 import `CodingEventType` / `log_coding_event`，但**全專案無任何呼叫**
+  - 根因：5-2b 當初掛的是「`hint_level > 0` 記 `hint_request` 事件」，
+    7-C2a 把 `hint_level` 從前端移除後，該呼叫一併消失，只留下孤兒 import（本次已清）
+  - **影響**：`coding_events` 表現在只剩 `/code/execute` 的執行事件，
+    chat 端的 hint 行為訊號等於斷線 → **5-3 行為分析的資料來源少一類**
+  - **如何處理**：5-3 開工前決定要不要改記新的 chat 訊號（如 `explicit_help` 按鈕點擊，
+    那才是 7-C2a 之後的等價物）；不補就要調整 5-3a/5-3c 的指標定義
+
 **C5. 本機 `.venv` 與宣告的依賴脫鉤**
+- ✅ 2026-08-07 修掉反向的一例：`ruff` 在 `pyproject.toml` dev 依賴中宣告且已設定，
+  但**從未安裝進 venv** → lint 從來沒跑過。已安裝（`VIRTUAL_ENV=.venv uv pip install ruff`；
+  該 venv 由 uv 建立、不含 pip，不能用 `.venv/bin/pip`）
 - [ ] `backend/.venv` 裝有 scipy 81M + pandas 48M + scikit-learn 40M（共 169M），
       但三者**既不在 `pyproject.toml` 也不在 `requirements.lock`**
   - **影響**：生產映像不受影響（Docker 內照 lock 重裝）；純本機磁碟 + 「以為裝了就能用」的錯覺

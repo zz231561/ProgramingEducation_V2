@@ -1,9 +1,10 @@
 """Rate limit dependency 測試 — 固定窗口計數、fail-open、未登入 401。"""
 
+from unittest.mock import patch
+
 import pytest
 from fastapi import Depends, FastAPI
 from httpx import ASGITransport, AsyncClient
-from unittest.mock import patch
 
 from core.errors import AppError, app_error_handler
 from core.rate_limit import rate_limit

@@ -13,7 +13,6 @@ from tests.feedback_factories import (
     mock_openai_response,
 )
 
-
 # === 基本 LLM 呼叫 ===
 
 @pytest.mark.asyncio

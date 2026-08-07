@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import uuid
 from contextlib import contextmanager
+from datetime import UTC
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -38,7 +39,6 @@ from services.learning.content_generator import ConceptExplanation, UnitContent
 from services.learning.unit_content_promote import promote_concept
 from services.rag.retrieve import RetrievedChunk
 from tests.helpers import TestSessionFactory
-
 
 # === 測試用 builders ===
 
@@ -307,11 +307,11 @@ async def test_upsert_overwrites_existing_resets_review():
     cid = await _seed_concept(tag="cpp-50")
     # 先放一個 approved + reviewed
     async with TestSessionFactory() as db:
-        from datetime import datetime, timezone
+        from datetime import datetime
         existing = UnitContentStaging(
             concept_id=cid, content={"old": True},
             status=StagingStatus.APPROVED.value,
-            reviewed_at=datetime.now(timezone.utc),
+            reviewed_at=datetime.now(UTC),
         )
         db.add(existing)
         await db.commit()

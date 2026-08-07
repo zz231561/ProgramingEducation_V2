@@ -1,6 +1,6 @@
 """使用者 service — 首次登入自動建立 DB 記錄。"""
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
@@ -30,7 +30,7 @@ async def get_or_create_user(db: AsyncSession, token: TokenPayload) -> User:
             name=token.name,
             avatar_url=token.picture,
             google_id=token.google_id or token.sub,
-            last_login_at=datetime.now(timezone.utc),
+            last_login_at=datetime.now(UTC),
         )
         db.add(user)
         try:
@@ -41,11 +41,11 @@ async def get_or_create_user(db: AsyncSession, token: TokenPayload) -> User:
         await db.refresh(user)
         return user
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     last = user.last_login_at
     if last is not None and last.tzinfo is None:
         # SQLite 測試環境回傳 naive datetime — 比較前補上 UTC
-        last = last.replace(tzinfo=timezone.utc)
+        last = last.replace(tzinfo=UTC)
     if last is None or now - last >= _LOGIN_UPDATE_INTERVAL:
         user.name = token.name
         user.avatar_url = token.picture

@@ -20,7 +20,6 @@ from services.mastery import (
 )
 from tests.helpers import TestSessionFactory
 
-
 # === BKT 數學 ===
 
 def test_bkt_correct_increases_confidence():
@@ -274,7 +273,7 @@ async def test_fanout_updates_only_exposed_group_members():
 async def test_fanout_direct_tag_match_takes_priority():
     """tag 直接命中 concept 時不走 parent group fan-out。"""
     ids = await _seed_video_concepts_with_parent(
-        _LOOP_GROUP + [("control-flow", 99, None)]  # 同名獨立 concept
+        [*_LOOP_GROUP, ("control-flow", 99, None)]  # 同名獨立 concept
     )
     user_id = uuid.uuid4()
 

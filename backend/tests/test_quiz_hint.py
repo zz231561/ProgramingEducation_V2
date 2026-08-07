@@ -12,7 +12,6 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from httpx import AsyncClient
-from sqlalchemy import select
 
 from models.quiz import Question
 from services.quiz.hint import _build_prompt, generate_hint

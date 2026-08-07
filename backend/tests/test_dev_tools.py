@@ -1,6 +1,5 @@
 """開發者工具端點測試（DEV-3/5/6）— 分類重置、熟練度覆寫、身分切換。"""
 
-import uuid
 
 import pytest
 from httpx import AsyncClient

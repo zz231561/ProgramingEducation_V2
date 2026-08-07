@@ -6,7 +6,6 @@ from pydantic import BaseModel
 from api.deps import get_current_db_user
 from models.user import User
 
-
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 

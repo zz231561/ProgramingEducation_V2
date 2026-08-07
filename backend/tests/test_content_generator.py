@@ -15,6 +15,7 @@ from contextlib import contextmanager
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from pydantic import ValidationError
 
 from core.errors import AppError
 from models.concept import Concept
@@ -130,18 +131,16 @@ async def test_concept_explanation_needs_more_source():
 
 @pytest.mark.asyncio
 async def test_llm_unavailable_raises_503():
-    with patched_llm(RuntimeError("network error")):
-        with pytest.raises(AppError) as exc:
-            await generate_concept_explanation(_fake_concept(), _fake_chunks())
+    with patched_llm(RuntimeError("network error")), pytest.raises(AppError) as exc:
+        await generate_concept_explanation(_fake_concept(), _fake_chunks())
     assert exc.value.status_code == 503
     assert exc.value.error == "LLM_UNAVAILABLE"
 
 
 @pytest.mark.asyncio
 async def test_llm_returns_invalid_json_raises_502():
-    with patched_llm("這不是 JSON"):
-        with pytest.raises(AppError) as exc:
-            await generate_concept_explanation(_fake_concept(), _fake_chunks())
+    with patched_llm("這不是 JSON"), pytest.raises(AppError) as exc:
+        await generate_concept_explanation(_fake_concept(), _fake_chunks())
     assert exc.value.status_code == 502
     assert exc.value.error == "LLM_PARSE_ERROR"
 
@@ -155,9 +154,8 @@ async def test_llm_returns_wrong_schema_raises_502():
         "markdown": "x",
         "citations": [{"timestamp": "00:01", "text_excerpt": "x" * 121}],
     }
-    with patched_llm(json.dumps(bad_payload)):
-        with pytest.raises(AppError) as exc:
-            await generate_concept_explanation(_fake_concept(), _fake_chunks())
+    with patched_llm(json.dumps(bad_payload)), pytest.raises(AppError) as exc:
+        await generate_concept_explanation(_fake_concept(), _fake_chunks())
     assert exc.value.error == "LLM_PARSE_ERROR"
 
 
@@ -220,5 +218,5 @@ async def test_generate_unit_content_single_section():
 def test_citation_text_excerpt_max_length():
     """Citation 的 excerpt 應限制 ≤120 字以避免吃太多 tokens。"""
     long_text = "x" * 121
-    with pytest.raises(Exception):  # ValidationError
+    with pytest.raises(ValidationError):
         Citation(timestamp="00:01", text_excerpt=long_text)

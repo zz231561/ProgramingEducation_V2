@@ -17,8 +17,8 @@ from pydantic import BaseModel, Field, ValidationError, field_validator
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.config import settings
-from core.llm_params import chat_model_kwargs
 from core.errors import AppError
+from core.llm_params import chat_model_kwargs
 from models.concept import Concept
 from models.quiz import Question, QuestionSource, QuestionType
 from services.quiz.generate_prompts import build_system_prompt, build_user_prompt

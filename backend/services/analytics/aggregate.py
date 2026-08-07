@@ -57,10 +57,9 @@ def _compute_fix_durations(
         if event_type in _ERROR_TYPES:
             if pending_error_ts is None:
                 pending_error_ts = created_at
-        elif event_type == CodingEventType.SUCCESS.value:
-            if pending_error_ts is not None:
-                durations.append((created_at - pending_error_ts).total_seconds())
-                pending_error_ts = None
+        elif event_type == CodingEventType.SUCCESS.value and pending_error_ts is not None:
+            durations.append((created_at - pending_error_ts).total_seconds())
+            pending_error_ts = None
     return durations
 
 
@@ -85,7 +84,7 @@ async def _dialogue_act_distribution(
     if until is not None:
         stmt = stmt.where(ChatMessage.created_at <= until)
     rows = (await db.execute(stmt)).all()
-    return {act: count for act, count in rows}
+    return dict(rows)
 
 
 async def aggregate_user_behavior(

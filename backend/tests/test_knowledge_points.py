@@ -86,15 +86,13 @@ async def test_strips_blank_points():
 
 @pytest.mark.asyncio
 async def test_llm_failure_raises_503():
-    with patched_llm(RuntimeError("network")):
-        with pytest.raises(AppError) as exc:
-            await extract_knowledge_points(_concept(), _chunks())
+    with patched_llm(RuntimeError("network")), pytest.raises(AppError) as exc:
+        await extract_knowledge_points(_concept(), _chunks())
     assert exc.value.status_code == 503
 
 
 @pytest.mark.asyncio
 async def test_invalid_json_raises_502():
-    with patched_llm("not json"):
-        with pytest.raises(AppError) as exc:
-            await extract_knowledge_points(_concept(), _chunks())
+    with patched_llm("not json"), pytest.raises(AppError) as exc:
+        await extract_knowledge_points(_concept(), _chunks())
     assert exc.value.status_code == 502

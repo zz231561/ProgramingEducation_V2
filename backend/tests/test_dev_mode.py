@@ -1,9 +1,10 @@
 """開發者模式 gating 測試（DEV-1）— 白名單判定、status 端點、rate limit 豁免。"""
 
+from unittest.mock import patch
+
 import pytest
 from fastapi import Depends, FastAPI
 from httpx import ASGITransport, AsyncClient
-from unittest.mock import patch
 
 from core.config import settings
 from core.dev_mode import is_dev_email

@@ -5,15 +5,15 @@ import uuid
 from datetime import datetime
 
 from sqlalchemy import (
+    JSON,
     Boolean,
     CheckConstraint,
-    String,
-    Text,
-    Enum,
     DateTime,
+    Enum,
     ForeignKey,
     Index,
-    JSON,
+    String,
+    Text,
     false,
     func,
 )

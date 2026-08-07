@@ -44,7 +44,7 @@ def fetch_playlist(url: str) -> list[dict]:
         "%(id)s\t%(title)s\t%(duration)s",
         url,
     ]
-    print(f"  → yt-dlp fetching (this may take 1-3 min for ~60 videos)...")
+    print("  → yt-dlp fetching (this may take 1-3 min for ~60 videos)...")
     result = subprocess.run(cmd, capture_output=True, text=True)
     if result.returncode != 0 and not result.stdout:
         print(result.stderr, file=sys.stderr)

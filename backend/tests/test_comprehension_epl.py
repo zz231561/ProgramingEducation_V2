@@ -192,7 +192,7 @@ async def test_grade_passed_when_avg_above_threshold():
     assert result.passed is True
     assert result.conceptual_correctness == 0.8
     assert result.feedback == "概念清楚"
-    assert (0.8 + 0.7 + 0.6) / 3 >= EPL_PASS_THRESHOLD
+    assert EPL_PASS_THRESHOLD <= (0.8 + 0.7 + 0.6) / 3
 
 
 @pytest.mark.asyncio

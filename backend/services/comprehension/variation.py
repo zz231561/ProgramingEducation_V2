@@ -27,8 +27,8 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.config import settings
-from core.llm_params import chat_model_kwargs
 from core.errors import AppError
+from core.llm_params import chat_model_kwargs
 from models.quiz import ComprehensionType, Question, QuestionType, StudentAnswer
 from services.comprehension.crud import _get_owned_answer
 from services.comprehension.mastery_hook import apply_comprehension_mastery

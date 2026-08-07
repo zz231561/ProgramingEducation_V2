@@ -16,7 +16,6 @@ import uuid
 import pytest
 from sqlalchemy import select
 
-from models.concept import Concept
 from models.quiz import Question, QuestionSource, StudentAnswer
 from models.user import User
 from services.quiz.bank import (

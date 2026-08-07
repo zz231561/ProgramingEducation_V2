@@ -12,12 +12,11 @@
 
 import uuid
 
-import pytest
 from httpx import AsyncClient
 from sqlalchemy import select
 
 from models.concept import Concept, ConceptEdge, EdgeType
-from models.learning import LearningPath, LearningUnit
+from models.learning import LearningPath
 from models.user import User
 from tests.helpers import TestSessionFactory, encrypt_test_token
 
@@ -181,7 +180,7 @@ async def test_list_paths_with_progress_summary(client: AsyncClient):
 
 
 async def test_get_path_returns_units_in_order(client: AsyncClient):
-    user_id = await _ensure_user(OWNER_PAYLOAD, client)
+    await _ensure_user(OWNER_PAYLOAD, client)
     ids = await _seed_concepts([
         {
             "tag": "first",

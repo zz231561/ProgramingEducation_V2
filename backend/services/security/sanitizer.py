@@ -26,7 +26,11 @@ _INJECTION_PATTERNS: list[tuple[re.Pattern, str]] = [
      "嘗試忽略規則"),
 
     # 英文 — 資訊洩漏
-    (re.compile(r"(reveal|show|display|print|output)\s+(me\s+)?(your|the)?\s*(system\s+)?(prompt|instructions?|rules?)", re.I),
+    (re.compile(
+        r"(reveal|show|display|print|output)\s+(me\s+)?(your|the)?\s*"
+        r"(system\s+)?(prompt|instructions?|rules?)",
+        re.I,
+     ),
      "嘗試取得系統 prompt"),
     (re.compile(r"what\s+(are|is)\s+your\s+(system\s+)?(prompt|instructions?|rules?)", re.I),
      "嘗試查詢系統指令"),

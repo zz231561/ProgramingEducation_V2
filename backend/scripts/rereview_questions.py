@@ -25,8 +25,8 @@ from sqlalchemy import delete, select
 from core.database import async_session
 from core.errors import AppError
 from models.quiz import Question, StudentAnswer
-from services.quiz.validate import validate_question
 from scripts._db_guard import require_local_db
+from services.quiz.validate import validate_question
 
 
 async def _run(dry_run: bool, only_source: str | None, only_type: str | None) -> int:

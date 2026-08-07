@@ -65,7 +65,7 @@ def wrap_json(row: tuple, indexes: set[int]) -> tuple:
 
 
 def count_of(cur, table: str) -> int:
-    cur.execute(f'select count(*) from "{table}"')  # noqa: S608 — 表名來自白名單常數
+    cur.execute(f'select count(*) from "{table}"')
     return cur.fetchone()[0]
 
 
@@ -78,7 +78,7 @@ def copy_direct(src_cur, dst_cur, table: str, dry_run: bool) -> int:
         raise SystemExit(f"[中止] 生產庫 {table} 缺少欄位：{sorted(missing)}（migration 版本不一致？）")
 
     quoted = ", ".join(f'"{c}"' for c in src_cols)
-    src_cur.execute(f'select {quoted} from "{table}"')  # noqa: S608
+    src_cur.execute(f'select {quoted} from "{table}"')
     rows = src_cur.fetchall()
     if dry_run or not rows:
         return len(rows)
@@ -86,7 +86,7 @@ def copy_direct(src_cur, dst_cur, table: str, dry_run: bool) -> int:
     jidx = json_indexes(src_cur, table, src_cols)
     placeholders = ", ".join(["%s"] * len(src_cols))
     dst_cur.executemany(
-        f'insert into "{table}" ({quoted}) values ({placeholders}) '  # noqa: S608
+        f'insert into "{table}" ({quoted}) values ({placeholders}) '
         "on conflict (id) do nothing",
         [wrap_json(r, jidx) for r in rows],
     )
@@ -122,7 +122,7 @@ def copy_staging_mapped(src_cur, dst_cur, dry_run: bool) -> tuple[int, list[str]
     cols = columns_of(src_cur, MAPPED_TABLE)
     quoted = ", ".join(f's."{c}"' for c in cols)
     src_cur.execute(
-        f"select {quoted}, c.tag from {MAPPED_TABLE} s "  # noqa: S608
+        f"select {quoted}, c.tag from {MAPPED_TABLE} s "
         "join concepts c on c.id = s.concept_id where s.status = 'approved'"
     )
     rows = src_cur.fetchall()
@@ -147,7 +147,7 @@ def copy_staging_mapped(src_cur, dst_cur, dry_run: bool) -> tuple[int, list[str]
         col_sql = ", ".join(f'"{c}"' for c in cols)
         placeholders = ", ".join(["%s"] * len(cols))
         dst_cur.executemany(
-            f"insert into {MAPPED_TABLE} ({col_sql}) values ({placeholders}) "  # noqa: S608
+            f"insert into {MAPPED_TABLE} ({col_sql}) values ({placeholders}) "
             "on conflict (id) do nothing",
             [wrap_json(r, jidx) for r in payload],
         )
@@ -197,7 +197,7 @@ def main() -> None:
     src_rag, dst_rag = count_of(src_cur, RAG_TABLE), count_of(dst_cur, RAG_TABLE)
     print(f"{RAG_TABLE}：本機 {src_rag} / 生產 {dst_rag}（pg_dump 搬，不由本 script 處理）")
     if dst_rag != src_rag:
-        print(f"  [警告] 筆數不一致——pg_dump 步驟可能沒跑完")
+        print("  [警告] 筆數不一致——pg_dump 步驟可能沒跑完")
 
     print(f"\n{'表':24} {'本機':>8} {'生產(前)':>10} {'將寫入':>8}")
     print("-" * 54)

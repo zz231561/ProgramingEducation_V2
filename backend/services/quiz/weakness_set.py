@@ -123,7 +123,7 @@ async def build_weakness_set(
         *(_bounded(plan) for _, plan in gen_slots),
         return_exceptions=True,
     )
-    for (idx, _plan), result in zip(gen_slots, gen_results):
+    for (idx, _plan), result in zip(gen_slots, gen_results, strict=False):
         if isinstance(result, UUID):
             ordered_ids[idx] = result
         elif isinstance(result, Exception):

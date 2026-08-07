@@ -17,15 +17,16 @@ idempotency：upgrade 為 additive；downgrade 精確 DELETE 這 3 條邊。
 """
 
 import uuid
-from typing import Sequence, Union
+from collections.abc import Sequence
 
 import sqlalchemy as sa
+
 from alembic import op
 
 revision: str = "h4c5d6e7f8a9"
-down_revision: Union[str, Sequence[str], None] = "g3b4c5d6e7f8"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | Sequence[str] | None = "g3b4c5d6e7f8"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 # (source_tag, target_tag) — 1→2→3→4

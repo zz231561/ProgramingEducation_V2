@@ -19,8 +19,8 @@ from services.chat_signals import (
     stabilize_error_type,
     turns_from_history,
 )
-from services.edf.evidence import analyze_evidence
 from services.edf.decision import decide_strategy
+from services.edf.evidence import analyze_evidence
 from services.edf.feedback import generate_feedback
 from services.edf.kgraph_context import fetch_kgraph_block_safe
 from services.edf.reflection_context import (
@@ -28,7 +28,7 @@ from services.edf.reflection_context import (
     format_reflection_for_feedback,
 )
 from services.mastery import BKT_CHAT_PARAMS, update_mastery
-from services.security.sanitizer import sanitize_input, wrap_student_input, wrap_student_code
+from services.security.sanitizer import sanitize_input
 
 # EDF 管線階段（7-U6）——值同時是 SSE 事件內容與前端文案的 key，改名需同步前端
 STAGE_ANALYZING = "analyzing"   # Evidence 層：分析程式碼與提問

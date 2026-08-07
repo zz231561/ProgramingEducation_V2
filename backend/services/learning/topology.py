@@ -34,7 +34,7 @@ def topological_sort_with_priority(
     Returns:
         排序後節點列表（前置節點必在依賴節點之前；同層優先排弱項）
     """
-    in_degree: dict[T, int] = {n: 0 for n in nodes}
+    in_degree: dict[T, int] = dict.fromkeys(nodes, 0)
     adj: dict[T, list[T]] = {n: [] for n in nodes}
     node_set = set(nodes)
 

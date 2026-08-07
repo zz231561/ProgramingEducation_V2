@@ -7,14 +7,14 @@ Revision ID: k7f8a9b0c1d2
 Revises: j6e7f8a9b0c1
 """
 
-from typing import Sequence, Union
+from collections.abc import Sequence
 
 from alembic import op
 
 revision: str = "k7f8a9b0c1d2"
-down_revision: Union[str, Sequence[str], None] = "j6e7f8a9b0c1"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | Sequence[str] | None = "j6e7f8a9b0c1"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 _CONSTRAINT = "ck_questions_source_enum"
 

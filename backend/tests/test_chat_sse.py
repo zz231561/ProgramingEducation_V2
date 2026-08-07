@@ -120,6 +120,7 @@ async def test_hint_request_logged_only_when_need_rises(client: AsyncClient):
     （base 已經是 2）就被記成求助，教師端的 hint 分布會全面灌水。
     """
     from sqlalchemy import select
+
     from models.coding_event import CodingEvent, CodingEventType
     from services.edf.models import ComprehensionSignal
     from tests.helpers import TestSessionFactory
@@ -165,6 +166,7 @@ async def test_explicit_help_button_raises_reveal_level(client: AsyncClient):
     同一句話、同一份證據，差別只在按鈕——沒按時 need 0，按了 +2。
     """
     from sqlalchemy import select
+
     from models.chat import ChatMessage
     from models.coding_event import CodingEvent, CodingEventType
     from tests.helpers import TestSessionFactory

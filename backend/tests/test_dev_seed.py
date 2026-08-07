@@ -2,10 +2,8 @@
 
 import uuid
 
-import pytest
 from sqlalchemy import func, select
 
-from models.chat import ChatMessage, ChatSession
 from models.classroom import ClassMember, Classroom
 from models.coding_event import CodingEvent
 from models.concept import Concept

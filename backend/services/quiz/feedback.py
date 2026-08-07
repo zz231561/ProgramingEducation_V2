@@ -23,8 +23,8 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.config import settings
-from core.llm_params import chat_model_kwargs
 from core.errors import AppError
+from core.llm_params import chat_model_kwargs
 from models.concept import Concept
 from models.learning import LearningPath, LearningUnit, LearningUnitStatus
 from models.mastery import StudentMastery

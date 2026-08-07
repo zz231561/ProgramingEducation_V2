@@ -11,11 +11,10 @@
   完整字幕 chunks（按時間順序），不做語意排序
 """
 
-from sqlalchemy import text as sa_text
-
 from llama_index.core import VectorStoreIndex
 from llama_index.embeddings.openai import OpenAIEmbedding
 from pydantic import BaseModel, Field
+from sqlalchemy import text as sa_text
 
 from core.config import settings
 from core.database import async_session
@@ -85,7 +84,7 @@ async def get_chunks_by_video_order(video_order: int) -> list[RetrievedChunk]:
                 FROM {actual_table}
                 WHERE (metadata_->>'video_order')::int = :order
                 ORDER BY (metadata_->>'start_time_seconds')::float
-                """  # noqa: S608
+                """
             ).bindparams(order=video_order)
         )
         rows = result.all()

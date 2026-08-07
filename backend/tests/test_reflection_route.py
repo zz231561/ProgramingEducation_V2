@@ -14,7 +14,6 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 from httpx import AsyncClient
-from sqlalchemy import select
 
 from models.quiz import Question
 from services.reflection.evaluate import ReflectionEvaluation

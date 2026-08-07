@@ -3,7 +3,6 @@
 from services.edf.prompt_blocks import build_system_prompt
 from tests.feedback_factories import make_chunk, make_evidence, make_strategy
 
-
 # === 基本 prompt 結構 ===
 
 def test_system_prompt_contains_preamble():

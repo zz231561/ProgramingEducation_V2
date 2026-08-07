@@ -1,16 +1,13 @@
 """Role-based 權限測試 — require_roles 依賴工廠。"""
 
-import pytest
+from fastapi import APIRouter, Depends
 from httpx import AsyncClient
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi import APIRouter, Depends
 
-from models.user import User, UserRole
 from api.deps import require_roles
 from main import app
-from tests.helpers import encrypt_test_token, TestSessionFactory
-
+from models.user import User, UserRole
+from tests.helpers import TestSessionFactory, encrypt_test_token
 
 # === 註冊測試用路由（僅執行一次） ===
 

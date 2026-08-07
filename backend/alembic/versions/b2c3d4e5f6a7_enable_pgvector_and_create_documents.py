@@ -9,16 +9,16 @@ Create Date: 2026-04-29 00:00:00.000000
 - 建立 documents 業務表：教材檔案 metadata（檔名、來源、上傳者、版本）
 - chunks 與向量資料由 LlamaIndex IngestionPipeline 於 2-1b 自動建表，本 migration 不處理
 """
-from typing import Sequence, Union
+from collections.abc import Sequence
 
-from alembic import op
 import sqlalchemy as sa
 
+from alembic import op
 
 revision: str = "b2c3d4e5f6a7"
-down_revision: Union[str, Sequence[str], None] = "a1b2c3d4e5f6"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | Sequence[str] | None = "a1b2c3d4e5f6"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:

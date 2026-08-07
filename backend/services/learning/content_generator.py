@@ -21,8 +21,8 @@ from openai import AsyncOpenAI
 from pydantic import BaseModel, Field, ValidationError
 
 from core.config import settings
-from core.llm_params import chat_model_kwargs
 from core.errors import AppError
+from core.llm_params import chat_model_kwargs
 from models.concept import Concept
 from services.rag.retrieve import RetrievedChunk
 

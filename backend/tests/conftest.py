@@ -1,6 +1,7 @@
 """共用測試 fixtures — DB 初始化、清理、app dependency override。"""
 
 import asyncio
+import contextlib
 import os
 from collections.abc import AsyncGenerator
 
@@ -13,8 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.config import settings
 from core.database import Base, get_db
 from main import app
-from tests.helpers import test_engine, TestSessionFactory, DB_PATH, TEST_SECRET
-
+from tests.helpers import DB_PATH, TEST_SECRET, TestSessionFactory, test_engine
 
 # === 覆蓋 app DB 依賴 ===
 
@@ -40,10 +40,8 @@ def pytest_configure(config):
 
 def pytest_unconfigure(config):
     """pytest 結束時刪除暫存 DB 檔。"""
-    try:
+    with contextlib.suppress(OSError):
         os.unlink(DB_PATH)
-    except OSError:
-        pass
 
 
 @pytest_asyncio.fixture(autouse=True)

@@ -9,6 +9,7 @@
 """
 
 import uuid
+from datetime import UTC
 
 import pytest
 from httpx import AsyncClient
@@ -222,7 +223,7 @@ async def test_mastery_route_returns_user_specific_rows(client: AsyncClient):
 
 async def test_mastery_route_applies_decay_and_review_flag(client: AsyncClient):
     """K6b/K6c：久未練習的 row 回傳衰減後 confidence + 複習提示旗標。"""
-    from datetime import datetime, timedelta, timezone
+    from datetime import datetime, timedelta
 
     ids = await _seed_graph()
     token = encrypt_test_token(STUDENT_PAYLOAD)
@@ -241,7 +242,7 @@ async def test_mastery_route_applies_decay_and_review_flag(client: AsyncClient):
                 success_count=0,  # 半衰期 = 14 天基準
                 error_count=3,
                 bloom_level=3,
-                last_practiced_at=datetime.now(timezone.utc) - timedelta(days=28),
+                last_practiced_at=datetime.now(UTC) - timedelta(days=28),
             )
         )
         await db.commit()
@@ -278,7 +279,7 @@ async def test_concept_detail_route_returns_directed_neighbors(client: AsyncClie
 
 async def test_mastery_route_includes_last_practiced_at(client: AsyncClient):
     """K2b：mastery 回應含 last_practiced_at（有值 ISO 字串 / 無值 null）。"""
-    from datetime import datetime, timezone
+    from datetime import datetime
 
     ids = await _seed_graph()
     token = encrypt_test_token(STUDENT_PAYLOAD)
@@ -291,7 +292,7 @@ async def test_mastery_route_includes_last_practiced_at(client: AsyncClient):
             StudentMastery(
                 user_id=user.id, concept_id=ids["syntax-basic"],
                 confidence=0.5, exposure_count=1, success_count=1, error_count=0,
-                last_practiced_at=datetime(2026, 7, 4, 12, 0, tzinfo=timezone.utc),
+                last_practiced_at=datetime(2026, 7, 4, 12, 0, tzinfo=UTC),
             ),
             StudentMastery(
                 user_id=user.id, concept_id=ids["control-flow"],

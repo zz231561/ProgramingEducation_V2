@@ -1,11 +1,10 @@
 """學生 profile + 加入班級 + 教師名冊 API 測試（5-1b-3）。"""
 
-import pytest
 from httpx import AsyncClient
 from sqlalchemy import select
 
 from models.user import User, UserRole
-from tests.helpers import encrypt_test_token, TestSessionFactory
+from tests.helpers import TestSessionFactory, encrypt_test_token
 
 TEACHER = {
     "sub": "t-1",

@@ -13,15 +13,16 @@ Create Date: 2026-07-16 00:00:00.000000
   防單筆灌爆；每人命名檔案數量上限由 service 層把關（DB 不易表達）。
 """
 
-from typing import Sequence, Union
+from collections.abc import Sequence
 
 import sqlalchemy as sa
+
 from alembic import op
 
 revision: str = "r4a5b6c7d8e9"
-down_revision: Union[str, Sequence[str], None] = "q3f4a5b6c7d8"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | Sequence[str] | None = "q3f4a5b6c7d8"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 _MAX_CODE_CHARS = 100_000
 

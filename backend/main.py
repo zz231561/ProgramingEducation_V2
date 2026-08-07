@@ -1,25 +1,18 @@
 """FastAPI 應用程式進入點。"""
 
 import time
-from contextlib import asynccontextmanager
 from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 
-from core.config import settings
-from core.database import engine
-from core.redis import init_redis, close_redis
-from core.errors import (
-    AppError,
-    app_error_handler,
-    unhandled_error_handler,
-    validation_error_handler,
-)
 from api.routes.assignment_submissions import router as assignment_submissions_router
 from api.routes.assignments import (
     attachments_router,
+)
+from api.routes.assignments import (
     router as assignments_router,
 )
 from api.routes.auth import router as auth_router
@@ -46,6 +39,15 @@ from api.routes.quiz_questions import router as quiz_questions_router
 from api.routes.reflection import router as reflection_router
 from api.routes.terminal import router as terminal_router
 from api.routes.users import router as users_router
+from core.config import settings
+from core.database import engine
+from core.errors import (
+    AppError,
+    app_error_handler,
+    unhandled_error_handler,
+    validation_error_handler,
+)
+from core.redis import close_redis, init_redis
 
 
 @asynccontextmanager

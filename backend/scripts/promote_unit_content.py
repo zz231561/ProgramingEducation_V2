@@ -15,15 +15,15 @@ from __future__ import annotations
 import argparse
 import asyncio
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlalchemy import select
 
 from core.database import async_session
 from models.concept import Concept
 from models.unit_content_staging import StagingStatus, UnitContentStaging
-from services.learning.unit_content_promote import promote_concept
 from scripts._db_guard import confirm_remote_db
+from services.learning.unit_content_promote import promote_concept
 
 _REMOVED_SECTIONS = ("summary", "code_examples")
 
@@ -48,7 +48,7 @@ async def _run(only: int | None) -> int:
             }
             staging.content = content
             staging.status = StagingStatus.APPROVED.value
-            staging.reviewed_at = datetime.now(timezone.utc)
+            staging.reviewed_at = datetime.now(UTC)
             await db.commit()
 
             count = await promote_concept(db, staging.concept_id)

@@ -136,7 +136,7 @@ def main() -> int:
     print(f"✅ Wrote {len(transcript_files)} corrected transcripts to {CORRECTED_DIR}")
     print(f"   Files with at least 1 replacement: {files_with_changes} / {len(transcript_files)}")
     if total_counter:
-        print(f"\n   Replacements summary (top 10):")
+        print("\n   Replacements summary (top 10):")
         for pattern, count in total_counter.most_common(10):
             print(f"     {pattern!r:40s} × {count}")
     return 0

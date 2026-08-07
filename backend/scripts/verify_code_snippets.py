@@ -24,7 +24,7 @@ import asyncio
 import hashlib
 import json
 import sys
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 from pathlib import Path
 
 from sqlalchemy import text as sa_text
@@ -69,7 +69,7 @@ async def static_scan() -> list[str]:
             ):
                 result = await db.execute(
                     sa_text(
-                        f"select count(*) from {table} where {column} like :pat"  # noqa: S608
+                        f"select count(*) from {table} where {column} like :pat"
                     ).bindparams(pat=f"%{bad}%")
                 )
                 n = result.scalar() or 0
@@ -119,11 +119,11 @@ async def compile_check(
             status = result.status_description
             detail = (result.compile_output or "").strip().splitlines()
             problem = status if result.compile_output else ""
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:
             status, problem, detail = "EXCEPTION", repr(e), []
         records[qid] = {
             "hash": hashlib.sha256(code.encode()).hexdigest()[:12],
-            "checked_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+            "checked_at": datetime.now(UTC).isoformat(timespec="seconds"),
             "status": status,
         }
         if problem:

@@ -374,6 +374,9 @@
       新增 jscpd 重複偵測；工作流寫成 `.claude/skills/code-health/SKILL.md`。
       7 檔逐案判斷結果＝**1 拆分**（`generate.py` → `generate_prompts.py`）＋ **6 舉證豁免**；
       🚫 與 ⚠ 雙雙歸零。下一個機械命中項＝tech-debt C3（`_get_client` 跨 14 檔）
+- [x] 7-D2b **後端 lint 首次落地** ✅ 2026-08-07：ruff 早已宣告與設定卻從未安裝（lint 零執行）；
+      擴充 rule set 並校準 6900+ 筆中文全形／FastAPI `Depends` 誤判，437 findings → **0**；
+      意外揭露 5-2b chat 事件記錄失效（→ tech-debt C6）
 - [ ] 7-D3 **`changelog.md` 拆檔**（tech-debt C4）：2026-07 以前移至 `changelog-archive.md`
 - [ ] 7-D4 **7-R R6 收尾**：教材健檢解除每日上限（`verify_code_snippets.py` `DAILY_BUDGET = 20`，
       Judge0 額度限制已隨自建 runner 消失）+ 30 並行壓測驗證 server-plan 容量假設
@@ -382,6 +385,9 @@
       四份最久沒動的逐份核對（`doc_selfcheck.py` 只驗機械事實，語意描述仍需人工讀）
 - [ ] 7-D6 **全站 429 / 5xx toast**（tech-debt B4 剩餘）：引入 sonner，把 quiz / learn / 教師端
       各自為政的 catch 收斂成統一攔截（chat 路徑已於 7-C2b 單獨修好）
+- [ ] 7-D7 **無意義／冗餘註解清查**（2026-08-07 使用者提出，獨立一輪執行）：
+      linter 做不到——判斷「這行註解有沒有講程式碼本身沒講的事」屬語意判斷。
+      掛進 `code-health` skill 當一個階段；會動到大量檔案的註解，值得單獨審
 - 暫不處理（已記錄且有明確重評時機）：tech-debt B5 / C3 / C5 / D1 / D2 / E1–E3
 
 ### 7-E 使用者驗收（**7-C 與 7-D 全數完成後才開始**）

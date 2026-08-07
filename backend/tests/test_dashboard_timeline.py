@@ -10,9 +10,8 @@
 """
 
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
-import pytest
 from httpx import AsyncClient
 from sqlalchemy import select
 
@@ -64,7 +63,7 @@ async def test_timeline_empty(client: AsyncClient):
 
 async def test_timeline_includes_three_event_types(client: AsyncClient):
     user_id = await _ensure_user(client)
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
 
     async with TestSessionFactory() as db:
         # 1. quiz
@@ -204,7 +203,7 @@ async def test_timeline_respects_limit(client: AsyncClient):
                 user_id=user_id, question_id=q.id,
                 answer={"selected": 0}, is_correct=True,
                 time_spent_seconds=5, hint_level_used=0, feedback="",
-                answered_at=datetime.now(timezone.utc) - timedelta(minutes=i),
+                answered_at=datetime.now(UTC) - timedelta(minutes=i),
             ))
         await db.commit()
 

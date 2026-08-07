@@ -4,11 +4,10 @@ import uuid
 from unittest.mock import AsyncMock, patch
 
 import pytest
-from sqlalchemy import select
 
 from core.errors import AppError
 from models.quiz import Question
-from models.reflection import Reflection, ReflectionSourceType
+from models.reflection import ReflectionSourceType
 from services.reflection import (
     ReflectionUpdate,
     create_reflection,

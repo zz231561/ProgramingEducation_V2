@@ -173,12 +173,11 @@ async def test_multiple_failures_listed_in_issues():
 @pytest.mark.asyncio
 async def test_llm_exception_raises_502_llm_error():
     q = _make_question()
-    with patched_validator(Exception("openai timeout")):
-        with pytest.raises(AppError) as exc_info:
-            async with TestSessionFactory() as db:
-                db.add(q)
-                await db.flush()
-                await validate_question(db, q)
+    with patched_validator(Exception("openai timeout")), pytest.raises(AppError) as exc_info:
+        async with TestSessionFactory() as db:
+            db.add(q)
+            await db.flush()
+            await validate_question(db, q)
     assert exc_info.value.status_code == 502
     assert exc_info.value.error == "LLM_ERROR"
 
@@ -186,12 +185,11 @@ async def test_llm_exception_raises_502_llm_error():
 @pytest.mark.asyncio
 async def test_non_json_response_raises_parse_error():
     q = _make_question()
-    with patched_validator("不是 JSON"):
-        with pytest.raises(AppError) as exc_info:
-            async with TestSessionFactory() as db:
-                db.add(q)
-                await db.flush()
-                await validate_question(db, q)
+    with patched_validator("不是 JSON"), pytest.raises(AppError) as exc_info:
+        async with TestSessionFactory() as db:
+            db.add(q)
+            await db.flush()
+            await validate_question(db, q)
     assert exc_info.value.error == "LLM_PARSE_ERROR"
 
 
@@ -199,10 +197,9 @@ async def test_non_json_response_raises_parse_error():
 async def test_missing_field_raises_validation_error():
     q = _make_question()
     incomplete = json.dumps({"answer_correct": True})  # 缺 concept_fits / bloom_appropriate
-    with patched_validator(incomplete):
-        with pytest.raises(AppError) as exc_info:
-            async with TestSessionFactory() as db:
-                db.add(q)
-                await db.flush()
-                await validate_question(db, q)
+    with patched_validator(incomplete), pytest.raises(AppError) as exc_info:
+        async with TestSessionFactory() as db:
+            db.add(q)
+            await db.flush()
+            await validate_question(db, q)
     assert exc_info.value.error == "LLM_VALIDATION_ERROR"

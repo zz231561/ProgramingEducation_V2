@@ -30,14 +30,14 @@ import asyncio
 import json
 import sys
 from pathlib import Path
-from uuid import UUID, uuid4
+from uuid import uuid4
 
 from llama_index.core import Document
 from sqlalchemy import text as sa_text
 
 from core.database import async_session
-from services.rag.pipeline import VECTOR_TABLE_NAME, get_ingestion_pipeline
 from scripts._db_guard import require_local_db
+from services.rag.pipeline import VECTOR_TABLE_NAME, get_ingestion_pipeline
 
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 CORRECTED_DIR = _PROJECT_ROOT / "data" / "teaching_content" / "transcripts_corrected"
@@ -169,7 +169,7 @@ async def reset_video_transcripts() -> int:
                 f"""
                 DELETE FROM {actual_table}
                 WHERE metadata_->>'source_type' = 'video_transcript'
-                """  # noqa: S608
+                """
             )
         )
         chunks_deleted = result.rowcount or 0
@@ -222,7 +222,7 @@ async def main() -> int:
             print(f"  [{transcript['video_order']:02d}] ❌ FAILED: {e}")
             failed.append((transcript["video_order"], str(e)))
 
-    print(f"\n=== Summary ===")
+    print("\n=== Summary ===")
     print(f"  total chunks written: {total_chunks}")
     print(f"  failed videos: {len(failed)}")
     if failed:

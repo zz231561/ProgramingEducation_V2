@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 
@@ -19,7 +19,6 @@ from services.quiz.weakness_set_plan import (
     plan_questions,
 )
 from tests.helpers import TestSessionFactory
-
 
 # === compute_blueprint（純函式）===
 
@@ -76,7 +75,7 @@ async def _seed_mastery(user_id: uuid.UUID, concept_id: uuid.UUID, confidence: f
         db.add(StudentMastery(
             user_id=user_id, concept_id=concept_id, confidence=confidence,
             exposure_count=3, success_count=1,
-            last_practiced_at=datetime.now(timezone.utc),
+            last_practiced_at=datetime.now(UTC),
         ))
         await db.commit()
 
@@ -112,7 +111,7 @@ async def test_snapshot_empty_when_no_mastery():
 
 @pytest.mark.asyncio
 async def test_plan_produces_single_multi_coding():
-    uid = await _seed_user()
+    await _seed_user()
     # target 弱項 + 一個已掌握前置（當綜合/鷹架相關節點）
     tgt = await _seed_concept("target-c")
     pre = await _seed_concept("prereq-c")
@@ -145,7 +144,7 @@ async def test_plan_produces_single_multi_coding():
 
 @pytest.mark.asyncio
 async def test_plan_empty_when_no_weak():
-    uid = await _seed_user()
+    await _seed_user()
     snapshot = MasterySnapshot(overall=0.9, weak=[], mastered_tags=set())
     blueprint = SetBlueprint(single_mc=3, multi_mc=2, coding=1)
     async with TestSessionFactory() as db:

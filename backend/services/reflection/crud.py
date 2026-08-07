@@ -10,7 +10,7 @@
 """
 
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import UUID
 
 from sqlalchemy import select
@@ -179,7 +179,7 @@ async def update_reflection(
 
     if changed:
         reflection.is_modified = True
-        reflection.updated_at = datetime.now(timezone.utc)
+        reflection.updated_at = datetime.now(UTC)
         question = await _load_question_best_effort(db, reflection)
         evaluation = await evaluate_reflection(reflection, question)
         _apply_evaluation(reflection, evaluation)

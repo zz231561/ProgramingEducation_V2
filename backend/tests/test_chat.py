@@ -1,14 +1,13 @@
 """Chat service 單元測試 — mock EDF pipeline 驗證互動流程。"""
 
 import uuid
-import pytest
 from unittest.mock import AsyncMock, patch
 
+import pytest
 from sqlalchemy import select
 
-from models.chat import ChatSession, ChatMessage, MessageRole
-from services.edf.models import EvidenceResult, BloomLevel, ErrorType
-from services.edf.decision import TeachingStrategy
+from models.chat import ChatMessage, ChatSession, MessageRole
+from services.edf.models import BloomLevel, ErrorType, EvidenceResult
 from tests.helpers import TestSessionFactory
 
 

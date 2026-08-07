@@ -1,11 +1,10 @@
 """班級管理 API 測試（5-1b-2）— 教師 CRUD + 授權 + 邀請碼。"""
 
-import pytest
 from httpx import AsyncClient
 from sqlalchemy import select
 
 from models.user import User, UserRole
-from tests.helpers import encrypt_test_token, TestSessionFactory
+from tests.helpers import TestSessionFactory, encrypt_test_token
 
 TEACHER_A = {
     "sub": "t-a",

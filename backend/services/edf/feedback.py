@@ -12,8 +12,8 @@ import re
 from openai import AsyncOpenAI
 
 from core.config import settings
-from core.llm_params import chat_model_kwargs
 from core.errors import AppError
+from core.llm_params import chat_model_kwargs
 from services.edf.citations import extract_citations, strip_ungrounded_citations
 from services.edf.off_topic import generate_off_topic_reply
 from services.edf.prompt_blocks import build_system_prompt
@@ -56,7 +56,7 @@ def validate_output(text: str, allow_code: bool) -> str:
 
     def _check_block(match: re.Match) -> str:
         code = match.group(1)
-        lines = [l for l in code.strip().splitlines() if l.strip()]
+        lines = [line for line in code.strip().splitlines() if line.strip()]
 
         if len(lines) <= 8:
             return match.group(0)

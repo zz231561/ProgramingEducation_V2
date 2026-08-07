@@ -21,8 +21,8 @@ from pydantic import BaseModel, Field, ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.config import settings
-from core.llm_params import chat_model_kwargs
 from core.errors import AppError
+from core.llm_params import chat_model_kwargs
 from models.quiz import Question
 
 _client: AsyncOpenAI | None = None
@@ -112,7 +112,7 @@ D. **考點有意義 (point_meaningful)**：題目測驗的是概念理解、語
 
 
 async def validate_question(
-    db: AsyncSession,  # noqa: ARG001 — 預留供未來查相關資料；當前只用來呼叫 caller commit
+    db: AsyncSession,
     question: Question,
 ) -> ValidationReport:
     """LLM 自審題目；通過則 set `validated=True`。

@@ -1,6 +1,5 @@
 """身分自選 / 切換 API 測試（5-1d-2）。"""
 
-import pytest
 from httpx import AsyncClient
 
 from tests.helpers import encrypt_test_token

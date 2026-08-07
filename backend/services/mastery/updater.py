@@ -8,7 +8,7 @@
 """
 
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import UUID
 
 from sqlalchemy import select
@@ -100,7 +100,7 @@ async def _upsert_mastery(
             success_count=1 if correct else 0,
             error_count=0 if correct else 1,
             bloom_level=bloom_level,
-            last_practiced_at=datetime.now(timezone.utc),
+            last_practiced_at=datetime.now(UTC),
         )
         db.add(mastery)
     else:
@@ -113,7 +113,7 @@ async def _upsert_mastery(
         # 取已達到的最高 Bloom 等級
         if mastery.bloom_level is None or bloom_level > mastery.bloom_level:
             mastery.bloom_level = bloom_level
-        mastery.last_practiced_at = datetime.now(timezone.utc)
+        mastery.last_practiced_at = datetime.now(UTC)
 
     return mastery
 

@@ -89,7 +89,7 @@ async def test_interact_without_sink_unchanged():
         patch("services.chat.generate_feedback", new_callable=AsyncMock, return_value="ok"),
     ):
         async with TestSessionFactory() as db:
-            session, user_msg, ai_msg = await interact(
+            _session, _user_msg, ai_msg = await interact(
                 db=db, user_id=ids["user_id"], code="", question="hi",
             )
     assert ai_msg.content == "ok"

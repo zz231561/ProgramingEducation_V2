@@ -175,12 +175,11 @@ async def test_generate_coding_success():
 @pytest.mark.asyncio
 async def test_generate_llm_returns_non_json_raises_parse_error():
     concept = await _seed_concept()
-    with patched_llm("這不是 JSON"):
-        with pytest.raises(AppError) as exc_info:
-            async with TestSessionFactory() as db:
-                await generate_question(
-                    db, concept, QuestionType.MULTIPLE_CHOICE, 3, 3
-                )
+    with patched_llm("這不是 JSON"), pytest.raises(AppError) as exc_info:
+        async with TestSessionFactory() as db:
+            await generate_question(
+                db, concept, QuestionType.MULTIPLE_CHOICE, 3, 3
+            )
     assert exc_info.value.status_code == 502
     assert exc_info.value.error == "LLM_PARSE_ERROR"
 
@@ -195,12 +194,11 @@ async def test_generate_schema_violation_raises_validation_error():
         # 缺 answer_index
         "explanation": "...",
     })
-    with patched_llm(bad_json):
-        with pytest.raises(AppError) as exc_info:
-            async with TestSessionFactory() as db:
-                await generate_question(
-                    db, concept, QuestionType.MULTIPLE_CHOICE, 3, 3
-                )
+    with patched_llm(bad_json), pytest.raises(AppError) as exc_info:
+        async with TestSessionFactory() as db:
+            await generate_question(
+                db, concept, QuestionType.MULTIPLE_CHOICE, 3, 3
+            )
     assert exc_info.value.status_code == 502
     assert exc_info.value.error == "LLM_VALIDATION_ERROR"
 
@@ -208,12 +206,11 @@ async def test_generate_schema_violation_raises_validation_error():
 @pytest.mark.asyncio
 async def test_generate_llm_exception_raises_502():
     concept = await _seed_concept()
-    with patched_llm(Exception("openai timeout")):
-        with pytest.raises(AppError) as exc_info:
-            async with TestSessionFactory() as db:
-                await generate_question(
-                    db, concept, QuestionType.MULTIPLE_CHOICE, 3, 3
-                )
+    with patched_llm(Exception("openai timeout")), pytest.raises(AppError) as exc_info:
+        async with TestSessionFactory() as db:
+            await generate_question(
+                db, concept, QuestionType.MULTIPLE_CHOICE, 3, 3
+            )
     assert exc_info.value.status_code == 502
     assert exc_info.value.error == "LLM_ERROR"
 

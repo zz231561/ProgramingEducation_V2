@@ -1,9 +1,8 @@
 """行為指標聚合 service 測試（5-2d）— aggregate_user_behavior。"""
 
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
-import pytest
 from httpx import AsyncClient
 from sqlalchemy import select
 
@@ -20,7 +19,7 @@ USER = {
     "googleId": "g-agg-1",
 }
 _COOKIE = "authjs.session-token"
-_T0 = datetime(2026, 7, 7, 10, 0, 0, tzinfo=timezone.utc)
+_T0 = datetime(2026, 7, 7, 10, 0, 0, tzinfo=UTC)
 
 
 async def _make_user(client: AsyncClient) -> uuid.UUID:

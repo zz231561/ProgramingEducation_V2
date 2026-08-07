@@ -7,9 +7,8 @@ import tempfile
 from authlib.jose import JsonWebEncryption
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-from core.auth import DEV_COOKIE_NAME, _derive_encryption_key
-from core.database import Base
 import models.user  # noqa: F401 — 確保 User model 註冊至 Base.metadata
+from core.auth import DEV_COOKIE_NAME, _derive_encryption_key
 
 # === 測試 DB — file-based SQLite ===
 

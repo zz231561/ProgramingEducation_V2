@@ -15,9 +15,11 @@ from core.config import settings
 from core.errors import AppError
 
 # re-export：呼叫端從本模組取得完整介面（模型正本仍在 judge0.py）
-from services.judge0 import (  # noqa: F401
+from services.judge0 import (
     CPP_LANGUAGE_ID,
     ExecutionResult,
+)
+from services.judge0 import (
     submit_and_poll as _judge0_submit_and_poll,
 )
 

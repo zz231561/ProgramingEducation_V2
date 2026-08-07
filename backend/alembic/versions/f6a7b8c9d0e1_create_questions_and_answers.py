@@ -17,15 +17,16 @@ Create Date: 2026-05-04 00:00:00.000000
 - Post-Solution Comprehension（2-6）的擴充欄位（comprehension_*）留給後續 migration，本次不加。
 """
 
-from typing import Sequence, Union
+from collections.abc import Sequence
 
 import sqlalchemy as sa
+
 from alembic import op
 
 revision: str = "f6a7b8c9d0e1"
-down_revision: Union[str, Sequence[str], None] = "e5f6a7b8c9d0"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | Sequence[str] | None = "e5f6a7b8c9d0"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 # 合法值 — 建表時用 CHECK 保證；ORM 層也定義一致的字串列舉

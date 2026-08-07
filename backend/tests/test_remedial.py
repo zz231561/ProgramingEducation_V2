@@ -1,7 +1,7 @@
 """補救路徑測試（roadmap K4c）— 復用 test_diagnosis 的圖與作答 seeding。"""
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 from httpx import AsyncClient
@@ -33,7 +33,7 @@ async def _seed_path_with_units(
                 content={},
                 status=statuses.get(tag, LearningUnitStatus.LOCKED.value),
                 completed_at=(
-                    datetime(2026, 7, 1, tzinfo=timezone.utc)
+                    datetime(2026, 7, 1, tzinfo=UTC)
                     if statuses.get(tag) == LearningUnitStatus.COMPLETED.value
                     else None
                 ),

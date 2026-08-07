@@ -8,7 +8,6 @@
 import uuid
 
 import pytest
-from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
 from core.database import Base
@@ -16,7 +15,6 @@ from models.concept import Concept
 from models.learning import LearningPath, LearningUnit, LearningUnitStatus
 from models.user import User
 from tests.helpers import TestSessionFactory
-
 
 # === metadata / structure ===
 

@@ -32,7 +32,6 @@ from services.quiz.batch_generator import (
 )
 from tests.helpers import TestSessionFactory
 
-
 # === Mock helpers ===
 
 
@@ -488,8 +487,9 @@ async def test_list_target_concepts_filters_by_only():
 
 @pytest.mark.asyncio
 async def test_concept_batch_result_validated_count_property():
-    from services.quiz.batch_generator import QuestionAttempt
     import uuid
+
+    from services.quiz.batch_generator import QuestionAttempt
 
     r = ConceptBatchResult(
         concept_id=uuid.uuid4(),

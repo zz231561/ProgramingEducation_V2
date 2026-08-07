@@ -6,7 +6,6 @@
 """
 
 import logging
-from datetime import datetime, timezone
 from uuid import UUID
 
 from sqlalchemy import desc, func, select

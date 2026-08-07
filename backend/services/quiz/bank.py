@@ -97,7 +97,7 @@ async def list_unit_question_set(
             .order_by(StudentAnswer.answered_at)
         )
     ).all()
-    last_correct: dict[UUID, bool] = {qid: correct for qid, correct in answers}
+    last_correct: dict[UUID, bool] = dict(answers)
 
     return [
         UnitQuestionItem(

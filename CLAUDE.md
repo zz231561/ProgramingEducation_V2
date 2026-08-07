@@ -41,8 +41,10 @@ Phase 7-R 自建互動執行引擎 ✅（生產終端已上線）｜Phase 7-U �
 - ✅ 7-D1 前端 Vitest（2026-08-07，`cd web && npm test`，31 it）
 - ✅ 7-D2 Code Health 規則改版（2026-08-07）：門檻 250/400 + 舉證豁免 + jscpd 重複偵測；
   7 檔逐案處置＝1 拆分 6 豁免，🚫/⚠ 歸零。工作流見 `.claude/skills/code-health/`
+- ✅ 7-D2b 後端 lint 首次落地（2026-08-07）：ruff 宣告了卻沒裝，437 findings → **0**；
+  rule set 擴充 B/C4/SIM/PERF/ERA/RUF 並校準 6900+ 中文與 FastAPI 誤判
 - 待辦：7-D3 changelog 拆檔（近 5000 行）｜ 7-D4 R6 收尾 ｜ 7-D5 文件稽核 ｜
-  7-D6 全站 429/5xx toast
+  7-D6 全站 429/5xx toast ｜ **7-D7 無意義註解清查**（需 LLM 語意判斷，linter 做不到）
 - ⏳ **待使用者裁決**：comprehension 觸發頻率——修掉吸收態後，弱學生連答 10 題會被驗 10 次
   （每次 2 呼叫）。屬教學取捨不是 bug，建議 7-E 實際點過再定
 - **7-E 使用者驗收在 7-D 之後**；本 session 新做的 UI（理解驗證 Modal / AI 鎖 / NZEC 說明 /

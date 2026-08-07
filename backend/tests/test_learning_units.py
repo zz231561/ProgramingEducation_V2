@@ -154,7 +154,7 @@ async def test_revisit_clears_completed_at(client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_other_user_returns_404(client: AsyncClient):
-    user_id_owner, [u0] = await _seed_path_with_units(OWNER, 1, client)
+    _user_id_owner, [u0] = await _seed_path_with_units(OWNER, 1, client)
     other_id, _ = await _seed_path_with_units(OTHER, 1, client)
     async with TestSessionFactory() as db:
         with pytest.raises(AppError) as exc:

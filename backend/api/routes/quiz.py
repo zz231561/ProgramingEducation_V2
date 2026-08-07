@@ -8,12 +8,13 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel, Field
+from sqlalchemy import select as sa_select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.deps import get_current_db_user, get_db
 from core.errors import AppError
 from core.rate_limit import rate_limit
-from models.quiz import Question, QuestionType, StudentAnswer
+from models.quiz import Question, QuestionType
 from models.user import User
 from services.quiz import (
     build_weakness_set,
@@ -25,7 +26,6 @@ from services.quiz import (
     pick_target_concept,
     submit_answer,
 )
-from sqlalchemy import select as sa_select  # noqa: F401  used by hint endpoint
 
 router = APIRouter(prefix="/quiz", tags=["quiz"])
 

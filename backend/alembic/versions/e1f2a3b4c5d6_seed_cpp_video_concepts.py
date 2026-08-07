@@ -25,15 +25,16 @@ C++簡介/安裝 DevC++）共 3 部介紹影片 → 剩 04-62 共 59 部 = 59 �
 """
 
 import uuid
-from typing import Sequence, Union
+from collections.abc import Sequence
 
 import sqlalchemy as sa
+
 from alembic import op
 
 revision: str = "e1f2a3b4c5d6"
-down_revision: Union[str, Sequence[str], None] = "d0e1f2a3b4c5"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | Sequence[str] | None = "d0e1f2a3b4c5"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 # (order, tag_suffix, name_zh, name_en, difficulty, category)

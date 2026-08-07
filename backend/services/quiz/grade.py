@@ -26,7 +26,7 @@ def _grade_fill_blank(content: dict[str, Any], answer: dict[str, Any]) -> bool:
         return False
     return all(
         isinstance(s, str) and s.strip().casefold() == c.strip().casefold()
-        for s, c in zip(submitted, correct)
+        for s, c in zip(submitted, correct, strict=False)
     )
 
 

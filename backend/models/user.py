@@ -4,7 +4,7 @@ import enum
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Boolean, String, Enum, DateTime, false, func
+from sqlalchemy import Boolean, DateTime, Enum, String, false, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from core.database import Base

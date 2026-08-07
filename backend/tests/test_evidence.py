@@ -1,10 +1,12 @@
 """Evidence 層單元測試 — mock OpenAI 驗證結構化分析流程。"""
 
 import json
-import pytest
-from unittest.mock import AsyncMock, patch, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
-from services.edf.evidence import analyze_evidence, _build_user_prompt, SYSTEM_PROMPT
+import pytest
+
+from core.errors import AppError
+from services.edf.evidence import SYSTEM_PROMPT, _build_user_prompt, analyze_evidence
 from services.edf.models import (
     CONCEPT_TAGS,
     BloomLevel,
@@ -12,8 +14,6 @@ from services.edf.models import (
     ErrorType,
     EvidenceResult,
 )
-from core.errors import AppError
-
 
 # === _build_user_prompt ===
 

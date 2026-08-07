@@ -5,7 +5,7 @@
 """
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -206,7 +206,7 @@ async def grade_submission(
         raise AppError(404, "SUBMISSION_NOT_FOUND", "繳交不存在")
     sub.score = score
     sub.feedback = feedback
-    sub.graded_at = datetime.now(timezone.utc)
+    sub.graded_at = datetime.now(UTC)
     await db.commit()
     await db.refresh(sub)
     return sub

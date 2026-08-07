@@ -3,9 +3,8 @@
 import pytest
 from httpx import AsyncClient
 
-from core.auth import _derive_encryption_key, decode_nextauth_token, TokenPayload
+from core.auth import TokenPayload, _derive_encryption_key, decode_nextauth_token
 from tests.helpers import encrypt_test_token
-
 
 SAMPLE_PAYLOAD = {
     "sub": "user-123",
@@ -60,6 +59,7 @@ def test_decode_invalid_token():
 def test_decode_expired_token():
     """exp 已過期的 token 應拋出 401 TOKEN_EXPIRED（防被竊 cookie 永久有效）。"""
     import time
+
     from core.errors import AppError
 
     token = encrypt_test_token({**SAMPLE_PAYLOAD, "exp": int(time.time()) - 60})

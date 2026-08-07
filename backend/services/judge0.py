@@ -115,7 +115,10 @@ async def submit_and_poll(
                 poll_resp = await client.get(
                     f"{base_url}/submissions/{token}",
                     headers=headers,
-                    params={"base64_encoded": "true", "fields": "stdout,stderr,compile_output,exit_code,time,memory,status"},
+                    params={
+                        "base64_encoded": "true",
+                        "fields": "stdout,stderr,compile_output,exit_code,time,memory,status",
+                    },
                 )
             except httpx.HTTPError:
                 continue

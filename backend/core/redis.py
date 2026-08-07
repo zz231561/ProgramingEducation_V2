@@ -9,7 +9,7 @@ redis_client: Redis | None = None
 
 async def init_redis() -> None:
     """啟動時建立 Redis 連線。"""
-    global redis_client  # noqa: PLW0603
+    global redis_client
     redis_client = Redis.from_url(
         settings.REDIS_URL,
         decode_responses=True,

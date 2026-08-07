@@ -18,7 +18,7 @@
 """
 
 import math
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 DECAY_FLOOR = 0.25
 BASE_HALF_LIFE_DAYS = 14.0
@@ -38,10 +38,10 @@ def days_since(last_practiced_at: datetime | None, now: datetime | None = None) 
     """距上次練習天數；無記錄（舊資料）回 None = 不衰減。"""
     if last_practiced_at is None:
         return None
-    now = now or datetime.now(timezone.utc)
+    now = now or datetime.now(UTC)
     # SQLite 測試 DB 可能回 naive datetime；一律視為 UTC
     if last_practiced_at.tzinfo is None:
-        last_practiced_at = last_practiced_at.replace(tzinfo=timezone.utc)
+        last_practiced_at = last_practiced_at.replace(tzinfo=UTC)
     return max(0.0, (now - last_practiced_at).total_seconds() / 86400.0)
 
 

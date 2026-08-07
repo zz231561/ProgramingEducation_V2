@@ -17,7 +17,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 from httpx import AsyncClient
 
-from models.quiz import ComprehensionType, Question, StudentAnswer
+from models.quiz import Question, StudentAnswer
 from tests.helpers import TestSessionFactory, encrypt_test_token
 
 OWNER_PAYLOAD = {

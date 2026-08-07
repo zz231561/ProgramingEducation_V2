@@ -4,7 +4,6 @@ import json
 import uuid
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import pytest
 from fastapi.testclient import TestClient
 from httpx import AsyncClient
 
@@ -126,13 +125,12 @@ def test_ws_relay_forwards_frames_and_logs():
         patch("api.routes.terminal.get_redis", return_value=stub),
         patch("api.routes.terminal.websockets.connect", _fake_connect(fake)),
         patch("api.routes.terminal.async_session", MagicMock(return_value=session_cm)),
-        patch("api.routes.terminal.log_execution", log),
+        patch("api.routes.terminal.log_execution", log),tc.websocket_connect("/terminal/ws") as ws
     ):
-        with tc.websocket_connect("/terminal/ws") as ws:
-            ws.send_json(
-                {"type": "start", "ticket": "t1", "code": "int main(){}", "args": "a"}
-            )
-            frames = [ws.receive_json() for _ in range(4)]
+        ws.send_json(
+            {"type": "start", "ticket": "t1", "code": "int main(){}", "args": "a"}
+        )
+        frames = [ws.receive_json() for _ in range(4)]
 
     assert [f["type"] for f in frames] == ["compiling", "started", "output", "exit"]
     # start frame 轉發給 runner（不含 ticket）

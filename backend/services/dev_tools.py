@@ -7,7 +7,7 @@ SQLite 測試與 Postgres 行為才一致）。
 
 import logging
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlalchemy import delete, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -111,7 +111,7 @@ async def set_mastery(
     if not concept_ids:
         return 0
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     existing = {
         m.concept_id: m
         for m in (

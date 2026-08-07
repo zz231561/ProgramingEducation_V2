@@ -191,7 +191,7 @@ def print_report(
         )
 
     if to_update and len(to_update) <= 5:
-        print(f"\n  Sample updates:")
+        print("\n  Sample updates:")
         for p in to_update[:3]:
             print(f"    [{p.video_order}] {p.db_name_zh} ← {p.new_yt} ({p.new_dur}s)")
 

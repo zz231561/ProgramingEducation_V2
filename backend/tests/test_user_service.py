@@ -1,20 +1,20 @@
 """使用者 service 測試 — 首次登入建立記錄、重複登入更新資訊。"""
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.auth import TokenPayload
 from models.user import User, UserRole
-from services.user import get_or_create_user, _LOGIN_UPDATE_INTERVAL
+from services.user import _LOGIN_UPDATE_INTERVAL, get_or_create_user
 from tests.helpers import TestSessionFactory
 
 
 async def _age_last_login(db: AsyncSession, user: User) -> None:
     """把 last_login_at 撥回節流間隔之前，模擬「距上次登入已超過 1 小時」。"""
     user.last_login_at = (
-        datetime.now(timezone.utc) - _LOGIN_UPDATE_INTERVAL - timedelta(minutes=5)
+        datetime.now(UTC) - _LOGIN_UPDATE_INTERVAL - timedelta(minutes=5)
     )
     await db.commit()
 
@@ -76,7 +76,7 @@ async def test_update_profile_after_throttle_interval():
 
 def _as_utc(dt: datetime) -> datetime:
     """SQLite 測試環境 refresh 後回傳 naive datetime — 比較前統一補 UTC。"""
-    return dt if dt.tzinfo is not None else dt.replace(tzinfo=timezone.utc)
+    return dt if dt.tzinfo is not None else dt.replace(tzinfo=UTC)
 
 
 async def test_update_last_login_at_after_throttle_interval():

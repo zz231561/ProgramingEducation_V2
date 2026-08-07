@@ -10,7 +10,7 @@ from __future__ import annotations
 import json
 import uuid
 from contextlib import contextmanager
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -49,7 +49,7 @@ async def _seed_weak_mastery(user_id: uuid.UUID, concept_id: uuid.UUID):
         db.add(StudentMastery(
             user_id=user_id, concept_id=concept_id, confidence=0.15,
             exposure_count=3, success_count=0,
-            last_practiced_at=datetime.now(timezone.utc),
+            last_practiced_at=datetime.now(UTC),
         ))
         await db.commit()
 
@@ -125,9 +125,12 @@ async def test_build_generates_when_bank_empty():
 
 
 def _mock_completion(content: str) -> MagicMock:
-    msg = MagicMock(); msg.content = content
-    choice = MagicMock(); choice.message = msg
-    resp = MagicMock(); resp.choices = [choice]
+    msg = MagicMock()
+    msg.content = content
+    choice = MagicMock()
+    choice.message = msg
+    resp = MagicMock()
+    resp.choices = [choice]
     return resp
 
 

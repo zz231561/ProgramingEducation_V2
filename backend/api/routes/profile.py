@@ -6,7 +6,6 @@
 email 沿用 users，不由前端提交；僅登入使用者可操作自己的 profile。
 """
 
-import uuid
 
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field

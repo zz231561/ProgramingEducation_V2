@@ -10,10 +10,11 @@ from openai import AsyncOpenAI
 from pydantic import ValidationError
 
 from core.config import settings
-from core.llm_params import chat_model_kwargs
 from core.errors import AppError
-from .models import EvidenceResult, CONCEPT_TAGS
+from core.llm_params import chat_model_kwargs
 from services.security.sanitizer import wrap_student_code, wrap_student_input
+
+from .models import CONCEPT_TAGS, EvidenceResult
 
 logger = logging.getLogger(__name__)
 

@@ -59,7 +59,7 @@ async def main() -> None:
 
         # 3) 驗證向量表內有資料
         result = await db.execute(
-            sa_text(f"SELECT count(*) FROM {actual_table}")  # noqa: S608
+            sa_text(f"SELECT count(*) FROM {actual_table}")
         )
         total = result.scalar_one()
         print(f"[3/3] {actual_table} count = {total}")

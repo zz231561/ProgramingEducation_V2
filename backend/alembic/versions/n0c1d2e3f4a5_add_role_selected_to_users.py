@@ -8,15 +8,16 @@ Create Date: 2026-07-07 01:30:00.000000
 現有列 server_default False → 既有帳號下次登入會被引導選擇身分（含測試者）。
 """
 
-from typing import Sequence, Union
+from collections.abc import Sequence
 
 import sqlalchemy as sa
+
 from alembic import op
 
 revision: str = "n0c1d2e3f4a5"
-down_revision: Union[str, Sequence[str], None] = "m9b0c1d2e3f4"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | Sequence[str] | None = "m9b0c1d2e3f4"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:

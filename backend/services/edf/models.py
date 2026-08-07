@@ -1,6 +1,7 @@
 """EDF 管線共用資料模型。"""
 
-from enum import IntEnum, Enum
+from enum import Enum, IntEnum
+
 from pydantic import BaseModel, Field
 
 

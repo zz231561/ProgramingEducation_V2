@@ -20,15 +20,16 @@ Phase 6-2b：unit content 批次生成的中介存放區。
 idempotency：concept_id UNIQUE → 重跑 batch 用 ON CONFLICT 更新（caller 處理）。
 """
 
-from typing import Sequence, Union
+from collections.abc import Sequence
 
 import sqlalchemy as sa
+
 from alembic import op
 
 revision: str = "g3b4c5d6e7f8"
-down_revision: Union[str, Sequence[str], None] = "f2a3b4c5d6e7"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | Sequence[str] | None = "f2a3b4c5d6e7"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 _STAGING_STATUSES = ("pending", "approved", "rejected")
 

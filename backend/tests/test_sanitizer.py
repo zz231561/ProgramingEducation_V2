@@ -2,14 +2,13 @@
 
 import pytest
 
+from core.errors import AppError
 from services.security.sanitizer import (
     check_injection,
     sanitize_input,
-    wrap_student_input,
     wrap_student_code,
+    wrap_student_input,
 )
-from core.errors import AppError
-
 
 # === check_injection ===
 

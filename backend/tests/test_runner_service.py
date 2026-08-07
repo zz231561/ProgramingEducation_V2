@@ -1,8 +1,9 @@
 """services/runner dispatcher 測試 — 分派規則 + 自建路徑回應/錯誤映射。"""
 
+from unittest.mock import AsyncMock, MagicMock, patch
+
 import httpx
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
 
 from core.errors import AppError
 from services.judge0 import ExecutionResult

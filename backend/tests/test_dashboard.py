@@ -11,9 +11,8 @@
 """
 
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
-import pytest
 from httpx import AsyncClient
 from sqlalchemy import select
 
@@ -144,7 +143,7 @@ async def test_dashboard_week_quiz_excludes_old_attempts(client: AsyncClient):
         db.add(q)
         await db.flush()
         # 2 個近期（近 7 天內）：1 對 1 錯
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         for is_correct, days_ago in [(True, 0), (False, 3), (True, 8), (False, 30)]:
             db.add(StudentAnswer(
                 user_id=user_id, question_id=q.id,

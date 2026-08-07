@@ -1,10 +1,10 @@
 """錯誤處理測試 — 確認 AppError 被正確攔截並回傳標準 JSON。"""
 
 import pytest
-from httpx import ASGITransport, AsyncClient
 from fastapi import FastAPI
+from httpx import ASGITransport, AsyncClient
 
-from core.errors import AppError, app_error_handler, ErrorResponse
+from core.errors import AppError, ErrorResponse, app_error_handler
 
 
 @pytest.fixture

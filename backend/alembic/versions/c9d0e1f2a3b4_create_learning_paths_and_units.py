@@ -20,15 +20,16 @@ Create Date: 2026-05-05 00:00:00.000000
   中保留 source_type，本表 id 為 polymorphic target，無 FK 反向約束。
 """
 
-from typing import Sequence, Union
+from collections.abc import Sequence
 
 import sqlalchemy as sa
+
 from alembic import op
 
 revision: str = "c9d0e1f2a3b4"
-down_revision: Union[str, Sequence[str], None] = "b8c9d0e1f2a3"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | Sequence[str] | None = "b8c9d0e1f2a3"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 _LEARNING_UNIT_STATUSES = ("locked", "available", "in_progress", "completed")

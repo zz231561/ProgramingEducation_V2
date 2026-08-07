@@ -7,7 +7,7 @@
 """
 
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from httpx import AsyncClient
@@ -68,7 +68,7 @@ async def _seed_answers(
 ) -> None:
     """為指定 concept seed 一串作答（results 由舊到新）。"""
     async with TestSessionFactory() as db:
-        base = datetime(2026, 7, 4, 10, 0, tzinfo=timezone.utc)
+        base = datetime(2026, 7, 4, 10, 0, tzinfo=UTC)
         for i, correct in enumerate(results):
             q = Question(
                 type="multiple_choice", concept_tags=[tag],

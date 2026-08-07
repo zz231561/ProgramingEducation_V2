@@ -11,6 +11,7 @@ ExecutionResult 供行為事件記錄（best-effort）。
 """
 
 import asyncio
+import contextlib
 import json
 import logging
 import secrets
@@ -19,7 +20,7 @@ import uuid
 import websockets
 from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
 
-from api.deps import get_current_db_user, User
+from api.deps import User, get_current_db_user
 from core.config import settings
 from core.database import async_session
 from core.errors import AppError
@@ -81,15 +82,11 @@ async def terminal_ws(ws: WebSocket) -> None:
         pass  # 學生關頁面；runner 端 session 由其 stdin pump 斷線回收
     except Exception:
         logger.warning("terminal relay failed", exc_info=True)
-        try:
+        with contextlib.suppress(Exception):
             await ws.send_json({"type": "error", "code": "RUNNER_UNAVAILABLE"})
-        except Exception:
-            pass
     finally:
-        try:
+        with contextlib.suppress(Exception):
             await ws.close()
-        except Exception:
-            pass
 
 
 async def _relay(ws: WebSocket, user_id: uuid.UUID, code: str, args: str) -> None:

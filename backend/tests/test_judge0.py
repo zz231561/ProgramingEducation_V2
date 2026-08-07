@@ -1,11 +1,12 @@
 """Judge0 service 單元測試 — mock httpx 驗證 submit + polling 流程。"""
 
 import base64
-import pytest
-from unittest.mock import AsyncMock, patch, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
-from services.judge0 import submit_and_poll, ExecutionResult, _build_headers, _decode_b64
+import pytest
+
 from core.errors import AppError
+from services.judge0 import ExecutionResult, _build_headers, _decode_b64, submit_and_poll
 
 
 def _b64(text: str) -> str:

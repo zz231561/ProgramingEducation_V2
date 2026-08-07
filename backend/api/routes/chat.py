@@ -7,12 +7,10 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from api.deps import get_current_db_user, get_db, User
+from api.deps import User, get_current_db_user, get_db
 from api.routes.chat_sse import interact_event_stream
 from core.dev_mode import is_dev_email
 from core.rate_limit import rate_limit
-from models.coding_event import CodingEventType
-from services.analytics import log_coding_event
 from services.chat_kickoff import reflection_kickoff
 from services.run_help import run_help
 

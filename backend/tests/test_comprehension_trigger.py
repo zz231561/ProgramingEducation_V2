@@ -6,9 +6,9 @@
 from models.quiz import ComprehensionType
 from services.comprehension.trigger import (
     HIGH_PASS_THRESHOLD,
-    MIN_SAMPLES_TO_SKIP,
     MID_HIGH_PASS_THRESHOLD,
     MID_LOW_PASS_THRESHOLD,
+    MIN_SAMPLES_TO_SKIP,
     _decide,
 )
 

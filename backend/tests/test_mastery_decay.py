@@ -8,7 +8,7 @@
 - K6a：BKT_CHAT_PARAMS 單次更新幅度顯著小於 quiz 強證據參數
 """
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
 
@@ -27,7 +27,7 @@ from services.mastery.updater import (
     bkt_online_update,
 )
 
-NOW = datetime(2026, 7, 6, 12, 0, 0, tzinfo=timezone.utc)
+NOW = datetime(2026, 7, 6, 12, 0, 0, tzinfo=UTC)
 
 
 def _ago(days: float) -> datetime:

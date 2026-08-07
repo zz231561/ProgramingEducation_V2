@@ -21,12 +21,12 @@ from typing import Any
 from openai import AsyncOpenAI
 from pydantic import BaseModel, Field, ValidationError
 
-logger = logging.getLogger(__name__)
-
 from core.config import settings
 from core.llm_params import chat_model_kwargs
 from models.quiz import Question
 from models.reflection import Reflection, ReflectionSourceType
+
+logger = logging.getLogger(__name__)
 
 # 平均分 < 此閾值才回追問；其餘放行。
 # 2026-07-16 修訂（使用者回饋：0.6 對初學者過嚴，反思變負荷）：
@@ -224,9 +224,7 @@ async def evaluate_reflection(
     )
     # 高於門檻仍給了 followup 就丟掉（避免 LLM 多嘴干擾學生）
     followup = parsed.followup_question
-    if quality_score >= threshold:
-        followup = None
-    elif followup is not None and not followup.strip():
+    if quality_score >= threshold or (followup is not None and not followup.strip()):
         followup = None
 
     return ReflectionEvaluation(

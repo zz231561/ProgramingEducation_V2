@@ -143,10 +143,10 @@ async def plan_questions(
     - coding：弱項目標 + 2 個已掌握相連節點（鷹架）；不足則補任意相關節點
     """
     weak = snapshot.weak
-    plans: list[QuestionPlan] = []
-
-    for target in _cycle(weak, blueprint.single_mc):
-        plans.append(QuestionPlan(QuestionType.MULTIPLE_CHOICE, target))
+    plans: list[QuestionPlan] = [
+        QuestionPlan(QuestionType.MULTIPLE_CHOICE, target)
+        for target in _cycle(weak, blueprint.single_mc)
+    ]
 
     for target in _cycle(weak, blueprint.multi_mc):
         extra = await _related_concepts(db, target.tag, MULTI_RELATED)

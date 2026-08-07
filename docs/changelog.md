@@ -1,5 +1,53 @@
 # 變更日誌
 
+## [2026-08-07] — 7-D2b 後端 lint 首次落地（ruff 宣告了但從未安裝）
+
+### 根本問題：工具設定好了，只是沒裝
+`ruff` 早在 `pyproject.toml` 的 dev 依賴與 `[tool.ruff.lint]` 都設定完成，
+但**沒安裝進 `.venv`** → 後端 lint 從專案開始到現在一次都沒跑過。
+（該 venv 由 uv 建立、不含 pip，須用 `VIRTUAL_ENV=.venv uv pip install ruff`。）
+沒被發現的原因很單純：lint 不參與執行，抓的全是「能跑但寫法有問題」的東西，
+`pytest` / `tsc` / `build` 全綠與 lint 從沒跑過完全不衝突。
+
+### Changed — rule set 擴充（`B` `C4` `SIM` `PERF` `ERA` `RUF`）+ 誤判校準
+盲目全開會拿到 **6952 個錯誤**，其中 96% 是誤判，故逐項校準：
+| 忽略項 | 數量 | 為什麼是誤判 |
+|---|---:|---|
+| RUF001/002/003 | 6708 | 中文全形標點（，。（））被判為 ambiguous unicode |
+| B008 | 174 | FastAPI 的 `Depends()` / `Query()` 寫在預設參數是官方用法 |
+| UP042 | 14 | `(str, Enum)` → `StrEnum` 會改變 `str(member)` 輸出，**是行為變更不是風格** |
+| SIM108 | 3 | 建議的三元式全部超過一行寬，可讀性反而變差 |
+| SIM117（限 tests） | 15 | 巢狀 `with` 做 monkeypatch，攤平看不出堆了哪些 patch |
+| ERA001·B905·RUF007（限 alembic） | 4 | migration 已上生產不得回改；欄位說明註解被誤判為程式碼 |
+- `line-length` 100 → **120**：54 筆超長行有 46 筆落在 101–120，且多為中文 prompt；
+  中文資訊密度高於英文，100 對本專案過嚴
+- 5 個檔的超長行落在**多行中文字串內部**（連 `# noqa` 都放不進去，會變成字串內容）→ per-file-ignore
+
+### Fixed — 437 → 0
+- **400 個自動修**（safe fixes）：未使用 import 44、import 排序 83、`Optional[X]` → `X | None` 84、
+  已棄用寫法 61、缺檔尾換行 8 等
+- **20 個選定的 unsafe fixes**：`zip(strict=)`、多餘 comprehension、`contextlib.suppress`、
+  測試中的死變數等；逐項確認語意等價後才套用
+- **手動修 8 個**：`evaluate.py` 的 `logger` 誤插在 import 之間、`feedback.py` 的 `l` 變數更名、
+  `pytest.raises(Exception)` → `ValidationError`、兩處 PERF401 改 comprehension、
+  `judge0.py` params dict 與 `sanitizer.py` 攻擊偵測 regex 換行（拆成相鄰字串常數，pattern 不變）
+
+### 實際健檢結果：程式碼比預期乾淨
+使用者關切的三類問題實測幾乎不存在——**低效寫法 2 個**、**被註解掉的程式碼 0 個**
+（原 2 個是欄位說明註解的誤判）、jscpd 重複率 **0.28%**。
+真正的債是「44 個未使用 import」與「lint 從沒跑過」本身。
+
+### 意外揭露：5-2b 的 chat 事件記錄已失效（→ tech-debt C6）
+`api/routes/chat.py` import 了 `log_coding_event` / `CodingEventType` 但**全專案無呼叫**——
+7-C2a 移除 `hint_level` 時把那次記錄一併帶走。`coding_events` 現在只剩執行事件，
+**5-3 行為分析少一類資料來源**，開工前需決定是否改記 `explicit_help`。
+
+### 驗證
+- `ruff check .` **All checks passed**｜backend **883 passed**（含 sanitizer 18 項專測，
+  確認 regex 換行後行為不變）｜逐筆檢視 websocket 收尾與 import 移除的 diff 語意等價
+
+---
+
 ## [2026-08-07] — 7-D2 Code Health 規則改版（固定行數上限 → 決策式健檢）
 
 ### 背景：實測推翻了原規則，也推翻了我最初的兩個替代提案

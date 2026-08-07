@@ -7,9 +7,9 @@ import pytest
 from models.concept import Concept
 from models.mastery import StudentMastery
 from services.edf.kgraph_context import (
+    _MasteryEntry,
     fetch_kgraph_block_safe,
     format_kgraph_block,
-    _MasteryEntry,
 )
 from services.edf.models import BloomLevel, ErrorType, EvidenceResult
 from tests.helpers import TestSessionFactory

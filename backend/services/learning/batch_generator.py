@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import asyncio
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import UUID
 
 from sqlalchemy import select
@@ -124,7 +124,7 @@ async def _upsert_staging(
         existing.notes = notes
         existing.attempt_count = attempt_count
         existing.model_used = settings.llm_model_content
-        existing.generated_at = datetime.now(timezone.utc)
+        existing.generated_at = datetime.now(UTC)
         existing.reviewed_at = None
     await db.commit()
 

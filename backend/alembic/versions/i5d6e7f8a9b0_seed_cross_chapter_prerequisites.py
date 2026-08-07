@@ -17,15 +17,16 @@ downgrade：還原線性鏈 61 條。
 """
 
 import uuid
-from typing import Sequence, Union
+from collections.abc import Sequence
 
 import sqlalchemy as sa
+
 from alembic import op
 
 revision: str = "i5d6e7f8a9b0"
-down_revision: Union[str, Sequence[str], None] = "h4c5d6e7f8a9"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | Sequence[str] | None = "h4c5d6e7f8a9"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 # curated 依賴 map：{target_video_order: [source_video_orders]}

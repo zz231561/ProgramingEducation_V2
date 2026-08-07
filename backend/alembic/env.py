@@ -3,13 +3,13 @@
 import asyncio
 from logging.config import fileConfig
 
-from alembic import context
 from sqlalchemy import pool
 from sqlalchemy.ext.asyncio import create_async_engine
 
+import models  # noqa: F401 — 確保所有 model 被載入到 Base.metadata
+from alembic import context
 from core.config import settings
 from core.database import Base
-import models  # noqa: F401 — 確保所有 model 被載入到 Base.metadata
 
 # Alembic Config
 config = context.config

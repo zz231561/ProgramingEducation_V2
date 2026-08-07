@@ -17,7 +17,7 @@ from sqlalchemy import select
 
 from core.errors import AppError
 from models.concept import Concept, ConceptEdge, EdgeType
-from models.learning import LearningPath, LearningUnit, LearningUnitStatus
+from models.learning import LearningUnit, LearningUnitStatus
 from models.mastery import StudentMastery
 from models.user import User
 from services.learning import generate_learning_path
@@ -178,7 +178,7 @@ async def test_weak_concept_prioritized_within_topological_layer():
 @pytest.mark.asyncio
 async def test_unit_content_initialized_with_empty_skeleton():
     user_id = await _seed_user()
-    ids = await _seed_concepts([{"tag": "x"}])
+    await _seed_concepts([{"tag": "x"}])
 
     async with TestSessionFactory() as db:
         path = await generate_learning_path(db, user_id, title="X")

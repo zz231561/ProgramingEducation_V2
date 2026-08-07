@@ -28,7 +28,7 @@
 擁有權檢查：透過 unit.path_id → path.user_id 比對。非本人 → 404。
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import UUID
 
 from sqlalchemy import select
@@ -116,7 +116,7 @@ async def update_unit_status(
     unit.status = new_status.value
     next_unit: LearningUnit | None = None
     if new_status is LearningUnitStatus.COMPLETED:
-        unit.completed_at = datetime.now(timezone.utc)
+        unit.completed_at = datetime.now(UTC)
         next_unit = await _unlock_next_unit(db, unit)
     elif new_status is LearningUnitStatus.AVAILABLE:
         # 重新開啟（revisit）→ 清掉先前的 completed_at（若有）

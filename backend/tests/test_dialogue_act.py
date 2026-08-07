@@ -1,8 +1,6 @@
 """對話行為分類測試（5-2c）— classify_dialogue_act 啟發式 + interact 寫入。"""
 
-import uuid
 
-import pytest
 from httpx import AsyncClient
 from sqlalchemy import select
 
@@ -123,7 +121,7 @@ async def test_interact_persists_dialogue_act(client: AsyncClient):
     assert resp.status_code == 200
 
     async with TestSessionFactory() as db:
-        u = (
+        (
             await db.execute(select(User).where(User.email == USER["email"]))
         ).scalar_one()
         msgs = (
@@ -131,6 +129,6 @@ async def test_interact_persists_dialogue_act(client: AsyncClient):
                 select(ChatMessage).where(ChatMessage.role == MessageRole.USER)
             )
         ).scalars().all()
-        user_msgs = [m for m in msgs]
+        user_msgs = list(msgs)
     assert user_msgs, "應有 user 訊息"
     assert user_msgs[-1].dialogue_act == DialogueAct.CLARIFICATION_REQUEST.value

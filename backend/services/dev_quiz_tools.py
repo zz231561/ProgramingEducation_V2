@@ -5,7 +5,7 @@
 
 import logging
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -70,7 +70,7 @@ async def simulate_failures(
         raise AppError(404, "CONCEPT_NOT_FOUND", f"找不到 concept: {tag}")
 
     question = await _find_or_create_stub_question(db, tag)
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     for i in range(count):
         db.add(
             StudentAnswer(

@@ -1,10 +1,8 @@
 """Coddy 反思開場測試 — POST /chat/reflection-kickoff。"""
 
-import json
 import uuid
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import pytest
 from httpx import AsyncClient
 from sqlalchemy import select
 

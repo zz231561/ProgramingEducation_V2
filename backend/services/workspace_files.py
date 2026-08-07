@@ -55,7 +55,7 @@ async def save_draft(
     db: AsyncSession,
     user_id: uuid.UUID,
     code: str,
-    opened_name: str | None | object = KEEP_OPENED_NAME,
+    opened_name: str | object | None = KEEP_OPENED_NAME,
 ) -> CodeFile:
     """upsert 草稿（每人一份）；opened_name 未提供時保留現值。
 

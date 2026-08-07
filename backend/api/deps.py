@@ -5,7 +5,7 @@ from collections.abc import Callable
 from fastapi import Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.auth import get_current_user, get_token_from_request, decode_nextauth_token, TokenPayload
+from core.auth import TokenPayload, get_current_user
 from core.database import get_db
 from core.dev_mode import is_dev_email
 from core.errors import AppError
@@ -56,12 +56,12 @@ async def require_dev_user(
 
 
 __all__ = [
-    "get_db",
-    "get_redis",
-    "get_current_user",
-    "get_current_db_user",
-    "require_roles",
-    "require_dev_user",
     "TokenPayload",
     "User",
+    "get_current_db_user",
+    "get_current_user",
+    "get_db",
+    "get_redis",
+    "require_dev_user",
+    "require_roles",
 ]

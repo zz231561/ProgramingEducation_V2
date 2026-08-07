@@ -56,18 +56,16 @@ class VideoRow:
 def parse_csv(path: Path) -> list[VideoRow]:
     if not path.exists():
         sys.exit(f"❌ CSV not found: {path}")
-    rows: list[VideoRow] = []
     with path.open(encoding="utf-8") as f:
-        for row in csv.DictReader(f):
-            rows.append(
-                VideoRow(
-                    video_order=int(row["video_order"]),
-                    youtube_id=row["youtube_id"].strip(),
-                    duration_seconds=int(row["duration_seconds"]),
-                    title_zh=row["title_zh"].strip(),
-                )
+        return [
+            VideoRow(
+                video_order=int(row["video_order"]),
+                youtube_id=row["youtube_id"].strip(),
+                duration_seconds=int(row["duration_seconds"]),
+                title_zh=row["title_zh"].strip(),
             )
-    return rows
+            for row in csv.DictReader(f)
+        ]
 
 
 def find_cached_audio(out_dir: Path, order: int) -> Path | None:
@@ -220,7 +218,7 @@ def main() -> int:
 
     actual_cost = actual_seconds / 60 * WHISPER_RATE_USD_PER_MIN
     processed = len(rows) - skipped - len(failed)
-    print(f"\n=== Summary ===")
+    print("\n=== Summary ===")
     print(f"  processed: {processed} / skipped: {skipped} / failed: {len(failed)}")
     print(f"  actual cost (this run): ${actual_cost:.3f}")
     if failed:

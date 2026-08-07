@@ -9,7 +9,7 @@
 
 import logging
 from collections.abc import Callable
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from fastapi import Request
 
@@ -35,7 +35,7 @@ async def _check_daily_quota(redis, user_key: str) -> None:
     if limit <= 0:  # 0 或負值 = 停用每日配額
         return
 
-    today = datetime.now(timezone.utc).strftime("%Y%m%d")
+    today = datetime.now(UTC).strftime("%Y%m%d")
     key = f"rl:daily:{user_key}:{today}"
     count = await redis.incr(key)
     if count == 1:

@@ -18,8 +18,8 @@ import sys
 import uuid
 
 from core.database import async_session
-from services.dev_seed import seed_fake_students
 from scripts._db_guard import require_local_db
+from services.dev_seed import seed_fake_students
 
 
 def _parse_args() -> argparse.Namespace:

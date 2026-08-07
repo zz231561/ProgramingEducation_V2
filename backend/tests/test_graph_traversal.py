@@ -101,7 +101,7 @@ async def test_closure_diamond_no_duplicate():
     tags = [c.tag for c, _ in result.ancestors]
     assert len(tags) == len(set(tags))
     # vars 取最短路徑 depth（BFS 保證）
-    assert dict((c.tag, d) for c, d in result.ancestors)["vars"] == 2
+    assert {c.tag: d for c, d in result.ancestors}["vars"] == 2
 
 
 async def _run_closure(tag: str, max_depth: int | None = None):

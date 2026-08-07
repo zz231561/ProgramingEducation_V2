@@ -7,7 +7,7 @@
 import random
 import uuid
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from models.chat import ChatMessage, DialogueAct, MessageRole
 from models.coding_event import CodingEvent, CodingEventType
@@ -64,7 +64,7 @@ def make_events(
     rng: random.Random, uid: uuid.UUID, arch: Archetype
 ) -> list[CodingEvent]:
     """依原型生成執行 / 錯誤 / hint / 成功事件（時間散佈於近 14 天）。"""
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     events: list[CodingEvent] = []
     for _ in range(arch.n_runs):
         ts = now - timedelta(days=rng.uniform(0, 14), minutes=rng.uniform(0, 600))
@@ -100,7 +100,7 @@ def make_mastery(
 ) -> list[StudentMastery]:
     """為取樣 concept 生成熟練度（confidence 以原型基準加 gauss 抖動）。"""
     picked = rng.sample(concept_ids, min(len(concept_ids), 12))
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     rows: list[StudentMastery] = []
     for cid in picked:
         conf = min(1.0, max(0.0, rng.gauss(arch.mastery_base, 0.12)))

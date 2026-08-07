@@ -61,7 +61,7 @@ def format_reflection_for_feedback(reflection: Reflection | None) -> str:
 
     score = reflection.quality_score
     score_label = (
-        f"（反思品質分數：{int(round(score * 100))}%）" if score is not None else ""
+        f"（反思品質分數：{round(score * 100)}%）" if score is not None else ""
     )
 
     lines = [

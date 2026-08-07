@@ -12,7 +12,7 @@
 """
 
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
 from sqlalchemy import func, select
@@ -104,7 +104,7 @@ async def _path_progress(
 
 
 async def _week_quiz_stats(db: AsyncSession, user_id: UUID) -> WeekQuizStats:
-    week_ago = datetime.now(timezone.utc) - timedelta(days=WEEK_DAYS)
+    week_ago = datetime.now(UTC) - timedelta(days=WEEK_DAYS)
     rows = (
         await db.execute(
             select(StudentAnswer.is_correct)

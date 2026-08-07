@@ -48,10 +48,45 @@ dev = [
 
 [tool.ruff]
 target-version = "py312"
-line-length = 100
+# 2026-08-07 100 → 120：實測 54 筆超長行有 46 筆落在 101-120，且多為中文 prompt / 描述字串。
+# 中文字元資訊密度高於英文，100 對本專案過嚴；硬拆字串會改動 prompt 內容。
+line-length = 120
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "N", "W", "UP"]
+# 2026-08-07 擴充：原本只有風格與正確性，補上「冗餘 / 低效 / 死代碼」三類
+#   B    = bugbear（可疑寫法）      C4   = comprehension 低效
+#   SIM  = 可簡化                   PERF = 效能反模式
+#   ERA  = 被註解掉的程式碼         RUF  = ruff 自有規則
+select = ["E", "F", "I", "N", "W", "UP", "B", "C4", "SIM", "PERF", "ERA", "RUF"]
+ignore = [
+    # 中文專案：全形標點（，。（））被判為 ambiguous unicode，實測 6708 筆全為誤判
+    "RUF001",
+    "RUF002",
+    "RUF003",
+    # FastAPI 的 `Depends()` / `Query()` 寫在預設參數是官方用法，實測 174 筆全為誤判
+    "B008",
+    # `class X(str, Enum)` → `StrEnum` 會改變 `str(member)` 的輸出（前者 "X.A"、後者 "a"）。
+    # 專案 14 處 enum 全靠 `.value` 寫入 DB，這是**行為變更**不是風格問題，不由 lint 順手改。
+    "UP042",
+    # 建議的三元式全都超過一行寬（如 citations.py 的 video_id 解析），可讀性反而變差
+    "SIM108",
+    # PEP 695 泛型語法遷移屬風格偏好，與正確性無關
+    "UP047",
+]
+
+[tool.ruff.lint.per-file-ignores]
+# 測試用巢狀 with 做 monkeypatch，攤平成單行反而看不出堆疊了哪些 patch
+"tests/*" = ["SIM117"]
+# migration 是凍結的歷史產物（已上生產、不得回頭改）：
+#   ERA001 欄位說明註解（`# (order, tag, name_zh)`）被誤判為註解掉的程式碼
+#   B905/RUF007 seed 資料的 zip 長度由同一份 literal 保證，改寫無收益且有風險
+"alembic/versions/*" = ["ERA001", "B905", "RUF007"]
+# 超長行落在**多行中文字串內部**（LLM prompt / 評估預期敘述 / docstring 指令範例），
+# 連 `# noqa` 都放不進去（會變成字串內容），硬拆則改動 prompt 文字本身
+"scripts/eval_coddy/*" = ["E501"]
+"scripts/flag_transcripts.py" = ["E501"]
+"scripts/ingest_transcripts_rag.py" = ["E501"]
+"services/quiz/validate.py" = ["E501"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

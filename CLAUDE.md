@@ -1,4 +1,4 @@
-# ProgramingEducation V2 — 開發指揮中心
+# ProgramingEducation V2 — AI 協作開發規範與文件導覽
 
 > ⚠ `CLAUDE.md`、`.claude/rules/*` 與所有 `AGENTS.md` 都是產生物。
 > 改規則一律改 `.agent-source/` 並跑 `python3 scripts/sync_agents_md.py`；直接編輯產生物會被覆蓋。

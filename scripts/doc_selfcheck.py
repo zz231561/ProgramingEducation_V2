@@ -31,7 +31,7 @@ SOURCE_GLOBS = ("backend/**/*.py", "web/**/*.ts", "web/**/*.tsx", "runner/**/*.p
 PREFIXES = ("", "backend/", "web/", "runner/", "docs/")
 # 歷史日誌不掃路徑：它們如實記錄「當時」的檔案，事後被刪除是正常的
 # （如 R5d 移除的 stdin-panel.tsx），報成失效反而是雜訊
-HISTORICAL = {"docs/decisions.md", "docs/roadmap-archive.md"}
+HISTORICAL = {"docs/decisions.md"}
 # 各文檔自訂的行數上限（寫在該檔內，過去無人驗 → CLAUDE.md 曾超標 35% 未被發現）
 SELF_DECLARED_CAPS = {"CLAUDE.md": 62}  # 2026-08-07 60→62：新增 AGENTS.md 雙讀者說明
 DOC_FILES = ["CLAUDE.md", *sorted(str(p.relative_to(ROOT)) for p in ROOT.glob("docs/*.md"))]

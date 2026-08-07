@@ -1,8 +1,8 @@
 # Roadmap
 
 > **狀態：活躍｜進度唯一真相來源。** 本檔只回答「現在做什麼、接著做什麼、卡在哪裡」。
-> 完成歷史見 [`roadmap-archive.md`](roadmap-archive.md)，設計取捨見 [`decisions.md`](decisions.md)，
-> 工程問題見 [`tech-debt.md`](tech-debt.md)，變更明細查 `git log`。
+> 設計取捨見 [`decisions.md`](decisions.md)，工程問題見 [`tech-debt.md`](tech-debt.md)，
+> 完成歷史與變更明細查 `git log`。
 >
 > **狀態規則**：`[ ]` 只代表已排程且有明確完成條件的工作；等人、等環境或條件式工作放在專區。
 > 完成 milestone 在本檔留一行索引，細節不回填。既有任務 ID 保留，避免破壞歷史引用。
@@ -103,5 +103,5 @@
 | 7-D | 技術債、文件契約、教材健檢、錯誤 toast 與註解規範完成 |
 | 7-D8 | Claude Code／Codex canonical source、雙端 adapters、CI drift check、macOS bootstrap 完成；Windows 實機驗收不阻擋結案 |
 
-> 早期完成細節依 phase 查凍結的 [`roadmap-archive.md`](roadmap-archive.md)；近期變更以
-> `git log --grep=<task-id>` 查詢。決策不得再複製回本檔。
+> 完成細節以 `git log --grep=<task-id>` 查詢；需要逐檔演變時使用 `git log -p -- <path>`。
+> 決策不得再複製回本檔。

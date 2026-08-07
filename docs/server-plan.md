@@ -68,6 +68,23 @@
 - RAM 峰值：30 互動 session ≈ 0.45 GB + 2 併發編譯 ≈ 0.6 GB → 合計 ~1.2 GB < 1.5 GB 可用（swap 兜底）
 - 規模擴大：升 4C4G 並調高編譯閘即可，A 機不受影響
 
+### 30 並行實測（2026-08-08）
+
+在 B 機 localhost 以 30 支不同 C++ 程式避免 binary cache，並行呼叫 `POST /run`：
+
+| 指標 | 結果 |
+|------|------|
+| 成功率 | 30/30（100%），全部輸出正確 |
+| 全批完成 | 3.491 秒 |
+| latency | median 1.912s / p95 3.428s / max 3.484s |
+| queue wait | median 446ms / p95 495ms / max 498ms |
+| runner peak | CPU 178.17% / RAM 74.96 MiB（container limit 1.367 GiB） |
+| 收尾狀態 | active=0、queue_depth=0、sandbox=nsjail |
+
+結論：2-slot gate 確實把 CPU 峰值限制在 2 cores 內，30 人同步提交低於原估 6 秒，
+RAM 餘裕遠高於假設；現行 2C2G 不需升級。B 機重跑：
+`cd /home/ubuntu/runner && python3 load_test.py --env-file .env --requests 30`。
+
 ## 環境變數（backend，詳見 `.claude/rules/backend.md`）
 
 | 變數 | 值 |

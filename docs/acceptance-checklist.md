@@ -144,7 +144,8 @@ backend 容器啟動時 `start.sh` 會跑 `alembic upgrade head`，所以 7-U2 �
 
 - [ ] **9-1 教材品質**：用到哪個單元覺得內容不對，記下編號 → 走 6-4b 局部重跑
 - [ ] **9-2 教材健檢**：`cd backend && .venv/bin/python -m scripts.verify_code_snippets`
-  - 每日 20 支的限制**已可解除**（Judge0 額度不再是瓶頸），待 **7-D4** 調整；跑出 `Compile Error` 就是下一個 `external` 等級的缺陷
+  - 預設以自建 runner 全量編譯所有 starter code；`--limit N` 僅供人工縮短單次執行
+  - 跑出 `Compilation Error` 就是下一個 `external` 等級的教材缺陷
 
 ---
 

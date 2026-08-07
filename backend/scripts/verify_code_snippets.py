@@ -7,13 +7,12 @@
 
 1. **靜態掃描（免費、每次都跑）**：拿 `corrections.json` 的 global_replacements
    當「已知錯誤拼法字典」掃全部教材與題目。任何一個鍵出現在 DB 內容裡＝退步。
-2. **Judge0 編譯（有配額）**：把 coding 題的 `starter_code` 送去真的編譯一次。
-   **每天上限 20 次**（Judge0 免費額度 50/天），未檢查過的優先、其次是最久沒檢查的，
-   狀態寫入 `snippet_check_state.json`，跨天接續跑完整輪。
+2. **Runner 編譯**：把 coding 題的 `starter_code` 送去真的編譯一次。預設全量檢查；
+   `--limit` 僅供人工縮短單次執行，未檢查過的優先、其次是最久沒檢查的。
 
 用法：
     .venv/bin/python -m scripts.verify_code_snippets --static-only   # 零成本
-    .venv/bin/python -m scripts.verify_code_snippets                 # 靜態 + 最多 20 次編譯
+    .venv/bin/python -m scripts.verify_code_snippets                 # 靜態 + 全量編譯
     .venv/bin/python -m scripts.verify_code_snippets --limit 5
 """
 
@@ -35,9 +34,6 @@ from services.runner import submit_and_poll
 _PROJECT_ROOT = Path(__file__).resolve().parents[2]
 CORRECTIONS_FILE = _PROJECT_ROOT / "data" / "teaching_content" / "corrections.json"
 STATE_FILE = _PROJECT_ROOT / "data" / "teaching_content" / "snippet_check_state.json"
-
-DAILY_BUDGET = 20
-
 
 def load_state() -> dict:
     if STATE_FILE.exists():
@@ -110,7 +106,7 @@ def pick_targets(
 async def compile_check(
     targets: list[tuple[str, str]], state: dict
 ) -> list[str]:
-    """逐一送 Judge0 編譯；回傳失敗描述清單，並更新 state。"""
+    """逐一送 runner 編譯；回傳失敗描述清單，並更新 state。"""
     failures: list[str] = []
     records = state.setdefault("snippets", {})
     for qid, code in targets:
@@ -136,11 +132,11 @@ async def compile_check(
 async def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
-        "--static-only", action="store_true", help="只做免費靜態掃描，不送 Judge0"
+        "--static-only", action="store_true", help="只做靜態掃描，不送 runner"
     )
     parser.add_argument(
-        "--limit", type=int, default=DAILY_BUDGET,
-        help=f"本次最多送幾支去編譯（預設 {DAILY_BUDGET}）",
+        "--limit", type=int, default=None,
+        help="本次最多送幾支去編譯（預設全量）",
     )
     args = parser.parse_args()
 
@@ -158,9 +154,9 @@ async def main() -> int:
 
     if not args.static_only:
         snippets = await load_snippets()
-        limit = max(0, min(args.limit, DAILY_BUDGET))
+        limit = len(snippets) if args.limit is None else max(0, args.limit)
         targets = pick_targets(snippets, state, limit)
-        print(f"\n=== 2) Judge0 編譯：{len(targets)}/{len(snippets)} 支（每日上限 {DAILY_BUDGET}）===")
+        print(f"\n=== 2) Runner 編譯：{len(targets)}/{len(snippets)} 支 ===")
         compile_failures = await compile_check(targets, state)
         checked = len(targets)
 
@@ -171,6 +167,8 @@ async def main() -> int:
             == hashlib.sha256(code.encode()).hexdigest()[:12]
         )
         print(f"\n  累計已驗：{done}/{len(snippets)} 支")
+        state["total_snippets"] = len(snippets)
+        state["remaining"] = len(snippets) - done
 
     # 只有真的編譯過才算「今天跑過」——靜態掃描是免費的，不該用來消掉提醒
     if checked:

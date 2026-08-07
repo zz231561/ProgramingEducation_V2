@@ -955,12 +955,7 @@ P2 證實不需要脆弱的「致謝歸零」規則：理解訊號本身就會�
 
 ## [2026-05-22] — Phase 6-3b ExercisesTab 題庫優先（GET /quiz/from-bank + 前端分流 fallback）
 
-### Verified (2026-05-22 透過 `pytest -q` + `npx tsc --noEmit` + `npx eslint`)
-- 後端 499 passed in 9.27s（原 488 + 新 11：bank 6 + route 5）
-- 前端 TypeScript / ESLint 全綠
-- Fallback path 直接驗證（DB 無 validated 題 → 預期跳 generate 流程）；命中題庫 path 延至 6-3a-3 / 6-4 實機跑出 grounded validated 題後驗
-
-### Added
+### 決策依據與證據
 - **`backend/services/quiz/bank.py`** (45 行)：`pick_random_validated_question(db, concept_tag, exclude_question_ids?)`
   - 篩 `validated=True` + Python 端 filter `concept_tags` 含 tag（避開 JSON contains 跨方言差異）
   - 隨機抽用 `random.choice`（候選 n 不大）；無題回 `None`
@@ -975,217 +970,13 @@ P2 證實不需要脆弱的「致謝歸零」規則：理解訊號本身就會�
   - 命中題、無題、validated=False 不被抽中、不同 tag 不串題、exclude_question_ids 過濾、多次抽都符合條件
 - **`backend/tests/test_quiz_route.py`** 加 5 個 endpoint integration 測試（test_from_bank_*）
 
-### Changed
-- **`web/components/learn/exercises-tab.tsx`**：
-  - `Phase` type 加 `loading-bank` / `loading-generate`（取代原單一 `loading`）
-  - `startExercise()`：先 `getQuestionFromBank` → catch `ApiRequestError(404, QUESTION_BANK_EMPTY)` → fallback `generateQuestion`；其他錯誤一律 humanize
-  - `LoadingView` 改 prop-driven 文案：bank 顯示「查找題庫題目（< 1 秒）」/ generate 顯示「AI 正在生成題目（5-15 秒）」
-  - 拆出 IdleView / LoadingView 至 exercises-tab-views.tsx（主檔 261 → 227 行，回到 < 250 健康水位）
-- **`backend/services/quiz/__init__.py`**：export `pick_random_validated_question`
-- **`backend/api/routes/quiz.py`**：212 → 237 行（< 250），新增 from-bank endpoint + 對應 import
-
-### Implementation note
+### 決策依據與證據
 - **為什麼 endpoint 用 GET 而非 POST**：抽題是冪等讀取操作（每次隨機抽 1 題；非建立資源），語意上 GET 更合適；URL 中 `concept_tag=` 也便於除錯 / 觀察。
 - **為什麼 random.choice 在 Python 端而非 SQL `ORDER BY RANDOM()`**：JSON contains（`concept_tags @> [tag]`）跨 SQLite/Postgres 寫法差異大；既然候選量 n ≤ 數十，先撈出再 Python random 是可攜的低成本選擇。未來流量大或 dedup 需要更複雜邏輯時可升級。
 
-### Tech debt
-- 已答題排除尚未啟用：service 已支援 `exclude_question_ids`，但前端 ExercisesTab 未維護「使用者已答題清單」；學生重複進同 unit 練習可能抽到同題（中短期可接受，列為 tech-debt）
-
-### Tests
-- 後端 499 tests 全綠（pytest -q 9.27s）
-- 前端 typecheck + lint 全綠
-
-### Health metrics
-- `bank.py` 45 行（健康）
-- `quiz.py` (routes) 237 行（< 250 ⚠ 門檻）
-- `exercises-tab.tsx` 227 行（< 250；超 150 ⚠ 但與既有 261 同水位）
-- `exercises-tab-views.tsx` 58 行（< 150）
-- `test_quiz_bank.py` 約 130 行（測試檔）
-
-### Deferred（已錨定）
-- 命中題庫 path 真實驗收：延至 6-3a-3 / 6-4 實機跑出 grounded validated 題後 → roadmap 6-4a-deferred-ui 紀錄 / tech-debt 延遲驗收區
-- Dedup 「不重複出已答題」：service `exclude_question_ids` 已預留 → 前端維護已答題清單後再啟用
-
----
-
-## [2026-05-22] — Phase 6-3a-2 批次練習題生成 service + CLI（程式碼 + mock+DB 測試完成；實機跑延 6-4）
-
-### Verified (2026-05-22 透過 `pytest -q`)
-- `tests/test_quiz_batch_generator.py` 8 passed
-- 全套 488 passed in 9.21s（原 480 + 新 8，無 regression）
-
-### Added
-- **`backend/services/quiz/batch_generator.py`** (217 行)：批次層
-  - `generate_questions_for_concept(concept, question_types, bloom_level)` — per-concept 跑 N 題、每題 generate（grounded mode：`video_order=concept.video_order`）+ validate（retry max 2）
-  - `generate_all(only, skip_existing, question_types, bloom_level)` — 入口；`skip_existing=True` 時跳過已有 ≥ N validated 題的 concept（用 `_count_validated_questions` 掃 `concept_tags` JSON array）
-  - `list_target_concepts(only)` — `Concept.video_order IS NOT NULL` + 可選 video_order filter（與 6-2b 同策略，含 1-3 課程介紹）
-  - dataclasses `QuestionAttempt`、`ConceptBatchResult`（含 `validated_count` property）
-  - 預設 `DEFAULT_QUESTION_TYPES = (MULTIPLE_CHOICE, CODING)`、`DEFAULT_BLOOM_LEVEL = APPLY=3`
-- **`backend/scripts/generate_unit_questions.py`** (124 行)：CLI
-  - `--only N` 單一 video_order；`--force` 跳 skip_existing；`--dry-run` 只列 concept
-  - 輸出 per-concept progress（marker：✅完整 / ⚠ partial / ❌全失敗 / ⏭️ skipped）+ summary（concepts / full success / partial / all-failed / skipped / total validated questions inserted）+ failed details
-- **`backend/tests/test_quiz_batch_generator.py`** (約 270 行)：8 個 mock+DB 測試
-  - per-concept 2 題全 validated → 入庫
-  - validate concept_fits=False 兩次 retry 失敗 → 該題 rollback、不阻擋下一題
-  - generate LLM_PARSE_ERROR → 該題直接 abort（不 retry）、不阻擋下一題
-  - NO_VIDEO_ORDER concept → 422 防呆
-  - `generate_all` `skip_existing=True` 跳過已有足量 validated 題的 concept
-  - `--force`（skip_existing=False）強制重生
-  - `list_target_concepts` only 過濾 + 排除無 video_order
-  - `ConceptBatchResult.validated_count` property
-
-### Fixed / Implementation note
-- **ORM attr expire 問題**：rollback / commit 後 SQLAlchemy 預設 `expire_on_commit=True` 會把 ORM 物件 attr 標 expired，下次 access 觸發 async lazy reload；在 retry loop 內每次 IO 後加 `await db.refresh(concept)` 確保下一輪訪問 `concept.video_order / .tag / .difficulty_level` 時不會拋 `MissingGreenlet`。
-
-### Changed
-- **`docs/roadmap.md`** 6-3a-2 勾選 + 補執行成本估計（62 × 2 × 2 LLM call ≈ 250-500k token / $5-15 USD）
-
-### Tests
-- 後端 488 tests 全綠（pytest -q 9.21s）
-
-### Health metrics
-- `batch_generator.py` 217 行（< 250 ⚠ 門檻）
-- `generate_unit_questions.py` 124 行（< 150 ⚠ 門檻）
-- `test_quiz_batch_generator.py` 約 270 行（測試檔無門檻；逐塊獨立）
-
-### Deferred（已錨定）
-- 6-3a-3 實機 LLM 全跑：延至 6-4a 與 6-2b 批次跑合併執行
-- 重複避免目前用「已 validated 題數 ≥ requested」判斷；題目雖然 grounded 但語意可能近似，未做相似度 dedupe（如有重複可手動 invalidate）
-
----
-
-## [2026-05-22] — Phase 6-3a-1 grounded mode 接入 `generate_question`（程式碼 + mock 測試完成；批次 script 與實機跑延 6-3a-2 / 6-4）
-
-### Verified (2026-05-22 透過 `pytest -q`)
-- `tests/test_quiz_generate.py` 12 passed（含 4 個新 grounding 測試）
-- 全套 480 passed in 9.23s（原 476 + 新 4，無 regression）
-
-### Added
-- **`backend/services/quiz/generate.py:_GROUNDING_RULES`** — 3 條 grounding rule（題目情境 / 嚴禁發明 / 字幕不足時降難度）
-- **`backend/services/quiz/generate.py:_fetch_grounded_chunks_for_video`** — 包 `get_chunks_by_video_order`，失敗 fallback 空 chunks（同 semantic path 容錯）
-- **`backend/tests/test_quiz_generate.py`** 新增 4 測試：
-  - `test_grounded_mode_uses_video_chunks_and_skips_semantic_retrieve` — `video_order` 提供時 `get_chunks_by_video_order` 被呼叫、`retrieve_chunks` 不被呼叫；TRANSCRIPT header + chunk 內文進 user prompt
-  - `test_grounded_mode_injects_grounding_rules_into_system_prompt` — system prompt 含「Grounding 規則」+「嚴禁發明字幕未提到的程式碼」
-  - `test_non_grounded_mode_preserves_legacy_path` — `video_order=None` 走 `retrieve_chunks`、prompt 不含 grounding 規則（backward compat）
-  - `test_grounded_retrieve_failure_does_not_block_generation` — `get_chunks_by_video_order` 拋例外仍能出題（fallback 空 chunks）
-
-### Changed
-- **`backend/services/quiz/generate.py:generate_question`** 簽名加 `video_order: int | None = None`；提供時 grounded mode（不需改 orchestrator / API；學生現生題路徑不變）
-- **`backend/services/quiz/generate.py:_build_system_prompt`** 加 `grounded: bool` 參數，true 時 append `_GROUNDING_RULES`
-- **`backend/services/quiz/generate.py:_build_user_prompt`** 加 `grounded: bool` 參數，true 時 user header 改為「以下 TRANSCRIPT 為教授實際 YouTube 影片字幕（依時間順序）」
-- **`backend/tests/test_quiz_generate.py:patched_llm`** 擴充：同時 patch `retrieve_chunks` + `get_chunks_by_video_order`；`yield` 回 3 個 mock 供新測試 assert 呼叫行為
-- **`docs/roadmap.md`** 6-3a 拆 3 子項：6-3a-1（程式碼，本次完成 ✅）/ 6-3a-2（批次 script，next）/ 6-3a-3（實機跑，延 6-4）
-
-### Tests
-- 後端 480 tests 全綠（pytest -q 9.23s）
-
-### Health metrics
-- `generate.py` 221 → 248 行（< 250 ⚠ 門檻；曾觸頂 268 行，主動壓縮 docstring + 縮短 grounding rules 字串後回到健康水位）
-- `test_quiz_generate.py` 250 → 359 行（測試檔，無 ⚠ 強制門檻；逐塊獨立可讀）
-
-### Deferred（已錨定）
-- 6-3a-2 批次 script + 6-3a-3 實機跑：roadmap 6-3 子項已標
-- 學生現生題 backward compat：本次未動 `orchestrator.generate_for_student`，學生路徑仍走 semantic RAG；待 6-3b 改造 ExercisesTab 時再決定是否切到題庫優先
-
----
-
-## [2026-05-22] — Phase 6-2e 程式碼完成：摘要 tab 渲染 grounded key_points + citation 標籤（fallback 已驗證 / grounded 狀態延至 6-4 驗收）
-
-### Verified (2026-05-22 透過 `npx tsc --noEmit` + `npx eslint`)
-- TypeScript / ESLint 全綠；既有 lazy-seed empty 形狀仍顯示「重點摘要尚未匯入」placeholder（與 6-2c/d 行為一致）
-- grounded 主路徑（`needs_more_source` notice / key_points bullet + citations）：**因 DB 尚無任何 promoted `summary` object 形狀**，延至 Phase 6-4a-deferred-ui 合併驗收
-
-### Added
-- **`web/components/learn/summary-tab.tsx`** (約 115 行)：grounded summary 渲染元件
-  - 四段狀態：grounded 且 `needs_more_source=true` → reason notice；grounded 且 `key_points` 非空 → bullet list + citation 列表；舊 `summary: string` → legacy fallback；都沒有 → empty placeholder
-  - citation 採靜態時間戳 + 節錄文字（不嵌 YT player，提示使用者回概念 tab 點 citation）
-
-### Changed
-- **`web/lib/learning.ts`**：新增 `SummaryContent` 介面（與後端 `content_generator.py:Summary` 對齊：`needs_more_source` / `reason` / `key_points` / `citations`）；`UnitContent.summary` 由 `string` 擴為 `string | SummaryContent`，相容舊 lazy seed 與 promote 後形狀
-- **`web/components/learn/unit-content.tsx`**：移除 inline `SummaryTab` + `EmptyTab`（共 19 行），改 import `SummaryTab` from `./summary-tab`；保持 ≤ 150 行健康水位
-- **`docs/roadmap.md`**：勾選 6-2e；6-4a-deferred-ui 子項「**6-2e grounded path**」補完內容說明（驗收 needs_more_source notice + key_points bullet 渲染）
-
-### Tests
-- 後端無新增測試（API 與 schema 未動）；後端 476 tests 全綠
-- 前端 TypeScript check 通過 (`npx tsc --noEmit` exit 0) + ESLint 通過
-
-### Health metrics
-- `summary-tab.tsx` 約 115 行（< 150 ⚠ 門檻）；`unit-content.tsx` 154 行（仍超 ≤150 警戒線少許，與 6-2d 完成時同水位，本任務未惡化）
-- `learning.ts` 新增 7 行 interface + 1 行 union 擴充，未跨 ⚠ 門檻
-
----
-
-## [2026-05-22] — Phase 6-2d 程式碼完成：範例 tab 渲染 grounded code + 「在 Workspace 開啟」轉場（fallback 已驗證 / 卡片狀態延至 6-4 驗收）
-
-### Verified (2026-05-22)
-- 使用者於 Unit 1「什麼是程式語言」範例 tab 看到「程式範例尚未匯入」placeholder — fallback 分支運作正確
-- 卡片列表（grounded code_examples）+ 「在 Workspace 開啟」轉場 + 一次性消費 sessionStorage：**因 DB 尚無任何 promoted `code_examples` JSON 而無法本次驗收**；延至 Phase 6-4 教授抽查 + 實機 LLM 批次跑完後合併驗收
-
-### Deferred verification anchored at 3 places (避免被遺忘)
-- `docs/roadmap.md` — 6-4a 下新增 `6-4a-deferred-ui` 子 checkbox，明列 6-2c / 6-2d 待補驗的 grounded 主路徑（含 sessionStorage 一次性消費關鍵驗收步驟）
-- `docs/tech-debt.md` — 新增「延遲驗收（Phase 6-2 → 6-4 必跑）」段，含失敗排查指引（`pending-workspace-code.ts` removeItem / `workspace/page.tsx` useState lazy initializer）
-- `CLAUDE.md` 當前狀態 — 6-2c / 6-2d 標記改為「✅程式碼完成 + fallback 已驗」，下一步段強調「6-4a-deferred-ui 必跑」
-
-### Added
-- **`web/components/learn/examples-tab.tsx`** (147 行)：grounded code examples 渲染元件
-  - 四段狀態：`needs_more_source=true` → reason notice；有 grounded examples → 卡片列表；舊形狀 `examples: string[]` → legacy fallback；都沒有 → empty placeholder
-  - `ExampleCard`：title + code block（mono / bg-inset）+ explanation + optional citation 標籤 + 「在 Workspace 開啟」按鈕
-  - citation 採靜態時間戳 + 節錄文字（不嵌 YT player，避免每 tab 各跑一個 IFrame）；要跳影片時間請回概念 tab 點 citation
-- **`web/lib/pending-workspace-code.ts`** (53 行)：sessionStorage helper for 跨頁攜帶程式碼
-  - `setPendingWorkspaceCode(code)` / `consumePendingWorkspaceCode()`（讀完即清，避免下次重整誤覆蓋）
-  - 復用 `active-reflection.ts` pattern（CustomEvent 同 tab 通知 + SSR safe try/catch）
-
-### Changed
-- **`web/lib/learning.ts`**：新增 `CodeExample` / `CodeExamples` 介面（與後端 `content_generator.py:CodeExample/CodeExamples` 對齊）；`UnitContent` 加 optional `code_examples?: CodeExamples`
-- **`web/components/learn/unit-content.tsx`**：移除 inline `ExamplesTab`（17 行），改 import `ExamplesTab` from `./examples-tab`；檔案 188→173 行（更接近 ≤ 150 健康水位）
-- **`web/app/(app)/workspace/page.tsx`**：mount 時用 `useState` lazy initializer 消費 `consumePendingWorkspaceCode()`，作為 `<CodeEditor initialValue={...}>` 一次性 prop；後續 re-render 不重複 consume
-
-### Tests
-- 後端無新增測試（API 與 schema 未動）；後端 476 tests 全綠
-- 前端 TypeScript check 通過 (`npx tsc --noEmit` exit 0)
-- 前端無 component test 基建（沿用 Phase 1-6 既定策略：UI 由使用者驗證）
-
-### Why
-6-2d 為 NotebookLM grounded 模式的「程式範例 tab」前端呈現：完成此 task 後使用者進入單元頁範例 tab 即可看到 LLM 從字幕生成的 1-3 個 C++ 程式範例 + 一鍵「在 Workspace 開啟」即時上手實驗。citation 與概念 tab 結構一致，讓學生能回溯字幕出處。配合 6-2c 概念 tab + 後續 6-2e 摘要 tab，三段 grounded 內容呈現基線完成。
-
-### How to verify (使用者待測)
-1. 前端 dev 環境（`npm run dev`）登入 → 進 Learn 頁 → 點開任一單元 → 切到「範例程式」tab
-2. 若該單元 `learning_units.content.code_examples` 已有 promoted 資料：
-   - 應顯示卡片列表，每張卡片含標題 + 程式碼 + 說明 + 出處（時間戳+節錄）+ 「在 Workspace 開啟」按鈕
-3. 點任一範例的「在 Workspace 開啟」→ 路由跳 `/workspace` → 編輯器應載入該範例程式碼（取代 default Hello World）
-4. 在 Workspace 內手動 navigate 回去再進來，編輯器應**不會**再次被該範例覆蓋（一次性消費）
-5. 若該單元尚未 promoted（多數 unit 目前如此）：應顯示 empty placeholder 或舊形狀 fallback
-
-## [2026-05-22] — Quiz cold-start fallback robust 補強（V2 cpp-XX schema 兼容）
-
-### Changed
-- **`backend/services/quiz/orchestrator.py:_pick_target_concept`** 改為兩段 fallback：
-  1. 先查 `COLD_START_FALLBACK_TAG`（V1 schema 兼容；測試環境直接 seed 此 tag 仍可用）
-  2. 若無，動態查 `difficulty_level` ASC + `video_order` ASC 取最低難度且最前序 concept
-  3. 兩段都失敗才回 503 `QUIZ_UNAVAILABLE`
-
-### Tests
-- **`backend/tests/test_quiz_route.py:test_generate_cold_start_dynamic_fallback_when_no_legacy_tag`** 新增：seed `cpp-04-first-program`（difficulty=1, video_order=1）+ `cpp-05-syntax`（difficulty=1, video_order=2）+ `cpp-25-if-else`（difficulty=2）；不含 `syntax-basic` legacy tag；驗證 cold-start 取到 `cpp-04-first-program`
-- 後端 476 tests 全綠
-
-### Why
-V1 cold-start 仰賴固定 tag `syntax-basic`，但 V2 cpp-XX 章節制 seed（62 部影片 concept）不含此 tag；無弱項 + 無 legacy tag 時 prod 會直接回 503。動態 fallback 讓部署初期（沒有任何 mastery 紀錄）的學生也能正常觸發出題。
-
-## [2026-05-22] — Phase 6-2c 使用者驗證通過（YT 播放 + citation 跳轉 + grounded markdown 渲染正常）
-
-### Verified
-- 使用者於本機 dev 環境登入 → 進 Learn 頁 → 點開已 PATCH `video_youtube_id` 的單元，確認：
-  - YT IFrame player 載入並可播放
-  - grounded markdown 內容正確渲染（react-markdown + remark-gfm）
-  - citation 列表點擊可呼叫 `player.seekTo` 跳到對應 timestamp
-- 6-2c 正式 close；`docs/roadmap.md` 該行勾選 `[x]`；`CLAUDE.md` 當前狀態更新「下一步：6-2d 範例 tab」
-
-### Next
-- 6-2d 範例 tab：渲染 LLM 生成的程式碼範例 + 「在 Workspace 開啟」按鈕（復用 Phase 2-5d sessionStorage）+ citation 標示
-
 ## [2026-05-22] — 設計反轉：video_order 1-3（課程介紹）加回學習路徑
 
-### Changed
+### 決策依據與證據
 - **新 alembic migration `h4c5d6e7f8a9_seed_intro_video_prerequisites.py`**：補 3 條 PREREQUISITE 邊
   - `cpp-01-language-intro` → `cpp-02-cpp-overview`
   - `cpp-02-cpp-overview` → `cpp-03-devcpp-install`
@@ -1196,77 +987,14 @@ V1 cold-start 仰賴固定 tag `syntax-basic`，但 V2 cpp-XX 章節制 seed（6
 - **保留 `category="課程介紹"` 不變**：未來知識圖譜頁可用此 category 做 styling 區分（不再做路徑過濾用途）
 - **`docs/roadmap.md`**：6-1c 條目 + 「已確認決策」段 1-3 處理方式 + Phase 6 開頭「Concept 範圍」說明 — 三處同步修訂
 
-### Tests
-- **`backend/tests/test_learning_generator.py`**：
-  - `test_intro_category_concepts_excluded_from_path` → `test_intro_category_concepts_included_in_path`（assert 三筆 concept 全部進路徑）
-  - `test_all_intro_category_raises_422` → `test_path_with_only_intro_category_still_succeeds`（assert 不再拋 422，能正常生成）
-- **`backend/tests/test_batch_generator.py:test_list_target_concepts_filters_intro_and_no_video_order`** → `test_list_target_concepts_includes_intro_filters_no_video_order`（assert 課程介紹也會被批次生成）
-- alembic upgrade head 套用成功；後端 476 tests 全綠
-
-### Why
-原 6-1c 把 1-3 列為「選看」類不進路徑；2026-05-22 使用者決定 1-3 教學內容（語言介紹 / C++ 概述 / DevC++ 安裝環境）對線性學習路徑而言是必要前置，應強制要學。加 PREREQUISITE 邊比「移除 filter 讓 1-3 與 4 並列 in_degree=0」更穩定，保證路徑順序固定為 1,2,3,4,...,62。
-
-### Migration
-本機 dev 環境：`cd backend && alembic upgrade head`
-部署環境（Phase 7）：deployment 流程自動跑 `alembic upgrade head`，無額外動作
-
-## [2026-05-22] — Phase 6-2c 程式碼完成：概念說明 tab 嵌入 YT IFrame player + grounded markdown + citation 跳轉（待使用者 UI 驗證）
-
-### Added
-- **`web/components/learn/youtube-player.tsx`** (142 行)：YT IFrame Player API wrapper
-  - lazy load `https://www.youtube.com/iframe_api`（全域 script 只 inject 一次，多 player 共用）
-  - `forwardRef` + `useImperativeHandle` 暴露 `seekTo(seconds)`；player 尚未 ready 時暫存待 `onReady` 補跳
-  - `videoId` 變更時 `cueVideoById` 重置（換單元不重建 iframe）
-  - 元件卸載時 `destroy()` 防 leak
-- **`web/components/learn/concept-tab.tsx`** (229 行)：grounded 內容渲染元件
-  - 三段狀態：無 youtube_id → placeholder；有影片無 grounded → player + 簡介；完整 → player + Markdown + citation 列表
-  - `ReactMarkdown` + `remarkGfm` 渲染 LLM 生成的 `concept_explanation.markdown`；自訂 12 個 element class（無 `@tailwindcss/typography` 仍維持可讀性）
-  - `parseTimestampStart()` 解析 `mm:ss` / `mm:ss-mm:ss` / `hh:mm:ss` → 秒數；citation 列表按鈕點擊呼叫 `player.seekTo`
-- **`web/components/learn/unit-action-bar.tsx`** (85 行)：從 unit-content.tsx 拆出 NavButton + ActionButton（讓 unit-content.tsx 降至 191 行 < 250 行硬上限）
-
-### Changed
-- **後端 `backend/api/routes/learning.py:UnitOut`** 新增 `video_youtube_id: str | None` / `video_duration_seconds: int | None`，由 concept JOIN 帶出
-- **後端 `backend/services/learning/queries.py:UnitWithConcept`** dataclass 同步擴充兩欄
-- **前端 `web/lib/learning.ts`**：`Unit` 加 `video_youtube_id` / `video_duration_seconds`；`UnitContent` 加 optional `concept_explanation`（grounded 形狀，含 markdown + citations）；新增 `Citation` / `ConceptExplanation` 介面
-- **前端 `web/components/learn/unit-content.tsx`**：原 inline `ConceptTab` + `VideoPlayerPlaceholder` 移除，改 import `ConceptTab`；NavButton + ActionButton 改 import 自 unit-action-bar
-- **新增 npm 套件**：`react-markdown@^10.1.0` + `remark-gfm@^4.0.1`
-
-### Tests
-- **`backend/tests/test_learning_route.py:test_get_path_returns_units_in_order`** 補斷言 `video_youtube_id` / `video_duration_seconds` 直通 UnitOut；`_seed_concepts` helper 容許 spec 帶這兩欄
-- 後端 476 tests 全綠（無新增測試檔；既有 route 測試擴充即可覆蓋 6-2c 新欄位）
-
-### Why
-6-2c 為 NotebookLM grounded 模式的「概念說明 tab」前端呈現：完成此 task 後使用者進入單元頁即可看到實際 YT 影片 + LLM grounded markdown + citation timestamp 跳轉，達成「LLM 生成內容必須引用 transcript 出處 + 學生可立即比對影片真實時間點」的設計目標。6-2b 已完成批次生成 + promote helper，配合本任務後即可端到端跑通 grounded 內容生成 → 前端呈現。
-
-### How to verify (使用者待測)
-1. 前端 dev 環境（`npm run dev`）登入 → 進 Learn 頁 → 點任一已 PATCH `video_youtube_id` 的單元（video_order 4-62）
-2. 確認概念說明 tab 顯示 YT player 並可播放
-3. 若該 unit `content.concept_explanation` 有資料 → 應顯示 markdown + citation 列表；點 citation 按鈕應跳轉至對應時間點
-4. 若 unit 仍是空 content → 應顯示 player + 「概念簡介」fallback 文字
-
 ## [2026-05-13] — chore(web): middleware → proxy 遷移（Next.js 16 deprecation）
 
-### Changed
-- **`web/middleware.ts` → `web/proxy.ts`**：Next.js 16 將 `middleware` 檔案規範改名為 `proxy`，原檔仍可運作但會發 deprecation warning。export 從 `auth as middleware` 改為 `auth as proxy`，`config.matcher` 規格不變。
-
-### Why
+### 決策依據與證據
 `npm run dev` 出現 deprecation 警告 `The "middleware" file convention is deprecated. Please use "proxy" instead.`。Next.js 官方理由：避免與 Express middleware 概念混淆，且明確標示其位於 Edge Runtime 上的 proxy 性質。
-
-## [2026-05-13] — docs: dev-setup.md 新增 Windows (PowerShell) 啟動章節
-
-### Added
-- **`docs/dev-setup.md` §1B**：Windows 對應啟動流程
-  - 最小啟動（DB + Redis）/ 完整開發（後端 + 前端三 terminal）/ 收工關閉 三段 PowerShell 指令
-  - Windows 與 macOS 對照表（路徑、Docker daemon、venv 啟動、shell 語法）
-  - 標註 Windows 路徑為 `C:\Users\hao\Desktop\Projects\...`（複數 Projects），與 macOS `Project`（單數）不同
-- **`docs/dev-setup.md` §1**：標題加註 `(macOS / 已裝完工具)` + 開頭指引「Windows 環境見 §1B」
-
-### Why
-原 §1 僅 macOS / Colima 流程；Windows 環境 session 啟動時無對應指引。
 
 ## [2026-05-08] — Phase 6-2b 程式碼完成：grounded 批次生成 + staging table + retry + promote helper（待使用者實機驗證）
 
-### Added
+### 決策依據與證據
 - **`backend/services/rag/retrieve.py`** 擴充：新 `get_chunks_by_video_order(video_order)` 直接 SQL 查 `data_codedge_rag.metadata_->>'video_order'`，依 `start_time_seconds` 排序回傳該 video 完整字幕 chunks（非語意 top-k，避免跨 video 污染與順序錯亂）
 - **`backend/services/learning/batch_generator.py`** (251 行)：批次生成核心
   - `generate_for_concept(db, concept) -> GenerationResult`：retrieve → generate_unit_content → UPSERT staging
@@ -1290,79 +1018,10 @@ V1 cold-start 仰賴固定 tag `syntax-basic`，但 V2 cpp-XX 章節制 seed（6
   - promote_concept ×3（成功 / pending 422 / 缺 row 404）
 - 全套 backend 從 458 → **476 tests 全綠**
 
-### Design 亮點
-- **per-concept 不 per-unit**：1 concept N user units 共用 grounded content；staging 用 `concept_id UNIQUE`，promote 時一次更新所有相關 units
-- **needs_more_source vs retry 互斥**：retry 處理「LLM 失敗」（網路 / parse），needs_more_source 處理「資料不足」（字幕短 / 偏題）
-- **vendor-neutral upsert**：避開 PG dialect `on_conflict_do_update`，用 SELECT-then-INSERT/UPDATE 維持 SQLite 測試相容；UNIQUE(concept_id) 仍由 schema 強制
-- **promote 與 generate 拆檔**：6-4 觸發的後段流程獨立，不與 batch generation 耦合；保持單一檔案 ≤ 250 行硬限
-
-### Sync
-- migration `g3b4c5d6e7f8` 已 apply 至 dev DB
-- `data_codedge_rag` retrieve 對齊 6-1e ingest 時寫入的 `video_order` / `start_time_seconds` metadata
-- dry-run 驗證：59 concept(s) would be processed（v04-v62），課程介紹 v01-v03 自動排除
-
-### 待使用者驗證
-- ⏳ 實際批次跑 1 部影片（建議 `--only 47` 遞迴）驗證 LLM 生成品質 + staging 寫入
-- ⏳ 全 59 部批次跑（成本估 $5-10 USD）後檢查 needs_more_source 比例
-
-### Why
-6-2a 完成 prompt + 模型驗證後，6-2b 把它接到實際 RAG infrastructure：對每 concept 用 video_order metadata filter retrieve 該影片字幕 → call generate_unit_content → 落到 staging 供 6-4 教授抽查。staging 表設計為 1 concept 1 row（不依賴用戶），審查通過後 promote 一次更新所有用戶的對應 unit。
-
----
-
-## [2026-05-08] — Phase 6-2a 完成：grounded prompt template + Pydantic 模型 + 13 mock-LLM 測試
-
-### Added
-- **`backend/services/learning/content_generator.py`** (235 行)：3 個 section 生成 function
-  - `generate_concept_explanation` / `generate_code_examples` / `generate_summary`：各自獨立呼叫 LLM，回傳對應 Pydantic 模型
-  - `generate_unit_content`：orchestrator，依序呼叫 3 個 section
-  - `_call_llm_json` 共用 helper：OpenAI `json_object` mode + temperature 0.3 + Pydantic validate + 503/502 分層錯誤
-- **Pydantic 輸出模型** 6 個：`Citation` / `ConceptExplanation` / `CodeExample` / `CodeExamples` / `Summary` / `UnitContent`，皆內建 `needs_more_source` + `reason` 欄位作為 graceful degradation
-- **`tests/test_content_generator.py`** (~250 行)：13 個 mock-LLM 單元測試
-  - 成功路徑 ×3（3 種 section 各自正確解析）
-  - needs_more_source 路徑 ×2（transcript 不足時 LLM 回 true，content 留空）
-  - 失敗路徑 ×3（503 LLM_UNAVAILABLE / 502 invalid JSON / 502 schema 違反）
-  - Grounding 機制 ×3（context_block 真的注入 chunks / 空 chunks 自動引導 / chunks 確實傳到 LLM）
-  - Orchestrator ×1（generate_unit_content 確實呼叫 3 次）
-  - Pydantic 驗證 ×1（Citation excerpt 字數上限）
-
-### Design 亮點
-- **Grounding 雙重把關**：prompt 5 條絕對規則 + Pydantic 嚴格 schema；LLM 回 hallucinate 直接被 502 攔下
-- **needs_more_source 機制**：每個 section 獨立判斷（concept ok 但 examples 沒料 → 只 examples needs_more）；不全有全無
-- **citation 嵌入 markdown**：LLM 在 markdown 中內嵌 `[mm:ss]`，前端顯示時可解析為跳轉連結
-- **caller 解耦**：generate function 只接 pre-fetched chunks，不自己呼叫 retrieve；6-2b 才負責 video_order metadata filter
-
-### Sync
-- `docs/roadmap.md` Phase 6-2a 標 [x] 並寫入完成細節
-- `CLAUDE.md` 進度更新
-
-### Why
-依 Phase 6 NotebookLM 模式設計（2026-05-07 確認），LLM 生成 unit content 必須 grounded 在 Whisper transcript 上、禁止 hallucinate。本次完成的是 prompt 設計 + 模型 + 測試的「設計與驗證」階段；6-2b 將實際呼叫此 service 為 62 個 unit 批次生成 content。
-
----
-
 ## [2026-05-08] — Phase 6-1e 完成：Whisper 全 62 部 transcript + 二次審核 + 861 chunks 入 RAG（NotebookLM 核心就緒）
 
-### Why A 方案改 B1
+### 決策依據與證據
 原計畫 A（yt-dlp 抓 zh-Hant 自動字幕）**徹底失敗**——6/6 樣本影片皆 "no automatic captions, no subtitles"（教授頻道未開或 YT 未生成）。改採 B1（OpenAI Whisper API），實測品質高（教授名「黃國豪」抓對；C++/devc++/Cout 等術語多數正確），唯一系統性錯辨「黃國昊」（同音字 hào），由二次審核 corrections.json 全域替換解決。
-
-### Added — 4 個 script + 配置 + 資料
-- **`backend/scripts/transcribe_videos.py`** (~190 lines)：yt-dlp 抓 audio + OpenAI `whisper-1` API；idempotent（skip 已存 transcripts）+ 成本上限保護（COST_CAP_USD=5）+ prompt 注入 title_zh 提升技術術語準度
-- **`backend/scripts/apply_corrections.py`** (~120 lines)：corrections.json 兩層替換（global + per_video segment-id）→ transcripts_corrected/；保留 raw 不動
-- **`backend/scripts/flag_transcripts.py`** (~140 lines)：GPT-4o-mini 自動掃可疑段落（type=term/semantic/repetition + confidence 0-1）→ issues_proposal.json；不誤報優於不漏報
-- **`backend/scripts/ingest_transcripts_rag.py`** (~180 lines)：60 秒時間視窗分組 → LlamaIndex Document（text 含 `[mm:ss]` timestamp markers）→ pipeline.arun → 寫入 data_codedge_rag；--reset 旗標可砍重來
-- **`data/teaching_content/corrections.json`**：12 條 global_replacements + per_video（目前空，留給 6-4 教授抽查補）
-- **`data/teaching_content/transcripts/`**：62 個 raw Whisper JSON（3.4 MB）
-- **`data/teaching_content/transcripts_corrected/`**：62 個套用 corrections 後的 JSON
-- **`data/teaching_content/issues_proposal.json`**：209 個 LLM-flagged issues 的完整審核清單（68 KB）
-
-### Results
-- **Whisper batch**：62/62 全成功；總時長 7.2 hr → 成本 $2.621 USD
-- **Flag scan**：209 issues（term ×152 / semantic ×48 / repetition ×9）；高 confidence ≥0.9 共 41 個
-- **採納修正**：12 條 global（黃國昊×31, Double×17, Cout×8, 黃國華×8, ioString×3, Void×2, iostring×1, WCHART×1, objective oriented×1 + 預防性 IOStream / objective-oriented）；per_video 0 條（保留給 6-4 教授抽查）
-- **RAG 入庫**：62 documents 行 + **861 chunks** 寫入 data_codedge_rag；每 chunk metadata 含 video_order / youtube_id / title_zh / start_time_seconds / end_time_seconds / source_type
-- **Spot retrieve 驗證**：4/4 query 命中 expected video（遞迴→v47 / 指標→v51 / 物件導向→v59 / 階乘→top-3 含 v47）
-- 總成本 6-1e: ~$2.69（Whisper $2.621 + Flag $0.07 + Embeddings $0.002）
 
 ### 設計亮點
 - **不破壞原始**：raw transcripts 永不修改；錯誤定位 + 重跑 apply 都很方便；可重複迭代 corrections
@@ -1370,16 +1029,9 @@ V1 cold-start 仰賴固定 tag `syntax-basic`，但 V2 cpp-XX 章節制 seed（6
 - **二次審核機制**：global 解決系統性錯誤（一條 fix 多影片）；per_video 留給 6-4 抽查階段針對性修
 - **Reset & re-ingest 高效**：發現「黃國華」漏網後，加 1 條 global → re-apply → --reset + re-ingest 全程 < 2 min
 
-### Sync
-- `docs/roadmap.md` Phase 6-1e/f 標 [x] 並寫入完成細節
-- `CLAUDE.md` 進度更新：6-1 整節完成
-- `.gitignore` 新增 `data/teaching_content/audio_cache/` 排除（transient）
-
----
-
 ## [2026-05-07] — Phase 6 升級為 NotebookLM grounded 模式 + 6-1a/b 完成
 
-### Changed（roadmap Phase 6 大幅細化）
+### 決策依據與證據
 - **採 NotebookLM grounded 模式**（核心架構決策）：所有 LLM 生成的 unit content / 練習題必須 grounded 在教授實際 YT 影片字幕上，禁止 LLM 自由發揮。Source = YT 自動字幕（A 方案，零成本，`yt-dlp --write-auto-subs`），品質不夠的 unit 在 6-4 抽查階段評估升級到 Whisper 重 transcribe（B 方案）
 - **Concept 範圍 59 → 62**：video_order 1-3（課程簡介、環境安裝、語言簡介）加回為 concept；標記 `category="課程介紹"` **不參與 PREREQUISITE 鏈**（learning_path generator 過濾此 category，知識圖譜頁仍顯示但 styling 區分）
 - **Phase 6-1 拆細**（原 6-1a/b/c → 6-1a~6-1f 共 6 子任務）：
@@ -1392,59 +1044,24 @@ V1 cold-start 仰賴固定 tag `syntax-basic`，但 V2 cpp-XX 章節制 seed（6
   - 6-1f 待同步 tech-debt
 - **Phase 6-2/6-3 升級為 grounded 版本**：prompt template 強制引用 transcript chunks + timestamp citation；禁止引入字幕未出現的概念；不足以生成時回 `needs_more_source=true` 而非 hallucinate
 
-### Added
-- `backend/scripts/fetch_playlist_metadata.py`（156 行，yt-dlp wrapper，含對齊驗證 + 缺漏報告）
-- `data/teaching_content/videos.csv`（59 列；待擴充 62 列）
-- `已確認決策` 加 3 條：NotebookLM 模式、62 個 concept 範圍、知識圖譜重構為後續工作
-- `tech-debt.md` 新增「video 1-3 不參與 PREREQUISITE」設計註記
-- 系統工具：`brew install yt-dlp`（2026.03.17）
-
-### Why
-原 Phase 6-2 計畫只注入「concept 名稱 + 影片標題」給 LLM，會生成「對 C++ 通用課程合理但未必對齊本課程教法」的內容（hallucination 風險）。使用者明確要求採 NotebookLM 模式（grounded on user-provided sources），確保 unit content 真實反映教授實際教法。同時將過去因「DB 04-62 而忽略 1-3」的限制解除，補齊 62 個影片完整對應。
-
----
-
 ## [2026-05-07] — Roadmap 新增 Phase 6 教學內容建構，原上線實測順延 Phase 7
 
-### Added
-- **`docs/roadmap.md` 新增 Phase 6：教學內容建構**（4 節 12 子任務，本機可完成 / 部分依賴教授交付資料）
-  - **6-1 影片 metadata 整合**：6-1a 教授交付 metadata / 6-1b PATCH script / 6-1c 執行+驗證
-  - **6-2 Unit content 批次生成**：6-2a prompt template / 6-2b LLM 批次寫入 / 6-2c 概念說明 YT player / 6-2d 範例 tab / 6-2e 摘要 tab
-  - **6-3 練習題庫補充**：6-3a Phase 2-4 batch 模式生成 / 6-3b ExercisesTab 改為優先讀題庫
-  - **6-4 內容品管**：6-4a 教授抽查 / 6-4b 修正 prompt 重跑
-
-### Changed
+### 決策依據與證據
 - **原 Phase 6 上線實測 → Phase 7**：6-1/6-2/6-3 整段順延為 7-1/7-2/7-3，所有子任務同步重編號（cross-ref 註解保留歷史軌跡：原 4-3a → 6-1 → 7-1）
 - **Phase 5 ⇄ Phase 6 平行關係**：執行策略 / 已確認決策最後一條同步調整為「兩者可平行 / 先後皆可，依教授資料準備進度而定」
 - **Phase 7 前置條件加強**：除原 Zeabur + VPS 就緒外，新增「Phase 6 至少 6-1 + 6-2b 完成」（避免部署後 Learn 頁面仍空殼）
 
-### Synced
-- `CLAUDE.md` 當前狀態：呈現 Phase 5 ⇄ Phase 6 平行 + Phase 7 收尾的三段結構
-- `docs/tech-debt.md` 兩條教學內容相關項目加 cross-ref 至 Phase 6-1 / 6-2~6-4（原內容保留作為背景說明）
-
-### Why
-使用者反映「整合教材」未進 roadmap 追蹤；目前只有 tech-debt + 內聯註釋，容易被忘。同時使用者明確指出「教師端 / 教學內容看實際狀況」決定先後，故將 Phase 5 與 Phase 6 設計為可平行關係，避免硬性綁定誰先誰後。
-
----
-
 ## [2026-05-07] — Roadmap 重整 follow-up：修正其他 doc 殘留舊 Phase 標號
 
-### Fixed
+### 決策依據與證據
 - **`docs/design-plan.md` §4.5**：`1-7c 上線驗證` → `Phase 6 上線實測（原 1-7c → 4-3a → 6-1b Golden path）`，保留歷史演進 cross-reference
 - **`docs/modules.md` Module 8 / 9**：Phase 4 → **Phase 5**（教師 Dashboard / 學習行為分析屬教師端，非部署）
 - **`docs/db-schema.md` chat_messages 擴充欄位註記**：Phase 4-2c → **Phase 5-2c**（dialogue_act 屬行為資料收集，原本就在 5-2c，4-2c 為誤標）
 - **`docs/roadmap.md` Phase 1 結尾註記**：「部署原 1-7 已移至 Phase 4」補完為「Phase 4（容器化 / 配置層）+ Phase 6（上線實測）」反映當前兩段切分
 
-### Verified clean（未動）
-- `docs/changelog.md` 歷史 entry（line 1670 / 1897 / 1898 / 2221）：屬當時決策的歷史記錄，保留原貌不改
-- `docs/dev-setup.md` Phase 4-1b 引用：4-1b 仍在 Phase 4，無誤
-- `docs/references.md` Phase 4 / 5-1 / 5-2 / 5-3 引用：全部與重整後結構一致
-
----
-
 ## [2026-05-07] — Roadmap 重整：上線實測類任務集中至 Phase 6
 
-### Changed
+### 決策依據與證據
 - **`docs/roadmap.md` 結構調整**：將「需要實際部署到 Zeabur / VPS 才能驗證」的工作集中到新的 **Phase 6 上線實測**
   - 原 `Phase 4-3 上線驗證`（4-3a/b/c）整段移至 Phase 6
   - 4-3a Golden path → **6-1**（拆成 6-1a 部署 / 6-1b Golden path / 6-1c 教師端 e2e 三步驟）
@@ -1453,14 +1070,6 @@ V1 cold-start 仰賴固定 tag `syntax-basic`，但 V2 cpp-XX 章節制 seed（6
 - **Phase 4 改名**：「部署上線」→「部署準備（容器化 + 配置層，本機可完成）」標記 ✅，明確區分本機可完成與須實際部署
 - **Phase 5 前置條件放寬**：原「Phase 4 部署完成」→「Phase 4 配置層完成」，加註資料策略：5-1/5-2/5-5 純本機可完成；5-3/5-4 程式碼可先用合成資料寫，部署後以實測資料調校
 - **執行策略 / 已確認決策**：頂部與底部同步更新為 Phase 2→3→4→5→6 新順序
-
-### Synced
-- `CLAUDE.md` 當前狀態區塊：Phase 4 標記為 ✅（容器化+配置層），下一階段呈現「Phase 5（本機可開發）vs Phase 6（須部署）」二選一供使用者選
-
-### Why
-使用者明確表示「還沒準備好部署」，但 Phase 4-3 包在 Phase 4 中容易給人「部署是當前阻塞」的錯覺。重整後，Phase 5 教師端（不需部署）就可獨立推進，Phase 6 維持為部署完成後一次驗收，避免邊開發邊維運耗能。
-
----
 
 ## [2026-05-06] — `from X import Y` 對 mutable global 的 binding 陷阱
 
@@ -1504,79 +1113,13 @@ prod compose **不暴露 PG / Redis host port**。
 
 ## [2026-05-05] — Phase 3-3c：Dashboard 精熟度詳細總覽（Phase 3 完成 🎉）
 
-### 新增（Backend）
-- `backend/services/dashboard/mastery.py`（111 行）：
-  - dataclass：`ConceptMasteryDetail` / `CategoryBreakdown` / `MasteryBreakdown`
-  - `get_mastery_breakdown(db, user_id)`：一次 outerjoin 取所有 (concept, mastery_for_user)；application 層分群 + 排序
-  - 分群：依 `concept.category`
-  - 排序：concept 內依 `video_order ASC`（None 排尾）+ tag 穩定 fallback；category 依 earliest video_order ASC
-  - `MASTERED_THRESHOLD = 0.8` 與 dashboard.queries / generator 一致
-- `backend/api/routes/dashboard.py`：加 `GET /dashboard/mastery-overview`
-  - response：`{ categories: [{ name, total, started, mastered, concepts: [{ tag, name_zh, video_order, difficulty, confidence }] }] }`
-
-### 新增（Frontend）
-- `web/lib/dashboard.ts`：加 types + `getMasteryOverview()` helper
-- `web/components/dashboard/mastery-breakdown.tsx`（130 行）：
-  - useEffect async fetch + cancelled flag
-  - 4 狀態：loading / error / empty / list
-  - 全展開（無摺疊互動）— 8 個 category section 全部顯示
-  - Category header：name + 摘要 (mastered/total) + overall progress bar
-  - Concept row：video_order + name + difficulty pill + mini progress bar + percent
-  - 顏色語意：mastered 用 accent-green / 其他用 accent-blue
-- `web/app/(app)/dashboard/page.tsx`：加 `<MasteryBreakdown />` section
-
-### 測試
-- `backend/tests/test_dashboard_mastery.py`（8 個 service + HTTP）：
-  - 401 / 空狀態 / 多 category 分群 + summary / category 排序 / video_order=None 排尾 / 未練 confidence=0 / threshold 0.8 邊界 / HTTP 完整 payload
-- 全套 439 backend tests 全綠（431 → 439，+8 個新測試，零 regression）
-
 ### 設計關鍵
 - **單次 outerjoin 而非 N+1**：59 concepts 只 1 個 query，不是 60+
 - **教學順序排序**：concept video_order ASC / category 依 earliest video_order
 - **MASTERED_THRESHOLD = 0.8 共用**：與 generator / dashboard.queries 一致；單一語意
 - **全展開 vs 摺疊**：60 rows 一覽比 click ladder 直觀
 
-### Phase 3 整體里程碑（學習體驗 🎉）
-- ✅ 3-1 結構化學習路徑（7 個 sub-tasks）
-- ✅ 3-2 Quiz 完整版（3 個 sub-tasks）
-- ✅ 3-3 Dashboard（3 個 sub-tasks）
-- 學生端完整體驗就緒：登入 → Learn → Quiz → Dashboard 全閉環
-- 後端測試從 Phase 3 開始時的 320 → 完成時的 439（+119）
-
----
-
 ## [2026-05-05] — Phase 3-3b：Dashboard 最近活動時間線
-
-### 新增（Backend）
-- `backend/services/dashboard/timeline.py`（142 行）：
-  - dataclass: `ActivityType` Literal["quiz", "reflection", "unit_completed"] + `ActivityItem`
-  - 3 個 fetch helper（每類各取 limit 筆）：
-    - `_list_quiz`：student_answers join question；標題含對錯與題幹截斷；detail 含題型/難度/提示用量
-    - `_list_reflection`：reflections；含 quality_score 百分比 + 步驟數
-    - `_list_completed_units`：learning_units WHERE completed_at IS NOT NULL（透過 path.user_id 過濾）
-  - `list_recent_activities` 主流程：merge 三類 → sort by timestamp desc → 取 limit
-- `backend/api/routes/dashboard.py`：加 `GET /dashboard/timeline?limit=N`
-  - 422 if limit out of [1, 100]
-  - response: `{ items: [{ type, timestamp(ISO), title, detail, link?, is_correct? }] }`
-
-### 新增（Frontend）
-- `web/lib/dashboard.ts`：加 `ActivityType` / `ActivityItem` types + `getRecentActivities(limit)` helper
-- `web/components/dashboard/activity-timeline.tsx`（150 行）：
-  - useEffect async fetch + cancelled flag 防 race
-  - 4 狀態：loading skeleton / error / empty / list
-  - `ActivityIcon` 依 type 與 is_correct 顯示對應 lucide icon + 顏色：
-    - quiz 對 → CheckCircle2 綠 / quiz 錯 → XCircle 紅
-    - reflection → ClipboardList 紫
-    - unit_completed → GraduationCap 藍
-  - `formatRelative(iso)` 相對時間（剛才 / N 分前 / N 小時前 / N 天前 / 完整日期）
-  - 有 link 的 item 整列為 Link；無 link 為純 div
-- `web/app/(app)/dashboard/page.tsx`：在 today suggestion 下加 `<ActivityTimeline />` section
-
-### 測試
-- `backend/tests/test_dashboard_timeline.py`（9 個 service + HTTP）：
-  - 401 / 空狀態 / 三種事件類型完整出現 / quiz 含 is_correct + 提示用量 detail / reflection 品質百分比 / unit 限 completed / limit 截斷 / HTTP ISO timestamp / HTTP 422 limit 範圍
-- 全套 431 backend tests 全綠（422 → 431，+9 個新測試，零 regression）
-- TypeScript / ESLint / next build 全綠
 
 ### 設計關鍵
 - **每類各取 limit 後合併**：避免單一事件類型（如 quiz）量大時遮蔽其他類型；merge 後再取最終 limit
@@ -1591,40 +1134,6 @@ prod compose **不暴露 PG / Redis host port**。
 
 ## [2026-05-05] — Phase 3-3a：學生 Dashboard 統計卡片 + 今日建議
 
-### 新增（Backend）
-- `backend/services/dashboard/queries.py`（231 行）：
-  - dataclass：`PathProgressSummary` / `WeekQuizStats` / `MasteryOverview` / `TodaySuggestion` / `DashboardStats`
-  - 4 個 fetch helper 對應 4 統計卡：
-    - `_path_progress`：取最早 path（與 `ensure_default_path_exists` 一致）+ 計算 completed/total/percent
-    - `_week_quiz_stats`：限近 7 天 student_answers + 答對率
-    - `_mastery_overview`：total_concepts / started_count（mastery 表 row 數）/ mastered_count（confidence ≥ 0.8）
-    - `_reflection_count`：累計反思次數
-  - `_today_suggestion`：規則版（無 LLM）— 依 unit status 推薦下一動作：
-    1. 有 `in_progress` unit → 「繼續學習：xxx」
-    2. 有 `available` unit → 「開始下一單元：xxx」
-    3. 全部 `completed` → 「課程完成，挑戰 Quiz」
-    4. 無 path → fallback「進入 Learn 開始」（ensure_default_path 後不該發生）
-  - 主入口 `get_dashboard_stats(db, user_id)` 組合所有
-- `backend/api/routes/dashboard.py`（91 行）：`GET /dashboard/stats` endpoint
-- `backend/main.py`：註冊 `dashboard_router`
-
-### 新增（Frontend）
-- `web/lib/dashboard.ts`：types + `getDashboardStats()` helper
-- `web/components/dashboard/`：
-  - `stats-cards.tsx`（145 行）— 4 張卡片網格（grid 1/2/4 列響應式）：路徑進度（含 progress bar）/ 本週 Quiz / 精熟度概覽 / 反思次數
-  - `today-suggestion.tsx`（38 行）— 建議標題 + 描述 + 「立即前往」按鈕
-- `web/app/(app)/dashboard/page.tsx`：完全重寫，從 placeholder 升級為功能頁
-  - View union（loading / error / ready）
-  - 統一 humanizeError（401 等）
-
-### 測試
-- `backend/tests/test_dashboard.py`（10 個 service + HTTP）：
-  - 401 / 空狀態 / path_progress 計算 / week_quiz 7 天篩選 / mastery 三欄 / reflection 計數
-  - today_suggestion 三規則（in_progress 優先 / 只 available / 全 completed）
-  - HTTP 完整 payload 結構檢查
-- 全套 422 backend tests 全綠（412 → 422，+10 個新測試，零 regression）
-- TypeScript / ESLint / next build 全綠
-
 ### 設計關鍵
 - **規則版 today_suggestion 而非 LLM**：MVP 階段；個人化 LLM 建議留給 3-3b/c 或 Phase 4+；對學生而言「下一個該做什麼」清晰即可
 - **Mastered threshold = 0.8**：與 generator 的 `DEFAULT_SKIP_MASTERED_THRESHOLD` 一致；單一語意「熟練」
@@ -1638,45 +1147,6 @@ prod compose **不暴露 PG / Redis host port**。
 
 ## [2026-05-05] — Phase 3-2c：作答後 EDF 回饋（Phase 3-2 完成 🎉）
 
-### 重點
-作答後的個人化回饋頁，整合 BKT 精熟度 + LLM 建議 + 推薦學習單元連結。
-與 `/quiz/submit` 即時對錯分離（async fetch），保持結果頁載入快但內容豐富。
-
-### 新增（Backend）
-- `backend/services/quiz/feedback.py`（250 行）：
-  - dataclass: `ConceptMasteryItem` / `RecommendedUnit` / `QuizFeedbackResult`
-  - `_get_owned_answer` 擁有權檢查（非本人 → 404 STUDENT_ANSWER_NOT_FOUND）
-  - `_fetch_concept_mastery`：outerjoin Concept × StudentMastery，未練概念視為 0
-  - `_fetch_recommended_units`：限同 user 路徑 + 未完成 + concept 匹配
-  - `_llm_suggestion`：依對錯 + mastery 給 1-2 句建議；4 種 fallback 路徑保證不擋學生
-  - `generate_quiz_feedback` 主流程
-- `backend/api/routes/quiz.py`：`SubmitResponse` 加 `answer_id`（前端要能拿來 fetch feedback）
-- `backend/api/routes/quiz_feedback.py`（77 行，獨立檔避免主 quiz.py 超 250）：
-  - `GET /quiz/answers/{answer_id}/feedback` endpoint
-  - response 含 mastery 列表 + suggestion + suggestion_fallback flag + recommended_units
-- `backend/main.py`：註冊 `quiz_feedback_router`
-
-### 新增（Frontend）
-- `web/lib/quiz.ts`：
-  - `SubmitResponse` 加 `answer_id` 欄位
-  - 加 `ConceptMasteryItem` / `RecommendedUnit` / `QuizFeedbackResponse` types
-  - 加 `getQuizFeedback(answerId)` helper
-- `web/components/quiz/feedback-section.tsx`（172 行）：
-  - useEffect async fetch + cancelled flag 防 race
-  - SkeletonView（loading）+ SuggestionCard / MasteryCard / RecommendedCard 三段式
-  - MasteryRow 進度條（0-100%）對齊 design tokens（accent-green）
-  - RecommendedUnit Link 帶 video_order 編號顯示
-  - 統一 humanizeError
-- `web/components/quiz/result-view.tsx`：在 CorrectAnswerSection 與導航按鈕之間嵌入 `<FeedbackSection answerId={result.answer_id} />`
-
-### 測試
-- `backend/tests/test_quiz_feedback.py`（14 個 unit + HTTP）：
-  - 6 unit：5 種 _llm_suggestion fallback 路徑（no client / exception / invalid JSON / empty / 對錯各一）+ success
-  - 4 service integration：擁有權 404 / mastery 0 補位 / 推薦 unit 過濾（已完成 / 不匹配 concept）/ 推薦 unit 正向案例
-  - 4 HTTP：401 / 跨使用者 404 / success 完整 payload / submit response 含 answer_id（3-2c 新增欄位）
-- 全套 412 backend tests 全綠（398 → 412，+14 個新測試，零 regression）
-- TypeScript / ESLint / next build 全綠
-
 ### 設計關鍵
 - **submit 與 feedback 分離**：submit 立即回對錯（快）；feedback async fetch（LLM 慢，UI loading state 不擋畫面）
 - **不重做 EDF Evidence**：quiz answer 結構化已知（is_correct + concept_tags），不需 LLM 拆解錯誤類型；EDF Evidence Pipeline 仍服務 chat 場景（學生提問時用）
@@ -1686,29 +1156,9 @@ prod compose **不暴露 PG / Redis host port**。
 - **LLM 失敗 fallback 對稱**：與 hint / EPL / Comprehension 設計一致；`suggestion_fallback` flag 讓前端顯示「離線」狀態
 - **RecommendedUnit 連結到 /learn**：MVP 直接導向學習路徑首頁；未來可加深 deep-link 直跳特定 unit
 
-### Phase 3-2 整體里程碑
-- ✅ 3-2a Quiz 頁面：選擇題 + 程式撰寫題 UI
-- ✅ 3-2b 計時器 + 提示系統（5 級 hint ladder）
-- ✅ 3-2c 作答結果頁 + EDF 回饋顯示
-- 全套 412 backend tests 全綠；學生 Quiz 完整閉環：選題型 → 取題 → 作答（含計時 + 提示）→ 對錯 + 解釋 + EDF 個人化回饋
-
----
-
 ## [2026-05-05] — Phase 3-2b：Quiz 計時器 + 5 級提示系統
 
-### 新增（Backend）
-- `backend/services/quiz/hint.py`（164 行）：
-  - `HintResult` dataclass（level + hint + fallback flag）
-  - `_FALLBACK_HINTS` dict — 對應 1-5 level 各一句固定鼓勵句（LLM 不可用時用）
-  - `_ladder_description(level)` — 對應 .claude/rules/edf-pipeline.md 的 Hint Ladder 規則文字
-  - `_format_question_for_prompt` — 題型 dispatcher（MC 含選項 / coding 含 starter）
-  - `generate_hint(question, hint_level, student_attempt?)` async LLM；失敗回 fallback
-- `backend/api/routes/quiz.py`（209 行）：加 `POST /quiz/hint` endpoint
-  - body: `{ question_id, hint_level (1-5), student_attempt? }`
-  - 404 QUESTION_NOT_FOUND / 400 QUESTION_NOT_VALIDATED / 422 invalid level
-  - response 含 `fallback` flag 讓前端顯示「離線 fallback」標籤
-
-### 新增（Frontend）
+### 決策依據與證據
 - `web/lib/quiz.ts`：加 `requestHint(payload)` helper + `HintResponse` type
 - `web/components/quiz/timer.tsx`（39 行）：
   - 純 prop-driven，caller 傳 `startedAt: number`（Date.now() 時戳）
@@ -1725,13 +1175,6 @@ prod compose **不暴露 PG / Redis host port**。
   - 換題時清空 hints
   - 顯示 Timer（question 模式）+ HintPanel（始終顯示）
 
-### 測試
-- `backend/tests/test_quiz_hint.py`（13 個 unit + HTTP）：
-  - 6 unit：prompt ladder 描述 / MC prompt 含 options / LLM 成功 / no client fallback / exception fallback / invalid JSON fallback / empty hint fallback
-  - 7 HTTP：401 / 422 (4 種 invalid level) / 404 / 400 / 200 success / 200 fallback
-- 全套 398 backend tests 全綠（385 → 398，+13 個新測試，零 regression）
-- TypeScript / ESLint / next build 全綠
-
 ### 設計關鍵
 - **Hint Ladder 對齊 EDF Pipeline 規則**：`_ladder_description` 直接引用 `.claude/rules/edf-pipeline.md` 5 級定義；保證 hint 風格與 chat 評估的「直接給答案」防護一致
 - **LLM 失敗 fallback 不擋學生**：類似 EPL/Comprehension 設計；fallback 句子分 5 個 level 預先寫好，前端用 `fallback` flag 提示「離線」狀態
@@ -1744,22 +1187,6 @@ prod compose **不暴露 PG / Redis host port**。
 
 ## [2026-05-05] — Phase 3-2a：Quiz 頁面 — 選擇題 + 程式撰寫題正式版
 
-### 新增（Frontend）
-- `web/lib/quiz.ts`（+30 行）：
-  - `SubmitAnswer` discriminated union（依題型不同）：`{selected_index}` / `{code}` / `{answers}`
-  - `SubmitQuestionPayload` / `SubmitResponse` types
-  - `submitAnswer(payload)` helper → POST `/quiz/submit`
-- `web/components/quiz/`（4 新元件）：
-  - `quiz-runner.tsx`（200 行）— 主流程容器；五狀態 union（idle / loading / question / submitting / result）；題型 dropdown（選擇題 / 程式撰寫題）；計時 startedAt → time_spent_seconds 提交時帶入；統一 humanizeError
-  - `mc-question.tsx`（68 行）— radio-style options + Lucide CheckCircle2/Circle 圖示；提交按鈕 disabled until 選中
-  - `coding-question.tsx`（68 行）— 復用 `CodeEditor`（CodeMirror 6 + cpp + oneDark）；提示「Judge0 自動判分屬 Phase 4」；切題自動 reset content
-  - `result-view.tsx`（115 行）— 對錯 banner（綠勾 ✓ / 紅叉 ✗ + Lucide）；feedback + explanation；MC/fill_blank 揭露正確答案；coding 不揭露（待 Judge0）；下一題 / 結束按鈕
-- `web/app/(app)/quiz/page.tsx`：完全重寫，從 Phase 2-5c demo 升級為正式 Quiz 頁面；純包裝 `<QuizRunner />`
-
-### Backend
-- 無變動（既有 `/quiz/generate` + `/quiz/submit` API 已支援整個 3-2a 流程）
-- 後端 385 tests 仍全綠（純前端任務）
-
 ### 設計關鍵
 - **設計分工釐清**：Quiz 頁面 = 純測驗（取題 → 作答 → 結果），無反思流程；Learn 練習 tab（3-1e）= 學習場景含 Pre-Coding Reflection。避免在 Quiz 頁面強制反思打斷測驗節奏
 - **Coding 題目前 is_correct=False**：`backend/services/quiz/grade.py` 的 coding 分支永遠回 False（Judge0 整合屬 Phase 4）；UI 提示這點，避免使用者困惑
@@ -1770,36 +1197,7 @@ prod compose **不暴露 PG / Redis host port**。
 - **fill_blank UI 未做**：roadmap 明列 3-2a 為「選擇題 + 程式撰寫題」；fill_blank 在 result-view 已支援揭露答案邏輯，UI 待後續任務（顯示 `UnsupportedTypeNote` placeholder）
 - **CodeEditor 復用**：直接 import 現有元件（守則 #7 不重複造輪子）；CodeMirror 6 + cpp + oneDark 已調整為 GitHub Dark token 對齊
 
-### 待驗證（手動）
-- 進 `/quiz` → 選題型 → 點開始 Quiz
-- 選擇題：點選項 → 提交 → 看到對錯 + 解釋 + 正確答案揭露 → 下一題 or 結束
-- 程式撰寫題：在 CodeMirror 寫 code → 提交 → 看到「答錯了」（因 coding 未接 Judge0）+ 解釋 → 下一題
-
----
-
 ## [2026-05-05] — Phase 3-1e：練習 tab 嵌入 Pre-Coding Reflection 觸發點（Phase 3-1 完成 🎉）
-
-### 新增（Backend）
-- `backend/services/quiz/orchestrator.py`：
-  - 新增 `_resolve_concept_by_tag(db, tag)` helper（404 CONCEPT_NOT_FOUND if missing）
-  - `generate_for_student` 加 optional `concept_tag` 參數：指定時直接針對該 concept 出題（跳過弱項邏輯）；省略則維持原弱項補強行為（向後相容）
-- `backend/api/routes/quiz.py`：`GenerateRequest` 加 `concept_tag: str | None`，透傳到 service
-
-### 新增（Frontend）
-- `web/lib/quiz.ts`（55 行）：Question / Content type union + `generateQuestion(payload)` helper
-- `web/components/learn/exercises-tab.tsx`（206 行）：
-  - 三狀態流程：idle（「開始練習」按鈕）→ loading → question（顯示題目 + 「開始反思」）→ reflecting（彈 ReflectionFlow modal）→ done（反思摘要 + 後續導引）
-  - 取題：`generateQuestion({ type: "coding", bloom_level: 3, concept_tag: unit.concept_tag })`
-  - 復用 `ReflectionFlow` 元件（Phase 2-5）：`sourceType="quiz"` + `sourceId=question.id`
-  - 反思 approve → 顯示反思摘要（含 quality_score 百分比 + followup question 若有）+ 提示「在 Workspace 作答」連結 + 「回上方點完成單元」
-  - 「重新出題」按鈕（reset 狀態）
-  - humanizeError 處理 CONCEPT_NOT_FOUND / QUIZ_VALIDATION_RETRY_EXHAUSTED / QUIZ_UNAVAILABLE / 401
-- `web/components/learn/unit-content.tsx`：把原 `ExercisesTab` placeholder 改用新元件，傳入 `unit.concept_tag` + `unit.concept_name_zh`
-
-### 測試
-- `backend/tests/test_quiz_route.py` 加 2 個 HTTP 測試：concept_tag 指定 → 該 concept 出題；不存在 tag → 404 CONCEPT_NOT_FOUND
-- 全套 385 backend tests 全綠（383 → 385，+2 個新測試，零 regression）
-- TypeScript / ESLint / next build 全綠
 
 ### 設計關鍵
 - **「觸發點」非「完整作答」**：3-1e 範圍嚴格限於「在練習 tab 內取題 + 觸發反思」；完整 coding 作答 UI（編輯器 + Judge0 提交 + 判分回饋）屬 Phase 3-2 Quiz 完整版
@@ -1807,18 +1205,6 @@ prod compose **不暴露 PG / Redis host port**。
 - **復用 ReflectionFlow 而非重寫**：對齊「不重複造輪子」（CLAUDE.md 守則 #7）；reflection 元件已成熟，直接 import 即可
 - **Workspace 導引**：反思 approve 後的「在 Workspace 作答」連結會配合 Phase 2-5d 的 `setActiveReflectionId`（reflection_id 寫 sessionStorage）— 學生跳到 /workspace 寫程式時 AI Tutor 自動帶入此反思（EDF Pipeline 注入），完整閉環
 - **題型固定 coding**：教學影片內容多為 coding 練習；MC/fill_blank 對「練習」概念意義較弱，3-1e 不暴露選擇
-
-### Phase 3-1 整體里程碑
-- ✅ 3-1a Schema + ORM
-- ✅ 3-1b 路徑生成 service（priority Kahn's）
-- ✅ 3-1c Learn 頁面 + 4 endpoints
-- ✅ 3-1c+ Concept Graph 重建（59 影片）
-- ✅ 3-1c++ Learn UX 簡化（lazy seed + 移除生成 UI）
-- ✅ 3-1d 學習單元內容頁（4 tab + status transition）
-- ✅ 3-1e 練習 tab 嵌入 Reflection 觸發點
-- 全套 385 backend tests 全綠；學生 onboarding → 學習 → 練習 → 反思 → 完成單元的完整閉環就緒
-
----
 
 ## [2026-05-05] — Phase 3-1c+ 簡化：onboarding 自動 seed 預設路徑（移除無意義的「生成路徑」UX）
 
@@ -1828,31 +1214,6 @@ prod compose **不暴露 PG / Redis host port**。
   → category filter 是唯一變數但 99% 學生會學完整課程
   → 「生成」變無意義儀式，違反「不為不存在的需求設計」原則（YAGNI / CLAUDE.md 守則 #7）
 - 結論：移除手動生成 UI，改為 onboarding 自動 seed
-
-### Backend
-- `backend/services/learning/queries.py`：
-  - 加 `DEFAULT_PATH_TITLE = "C++ 完整課程"` + `DEFAULT_PATH_DESCRIPTION` 常數
-  - 加 `ensure_default_path_exists(db, user_id) -> LearningPath`：學生有任何路徑 → 回最早建立的；無 → 呼叫 generate_learning_path 用預設 title/description
-- `backend/api/routes/learning.py`：
-  - 加 `GET /learning/paths/default` endpoint — Learn 頁面唯一入口
-  - 抽 `_build_path_detail` helper 共用於 GET /paths/{id} / POST /paths / GET /paths/default 三處
-  - **保留** POST/DELETE/GET list endpoints 供未來教師端 / 自訂路徑使用，前端不暴露
-
-### Frontend
-- `web/lib/learning.ts`：精簡 — 加 `getDefaultPath()`；**刪除** `listPaths` / `generatePath` / `deletePath` / `progressPercent` / `GeneratePathPayload` / `PathSummary`（前端不再需要）
-- `web/components/learn/path-card.tsx`：**整檔刪除**
-- `web/components/learn/generate-path-dialog.tsx`：**整檔刪除**
-- `web/components/learn/path-detail.tsx`：移除 `onBack` prop + 「返回路徑列表」按鈕（無 list 可返）
-- `web/app/(app)/learn/page.tsx`：**完全重寫**
-  - 兩模式：detail（預設視圖）/ unit（內容頁）— 移除原 list / loading-detail
-  - 進入 → 自動 fetch `/learning/paths/default`（後端 lazy seed）→ 直接顯示 detail
-  - 移除：EmptyState / 「+ 生成新路徑」按鈕 / 刪除按鈕 / dialog 整套
-  - 學生 onboarding 體驗：登入 → Learn → 立刻看到「C++ 完整課程」59 個 unit
-
-### 測試
-- `backend/tests/test_learning_route.py` 加 4 個 HTTP 測試：401 / lazy seed 首次 / 已有路徑回最早建立 / 422 無 concepts
-- 全套 383 backend tests 全綠（379 → 383，+4 個新測試，零 regression）
-- TypeScript / ESLint / next build 全綠（Route summary 含 `/learn` ○ static prerender）
 
 ### 設計關鍵
 - **「ensure 而非 default-named」語意**：`ensure_default_path_exists` 回任何已存在路徑（不檢驗 title），避免使用者手動建立非預設 title 後又被自動建一條重複的
@@ -1864,40 +1225,6 @@ prod compose **不暴露 PG / Redis host port**。
 ---
 
 ## [2026-05-05] — Phase 3-1d：學習單元內容頁（4 tab + status transition + 自動解鎖）
-
-### 新增（Backend）
-- `backend/services/learning/units.py`（129 行）：
-  - `update_unit_status(db, user_id, unit_id, new_status)` — status transition + 解鎖下一單元
-  - 合法 transition：available → in_progress、in_progress → completed、in_progress → available（revisit）
-  - 非法 transition 一律 422 LEARNING_UNIT_INVALID_TRANSITION（locked 不可手動設、completed 不可重置）
-  - completed 自動連動：同 path 內 order_index = current+1 的 unit（若 locked）→ available
-  - 擁有權檢查透過 unit.path_id → path.user_id；非本人 → 404
-- `backend/api/routes/learning_units.py`（85 行，獨立檔避免主 learning.py 超 250）：
-  - `PATCH /learning/units/{unit_id}` body `{ status: "available" | "in_progress" | "completed" }`
-  - `_parse_status` 422：非合法 enum / locked
-  - `UnitTransitionOut` 含 `unit` + `next_unlocked_unit`（若有）
-
-### 新增（Frontend）
-- `web/lib/learning.ts`：加 `updateUnitStatus(unitId, status)` + types `WritableUnitStatus` / `UnitBasic` / `UnitTransitionResult`
-- `web/components/learn/unit-content.tsx`（230 行）：
-  - 4 tab：概念說明 / 範例程式 / 練習題 / 摘要
-  - 概念說明 tab：YT player placeholder（待教授補 video_id）+ concept 簡介
-  - 範例程式 / 摘要：unit.content 為空時顯示 EmptyTab placeholder
-  - 練習題：3-1e 整合 placeholder
-  - 上一/下一單元導航（locked unit 不可導航）
-  - ActionButton 依 status 顯示「開始學習」/「完成單元」/「已完成 ✓」/「尚未解鎖」
-- `web/components/learn/path-detail.tsx`：unit 變可點，locked 用 opacity-60 + cursor-default
-- `web/app/(app)/learn/page.tsx`：
-  - View union 加 `unit` 模式（持 detail + unitIndex）
-  - 新增 `UnitView` 包裝 — status transition 後重 fetch path detail + 維持當前 unitIndex
-  - 解鎖的下一 unit 經 path detail 同步刷新自動可見
-
-### 測試
-- `backend/tests/test_learning_units.py`（13 個 service + HTTP）：
-  - Service：合法 transition / completed 解鎖 / last unit no next / locked rejected / completed→available rejected / revisit 清 completed_at / 跨使用者 404
-  - HTTP：401 / 422 invalid status string / 422 locked / 200 + next_unlocked / 422 invalid transition / 跨使用者 404
-- 全套 379 backend tests 全綠（366 → 379，+13 個新測試，零 regression）
-- TypeScript / ESLint / next build 全綠
 
 ### 設計關鍵
 - **status transition 用查表** (`_VALID_TRANSITIONS: dict[str, set[str]]`)：宣告式比 if/else 易擴充與檢驗
@@ -1918,27 +1245,6 @@ prod compose **不暴露 PG / Redis host port**。
 - EDF 的 20 個 ConceptTag enum **保留**在 `services/edf/models.py` 純粹做 LLM 錯誤分類提示用，**不再寫入 concepts 表**
 - chat-driven mastery 暫時退場（EDF 評估 LLM 回的粗 tag 在 concepts 表找不到 → 既有 fallback 跳過更新）；mastery 改由 quiz 答題 + comprehension 驅動（這些用 question.concept_tags = 影片 tag）
 
-### Schema
-- `backend/alembic/versions/d0e1f2a3b4c5_add_video_metadata_to_concepts.py`（67 行）：
-  - `concepts` 加 3 nullable 欄位：`video_youtube_id` (VARCHAR 20) / `video_duration_seconds` (INT) / `video_order` (INT)
-  - 2 個 CHECK constraints + 1 個 index on `video_order`
-- `backend/models/concept.py`：對應 ORM 加 3 欄位
-
-### 內容（destructive seed）
-- `backend/alembic/versions/e1f2a3b4c5d6_seed_cpp_video_concepts.py`（180 行）：
-  - ⚠ 清空 `learning_units` / `learning_paths` / `concept_edges` / `student_mastery` / `concepts`
-  - Seed **59 個影片 concept**，依教授課程順序 04-62
-  - tag 命名：`cpp-NN-keyword`（NN 兩位編號 + 簡短英文）
-  - 8 個 category：入門 / 變數與型別 / 運算子 / 流程控制 / 迴圈 / 函式 / 陣列 / 指標與記憶體 / 物件導向
-  - difficulty_level 1-5 依教學順序漸進
-  - Seed **58 條 PREREQUISITE 線性鏈**（04→05→...→61→62）
-  - YT video_id / duration 暫 NULL，等教授補後 PATCH
-- 修正：`concept_edges.edge_type` 是 PG ENUM `concept_edge_type` 不能從 VARCHAR 隱式轉型 → 用 `sa.Enum(..., create_type=False)` 顯式宣告
-
-### 驗證
-- PG 上 alembic upgrade head 成功；`SELECT COUNT(*) FROM concepts` = 59；`prerequisite` edges = 58
-- 全套 366 backend tests 全綠，零 regression（ORM 加 nullable 欄位無破壞性）
-
 ### 設計關鍵
 - **方案 B（完全替換）vs A（共存）/ C（替換+對應）**：選 B 因為 chat-driven mastery 本來噪音多，真正可信信號來自 quiz/comprehension；簡化 99% 複雜度，符合 YAGNI 原則
 - **線性 PREREQUISITE 鏈為主**：跨章節依賴（如 47 遞迴 ← 29 for）等教授後續標註；MVP 先簡單可用
@@ -1946,45 +1252,7 @@ prod compose **不暴露 PG / Redis host port**。
 - **學習路徑生成可立即運作**：拓撲排序在 59 個 concept + 58 條線性邊上產生有意義路徑；弱項補強仍能依 BKT 信心度排序
 - **YT player 整合延後**：`video_youtube_id` 已在 schema，等教授補資料後 3-1d 學習單元頁實作
 
-### 待辦（教授提供資料後）
-- [ ] PATCH script 一次更新 59 影片的 `video_youtube_id` + `video_duration_seconds`
-- [ ] 跨章節 PREREQUISITE 邊補強（如 47 遞迴 ← 29 for；65 條左右）
-- [ ] Learn 頁面影片 thumbnail / duration 顯示（需 youtube_id）
-
----
-
 ## [2026-05-05] — Phase 3-1c：Learn 頁面 — 路徑視覺化 + 進度條
-
-### 新增（Backend）
-- `backend/services/learning/queries.py`（135 行）：
-  - `PathProgress` / `UnitWithConcept` dataclass
-  - `list_paths_for_user`（一次取所有 units 算進度，避免 N+1）
-  - `get_path_with_units`（join concepts 取 tag/name_zh/difficulty，避免前端再 join）
-  - `delete_path`（CASCADE 連動 units）
-  - `_get_owned_path` 擁有權檢查 → 404（避免列舉攻擊）
-- `backend/api/routes/learning.py`（186 行）— 4 endpoints：
-  - `POST /learning/paths`（201）→ 完整 detail
-  - `GET /learning/paths` → list + 進度概覽
-  - `GET /learning/paths/{id}` → detail + units
-  - `DELETE /learning/paths/{id}`（204）
-
-### 新增（Frontend）
-- `web/lib/learning.ts`（76 行）：types + 4 API helpers + `progressPercent` utility
-- `web/components/learn/`：
-  - `path-card.tsx`（83 行）— 卡片含進度條 + hover 顯示刪除按鈕
-  - `unit-status-icon.tsx`（37 行）— 4 種 status icon（CheckCircle2/PlayCircle/Circle/Lock）+ 中文 label
-  - `path-detail.tsx`（76 行）— 路徑詳細頁含 unit ordered list
-  - `generate-path-dialog.tsx`（132 行）— 表單 modal（title/description/category）
-- `web/app/(app)/learn/page.tsx`（重寫，180 行）：
-  - 三模式：list / detail / loading-detail
-  - 整合：listPaths / getPath / generatePath / deletePath
-  - 統一 error handling 翻譯成中文（LEARNING_PATH_EMPTY / LEARNING_PATH_NOT_FOUND / 401）
-  - EmptyState（無路徑時引導生成）
-
-### 測試
-- `backend/tests/test_learning_route.py`（13 個 HTTP 整合）：4 endpoint × 401 / POST 完整流程 / POST 422 / list 空 + 含進度 / GET 排序 / GET 跨使用者 404 / GET 不存在 404 / DELETE 移除 / DELETE 跨使用者 404
-- 全套後端 366 tests 全綠（353 → 366，+13 個新測試，零 regression）
-- TypeScript / ESLint / next build 全綠
 
 ### 設計關鍵
 - **單元擁有權檢查走 path**：unit 沒獨立 user_id；過 path.user_id 過濾即可（DB schema 設計就如此）
@@ -1999,27 +1267,6 @@ prod compose **不暴露 PG / Redis host port**。
 
 ## [2026-05-05] — Phase 3-1b：學習路徑生成 service（拓撲排序 + 弱項補強）
 
-### 新增（Service）
-- `backend/services/learning/topology.py`（73 行）：
-  - `topological_sort_with_priority(nodes, edges, priority, default_priority)` — priority Kahn's algorithm
-  - 純函式無 DB 依賴；O((N+E) log N)
-  - 同層內按 priority 升序（弱項優先）；priority tie 用插入順序穩定破除
-  - Cycle 容錯：殘留節點按 priority 附加到尾端，不擲錯
-  - 邊指向 nodes 集合外的節點 → 忽略不擲錯（filter 後常見）
-- `backend/services/learning/generator.py`（160 行）：
-  - `generate_learning_path(db, user_id, title, description, category, skip_mastered_threshold)`
-  - 流程：fetch concepts → fetch PREREQUISITE edges → fetch user mastery → 篩除已熟練 → priority Kahn's 拓撲 → 寫入 LearningPath + LearningUnits
-  - 第一個 unit 設 `available`，其餘 `locked`（漸進解鎖機制）
-  - 預設 `DEFAULT_SKIP_MASTERED_THRESHOLD = 0.8`
-  - `content` 預留空骨架 `{"summary": "", "examples": [], "exercise_question_ids": []}`，由後續 service 填入
-  - 422 LEARNING_PATH_EMPTY：無概念 / 全部已熟練 / category filter 無匹配
-- `backend/services/learning/__init__.py`：export
-
-### 測試
-- `backend/tests/test_learning_topology.py`（12 個 unit）：空圖 / 單節點 / 線性鏈 / 弱項優先 / 拓撲約束維持 / cold start default / 穩定性 / diamond / cycle 容錯 / 外部邊忽略 / 多獨立鏈
-- `backend/tests/test_learning_generator.py`（9 個 DB 整合）：3 種 422 / 線性鏈生成 / 跳過已熟練 / 同層弱項優先 / content 骨架 / category filter / 邊指向已熟練節點不破壞拓撲
-- 全套 353 tests 全綠（332 → 353，+21 個新測試，零 regression）
-
 ### 設計關鍵
 - **不採 RL**（守則 #7）：純拓撲 + 弱項補強已足夠；OATutor RL 屬過度工程，明確排除
 - **priority Kahn's**：在 in-degree=0 候選中用 min-heap 選 confidence 最低 → 同時保證拓撲安全 + 弱項優先
@@ -2032,22 +1279,6 @@ prod compose **不暴露 PG / Redis host port**。
 ---
 
 ## [2026-05-05] — Phase 3-1a：學習路徑基礎 schema（Module 7 啟動）
-
-### 新增（Schema / Migration）
-- `backend/alembic/versions/c9d0e1f2a3b4_create_learning_paths_and_units.py`（114 行）：
-  - `learning_paths`：id / user_id (FK CASCADE) / title (VARCHAR 200) / description / created_at / updated_at + index user_id
-  - `learning_units`：id / path_id (FK CASCADE) / concept_id (FK RESTRICT) / order_index / content (JSON) / status (VARCHAR 20 + CHECK enum) / completed_at + UNIQUE(path_id, order_index) + CHECK order_index >= 0 + index path_id, concept_id
-  - status enum 4 值：`locked` (預設) / `available` / `in_progress` / `completed`
-
-### ORM
-- `backend/models/learning.py`（109 行）：
-  - `LearningUnitStatus(str, Enum)` — locked/available/in_progress/completed
-  - `LearningPath` + `LearningUnit` model（與 alembic 對齊）
-- `backend/models/__init__.py`：export `LearningPath` / `LearningUnit` / `LearningUnitStatus`
-
-### 測試
-- `backend/tests/test_learning_models.py`（12 個）：metadata / 欄位 / status enum 值 / 預設 status=locked / UNIQUE(path, order) 衝突 / status CHECK 阻擋非法值 / order_index < 0 阻擋 / FK ondelete CASCADE 宣告
-- 全套 332 tests 全綠（320 → 332，+12 個新測試，零 regression）
 
 ### 設計關鍵
 - **status 用 String + CHECK**：與 quiz/concept/reflection/comprehension 慣例一致；避開 PG ENUM 雙寫法 + SQLite 測試相容
@@ -2063,36 +1294,6 @@ prod compose **不暴露 PG / Redis host port**。
 
 ## [2026-05-05] — Phase 2-6e：動態觸發頻率 + 驗證結果驅動 BKT（Phase 2-6 完成 🎉）
 
-### 新增（Service）
-- `backend/services/comprehension/mastery_hook.py`（51 行）：
-  - `apply_comprehension_mastery(db, user_id, question, passed)` — comprehension 通過/不通過 → BKT
-  - `passed=True` → Evidence(NONE) 上調 confidence；`passed=False` → Evidence(LOGIC) 下調
-  - `passed=None`（EPL fallback）→ no-op（無有效信號避免噪音）
-  - `update_mastery` 異常 swallow（best-effort，與 quiz/submit 容錯一致）
-- `backend/services/comprehension/trigger.py`（120 行）：
-  - `TriggerDecision` dataclass + `decide_trigger(db, user_id, student_answer_id)`
-  - 純規則 `_decide(pass_rate, is_coding)`（獨立函式方便 unit test）
-  - 取近 5 筆有 `comprehension_passed` 的紀錄算 pass_rate；無紀錄 = cold start
-  - 規則表：cold start → EPL；≥0.8 → 不觸發；[0.6, 0.8) → VARIATION；[0.3, 0.6) → PREDICT_OUTPUT；<0.3 → EPL
-  - 非 coding 題 → PREDICT_OUTPUT/VARIATION 自動 fallback EPL（reason 補上 `（題型非 coding，fallback EPL）`）
-
-### Workflow 整合
-- `services/comprehension/orchestrator.py`：`submit_epl_for_answer` + `submit_predict_for_answer` 在 commit 前呼叫 `apply_comprehension_mastery(...)`
-- `services/comprehension/variation.py`：`submit_variation_for_answer` 同樣串接 mastery hook
-- 三條 grade pipeline 通過後皆驅動 BKT；EPL passed=None 跳過
-
-### API
-- `backend/api/routes/comprehension_trigger.py`（57 行）：
-  - `GET /comprehension/trigger-suggestion/{student_answer_id}` → `TriggerDecisionOut`（should_trigger / suggested_type / pass_rate / sample_size / reason）
-- `backend/main.py`：註冊 `comprehension_trigger_router`
-
-### 測試
-- `backend/tests/test_comprehension_trigger.py`（12 個 unit）：cold start / 高 / 中高 coding+非 coding / 中等 coding+非 coding / 低；threshold 邊界值
-- `backend/tests/test_comprehension_mastery_hook.py`（4 個 unit）：passed=True/False/None / update_mastery 異常 swallow
-- `backend/tests/test_comprehension_trigger_route.py`（6 個 HTTP）：401 / 跨使用者 404 / cold start / 高 skip / 中等 predict / 中高非 coding fallback / 低 EPL
-- `backend/tests/test_comprehension_mastery_integration.py`（4 個整合）：EPL grade 通過 → mastery confidence > 0；EPL passed=None → mastery row 不存在；Predict / Variation grade 通過 → mastery 上調
-- 全套 320 tests 全綠（293 → 320，+27 個新測試，零 regression）
-
 ### 設計關鍵
 - **passed=None 不觸碰 mastery**：BKT 演算法對「答錯」與「未評分」應有差別 — fallback 不該被當作扣分，否則 LLM 偶發失敗會誤傷學生信心度
 - **trigger 純規則 + DB 查詢**：可預測、易測；不引入隨機性 / RL（避免過度工程，符合守則 #7「不過度設計」）
@@ -2100,39 +1301,7 @@ prod compose **不暴露 PG / Redis host port**。
 - **`_decide` 獨立函式**：12 個 unit test 直接覆蓋規則矩陣，不需 DB；`decide_trigger` 只負責 fetch + dispatch
 - **route 拆獨立檔**：trigger endpoint 放 `comprehension_trigger.py`，主 `comprehension.py` 維持 242 行不超 250
 
-### Phase 2-6 整體里程碑
-- ✅ 2-6a Schema 擴充 + Comprehension API
-- ✅ 2-6b EPL 驗證
-- ✅ 2-6c 預測輸出驗證
-- ✅ 2-6d 變體挑戰
-- ✅ 2-6e 動態觸發 + BKT 串接
-- 全套後端 320 tests 全綠，準備迎接 Phase 3 學習體驗（Learn / Quiz / Dashboard 頁面）
-
----
-
 ## [2026-05-05] — Phase 2-6d：變體挑戰（LLM 生變體題 + 評分學生新解）
-
-### 新增（Service）
-- `backend/services/comprehension/variation.py`（242 行）：
-  - `VariationGenerationResult` / `VariationGradeResult` dataclass
-  - `_call_llm_json` 共用 helper（dedupe 兩 LLM 呼叫的 boilerplate；換取行數壓在 250 限制內）
-  - `generate_variation(question, student_code)` / `grade_variation(...)` LLM 函式
-  - `start_variation_for_answer` / `submit_variation_for_answer` workflow（DB + LLM 整合）
-  - **StrictBool**：`_GradeResponse.passed` 拒絕 `"yes"` / `"true"` / `1` 等 LLM 文字噪音的隱式轉型
-- `backend/services/comprehension/variation_prompts.py`（90 行）：
-  - `build_generate_prompt`：強調「同核心概念、變更非本質特徵」（情境 / 數值 / 邏輯方向）
-  - `build_grade_prompt`：LLM 心智模擬執行學生 code 對 test_cases；binary passed + feedback
-
-### API
-- `backend/api/routes/comprehension_variation.py`（99 行，獨立檔避免 comprehension.py 超 250 限制）：
-  - `POST /comprehension/{id}/variation/generate` — 露 stem/starter/test_cases/concept_focus
-  - `POST /comprehension/{id}/variation/grade` — body `{student_code: str}`
-- `backend/main.py`：註冊 `comprehension_variation_router`
-
-### 測試
-- `backend/tests/test_comprehension_variation.py`（13 個 unit）：prompt 組裝 / generate 5 種 fallback / grade 通過 + 不通過 + LLM 不可用 + StrictBool ValidationError + 空 feedback 正規化
-- `backend/tests/test_comprehension_variation_route.py`（10 個 HTTP 整合）：401 / generate 持久化 + 清空舊 / 422 非 coding / 503 LLM 失敗 / 跨使用者 404 / 400 未先 generate / grade 通過 / grade LLM 失敗 fallback / 跨使用者 grade 404
-- 全套 293 tests 全綠（270 → 293，+23 個新測試，零 regression）
 
 ### 設計關鍵
 - **題型限制**：variation 僅對 coding 有效（其他 → 422 VARIATION_NOT_APPLICABLE）；MC/fill_blank 的「變體」概念意義有限
@@ -2147,31 +1316,6 @@ prod compose **不暴露 PG / Redis host port**。
 
 ## [2026-05-05] — Phase 2-6c：預測輸出驗證（自動生新測資 + 兩階段比對）
 
-### 新增（Service）
-- `backend/services/comprehension/predict_output.py`（199 行）：
-  - `PredictGenerationResult` / `PredictGradeResult` dataclass（frozen）
-  - `normalize_output(text)` — trim + 折疊內部空白 + 去空行（Stage 1 嚴格比對前置）
-  - `generate_predict_test(question, student_code)` — LLM 生新測資 + expected
-  - `grade_predict_answer(...)` — 兩階段：嚴格 → LLM 語意 → fallback mismatch
-  - `match_method` ∈ {exact, semantic, mismatch}
-- `backend/services/comprehension/predict_output_prompts.py`（86 行）：
-  - `build_generate_prompt`：強調「不重複 test_cases」+「對學生實際程式」推理 expected（含 bug 行為）
-  - `build_semantic_grade_prompt`：判斷「語意一致」（允許格式差異 / 拒絕邏輯錯誤）
-- `backend/services/comprehension/orchestrator.py`（+108 行）：
-  - `start_predict_for_answer` — 拒非 coding（422）→ LLM → JSON 寫入 prompt（input + expected）+ 清空舊 answer/passed
-  - `submit_predict_for_answer` — 從 prompt 解 JSON → 比對 → 寫 answer/passed
-
-### API
-- `backend/api/routes/comprehension.py`（242 行，+68）：
-  - `POST /comprehension/{id}/predict_output/generate` — 回 input；不洩漏 expected
-  - `POST /comprehension/{id}/predict_output/grade` — body `{predicted_output: str}`；回 passed + match_method + expected_output（學生已答完可對照）
-  - `PredictGenerateOut` / `PredictGradeOut` response schemas
-
-### 測試
-- `backend/tests/test_comprehension_predict.py`（16 個 unit）：normalize 5 案 / generate 成功 + 4 種 fallback / grade exact / normalize match / semantic 通過 / semantic 不通過 / LLM unavailable + exception fallback
-- `backend/tests/test_comprehension_predict_route.py`（11 個 HTTP 整合）：401 / generate 持久化 + hide expected / 清空舊 / 422 非 coding / 503 LLM 失敗 / 跨使用者 404 / 400 未先 generate / exact 通過 / mismatch fallback / 跨使用者 grade 404
-- 全套 270 tests 全綠（243 → 270，+27 個新測試，零 regression）
-
 ### 設計關鍵
 - **題型限制**：predict_output 只對 coding 有意義（其他 → 422 PREDICT_OUTPUT_NOT_APPLICABLE），避免「對 MC 預測輸出」這種無意義操作
 - **expected 不洩漏**：generate response 只回 `test_input`；server 把 `{"input", "expected"}` 用 JSON 編碼存入 `comprehension_prompt`，grade 時解出比對
@@ -2184,32 +1328,6 @@ prod compose **不暴露 PG / Redis host port**。
 
 ## [2026-05-05] — Phase 2-6b：EPL 驗證（LLM 出題 + 評分學生回答）
 
-### 新增（Service）
-- `backend/services/comprehension/epl.py`（159 行）— LLM 客戶端 + dataclass + async 流程：
-  - `EplGenerationResult` / `EplGradeResult` dataclass（frozen）
-  - `generate_epl_prompt(question, student_answer)` — 出 EPL 題；失敗回 prompt=None
-  - `grade_epl_answer(question, student_answer, epl_prompt, epl_answer)` — 評分；失敗回 fallback
-  - 評分 3 面向：conceptual_correctness / specificity / causality；passed = (avg ≥ 0.6)
-- `backend/services/comprehension/epl_prompts.py`（111 行）— 純 prompt 模板獨立檔（避免 epl.py 超過 250 行硬性限制）：
-  - `format_student_answer` — 題型決定格式（coding 出 code block / MC 解析選項文字 / fill_blank 列出填空）
-  - `build_generate_prompt` — 生成 EPL 題的 system prompt
-  - `build_grade_prompt` — 評分學生 EPL 回答的 system prompt
-- `backend/services/comprehension/orchestrator.py`（106 行）— 整合 LLM + DB：
-  - `start_epl_for_answer` — 取作答 + 題目 → LLM → 寫 type/prompt + 清空舊 answer/passed
-  - `submit_epl_for_answer` — 校驗已 generate → LLM → 寫 answer/passed
-  - LLM 失敗：generate → 503；grade → 200 但 passed=None（不擋學生）
-
-### API
-- `backend/api/routes/comprehension.py`（174 行）：
-  - `POST /comprehension/{student_answer_id}/epl/generate` — 出題（重置語意）
-  - `POST /comprehension/{student_answer_id}/epl/grade` — 評分，body `{epl_answer: str}`
-  - `EplGenerateOut` / `EplGradeOut` response schemas（細項分數即時回傳，不入庫）
-
-### 測試
-- `backend/tests/test_comprehension_epl.py`（16 個 unit）：format / prompt building / LLM 成功 / fallback (no client / exception / invalid JSON / empty prompt / ValidationError) / 通過閾值 / 不通過 / feedback 空字串正規化
-- `backend/tests/test_comprehension_epl_route.py`（9 個 HTTP 整合）：401 / generate 持久化 + 清空舊 / generate LLM 失敗 503 / generate 跨使用者 404 / grade 未先 generate 400 / grade 成功 / grade LLM 失敗 200 但 passed=None / grade 跨使用者 404
-- 全套 243 tests 全綠（218 → 243，+25 個新測試，零 regression）
-
 ### 設計關鍵
 - **重置語意**：generate 每次都清空 `comprehension_answer/passed`，避免新 prompt 搭配舊回答的資料錯亂
 - **順序強制**：grade 必須先 generate（無 prompt → 400 EPL_NOT_STARTED），確保 LLM 評分時有完整脈絡
@@ -2220,35 +1338,6 @@ prod compose **不暴露 PG / Redis host port**。
 ---
 
 ## [2026-05-05] — Phase 2-6a：Post-Solution Comprehension Check 持久化基礎
-
-### 新增（Schema / Migration）
-- `backend/alembic/versions/b8c9d0e1f2a3_add_comprehension_to_student_answers.py`（66 行）— `student_answers` 表加 4 個 nullable 欄位：
-  - `comprehension_type` (varchar 20, nullable) — `epl` / `predict_output` / `variation`
-  - `comprehension_prompt` (text, nullable) — 系統出的驗證題目
-  - `comprehension_answer` (text, nullable) — 學生回答
-  - `comprehension_passed` (boolean, nullable) — 是否通過驗證
-  - CHECK constraint：`comprehension_type IS NULL OR ∈ enum`
-
-### ORM
-- `backend/models/quiz.py`：`StudentAnswer` 加 4 欄位 + `ComprehensionType(str, Enum)`（EPL / PREDICT_OUTPUT / VARIATION）
-- `backend/models/__init__.py`：export `ComprehensionType`
-
-### Service
-- `backend/services/comprehension/__init__.py` + `crud.py`（79 行）：
-  - `get_comprehension(db, student_answer_id, user_id)` — 擁有權檢查（非本人 → 404）
-  - `upsert_comprehension(db, student_answer_id, user_id, payload)` — partial upsert，未提供欄位保留原值
-  - `ComprehensionUpdate` dataclass
-
-### API
-- `backend/api/routes/comprehension.py`（108 行）：
-  - `GET /comprehension/{student_answer_id}` — 讀取 4 欄位狀態
-  - `PUT /comprehension/{student_answer_id}` — partial upsert
-  - 422 type 非法 / 404 跨使用者或不存在
-- `backend/main.py`：註冊 `comprehension_router`
-
-### 測試
-- `backend/tests/test_comprehension_route.py`（10 個整合測試）：401 未登入 / GET 初始狀態 null / 完整 PUT / partial PUT 保留欄位 / 422 type 非法 / 404 跨使用者 / 404 不存在
-- 全套 218 tests 全綠（208 → 218，+10 個新測試，零 regression）
 
 ### 設計關鍵
 - **nullable + 同表擴充**：comprehension 為「解題後選擇性驗證」，多數作答不觸發；nullable 欄位比 1:1 副表省一個 join

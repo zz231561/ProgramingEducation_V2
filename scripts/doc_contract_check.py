@@ -1,95 +1,76 @@
-"""以靜態 AST 比對 API / DB 文件與後端契約。"""
+"""比對 API、DB、環境、前端頁面與部署文件契約。"""
 
 from __future__ import annotations
 
-import ast
 import re
 from pathlib import Path
 
-HTTP_METHODS = {"get", "post", "put", "patch", "delete"}
+from doc_contract_inventory import (
+    alembic_heads,
+    api_signature_digest,
+    api_signatures,
+    db_signature_digest,
+    documented_columns,
+    env_example_names,
+    frontend_pages,
+    model_columns,
+    settings_names,
+    zeabur_services,
+)
+
 API_ROW_RE = re.compile(r"\| ([A-Z /]+) \| `([^`]+)` \|")
-DB_NAME_RE = re.compile(r"^([a-z][a-z_]+)(?:\s+.*)?$", re.MULTILINE)
+MARKER_RE = re.compile(r"<!-- contract: ([a-z0-9-]+)=([^>]+) -->")
 
 
-def _constant_string(node: ast.AST | None, default: str = "") -> str:
-    """讀取 AST 中的字串常數；動態值不納入可機械驗證契約。"""
-    return node.value if isinstance(node, ast.Constant) and isinstance(node.value, str) else default
-
-
-def _router_prefixes(tree: ast.Module) -> dict[str, str]:
-    """取得同檔各 APIRouter 變數的 prefix。"""
-    prefixes: dict[str, str] = {}
-    for node in tree.body:
-        if not isinstance(node, ast.Assign) or not isinstance(node.value, ast.Call):
-            continue
-        if not isinstance(node.value.func, ast.Name) or node.value.func.id != "APIRouter":
-            continue
-        prefix = next(
-            (_constant_string(keyword.value) for keyword in node.value.keywords if keyword.arg == "prefix"),
-            "",
-        )
-        for target in node.targets:
-            if isinstance(target, ast.Name):
-                prefixes[target.id] = prefix
-    return prefixes
-
-
-def actual_api_operations(root: Path) -> set[tuple[str, str]]:
-    """從 route decorators 取得 (METHOD, path) inventory。"""
-    operations: set[tuple[str, str]] = set()
-    for path in (root / "backend/api/routes").glob("*.py"):
-        tree = ast.parse(path.read_text())
-        prefixes = _router_prefixes(tree)
-        for node in ast.walk(tree):
-            if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
-                continue
-            for decorator in node.decorator_list:
-                if not isinstance(decorator, ast.Call) or not isinstance(decorator.func, ast.Attribute):
-                    continue
-                method = decorator.func.attr
-                owner = decorator.func.value
-                if method not in HTTP_METHODS or not isinstance(owner, ast.Name) or not decorator.args:
-                    continue
-                route = _constant_string(decorator.args[0])
-                operations.add((method.upper(), f"{prefixes.get(owner.id, '')}{route}"))
-    return operations
+def _markers(root: Path) -> dict[str, str]:
+    markers: dict[str, str] = {}
+    for path in (root / "docs").glob("*.md"):
+        markers.update((key, value.strip()) for key, value in MARKER_RE.findall(path.read_text()))
+    return markers
 
 
 def documented_api_operations(root: Path) -> set[tuple[str, str]]:
-    """從 api-spec endpoint tables 取得 (METHOD, path) inventory。"""
     text = (root / "docs/api-spec.md").read_text()
-    return {
-        (method, path)
-        for methods, path in API_ROW_RE.findall(text)
-        for method in methods.split(" / ")
-    }
+    return {(method, path) for methods, path in API_ROW_RE.findall(text) for method in methods.split(" / ")}
 
 
-def actual_model_tables(root: Path) -> set[str]:
-    """從 SQLAlchemy models 的 __tablename__ 取得 table inventory。"""
-    tables: set[str] = set()
-    for path in (root / "backend/models").glob("*.py"):
-        tree = ast.parse(path.read_text())
-        for node in ast.walk(tree):
-            if not isinstance(node, ast.Assign):
-                continue
-            if any(isinstance(target, ast.Name) and target.id == "__tablename__" for target in node.targets):
-                name = _constant_string(node.value)
-                if name:
-                    tables.add(name)
-    return tables
-
-
-def documented_model_tables(root: Path) -> set[str]:
-    """取得 db-schema code blocks 中的 table names。"""
-    return set(DB_NAME_RE.findall((root / "docs/db-schema.md").read_text()))
-
-
-def contract_drift(root: Path) -> tuple[list[str], list[str], list[str]]:
-    """回傳缺少 API、過時 API、缺少 DB table。"""
-    actual_api = actual_api_operations(root)
+def contract_drift(root: Path) -> dict[str, list[str]]:
+    """回傳各類契約 drift；空 list 表示一致。"""
+    markers = _markers(root)
+    actual_api = {(str(item["method"]), str(item["path"])) for item in api_signatures(root)}
     documented_api = documented_api_operations(root)
-    missing_api = [f"{method} {path}" for method, path in sorted(actual_api - documented_api)]
-    stale_api = [f"{method} {path}" for method, path in sorted(documented_api - actual_api)]
-    missing_tables = sorted(actual_model_tables(root) - documented_model_tables(root))
-    return missing_api, stale_api, missing_tables
+    actual_columns = model_columns(root)
+    doc_columns = documented_columns(root)
+    missing_columns = [
+        f"{table}.{column}"
+        for table, columns in sorted(actual_columns.items())
+        for column in sorted(columns - doc_columns.get(table, set()))
+    ]
+    stale_columns = [
+        f"{table}.{column}"
+        for table, columns in sorted(doc_columns.items())
+        if table in actual_columns
+        for column in sorted(columns - actual_columns[table])
+    ]
+    expected_pages = {item for item in markers.get("frontend-pages", "").split(",") if item}
+    expected_services = {item for item in markers.get("zeabur-services", "").split(",") if item}
+    return {
+        "api_missing": [f"{m} {p}" for m, p in sorted(actual_api - documented_api)],
+        "api_stale": [f"{m} {p}" for m, p in sorted(documented_api - actual_api)],
+        "api_signature": []
+        if markers.get("api-signature-sha256") == api_signature_digest(root)
+        else ["request/response/status/auth signature changed"],
+        "db_missing": missing_columns,
+        "db_stale": stale_columns,
+        "db_signature": []
+        if markers.get("db-signature-sha256") == db_signature_digest(root)
+        else ["column type/nullability/FK/index/check signature changed"],
+        "alembic_heads": []
+        if markers.get("alembic-heads") == ",".join(sorted(alembic_heads(root))) and len(alembic_heads(root)) == 1
+        else [f"actual={','.join(sorted(alembic_heads(root)))}"],
+        "env_missing": sorted(settings_names(root) - env_example_names(root)),
+        "frontend_missing": sorted(frontend_pages(root) - expected_pages),
+        "frontend_stale": sorted(expected_pages - frontend_pages(root)),
+        "services_missing": sorted(zeabur_services(root) - expected_services),
+        "services_stale": sorted(expected_services - zeabur_services(root)),
+    }

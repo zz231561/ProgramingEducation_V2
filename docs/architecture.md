@@ -1,5 +1,11 @@
 # 系統架構
 
+<!-- contract: frontend-pages=/,/assignments,/dashboard,/knowledge,/learn,/login,/notifications,/overview,/quiz,/settings,/teacher,/teacher/assignments,/workspace -->
+
+> 前端 page routes：`/`、`/workspace`、`/learn`、`/quiz`、`/knowledge`、`/overview`、
+> `/dashboard`、`/assignments`、`/teacher`、`/teacher/assignments`、`/notifications`、
+> `/settings`、`/login`；route group 不出現在 URL。
+
 ```
 ┌─────────────────────────────────────────────────────────┐
 │                      Zeabur                              │

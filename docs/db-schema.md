@@ -3,6 +3,10 @@
 > 標記 `★` 為需要建立的 index/constraint
 > SQLAlchemy tables 以 `backend/models/__init__.py` 為 inventory；LlamaIndex 管理的 RAG tables
 > 不在 SQLAlchemy metadata。Migration head 以 `alembic heads` 動態查詢，不在文件手抄。
+> column type/nullability、FK、index、unique、check 與 Alembic 單一 head 由
+> `doc_selfcheck.py` 防 drift；更新 fingerprint 使用 contract inventory script。
+<!-- contract: db-signature-sha256=a68b1b21690f1919201456bd9649dd1f0fb40926524e95dd8a2b9b67f32f684e -->
+<!-- contract: alembic-heads=v8e9f0a1b2c3 -->
 
 ## Module 1: Auth
 
@@ -74,7 +78,12 @@ concepts
 ├── name_en (varchar)
 ├── description (text)
 ├── difficulty_level (int 1-5)
-└── category (varchar)               -- "基礎語法", "物件導向", "STL"
+├── category (varchar)               -- "基礎語法", "物件導向", "STL"
+├── video_order (int, nullable)
+├── video_youtube_id (varchar, nullable)
+├── video_duration_seconds (int, nullable)
+├── edf_parent_tag (varchar, nullable) -- EDF 粗粒度 parent tag
+└── created_at
 
 concept_edges
 ├── id (UUID, PK)
@@ -82,6 +91,7 @@ concept_edges
 ├── target_id (FK → concepts, ON DELETE CASCADE)
 ├── edge_type (enum: prerequisite/contains/specialization/related)
 ├── weight (float, default 1.0)
+├── created_at
 └── UNIQUE (source_id, target_id, edge_type) ★
 
 -- 邊資料現況（2026-07-04 K1a，migration i5d6e7f8a9b0）：
@@ -125,6 +135,10 @@ student_answers
 ├── time_spent_seconds (int)
 ├── hint_level_used (int 0-5)
 ├── feedback (text)
+├── comprehension_type (epl/predict_output/variation, nullable)
+├── comprehension_prompt (text, nullable)
+├── comprehension_answer (text, nullable)
+├── comprehension_passed (boolean, nullable)
 ├── answered_at (timestamp)
 └── ★ index (user_id, answered_at) 供歷史查詢
 -- ⚠ 擴充欄位（comprehension_type 等）見下方「跨模組：Pre-Coding Reflection」
@@ -149,12 +163,6 @@ reflections
 ├── updated_at
 └── UNIQUE (user_id, source_type, source_id) ★
 ```
-
-> `student_answers` 表擴充欄位（Post-Solution Comprehension Check）：
-> - `comprehension_type (enum: epl/predict_output/variation, nullable)` — 驗證類型
-> - `comprehension_prompt (text, nullable)` — 系統出的驗證題目
-> - `comprehension_answer (text, nullable)` — 學生回答
-> - `comprehension_passed (boolean, nullable)` — 是否通過驗證
 
 ## Module 7: 學習路徑
 

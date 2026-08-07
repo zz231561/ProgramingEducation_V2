@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """文件自檢 — 掃出「文件寫的」與「實際的」不一致（roadmap 8-1d）。
 
 背景：文件中的機械事實（行數 / 測試數 / 檔案是否存在）全靠手寫敘述，
@@ -145,7 +144,7 @@ def broken_anchors() -> list[tuple[str, str, str]]:
                     continue
                 body = tp.read_text(errors="ignore")
                 # 標題可能寫成 `## 12.` / `### 12.2` / `## §E.`
-                if not re.search(rf"^#{{1,4}}\s*§?\s*{re.escape(section)}[.\s]", body, re.M):
+                if not re.search(rf"^#{{1,4}}\s*§?\s*{re.escape(section)}[.\s]", body, re.MULTILINE):
                     found.append((doc, target, section))
     return sorted(set(found))
 
@@ -170,7 +169,7 @@ def test_counts() -> dict[str, int]:
         if not d.exists():
             continue
         counts[name] = sum(
-            len(re.findall(r"^\s*(?:async )?def test", f.read_text(errors="ignore"), re.M))
+            len(re.findall(r"^\s*(?:async )?def test", f.read_text(errors="ignore"), re.MULTILINE))
             for f in d.glob("*.py")
         )
 
@@ -178,7 +177,7 @@ def test_counts() -> dict[str, int]:
     web_tests = ROOT / "web/tests"
     if web_tests.exists():
         counts["web"] = sum(
-            len(re.findall(r"^\s*it\(", f.read_text(errors="ignore"), re.M))
+            len(re.findall(r"^\s*it\(", f.read_text(errors="ignore"), re.MULTILINE))
             for f in web_tests.glob("*.test.ts")
         )
     return counts
@@ -225,24 +224,16 @@ def main() -> int:
     if not caps:
         print("（無）")
 
-    missing_api, stale_api, missing_tables = contract_drift(ROOT)
-    print(f"\n### API 契約 drift（缺 {len(missing_api)}／過時 {len(stale_api)}）")
-    for item in missing_api:
-        print(f"- 缺少 `{item}`")
-    for item in stale_api:
-        print(f"- 過時 `{item}`")
-    if not missing_api and not stale_api:
-        print("（無）")
-
-    print(f"\n### DB Schema drift（缺 {len(missing_tables)} 張 table）")
-    for table in missing_tables:
-        print(f"- 缺少 `{table}`")
-    if not missing_tables:
+    contracts = contract_drift(ROOT)
+    failures = [(kind, item) for kind, items in contracts.items() for item in items]
+    print(f"\n### 文檔契約 drift（{len(failures)} 筆）")
+    for kind, item in failures:
+        print(f"- `{kind}` → `{item}`")
+    if not failures:
         print("（無）")
 
     # 超硬上限或任何失真時回非零，方便未來接 CI
-    drift = missing_api or stale_api or missing_tables
-    return 1 if (hard or missing or anchors or caps or drift) else 0
+    return 1 if (hard or missing or anchors or caps or failures) else 0
 
 
 if __name__ == "__main__":

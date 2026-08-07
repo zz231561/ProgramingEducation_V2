@@ -2,6 +2,10 @@
 
 > 本文件記錄 FastAPI 對外契約；路由 inventory 以 `backend/main.py` 註冊後的 OpenAPI 為準。
 > Backend routes 不帶 `/api`；瀏覽器端由 Next.js `/api/**` proxy 轉送。修改 router 時需同步本表。
+> request annotations、response model、success status 與 auth/rate-limit dependencies 由
+> `doc_selfcheck.py` 的 signature fingerprint 防 drift；變更契約時須一併更新本文件與 fingerprint。
+> 新 fingerprint：`python3 scripts/doc_contract_inventory.py`。
+<!-- contract: api-signature-sha256=335c1d9311826e6e4851d7ba5816a9bdac17523fcedc08b118083a30f2a59566 -->
 
 ## Auth、使用者與 Profile
 

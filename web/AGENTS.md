@@ -94,6 +94,7 @@ npx tsc --noEmit      # 型別
 npm run lint          # ESLint（僅 global-nav <img> 一則既有 warning 可忽略）
 npm run build         # Next build，確認 route 產出正常
 ```
+新增／刪除 page route 時同步 `docs/architecture.md` 的 frontend page inventory，並跑 `python3 scripts/doc_selfcheck.py`。
 
 ## API 呼叫
 

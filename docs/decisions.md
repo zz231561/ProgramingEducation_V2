@@ -19,6 +19,23 @@
 > `python3 scripts/doc_selfcheck.py` 的當下產出為準（同 `tech-debt.md` 規範）。
 >
 
+## [2026-08-08] — 文件契約 drift 的三層防線
+
+### 為什麼採 AST inventory + fingerprint
+
+method/path、table/column、env、page route 與 service name 適合直接列出差集；request/response、
+status、auth dependencies 及 DB constraints 的完整展開量很大，若把 83 筆 OpenAPI 或 SQLAlchemy
+metadata 複製進 Markdown，文件會重新變成難以閱讀的機械快照。因此保留人類可讀的 endpoint／schema
+摘要，並以 normalized signature fingerprint 偵測細節變更；drift 時必須先更新文件，再更新 fingerprint。
+
+### 否決方案
+
+- **只靠規則提醒**：無法阻止漏跑，故接入 GitHub CI。
+- **把完整 OpenAPI / metadata JSON commit 到 docs**：diff 噪音大、AI 讀取成本高，且與
+  `api-spec.md`／`db-schema.md` 重複。
+- **解析自然語言判斷所有架構敘述**：容易誤判；敘述性內容維持人工核對，機械 gate 只處理
+  可建立明確 inventory 的契約。
+
 ## [2026-08-07] — 7-D3 階段二 A：UI 文件退場（2891 行）
 
 ### 為什麼是「退場」而不是「整合」

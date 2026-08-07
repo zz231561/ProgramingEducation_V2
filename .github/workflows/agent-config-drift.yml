@@ -32,4 +32,6 @@ jobs:
         with:
           python-version: "3.12"
       - name: Check documentation contracts
-        run: python3 scripts/doc_selfcheck.py
+        run: |
+          python3 -m unittest discover -s scripts/tests
+          python3 scripts/doc_selfcheck.py

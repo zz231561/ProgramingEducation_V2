@@ -17,7 +17,7 @@
    - `docs/roadmap.md` — 完成 sub-task 就打勾 + **一行**摘要（**進度的唯一真相來源**）
    - `docs/decisions.md` — **有設計取捨才寫**：決策理由／否決方案／實測數據；純執行的變更不寫
    - `docs/tech-debt.md` — 產生或消除技術債時
-   - route / request-response 契約變更同步 `api-spec.md`；ORM table / migration 變更同步 `db-schema.md`；以 `doc_selfcheck.py` 驗 drift
+   - API／ORM／env／page route／部署 service 變更須同步對應 ⚪ 文件；一律跑 `doc_selfcheck.py` 驗 contract drift
    - 各文檔「怎麼寫」寫在**該檔自己的檔頭**，不另立格式規範
 6. **改檔案一律用 Edit/Write 工具**：**禁止**用 `python3 - <<EOF` / `sed -i` / `cat >` 等 shell 手法改動專案檔案——那是任意程式碼執行、diff 不可見、且會繞過權限確認。批次改動就多呼叫幾次 Edit。
 7. **避免重複造輪子（OSS 優先）**：開發新功能前必先查 `docs/references.md` §1 決策矩陣。**禁止移植已有對應套件的演算法**（例：BKT 必用 pyBKT）。**禁止引入 AGPL/GPL 授權套件**（見 references.md §2 黑名單）。

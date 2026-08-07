@@ -1,5 +1,7 @@
 # 部署指南
 
+<!-- contract: zeabur-services=backend,postgres,redis,web -->
+
 兩種部署選項：
 - **A. Zeabur**（推薦 MVP 上線）— 走 `zeabur.json`，details 見 §A
 - **B. Self-host VPS**（如 Tencent Tokyo）— 走 `docker-compose.prod.yml`，details 見 §B

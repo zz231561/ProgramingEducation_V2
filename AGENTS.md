@@ -36,7 +36,7 @@
 > **每次 session 開頭先讀 `docs/dev-setup.md` §1**（Colima + docker-compose 啟動 SOP）。
 > ⚠ **環境前置**：`web/.env.local` `AUTH_SECRET` 必須與 `backend/.env` `NEXTAUTH_SECRET` 同值。
 
-**工具**：`python3 scripts/doc_selfcheck.py` — 文件自檢（超門檻／失效路徑／失效章節）；session 結束前跑
+**工具**：`bootstrap_agent_config.py` — 重建雙端 agent 設定；`doc_selfcheck.py` — 文件自檢；皆位於 `scripts/`
 **部署與營運**：見 `docs/deployment.md`。**push 即自動部署**、migration 自動跑；
 **唯獨改環境變數必須手動重啟 service**；OAuth 測試模式 100 人上限。
 

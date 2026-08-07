@@ -129,6 +129,15 @@ docker-compose -f docker-compose.dev.yml down   # 容器停（資料保留）
 | venv 執行檔 | `.venv/bin/uvicorn` | `.venv\Scripts\uvicorn.exe`（啟動 venv 後可省略） |
 | Shell 語法 | bash | PowerShell（`$null` / `$env:VAR` / 反引號續行） |
 
+## 1C. Claude Code / Codex 首次設定
+
+先手動安裝並登入兩個工具，再於 repository 根目錄執行。只重建 project-level 設定，不讀寫 credential。
+
+- macOS：`python3 scripts/bootstrap_agent_config.py`
+- Windows PowerShell：`py -3 scripts/bootstrap_agent_config.py`
+
+成功時顯示 `Agent config bootstrap complete (credentials unchanged)`；可重複執行。
+
 ---
 
 ## 2. 已安裝工具清單

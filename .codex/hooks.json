@@ -8,7 +8,7 @@
           {
             "type": "command",
             "command": "python3 \"$(git rev-parse --show-toplevel)/scripts/agent_config_hook.py\" check",
-            "commandWindows": "py -3 \"$(git rev-parse --show-toplevel)/scripts/agent_config_hook.py\" check",
+            "commandWindows": "py -3 \"scripts\\agent_config_hook.py\" check",
             "timeout": 10,
             "statusMessage": "檢查 Claude Code / Codex 規則是否同步"
           }
@@ -22,7 +22,7 @@
           {
             "type": "command",
             "command": "python3 \"$(git rev-parse --show-toplevel)/scripts/agent_config_hook.py\" guard-generated",
-            "commandWindows": "py -3 \"$(git rev-parse --show-toplevel)/scripts/agent_config_hook.py\" guard-generated",
+            "commandWindows": "py -3 \"scripts\\agent_config_hook.py\" guard-generated",
             "timeout": 10,
             "statusMessage": "保護 generated agent config"
           }
@@ -36,7 +36,7 @@
           {
             "type": "command",
             "command": "python3 \"$(git rev-parse --show-toplevel)/scripts/agent_config_hook.py\" sync-after-edit",
-            "commandWindows": "py -3 \"$(git rev-parse --show-toplevel)/scripts/agent_config_hook.py\" sync-after-edit",
+            "commandWindows": "py -3 \"scripts\\agent_config_hook.py\" sync-after-edit",
             "timeout": 10,
             "statusMessage": "同步 canonical agent config"
           }

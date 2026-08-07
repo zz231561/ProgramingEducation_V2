@@ -18,7 +18,6 @@
 > **禁止手抄機械事實**（行數／測試數／檔案清單）——那些會過時，一律以
 > `python3 scripts/doc_selfcheck.py` 的當下產出為準（同 `tech-debt.md` 規範）。
 >
-> 下方仍可見的舊格式條目正依 7-D3 分批按本規範清理。
 
 ## [2026-08-07] — 7-D3 階段二 A：UI 文件退場（2891 行）
 
@@ -38,15 +37,6 @@
 
 連 7-C3 本週才引用的 §12.2，實際也只是 12 行示意圖，與真做出來的三型驗證（EPL/Predict/
 Variation + 評分）無關。
-
-### visual-protocol.md 已被 frontend.md 完全取代
-今天稍早才把它從 `design-plan.md` 改名（名實對齊），深入比對後發現整份重複：
-§0 七條硬規則 → `frontend.md` R1–R8（**更完整**，多 R8.1–R8.5）；§3 標題自己就寫
-「Design Token 增補（**寫入 frontend.md**）」；§5 違和感清單同 §0；§1/§2 借鑑對照的
-來源檔（`design-references/` 1819 行）同日刪除後成為純歷史。
-唯一存活內容是 §2.10 `.kbd` 規格（被 `frontend.md` 引用），已搬入。
-
----
 
 ## [2026-08-07] — 7-D3 階段一：文檔工作流重整（本檔即為產物）
 
@@ -137,17 +127,6 @@ git log 沒有的」，那複述內容本來就不該存在，搬走只是換地
 - 提案二（只計邏輯行、排除 schema/prompt/JSX）**同樣放棄**：對 AI 而言成本是 token 與
   檢索粒度，100 行 Pydantic schema 與 100 行分支邏輯載入成本相同，折算反而失真
 
-### 新規則
-- 門檻 **150/250 → 250/400**，維持**原始行數**；判準改為「AI 能否用檔名預測內容 +
-  能否一次讀完」，與可維護性理論脫鉤
-- **超標不等於必拆**：逐案回答三問後三選一（拆分／豁免／記債）
-  ① 檔名能不能預測內容（不能 → 必拆，與行數無關）② 有幾個變更理由（≥2 → 拆）
-  ③ 拆完一次典型修改要開幾個檔（**≥3 → 判定拆錯，此題有否決權**）
-- **新增反向約束**：禁 `utils.*`/`helpers.*`/`xxx-part2.*` 無語意檔名、禁為過門檻硬切、
-  禁外移「只被一處呼叫且不獨立可測」的函式
-- **新增重複偵測**：jscpd，**跨 ≥3 檔才處理**（只跨 2 檔沿用「三行重複優於過早抽象」）
-- 函式層級加例外：主體以單一字串常數為主者（LLM prompt 組裝）以邏輯行判斷
-
 ### 實測數據（本次決策依據，非引用）
 - jscpd 全專案重複率 **0.28%**（276 檔）——遠低於業界 3–5% 警戒值，
   「vibe coding 必然產生大量重複」在本專案**不成立**
@@ -196,33 +175,7 @@ P1 第 4 輪自發示範 RULE-8：「**我前面說得不夠清楚**：這不是
 - `error_type` 跨次執行仍會變（同一份程式碼這次判 none、上次判 logic）；
   **同一次對話內已穩定**（B8 的 `stabilize_error_type` 有效）
 
-### 驗證
-- 後端 **883 tests 全綠**（+3）；改防線後重跑 P1/P3 確認行為
-
----
-
 ## [2026-08-06] — 7-C3 Comprehension 前端 UI（2-6 後端完整但學生一直碰不到）
-
-### Added
-- `web/lib/comprehension.ts`：trigger-suggestion + 三種 type 的 generate/grade API client
-- `components/comprehension/`（7 檔，全部 < 200 行）
-  - `use-comprehension.ts` — 狀態機：答對 → 問後端要不要驗 → 依建議 type 出題 → 作答 → 評分。
-    **任何一步失敗都不擋學生**（出題失敗靜默收掉、評分失敗保留學生打的內容可重送）
-  - `comprehension-modal.tsx` — Modal 殼（ui-ux-spec §12.2）；Esc / 關閉鈕隨時可離開
-  - `epl-step.tsx`（回三項分數：概念正確性／具體程度／因果連結）、
-    `predict-step.tsx`（評分後才揭露正解 —— generate 階段本來就不下發 expected）、
-    `variation-step.tsx`（題幹 + 測資表 + 解答編輯區）
-  - `ai-lock.tsx` — **變體挑戰進行中真的鎖住 Coddy**（2-6d）：Chat 掛在 AppShell、
-    每頁都能 Ctrl+B 叫出來，不鎖等於沒驗到遷移能力。Provider 掛在 AppShell，
-    ChatPanel 讀鎖 → 輸入框 disabled + 顯示原因，離開挑戰（含中途關閉）一律解鎖
-- 接入點：`quiz/result-view.tsx`（Quiz 頁 + 弱項測驗共用）與 `learn/concept-quiz-tab.tsx`
-  —— 兩處行為一致，避免同一件事在不同頁面不同表現
-
-### 驗證
-- **端對端煙霧測試**（本機後端 + 真實 LLM）：六個端點的回傳欄位與前端 client 逐一對上
-  （trigger→epl generate/grade→predict generate/grade→variation generate/grade）。
-  故意送不相關的解答時，變體評分正確指出「你交的是閏年程式但題目要成績表」
-- 後端 880 tests 全綠（本次未動後端）；`web` tsc / eslint / build 通過
 
 ### 待觀察（7-C4）
 - 觸發頻率：後端規則是通過率 ≥ 0.8 才不觸發，冷啟動必觸發 EPL。多題連續作答時
@@ -234,49 +187,15 @@ P1 第 4 輪自發示範 RULE-8：「**我前面說得不夠清楚**：這不是
 
 ## [2026-08-06] — 7-C2b 其餘 P1 修正（NZEC 語意 / 逾時文案 / 說明規則 / 429 顯示）
 
-### Added
-- **NZEC 主動說明**（`run_help.py` `kind="nzec"`，零 LLM）：學生程式輸出完全正確、stderr 全空，
-  只看到一句 Runtime Error。固定文案分三層講清楚——**C++ 標準**（`main` 回傳值交給執行環境，
-  0＝成功，其他值意義由實作決定）／**OS 慣例**（Unix 系把非 0 當異常結束）／
-  **本平台判定**（以第一人稱說「我沿用那個慣例」）。前端在 `exit_code !== 0` 且無編譯訊息時觸發，
-  每個 session 一次
-- **PREAMBLE RULE-7／RULE-8**：講「規定」必須分清 C++ 標準 / OS 慣例 / 本平台判定並用第一人稱，
-  **禁用**「通常」「一般來說」含糊帶過；要更正自己先前的說法時第一句就說「我前面說錯了」，
-  不得先稱讚再夾帶
-- `web/lib/chat-error.ts`：429 分兩種顯示——`DAILY_QUOTA_EXCEEDED` 用後端原文（已寫明何時恢復）、
-  `RATE_LIMITED` 消費 `retry_after_seconds` 顯示剩餘秒數
-
-### Fixed
-- `_TIMEOUT_TEMPLATE` 仍叫學生去填 R5d 已移除的「輸入」欄位 → 改成互動終端的實際操作方式
-- `use-chat.ts` 的 `catch {}` 把配額用盡誤導成系統故障（學生只會一直重按）
-
 ### 實測驗證（P1 重跑）
 RULE-7 生效：由基準的「評測平台**通常**會視為異常結束」變成
 「**本平台的判定**：我這邊會把非零結束狀態判成 Runtime Error」，第 4 輪並自動分成三層陳述。
 ⚠ 觀察：LLM 在散文中仍會把「非零＝失敗」講成 C++ 標準的規定（嚴格說那是實作定義）——
 機械文案本身正確，此為 prose 精確度問題，記入 7-C4 觀察
 
-### 消除的技術債
-- **B1**（NZEC 教學語意）、**B2**（逾時文案脫節）；**B4** 消化最痛的 chat 路徑，全站 toast 仍待 7-D
-
-### 驗證
-- 後端 **880 tests 全綠**（+3）；`web` tsc / eslint 乾淨
-
----
-
 ## [2026-08-06] — 7-C2a'' 收尾：B8 消除 + 「我卡住了」按鈕 + Evidence 容錯 + 七型全驗
 
-### Added
-- **「我卡住了」按鈕**（`chat-input.tsx`）：need 狀態機唯一的非推論訊號，+2。
-  輸入框有字就連同學生的問題一起送、沒字才用預設句
-  - migration `v8e9f0a1b2c3` 加 `chat_messages.explicit_help`（up/down/up 實跑可逆）
-  - **不借用 `dialogue_act='asking_hint'` 持久化**：那欄也會由關鍵字啟發式產生
-    （「這個怎麼寫」也會中），重放歷史會把普通提問誤讀成按了按鈕、追溯性灌高 need
-  - 與被移除的 `hint_level` 不牴觸：那是前端**推算的等級**（可被寫死成 0），
-    這是使用者的**實際動作**（後端觀測不到）。按下時 `dialogue_act` 直接標 `asking_hint`
-- 單輪漲幅上限 **+2**：訊號可疊加（按鈕 + 沒理解 + 失敗嘗試 = 4）但一次跳三級階梯就沒意義
-
-### Fixed
+### 決策依據與證據
 - **tech-debt B8**：`stabilize_error_type` — 同一份 code + 執行結果沒變就沿用上輪的 `error_type`。
   實測 P3 由 `1→1→0→0`（LLM 把 logic 漂成 none，學生看到揭露程度倒退）變成 **`1→1→1→1`**
 - **Evidence 單一欄位越界毀掉整輪**（實測 P5 撞到）：LLM 把 ConceptTag 寫進 `error_type`
@@ -291,51 +210,11 @@ RULE-7 生效：由基準的「評測平台**通常**會視為異常結束」變
   **實證污染幅度**：P7 的 `recent_failure_streak` 由 8（累積假象）降為真實的 3
   - `_upsert_reflection` 保留為第二道防線（手動指定 persona 重跑時仍可能撞既有反思）
 
-### 七型全驗（真實 LLM，本輪最終狀態）
-
-| persona | 結果 |
-|---|---|
-| P1 迷惘新手 | need 0→1→2→3，reveal **2→3→4→5**：逐級爬升，第 4 輪才到頂 |
-| P2 按部就班型 | 兩輪皆 understood → need 0、reveal 0；反思注入與教材引用正常 |
-| P3 答案索取型 | 四輪施壓 need **恆 0**、reveal **恆 1**；每輪都明確拒絕代寫 |
-| P4 離題型 | 離題分流正確；「陣列第幾章」未被誤殺；lambda 誠實說教材沒有 |
-| P5 進階挑戰型 | 兩輪皆正常（修正前第 2 輪 502）；overflow 判 UB 正確、不捏造影片時間點 |
-| P6 對抗型 | 三段注入全擋（sanitizer + preamble 不可覆寫 + 註解夾帶） |
-| P7 Quiz 診斷型 | 作答→診斷→補救單元流程完整（乾淨狀態下 `recent_failure_streak=3`、suspects 有值） |
-
-> 上表為**每個 persona 重置後**的乾淨基準，可作為 7-C3／7-C4 的對照起點。
-
-### 驗證
-- 後端 **877 tests 全綠**；`web` tsc / eslint / **`npm run build`** 皆通過
-- migration up→down→up 實跑可逆；`doc_selfcheck` 失效路徑 0
-
----
-
 ## [2026-08-06] — 7-C2a' 選層輸入改寫：persistence（追問次數）→ need（需求量估計）
 
 > 使用者要求「跳脫現有規則構思最接近完美的解法」後的重寫。**核心主張：堅持不等於值得。**
 > 舊的 persistence 是「同脈絡追問了幾次」，實測顯示它把三種完全不同的學生混為一談——
 > 認真卡住的、在對話中一直有進展的、單純施壓索答的，全都是 +1。
-
-### Changed
-- `reveal_level = min(5, base(error_type) + need)`，`need` 改為狀態估計而非歷史計數：
-
-  | 訊號 | delta |
-  |---|---|
-  | 學生展現理解（understood） | −1（**舊模型只升不降**） |
-  | 學生表示沒理解（not_understood） | +1 |
-  | 改了程式又跑失敗（努力的存在證明） | +1 |
-  | 顯式求助（按鈕，欄位預留） | +2 |
-  | **單純追問／索答施壓** | **0** |
-
-  歸零三途：程式跑成功（事實）／換卡點（LLM 保守二元判定）／閒置 30 分鐘（純時間）——
-  全部與「學生講話的語氣」無關，不再有關鍵字正規表達式
-- `EvidenceResult` 新增 `comprehension_signal` + `continues_previous_issue`，
-  **搭在既有那次 Evidence 呼叫上，零額外 LLM 請求**（同 `is_on_topic` 的作法）；
-  Evidence prompt 新增上一輪問答摘要，並明文規定「索答施壓＝意願問題不是理解問題 → unclear」
-- `services/chat_signals.py` 改寫成 need 狀態機 + `turns_from_history` ORM 轉接層
-  （每輪判定存在 assistant 訊息的 evidence JSON → 無狀態重算、可事後稽核）
-- 舊資料無這兩個欄位時取保守預設（unclear / True），不影響既有行為
 
 ### 實測對照（真實 LLM，同一組 persona 腳本）
 
@@ -348,54 +227,11 @@ RULE-7 生效：由基準的「評測平台**通常**會視為異常結束」變
 P3 停在 base **不是靠關鍵字黑名單擋的**，是因為他從未付出可觀測的努力、也從未表示不理解。
 P2 證實不需要脆弱的「致謝歸零」規則：理解訊號本身就會把 need 壓住。
 
-### 消除的技術債
-- tech-debt **B7**（persistence 只增不減、唯一歸零是跑成功）——三個症狀（連問多個小問題、
-  純概念問答無歸零點、換題繼承）由「換單位」一次解掉，不是各補一條規則
-
-### 檔案拆分（依使用者「超過硬上限直接拆」的指示）
-- `services/chat.py` 306 → **228**：session CRUD 抽為 `services/chat_sessions.py`（92 行）——
-  對話容器管理與 EDF 管線本來就沒有共用狀態
-- 超硬上限檔案數 9 → **7**（另一個是同日拆掉的 `edf/feedback.py`）
-
-### 驗證
-- 後端 **869 tests 全綠**（+12，含 need 狀態機 26 支）；`web` tsc / eslint 乾淨
-- `eval_coddy` P1/P3/P2 真實 LLM 重跑（數據如上表）
-
----
-
 ## [2026-08-06] — 7-C2a 實作：Decision 層改累積式揭露階梯 + 動態選層（方案 B）
 
 > 同日設計定案（見下一節）的實作。行為驗證（`eval_coddy` 七型重跑對照）屬 7-C4，尚未執行。
 
-### Changed
-- `services/edf/decision.py` 整份重寫：6×6＝36 格手寫矩陣 → **6 條累積式等級指令 + 6 條 Bloom 深度修飾**。
-  `TeachingStrategy.hint_level` → `reveal_level`（語意＝本題解法揭露程度），新增 `bloom_guidance`；
-  `decide_strategy(evidence, persistence)` 依 `min(5, base(error_type) + persistence)` 選層，
-  `base`＝none 0／logic·semantic 1／syntax·compilation·runtime 2；L3 起才允許程式碼片段
-- `services/edf/feedback.py`：strategy block 改組裝「累積指令 ＋ 說明深度 ＋ 揭露等級」；
-  洩答防線改看 `reveal_level`，L5 由「無防線」改為「解釋可完整、程式碼不可」
-- PREAMBLE 新增 **RULE-6**（提問必須是學生用手上資訊答得出來的，否則改行動建議）與
-  **不變量宣告**：RULE-1／RULE-2 凌駕階梯，高等級的「完整」指解釋完整非程式碼完整
-- `api/routes/chat_sse.py`：`hint_request` 事件改用後端算出的 `reveal_level`（經 `strategy_sink` 回填）
-- `scripts/eval_coddy/`：harness 不再模擬前端階梯；`run.py` debug 摘要改記 `persistence`/`reveal_level`；
-  persona `expect` 註記依新公式改寫（P2 flow 的「致謝歸零」已不成立，只有成功執行才歸零）
-
-### Added
-- `services/chat_signals.py`：`compute_persistence`（同脈絡追問 +1／明確卡住 +2／成功執行 exit 0 歸零，
-  往回掃到最近一次成功執行為止）+ `is_successful_run`；`_is_repeat_evidence` 由 `chat.py` 遷入此處
-  （改吃純資料 `TurnSignal`，不依賴 ORM，可單測）
-- `tests/test_chat_signals.py` 13 tests；`tests/test_decision.py` 整份重寫（原斷言 36 格矩陣形狀）
-
-### Removed
-- `web/lib/hint-escalation.ts` 與其人工鏡像 `backend/scripts/eval_coddy/ladder.py` — **兩檔皆刪**，
-  persistence 單一來源在後端。`use-chat.ts` 的 `hintLevelRef`/`resetHintLadder` 一併移除
-- `InteractRequest.hint_level`（chat 路徑）— 送不出去的東西就不可能再被寫死成 0。
-  ⚠ Quiz 的 `hint_level`（學生按了 N 次提示鈕）語意不同，維持原樣
-
-### 消除的技術債
-- tech-debt **B6**（`decision.py` L5 措辭與 RULE-1 自相矛盾）+ C1 附帶的鏡像檔同步負擔
-
-### 驗證
+### 決策依據與證據
 - 後端 **857 tests 全綠**（+23）；`web` tsc 無錯、改動檔 eslint 乾淨
 - **真實 LLM 模擬實測**（`eval_coddy` P1/P3，本機 DB + debug_sink 白盒探針）：
   P1（NZEC）reveal 2→3→5→5、P3（索答）1→1→2→4，與公式逐輪吻合；
@@ -442,12 +278,6 @@ P2 證實不需要脆弱的「致謝歸零」規則：理解訊號本身就會�
   自算即可；刪 `hint-escalation.ts` 與其人工鏡像 `eval_coddy/ladder.py`，
   chat 不再由前端送 `hint_level`（**送不出去的東西不可能被寫死成 0**）
 
-### 修正一項早先的判斷（洩答重新界定）
-- 2026-08-06 早先把「散文給出閏年規則」列為 🔴 洩答，**判斷過當**：該題屬章節 25「if-else」，
-  **學習目標是 if-else 與模數**，閏年定義只是背景設定——講出來反而移除了與目標無關的認知負荷
-- 真正的缺陷是 **L0 的語意錯誤**（該回答問題時卻反問），已改由 7-C2a 處理
-- 保留的例外：若學生問的正是本題目標概念（如演算法題），仍須引導而非直述
-
 ### 矛盾的解法：移除離群值而非新增裁決
 - 明文原則：**RULE-1／RULE-2 是階梯之上的不變量，任何等級都不得突破；
   L5 的「完整」指解釋完整、非程式碼完整**
@@ -455,49 +285,19 @@ P2 證實不需要脆弱的「致謝歸零」規則：理解訊號本身就會�
   為了階梯好看而破例會拆掉地基
 - 附帶發現：edf-pipeline.md 寫 L5「僅在反覆失敗 5+ 次後觸發」，**此門檻從未被任何程式碼實作**
 
-### Changed — 文件（僅文件）
-- `docs/roadmap.md`：7-C2 拆為 **7-C2a**（Decision 重構，含可直接執行的六段規格）與 **7-C2b**（其餘 P1）；
-  執行順序表更新；「已確認決策」新增本次設計全文
-- `.claude/rules/edf-pipeline.md`：Hint Ladder 表標註「現行（改版前）」+ 新增「⚠ 已知矛盾」節
-  （L5 vs RULE-1、5+ 次門檻未實作、chat 與 Quiz 兩條階梯語意不同不可混用）；
-  Decision 節註明 `decide_strategy` 只有 chat 呼叫
-- `docs/tech-debt.md`：B3 重新界定（洩答 → L0 語意錯誤）；新增 **B6**（L5 措辭矛盾）；
-  C1 註明鏡像檔問題將由 7-C2a 根除
-- `docs/roadmap.md` 7-D1：測試清單移除 `hint-escalation.ts`（該檔將於 7-C2a 刪除）
-
 ## [2026-08-06] — docs：8-1d 自檢 script + roadmap 重排（技術債納入排程）+ 全域文件同步
 
 > 使用者要求：重整現況、重排 roadmap（以現在進行的事為主）、技術債清理排在**功能之後驗收之前**、
 > 確保文檔與現況一致無幻覺，並新增「小問題當輪直接修」守則。
 
-### Added — `scripts/doc_selfcheck.py`（roadmap 8-1d 完成，144 行）
-- 掃三件機械可判定的事：① 超門檻檔案（⚠150 / 🚫250，排除 tests）② 文件中 backtick 標注的路徑是否存在
-  ③ 後端 / runner 測試函式數；輸出即可貼進文件的 markdown，**杜絕手抄數字**
-- 誤判防治（兩輪自我修正）：歷史日誌（changelog / roadmap-archive）與刪除線行、「已消除」區塊不掃路徑；
-  路徑比對含**未追蹤但未被 ignore** 的新檔（否則本次新增檔案會被誤報失效）
-- 有超標檔或失效路徑時回非零，未來可直接接 CI
-
-### Fixed — 首跑抓到並當場修正的文件漂移（守則 9 首次適用）
-- `.claude/rules/frontend.md`：`shadcn/ui/button.tsx` → `web/components/ui/button.tsx`
-- `docs/roadmap.md`：`backend/app/core/config.py` → `backend/core/config.py`（舊目錄結構殘留）
-- `docs/roadmap.md`：K4f 寫的 `services/compile_error.py` **實為 `services/run_help.py`**（該檔名從未存在）
-- `docs/roadmap.md`：`galaxy-backgrounds.ts` 寫「留作備援」但檔案早已刪除
-- 三處已刪除元件（citation-list / galaxy-backgrounds / stdin-panel）改為非路徑措辭 → 自檢報告失效路徑歸零
-
-### Changed — roadmap 重排（使用者定序）
-- 新增開頭「🎯 現在的執行順序」表：**7-C2 功能優化 → 7-C3 新建功能 → 7-C4 再驗 → 7-D 技術債 → 7-E 驗收 → Phase 8/監控/效能/行為分析**
-- 新增 **7-D 技術債清償**節（前端測試 → 檔案拆分 → changelog 拆檔 → R6 收尾 → 文件稽核），
-  原 7-R6 / 8-1c / 8-1d / 8-3a 併入；新增 **7-E 使用者驗收**節
-- 7-C2 展開為四項具體工作（原本只是一行）；7-C4 新增「改完用 eval_coddy 七型重跑對照」
-
-### Changed — tech-debt 全面重整
+### 決策依據與證據
 - 依性質重編為 A 功能缺口 / B Coddy 品質 / C 測試與工程 / D 部署 / E 內容視覺，每項給編號供 roadmap 引用
 - **關閉兩條已失去現實對應的項目**：7-R 過渡期 stdin 兩缺陷（R4/R5d 已上線，回退前提不可能成立）、
   Zeabur PREBUILT schema 未實測（實際部署走 dashboard 手動建 service，未用該 template 路徑）
 - 已消除項集中到底部並補上 7-C 系列 9 項；表頭聲明「機械事實一律以 doc_selfcheck.py 產出為準」
 - C2 檔案大小更新為**實測 8 個超硬上限**（原記 4-5 個，且遺漏 variation/comprehension/quiz-feedback）
 
-### Changed — 其他文件
+### 決策依據與證據
 - `CLAUDE.md`：新增**守則 9「當場修小問題」**（範圍小＋根因明確＋不需設計裁決＝當輪直接修，
   只有擴散性改動 / 架構或教學設計取捨 / 根因未定才需討論）；當前狀態改寫為 7-C 主線 + 兩項工具指引
 - `docs/acceptance-checklist.md`：標題區註明對應 7-E、開始時機為 7-C+7-D 完成後，並列出待增補的新驗收點
@@ -507,14 +307,7 @@ P2 證實不需要脆弱的「致謝歸零」規則：理解訊號本身就會�
 > 使用者指示：扮演多型學生與 Coddy 真實對話、同步白盒檢測後台、驗證 RAG，確認機制符合設計。
 > 兩輪模擬（診斷輪 r1 → 修復 → 驗證輪 r2/r3），約 60 次真實 LLM 互動（成本 < $0.2）。
 
-### Added — `scripts/eval_coddy/` 模擬 harness（6 檔，均 ≤ 175 行）
-- 七型學生：迷惘新手（NZEC+卡住）/ 按部就班（反思→kickoff→提問）/ 答案索取 / 離題+邊界 /
-  進階挑戰（DEV 種高熟練+衰減撥時）/ 對抗注入 / Quiz 連錯→K3 診斷→補救
-- 白盒探針：DEV-7 debug_sink（evidence/strategy/RAG 分數/kgraph）+ DB 直查
-  （dialogue_act / mastery 差分 / coding_events）；`ladder.py` 為前端 hint ladder 的鏡像移植（**兩邊改動必須同步**）
-- 僅限本機 DB（`require_local_db`）；`--only p1,p7` 選型重跑、輸出逐輪 JSON transcript
-
-### Fixed — 診斷輪抓到的缺陷（全部經驗證輪確認）
+### 決策依據與證據
 1. 🔴 **gpt-5.6 reasoning 預算間歇性吃光輸出**（root cause 級）：`llm_params.py` 2026-08-05
    「拒收 reasoning_effort」結論**錯誤**——只是值域改為 none/low/…；預設會浮動燒 reasoning
    （同 prompt 0～96+ tokens），與 max_completion_tokens 同預算 → finish_reason=length、
@@ -555,41 +348,9 @@ P2 證實不需要脆弱的「致謝歸零」規則：理解訊號本身就會�
 - SSE 三階段進度全程正常
 - 後端 834 tests 全綠（+7）；tsc/eslint 過
 
-### ⚠ 規範警報
-- `services/chat.py` **299 行超過 250 硬上限**（拆分計畫見報告，待使用者核准）；
-  `services/edf/feedback.py` 247 行貼線
-- 本機 `.env` DEV_MODE_EMAILS 加入 p1~p7@eval.local（僅本機，不影響生產）
-
 ## [2026-08-06] — fix(coddy)：7-C1 P0 批次——接通 Hint Ladder + Evidence 補執行狀態
 
 > 起因：使用者實測 return 1 對話，Coddy 連續反問不升級。審計證實兩個結構性斷線（詳見 tech-debt / roadmap 7-C）。
-
-### Fixed — Hint Ladder（前端寫死 0 → 真實追蹤）
-- 新增 `web/lib/hint-escalation.ts`（純函式，供未來 Vitest）：同脈絡追問 +1；
-  卡住訊號（不懂/沒辦法回答/看不懂…保守列舉，「會不會」不誤中）跳 2 級、下限 2；
-  致謝／理解訊號歸零（卡住優先——「謝謝但我還是不懂」仍升級）；上限 5
-- `use-chat.ts`：ref 追蹤 hint_level 送出真實值；歸零時機＝新 session／載入歷史 session／
-  反思開場／**重新執行程式**（injectExecutionResult＝學生已採取行動，脈絡刷新）
-- **下游自動復活**：`chat_sse.py` hint_request 行為事件（原永不觸發，5-2 hint 分布恆空）、
-  策略矩陣 1-5 欄（原本 36 格只用得到第 0 欄、allow_code_snippet 恆 False）
-- 驗證：真實對話重演斷言——那段 return 1 對話在新版下第 5 則（「我不明白也沒辦法回答」）
-  會落在 hint 5＝完整解釋，不再無限反問
-
-### Fixed — Evidence 執行狀態盲區
-- `analyze_evidence()` 增 `exit_code` / `status_description` 參數；`services/chat.py` 從
-  execution_result 傳入（原本抽三欄後丟棄）
-- `_build_user_prompt`：失敗狀態（非 Accepted 或非零 exit）注入「執行平台狀態」行——
-  **修復前 NZEC 時 prompt 對 LLM 說「程式執行成功，無錯誤」**，而學生螢幕上是 Runtime Error
-- `_has_execution_error`（dialogue_act）同步看 exit_code/status →「出現了Runtime Error 為什麼」
-  正確分類 DEBUGGING（原漏判，行為資料失真）
-
-### Changed — dialogue_act 語意修正
-- `services/chat.py` 呼叫 `classify_dialogue_act` 的 hint_level 改傳 0：chat 的階梯是**自動升級**
-  （連續追問位置），不是學生「明確要提示」的行為——照傳會把一般追問全誤標 asking_hint
-
-### 驗證
-- 後端 827 tests 全綠（+5：NZEC prompt×3、dialogue×2）；前端 tsc / eslint / build 過；
-  `hint-escalation` 編譯後 node 斷言 11/11（含上述對話重演）
 
 ## [2026-08-06] — docs：Phase 8-0 討論（專案體積釐清 + 工作流自檢定案 + CLAUDE.md 瘦身）
 
@@ -608,56 +369,18 @@ P2 證實不需要脆弱的「致謝歸零」規則：理解訊號本身就會�
 - **8-2a 查證後直接關閉**：`.DS_Store` / `.pytest_cache` / `.next` / `.venv` / `node_modules` / `ScreenShot/`
   經 `git check-ignore` 逐項驗證**全部已被 gitignore 涵蓋**，無事可做
 
-### 8-0c 工作流 — 結論：不改流程，改補自檢 script
-- 量測最近 60 commits：程式碼 +15512/-1994 行、文件 +1719/-300 行 → **文件僅佔約一成 churn**，
-  「文件同步拖慢開發」不成立。真正的成本是**準確度**：文件中的機械事實全靠手寫，失真時沒有任何東西會報錯
-- 當場抓到兩個實例：① tech-debt 2026-08-06 寫「無任何檔案超過硬上限」，實際有 4 個非測試檔超過 250
-  （`quiz.py` 347 / `generate.py` 307 / `concept-detail-panel.tsx` 279 / `batch_generator.py` 267）——
-  那次稽核只掃了 7-U 期間動過的檔案卻寫成全域結論；② `CLAUDE.md` 自訂「≤ 60 行」實際 89 行
-- 裁決：**工作流本身不改**（單一 session 多批 + 每批 commit/push 運作良好），改導入 8-1d 自檢 script
-  （手動跑、**不掛 pre-commit**——會擋下想先存檔的中途 commit）
-
-### Changed — 文件
-- `CLAUDE.md` **89 → 64 行**：「當前狀態」只留現在進行式（已完成階段壓成一行索引，細節一律查 roadmap-archive / changelog）；
-  順修「技術棧」仍寫著 Judge0 / GPT-4o → 改為自建 runner（nsjail + PTY）+ gpt-5.6（luna / terra）
-- `docs/deployment.md` 新增 **Step 6 日常更新機制** 與 **OAuth 測試模式 100 人上限** 兩節 ——
-  這兩條原本**只存在於 `CLAUDE.md`**，是瘦身前必須先搬走的唯一紀錄（含「唯獨改環境變數必須手動重啟 service」）
-- `docs/tech-debt.md`：修正檔案大小那條錯誤結論並補上超標清單；新增「本機 `.venv` 與宣告的依賴脫鉤」——
-  scipy/pandas/sklearn 共 169M **既不在 `pyproject.toml` 也不在 `requirements.lock`**（生產不受影響，
-  但 5-3 若要用必須先宣告，否則重建 venv 即消失）
-- `docs/roadmap.md`：8-0b/8-0c 標記完成並寫入結論；8-1b 關閉；8-1d 補上 script 的三項掃描範圍；8-2 依量測結果縮減範圍
-
 ## [2026-08-06] — feat(chat)：7-U6 Coddy 分階段進度（`/chat/interact` 改 SSE）
 
 > 原本從頭到尾只有一個不動的「Coddy思考中…」。使用者要「像主流 LLM 那樣有進度感」，
 > 但**拒絕假進度**——所以做的是後端真實推播 EDF 三層管線的所在階段。
 
-### Changed — 後端
+### 決策依據與證據
 - `services/chat.py`：`interact()` 新增 `on_stage` 回呼，在 Evidence 前 / K-Graph+RAG 前 / Feedback 前各推一次（`analyzing` / `retrieving` / `composing`）。**None 時完全不呼叫**，非串流呼叫端零開銷
 - `api/routes/chat.py`：`/chat/interact` 改回 `StreamingResponse`（`text/event-stream`），事件序 `stage`×3 → `done`(InteractResponse)；帶 `X-Accel-Buffering: no` 防代理層把事件壓到最後一起送
 - **錯誤處理的真實取捨**：串流一開始 HTTP header 就送出，途中失敗無法再改 status → 改發 `error` 事件。rate limit / 認證屬前置檢查，仍維持正常 429 / 401
 - 為何不做逐字串流：現行輸出防護（阻擋 AI 直接給完整程式碼）是拿到完整回應才檢查，一旦逐字吐出，洩漏的程式碼學生已經看到了。分階段狀態不動這條防線，且資訊量更高（學生知道它在查教材）
 
-### Added — 前端
-- `lib/sse.ts`：SSE 解析器。**不用內建 `EventSource`**——它只支援 GET 且不能帶 body，而本端點是帶 payload 的 POST
-- `lib/chat-interact.ts`：串流呼叫 + 階段文案；串流中途斷線（沒收到 `done`）視為失敗，不會靜默留空
-- `message-list.tsx`：等待指示器顯示當前階段文字 + 三段進度條（已完成填滿／進行中半亮／未開始留白）
-
-### Changed — 檔案拆分（⚠ 觸發硬性約束，使用者核准）
-- 加入串流後 `api/routes/chat.py` 達 **263 行超過 250 硬上限** → 抽出 `api/routes/chat_sse.py`（SSE 組裝、階段推播、錯誤事件、hint 事件記錄）。現為 208 + 95 行
-- 膨脹全來自串流邏輯，抽掉即回復原狀，且相關邏輯聚在一處
-
-### 測試
-- 新增 `tests/test_chat_sse.py` 4 項：階段依序推播且都在 done 之前 / AppError 轉 `error` 事件 / 未預期例外不洩漏內部細節（斷言錯誤訊息不含敏感字串）/ 未登入仍回 HTTP 401
-- 後端 **822 全綠**；前端 tsc 0 錯、eslint 0 錯、build 通過
-
 ## [2026-08-06] — feat(editor)：7-U5 C++ 靜態補全（VSCode 式，不接 LSP）
-
-### Added
-- **`cpp-completions.ts`**：92 個候選 — 語言關鍵字 + **教材真的會用到的** STL（cout/cin/getline/vector/push_back/sort/substr…，各帶簽章與**繁中一行說明**，例：`getline(cin, str)` — 讀取一整行含空白）+ 骨架片段（main / for / while / include，插入後游標自動落在該填的位置）
-  - 收錄原則刻意保守：清單過長會讓學生在沒學過的 API 裡迷路，違背教學目的
-- **`cpp-completion-source.ts`**：掃描當前檔案的變數與函式名並排在候選最前（`boost: 1`）——學生最常用的是自己剛寫的東西。以正則而非 AST（同 tech-debt「真 AST 暫不引入」的判斷；掃錯只是多一個沒用的候選，不影響編譯）；過濾保留字與單字元名；註解內不觸發
-- **`editor-theme.ts`**：自 `code-editor.tsx` 抽出（補全彈窗樣式讓該檔到 208 行超過提醒線；現為 135 行）。彈窗對齊 GitHub Dark：`#161B22` 底、`#30363D` 邊、JetBrains Mono、已輸入字元 `#58A6FF` 標示；關閉 CM 內建圖示（字元字形與 R8.2 相衝）
 
 ### 鍵位設計
 - `{ key: "Tab", run: acceptCompletion }` 排在 `indentWithTab` **之前**：有候選時 Tab 接受、沒候選時 handler 回傳 false 才輪到縮排，兩者不打架
@@ -665,27 +388,6 @@ P2 證實不需要脆弱的「致謝歸零」規則：理解訊號本身就會�
 
 ### 決策記錄
 - **不接 clangd LSP**：B 機 2GB，clangd 每實例 300MB 起跳，30 人同時上課必爆（與不自架 Judge0 同一資源理由）。要做得先升硬體
-
-### 驗證
-- 編譯真實原始碼後以 node 跑識別字掃描：`addNumbers`(function) / `score`,`average`,`playerName`,`results`,`title`(variable) 全中，`main`/`return` 正確過濾，單字元 `a`/`b`/`i` 依設計略過 — 13 項斷言全通過
-- tsc 0 錯、eslint 0 錯、build 通過；`@codemirror/autocomplete` 已隨相依存在，**未新增套件**
-
-## [2026-08-06] — feat(workspace)：7-U4 執行歷史 per-file + 切檔清空終端
-
-### Changed — `use-run-history.ts`（store 結構改版，sessionStorage key v1 → v2）
-- 從「全域一份歷史」改為 **`{ order, byFile }` 每個檔案各自一份**：切到 A.cpp 就只看到 A.cpp 的執行紀錄，不再混入別支程式的輸出
-- 上限（使用者要求「合理上限、不要負荷太高也不要太冗餘」）：**每檔 20 次 / 最多 5 個檔案**，超過依 LRU 淘汰最久未使用的檔案
-- 未命名草稿有自己的 key（`__draft__`）——草稿也是一支程式
-- `clearRuns()` 只清目前檔案，其他檔案不受影響；Run 編號改為**每檔各自從 1 起算**
-- 新增 `setActiveRunFile(name)`；workspace 頁以 `currentName` 變動驅動
-
-### Added — 切換程式時重置終端
-- `useRunCode` 新增 `resetTerminal()`：中止進行中的 WS session、清空 xterm 畫布、清掉待寫入 buffer
-- 避免「切了檔案卻留著一個等不到輸入的終端」
-
-### 驗證
-- 前端仍無測試框架，故將**真實 store 原始碼**編譯後以 node 跑 10 項斷言全通過：草稿獨立計數／切檔互不污染／編號各自從 1／清空只影響當前檔／每檔上限 20／最多 5 檔／最舊被淘汰／LRU 順序正確／回到同檔可續寫
-- tsc 0 錯、eslint 0 錯、build 通過
 
 ## [2026-08-06] — feat(learn)：7-U3 教材出處移除 + 時間戳改句尾註腳式播放標記
 
@@ -695,20 +397,7 @@ P2 證實不需要脆弱的「致謝歸零」規則：理解訊號本身就會�
 - **citations 資料本身保留**：後端照常檢索、注入 prompt、隨回應傳回並存 DB，只是不再呈現給學生
 - ⚠ 副作用：K4e 防幻覺從三層變**兩層**（機械攔截未 grounded 引用 + 誠實說教材沒提仍在；失去「學生當場核對原文」那層）
 
-### Added — `lib/transcript-timestamps.ts`
-- grounded 內文句中的 `[00:15]`、`[01:02-01:20]` 戳記把文句切得很碎 → 改寫為**段尾註腳式播放標記**（`▸ 0:15`，平常 muted、hover 變藍、點擊 `player.seekTo`）
-- 行為：**段落內去重**（同一秒數只留一個）、**程式碼圍籬內不動**（可能是學生要照抄的程式）、區間戳記取起點、支援 `mm:ss` 與 `hh:mm:ss`
-- 實作方式：轉為自訂 scheme 的 markdown 連結（`codedge-seek:秒數`），由 `MarkdownContent` 的 `a` 覆寫接成按鈕；`MarkdownContent` 新增選用 `components` 覆寫參數
-- **驗證**：前端無測試框架（tech-debt 🔴），故將真實原始碼 `tsc` 編出後以 node 跑 7 種情境（句中單戳／多戳去重／跨段落／圍籬不動／無戳記／區間／小時制）全數正確
-- 移除 `concept-tab.tsx` 內已成 orphan 的 `parseTimestampStart`
-
-### Fixed
-- tech-debt「6-2c citation 跳轉未真機驗收」**標為消除**——使用者已私下驗收通過，跳轉正確（此條掛最久）
-
 ## [2026-08-06] — feat(learn)：7-U1 單元導航收斂 + 7-U2 課程全解鎖；修 schema 漂移
-
-### Changed — 7-U1 上下單元只在概念說明顯示
-- 作答中（程式實作題／觀念題）跳到別的單元不是合理動線，按鈕只會誤觸；該分頁改為只置中顯示主動作按鈕
 
 ### Changed — 7-U2 課程全解鎖（推翻「循序解鎖」設計）
 - `generator.py`：新路徑所有 unit 皆 `available`（原為第一個 available、其餘 locked）
@@ -717,45 +406,16 @@ P2 證實不需要脆弱的「致謝歸零」規則：理解訊號本身就會�
 - 學習引導改由 K-Graph 前置依賴 / 弱項診斷 / 補救路徑負責，不再用鎖擋人；順序仍以編號與狀態圖示呈現為建議路徑
 - 3 個測試改為斷言新語義（generator 全 available / route status / progress summary available_units 3）
 
-### Fixed — 🔴 models 與 migration 的 schema 漂移（本次跑測試時挖出，與 7-U 無關）
-- `uq_code_files_draft`（草稿每人一份的 partial unique index）**只存在於 migration**，`CodeFile` model 未宣告 → 測試的 `Base.metadata.create_all` 建不出來
-- 後果：`save_draft()` 靠 `IntegrityError` 接住併發 INSERT 的保護（`workspace_files.py:71-77`）**在測試中從未真正執行過**；機器負載升高（Colima 運行）後三個併發請求真的重疊，`test_concurrent_first_draft_save_does_not_500` 開始穩定失敗於 `MultipleResultsFound`
-- **生產不受影響**（Postgres 走 migration，index 存在），問題是測試給了假的安全感，且 `alembic --autogenerate` 未來會想刪掉這個 index
-- 修法：`CodeFile.__table_args__` 補宣告 3 個約束（partial index 同時給 `postgresql_where` 與 `sqlite_where`；CHECK 用兩種 dialect 都認得的 `length()` 取代 Postgres 專有的 `char_length()`）
-- 該測試現已穩定通過且**真正在驗那條防線**；後端 **818 全綠**
-
 ## [2026-08-06] — feat(runner)：R5c-2 生產互動終端上線 + R5d 移除 stdin 預填 UI
 
-### 🎉 生產環境互動終端已上線（使用者驗收通過）
+### 決策依據與證據
 - Zeabur：backend 綁公開子網域 + `RUNNER_BACKEND/RUNNER_URL/RUNNER_TOKEN` + web `NEXT_PUBLIC_TERMINAL_WS_URL` + redeploy
 - **唯一卡點＝backend 需重啟才會讀入環境變數**（web 已 redeploy 但 backend 未重啟時，批次與互動都不會打到 B 機——判斷依據：B 機日誌完全沒有來自 A 機的連線）。已寫入 deployment.md §E 疑難排解
 - **A 機出口 IP 實測為 `43.153.167.105`**，與 R5a 依生產 DB 連線字串的推測值一致 → 防火牆規則無需調整，`ufw logging` 探測法未被用上（保留於文件備用）
 
-### Changed — R5d：移除「進階：預先餵入」（使用者回饋視覺不佳）
-- 刪除 `stdin-panel.tsx`；新增 `args-panel.tsx` — **僅保留 argv 單行輸入**（章節 58 `main(int argc, char* argv[])` 沒有互動替代方案：參數在程式啟動當下就要決定），且只在 `codeUsesArgs(code)` 為真時渲染，其餘情況完全不佔版面
-- 靜態偵測函式移至 `lib/code-detect.ts`（`codeUsesArgs` + `usesLocalTime`；後者供 Coddy 的 UTC 時區主動說明，原本一併住在被刪的檔案裡）
-- `workspace-context` 移除 orphan `getStdin/setStdin`；批次降級路徑不再送 stdin（runner 不可用時讀輸入的程式會拿到 EOF——降級路徑本就無互動能力，可接受）
-- tsc 0 錯 / eslint 0 錯 / build 通過
-
-## [2026-08-06] — fix(runner)：R5c-1 B 機實機部署 — 再修 3 個只有真實硬體才暴露的缺陷
-
-> 本機 Colima（arm64）與 B 機（amd64 Ubuntu 24.04）的差異，以及「腳本靜默失敗」，各貢獻了一個真缺陷。
-
-### Fixed
-1. 🔴 **`/lib64` 未掛入 jail（架構相依）** — amd64 動態載入器在 `/lib64/ld-linux-x86-64.so.2`，未掛載時 `execve` 回報 `No such file or directory`（看起來像編譯器不見了，實際缺的是 loader）。**arm64 的 loader 在 `/lib` 底下，故 Apple Silicon 本機 100% 測不出來**。改為候選清單 `_RO_CANDIDATES` + 存在才掛（同時涵蓋 `/lib32`、`ld.so.conf*`）
-2. **`iptables-persistent` 與 `ufw` 互斥** — apt 為安裝前者**直接移除 ufw**（`Remove: ufw:amd64`），而原腳本用 `>/dev/null 2>&1 || true` 把訊息吃掉，於是「防火牆設定成功」是假象。改為：偵測到即 purge，DOCKER-USER 規則改用 **systemd oneshot unit**（`runner-firewall.service`，After=docker）持久化，完全不依賴持久化套件
-3. **驗證函式在 `pipefail` 下誤判** — `cmd | grep -q` 命中即結束，上游收 SIGPIPE 回 141 被當失敗（SSH 檢查假性 FAIL）。`check()` 改在子 shell 內 `set +o pipefail`
-- `bootstrap.sh` 結尾由「只印狀態」改為 **8 項逐條驗證 + 失敗 `exit 1`**（原版即使沒做到也會顯示成功）
-
-### Verified — B 機實機（43.133.7.93）
-bootstrap 8/8 [OK]；容器 healthy；hello / stdin / argv / 編譯錯誤（真實 g++ 訊息）/ 逾時→Time Limit Exceeded / SIGSEGV / **快取命中**（第二次 `cache_hit:true`）/ 無 token→401 / **WS PTY 互動**（`'name: '` 先於輸入到達、kernel 回顯、`hi Alice`）；**從外部 Mac 直連 8080 回 000（防火牆生效）**
-
-### 待使用者（R5c-2）
-Zeabur：backend 綁公開子網域 + 三個環境變數；web 設 `NEXT_PUBLIC_TERMINAL_WS_URL` 並 **redeploy**（建置期烘入）。A 機出口 IP 目前暫填 `43.153.167.105`，待首次實連後依 ufw 日誌校正。
-
 ## [2026-08-05] — feat(runner)：R5a/b 部署產物 + 本機 Docker 實測（修 3 個容器內才會爆的缺陷）
 
-### Added — 部署產物
+### 決策依據與證據
 - `runner/docker-compose.yml`：`cap_add: SYS_ADMIN` + apparmor/seccomp unconfined（nsjail 建 namespace 必需）；**容器層天花板** mem 1400m / pids 512 / cpus 1.8（個別程式限制歸 nsjail，這層防「全部 session 加總拖垮 2C2G 主機」）；`/tmp` tmpfs（學生寫檔不落地、重啟自清）；healthcheck
 - `runner/bootstrap.sh`：swap 2G + `vm.swappiness=10` / docker / ufw 僅放行 22 與 A 機→8080 / **補 `DOCKER-USER` iptables 規則**（docker 會繞過 ufw，常見疏漏）/ 禁 SSH 密碼登入 / 清重複公鑰。冪等
 - `runner/deploy.sh`：build → up → 等 healthy → 冒煙測試；`.env.example`（token 產生方式）；`.gitignore`
@@ -766,19 +426,16 @@ Zeabur：backend 綁公開子網域 + 三個環境變數；web 設 `NEXT_PUBLIC_
 2. **nsjail 以 execve 啟動子行程、不做 PATH 查找** → 傳 `g++` 靜默失敗，且 `--really_quiet` 把錯誤吃掉只剩 "compile failed"；改為 `shutil.which` 解析絕對路徑，並讓失敗訊息帶上 sandbox rc 以便診斷
 3. 🔴 **nsjail 以 `128+signal` 回報，無窮迴圈被誤判成 `Runtime Error (NZEC)`** → 學生會收到錯誤的 Coddy 主動說明（該講逾時卻講執行期錯誤）；`classify_exit` 改為同時處理負數（直接子行程）與 128+N（nsjail）兩種慣例，SIGKILL/SIGXCPU 歸 Time Limit
 
-### Verified — 真實 nsjail 容器內
-hello / stdin / argv / 編譯錯誤（真實 g++ 訊息）/ 逾時→Time Limit Exceeded / SIGSEGV / `/usr` 寫入被擋 / **WS PTY 互動：`cout` 無 endl 的提示字先於輸入到達、kernel 回顯正常**（`'name: ' → 'Alice\r\n' → 'hi Alice\r\n'`）；runner 27 tests（+5 分類）、backend 818 全綠
-
 ## [2026-08-05] — feat(runner)：R4 前端互動終端 — xterm 嵌入 Output 面板
 
-### Added — `web/`
+### 決策依據與證據
 - **`lib/terminal-theme.ts`**：xterm 主題；bg/fg/cursor 直接對應既有 token（`--bg-inset` / `--text-primary` / `--text-link`），ANSI 16 色採 GitHub 官方 dark 色盤（frontend.md R8 白名單核准例外，僅限終端畫布）
 - **`lib/terminal-protocol.ts`**：frame 型別（與 `runner/app/terminal.py` docstring 同一份契約）+ `terminalWsUrl()`（讀 `NEXT_PUBLIC_TERMINAL_WS_URL`，未設退同源）+ `frameToExecutionResult()`（exit/compile_error → 既有 ExecutionResult 語意）
 - **`use-terminal-session.ts`**：ticket → WS → frame 分派；**任何錯誤（RUNNER_BUSY / SESSION_LIMIT / ticket 503 / 連線失敗）一律退回批次執行**，學生不會卡住
 - **`terminal-view.tsx`**：xterm 動態 import（避 SSR）+ ResizeObserver fit + **不做 local echo**（PTY 端 kernel 行規範已處理回顯）；回呼以 ref 持有，避免 prop 變動重建終端機清空畫面
 - **`terminal-pane.tsx`**：狀態列（排隊中／編譯中／互動中）+ 畫布；排隊時顯示「前面還有 N 位」
 
-### Changed
+### 決策依據與證據
 - `use-run-code.ts`：改為**優先互動終端**，退回批次；xterm 動態載入期間的首批輸出先 buffer、attach 時 flush（避免掉字）
 - `output-panel.tsx`：session 進行中以終端畫布取代歷史列表，結束後自動收回 RunBlock（`STATUS_META` 圖示／「詢問 Coddy」／執行歷史選單全部沿用）
 - `stdin-panel.tsx`：降級為「**進階：預先餵入**」，預設收合、移除 `codeNeedsInput` 與「程式在等待輸入」提示（互動模式下程式真的會停下來等，提示無意義）→ **tech-debt 記錄的 A12 兩缺陷（提示不即時 / Run 不攔截）就此消滅**
@@ -786,35 +443,9 @@ hello / stdin / argv / 編譯錯誤（真實 g++ 訊息）/ 逾時→Time Limit 
 - 驗證：`tsc --noEmit` 0 錯、eslint 0 錯（1 既有 warning 在無關檔案）、`npm run build` 通過
 - ⚠ `output-panel.tsx` 163 行（R4 +25，>150 提醒線未達硬線）已記 tech-debt
 
-## [2026-08-05] — feat(runner)：R3 互動層 — PTY 終端 WS + ticket 認證 + backend 中繼
-
-### Added — runner（`app/pty_exec.py` + `app/terminal.py`）
-- **`WS /terminal`**：PTY 執行（stdout 行緩衝→無 endl 提示字即時出現；kernel 行規範原生處理回顯與 \r→\n，前端免 local echo）；frame 協議 `start/stdin` ⇄ `queue/compiling/compile_error/started/output/exit/error`（協議文件在 terminal.py docstring，R4 依此渲染）
-- 資源紀律：gate slot **僅編譯階段持有**（等待輸入不佔）；看門狗 idle 60s（無輸入且無輸出）/ 硬上限 300s（狀態字串含 "Time Limit" 保持前端分類）/ 同時 session 上限 40（`SESSION_LIMIT` frame）；客端斷線立即 kill 行程；exit frame 帶 `output_summary`（64KB 上限）供 EDF/analytics
-- `executor.py` 抽出 `classify_exit` / `stage_workdir` 供批次與互動共用；healthz 加 `terminal_sessions`
-- 修 2 個設計期 race：master fd 關閉搶在 EOF 回呼前（拆顯式 `close()`）、行程剛結束時寫 stdin（吞 OSError）
-
-### Added — backend（`api/routes/terminal.py`）
-- **ticket 認證**：WS 直連公開子網域帶不到 HttpOnly cookie → `POST /terminal/ticket`（走既有 proxy cookie 認證 + **沿用 execute rate limit**）發 Redis 單次使用 ticket（60s TTL，GETDEL 防重放）；WS 首訊息帶 ticket，15s 未送 4408
-- 中繼：`websockets.connect` 帶 X-Runner-Token 連 B 機，frame 原樣轉發（client→runner 僅放行 stdin）；exit/compile_error 側錄 → `log_execution` 行為事件（best-effort，與批次同管線）；runner 連不上 → `RUNNER_UNAVAILABLE` frame（R4 前端退批次）
-- `pyproject.toml` 顯式宣告 `websockets`（原僅隨 uvicorn 間接安裝，防 7-1a-1 型 lock 脫鉤）+ lock 重產
-- **測試**：runner +7（真實 PTY 互動往返/提示字先於輸入出現/idle 看門狗/session 上限/token）→ 22 全綠；backend +7（ticket 三態/中繼轉發+側錄/ticket 單次性/runner 連線失敗）→ **818 全綠**
-- ⚠ `runner/app/terminal.py` 165 行（>150 提醒線；session 編排單一職責 + 12 行協議文件，暫不拆）
-
-## [2026-08-05] — feat(runner)：R2 backend 抽換 — 執行引擎 dispatcher + fallback
-
-### Added — `backend/services/runner.py`
-- `submit_and_poll` 同名同介面 dispatcher：`RUNNER_BACKEND=judge0` 強制降級 / **`RUNNER_URL` 未設自動退 Judge0**（R5 部署前生產不會斷，切換零風險）/ 其餘走自建 runner（`POST /run` + `X-Runner-Token`）
-- 錯誤映射對齊 backend.md：httpx timeout → 504 EXECUTION_TIMEOUT、網路例外 → 503 RUNNER_UNAVAILABLE、排隊滿 → 503 RUNNER_BUSY、401 等配置錯誤 → 502（不對學生洩漏細節）
-- config 加 `RUNNER_BACKEND/RUNNER_URL/RUNNER_TOKEN`（.env.example 同步）；7 tests（分派 2 + 成功映射 + 錯誤 4）
-
-### Changed
-- `api/routes/code.py` 與 `scripts/verify_code_snippets.py` 改 import `services.runner`（`ExecutionResult`/`CPP_LANGUAGE_ID` re-export，模型正本留 judge0.py；`analytics/events.py` 僅用型別不動）
-- 後端 **811 tests 全綠**（804 + 7；既有 code_execute/judge0 測試零改動通過）
-
 ## [2026-08-05] — feat(runner)：R1 runner service — 沙箱編譯執行 + PCH + 快取 + 並行閘
 
-### Added — `runner/`（獨立 service，B 機部署；本機以 sandbox=none 模式開發測試）
+### 決策依據與證據
 - **`POST /run`**：批次編譯執行，回應七欄位逐字對齊 `ExecutionResult`、狀態字串沿用 Judge0 慣例（"Accepted" / "Compilation Error" / "Time Limit Exceeded" / "Runtime Error (SIGXXX/NZEC)"）→ R2 映射與前端 `classifyStatus` / `run_help` 零改動；`GET /healthz`（queue/cache 觀測，不驗 token）
 - **模組**（9 檔，皆 <150 行）：`config`（env 參數，server-plan 定案值）/ `models` / `sandbox`（nsjail 旗標包裝，`none` 模式供本機測試）/ `gate`（並行閘 2 + 排隊位置回報 API 供 R3 WS 推送 + 排隊逾時 503 RUNNER_BUSY）/ `cache`（sha256 LRU 256 條，逐出刪檔）/ `compiler`（PCH `-include` 自動偵測 + 快取入庫）/ `executor`（argv shlex + 訊號翻譯 + hardlink 進 workdir）/ `proc`（**串流封頂讀取**——不用 `communicate()` 防 `while(1) cout` 在截斷前 OOM runner；stdin feed + 孫行程佔 pipe 寬限 2s）/ `main`
 - **Dockerfile**：multi-stage——nsjail 自 source 建（不在 apt 庫）+ **PCH 預編 15 個常用標準庫標頭**（旗標與 config 一致否則 g++ 拒用）；`RUNNER_SANDBOX=nsjail` 烘入映像
@@ -832,35 +463,19 @@ hello / stdin / argv / 編譯錯誤（真實 g++ 訊息）/ 逾時→Time Limit 
 - UI：終端機**嵌入 Output 面板**（拒絕 V1 的 modal——寫程式時看不到程式碼）；`@xterm/xterm`；**ANSI 16 色例外核准**（GitHub 官方 dark 色盤，僅限終端畫布，frontend.md R8 白名單）
 - 費用：B 機另租 +$3/月（總 $12），PokerNote 原機不動（避免 DB 搬遷風險與失去 Zeabur 託管）；不再需要 Judge0 付費訂閱（比原路線省 $7+/月）
 
-### Added
+### 決策依據與證據
 - **B 機已租用並實測全綠**：`43.133.7.93`（2C2G/40G Tokyo；cgroup v2 齊全不需動 GRUB；`ubuntu@` 金鑰登入 + 免密碼 sudo；純裸 VM 無 k3s）；實測 OS 為 24.04（面板顯示 22.04，以實測為準）
 - 資源參數定案：並行編譯閘 2 / swap 2G / 編譯 CPU 10s·RAM 512M / 執行 RAM 256M·pids 64·輸出 8M / session idle 60s·硬上限 300s·同時 40；PCH 加速（本機實測編譯 0.25s→0.09s）
 - roadmap 新增 **7-R 節（R0✅~R6）**；server-plan.md 全文改寫為 Runner 專用機；architecture.md 新增執行引擎節；backend.md 加 `RUNNER_BACKEND/RUNNER_URL/RUNNER_TOKEN`；tech-debt 記「stdin 預填 UI 兩缺陷不修（R4 取代，含回退條款）」
-
-### Removed
-- tech-debt 過期條目「YT video metadata 未補」（6-1 早已完成且生產已同步）；「Judge0 自架 docker-compose 未驗證」標作廢
 
 ## [2026-08-05] — chore(security)：清除設定檔明文 DB 密碼 + 權限收斂 + 正式環境硬擋 hook
 
 > 起因：巡檢 Claude Code 權限設定時，發現 `.claude/settings.local.json` 有一條同時包含**正式環境 DB 明文密碼**與 `.venv/bin/python *` 萬用字元的 allow 規則——等於「連著正式資料庫的任意 Python 執行，永不詢問」。
 
-### Removed — `.claude/settings.local.json`（未進版控，密碼未外洩）
-- 刪除兩條含 `postgresql://postgres:<pw>@43.153.167.105:30148/...` 的 allow 規則
-- 已用 `git grep` / 全樹 `grep` 確認該密碼**僅存在於此檔**，未進 git 歷史或遠端
-
-### Added — `.claude/settings.json` 精確 allow 規則（取代寬鬆萬用字元）
-- `.venv/bin/python -m pytest *`、`.venv/bin/pytest *`、`source .venv/bin/activate`
-- `.venv/bin/alembic current* / heads* / history*`（**唯讀**；`upgrade` / `downgrade` 刻意不放行）
-- `docker exec codedge-postgres-dev psql *`（鎖死本機 dev 容器，語法上碰不到正式環境）
-
 ### 評估後不採用 — 正式主機硬擋 hook
 - 曾實作 PreToolUse hook 攔截含正式主機的 Bash 指令（實測可攔），**同日評估後移除**
 - 原因：① 只擋得住寫死的那一台，換主機或改從 `.env` 讀連線字串就失效，安全感不實 ② 正式環境測試是常態需求，硬擋反而礙事
 - **實際防線**：含密碼的 allow 規則已刪除，故連正式 DB 的指令會回到逐次確認，由人眼判斷
-
-### Changed — `CLAUDE.md` 執行守則新增第 7 條
-- **改檔案一律用 Edit/Write 工具**，禁止 `python3 - <<EOF` / `sed -i` / `cat >` 改動專案檔案
-- 巡檢近 19 份 transcript 發現此手法用了 **41 次**且全被 `Bash(python*)` 靜默放行：diff 不可見、繞過權限確認
 
 ## [2026-08-05] — feat(scripts)：教材程式碼健檢工具 + 每日 20 次配額 + session 開場提醒
 
@@ -872,11 +487,7 @@ hello / stdin / argv / 編譯錯誤（真實 g++ 訊息）/ 逾時→Time Limit 
 - 狀態寫 `data/teaching_content/snippet_check_state.json`（哪天跑過 / 每支的 hash + 結果 + 時間）；**只有真的編譯過才算「今天跑過」**，靜態掃描不會消掉提醒
 - 教材本身沒有 code fence（U2g 移除範例程式後概念說明是純文字），所以可編譯的實體只有 starter_code
 
-### Added — session 開場提醒
-- `scripts/snippet_check_reminder.py`（純標準函式庫，不經 venv）+ `.claude/settings.json` 的 **SessionStart hook**
-- 今天跑過 → 靜默；沒跑過 → 顯示上次日期、已驗支數、上次殘留問題數與指令
-
-### 今日狀態
+### 決策依據與證據
 - 依使用者指示**今天先不實測**，只完成程式；靜態掃描已跑過一次：**0 個已知錯誤拼法**（v41 修完後全庫乾淨）
 
 
@@ -887,26 +498,6 @@ hello / stdin / argv / 編譯錯誤（真實 g++ 訊息）/ 逾時→Time Limit 
 - **但 v41 的 2 題全都寫成 `external`**（其中 coding 題直接要求「利用 external 宣告」）→ 學生照做**必定編譯失敗**，等於 0 題可用。全庫掃描確認錯誤只在 v41
 - 覆蓋率最低的其餘章節：v03 安裝教學 1 題（無可考點，屬預期）、v61 5 題、v45 6 題
 
-### Fixed — 修正鏈（沿用 6-1e 既有機制，未新寫工具）
-1. `corrections.json` 加 `"external": "extern"` → `apply_corrections --only 41`（替換 3 處）
-2. 刪除 v41 舊 chunks + document → `ingest_transcripts_rag --only 41` 重建 8 chunks（**全庫 `external` 殘留 0**）
-3. 刪除 2 題錯題 → `generate_unit_content --only 41 --force` → `generate_unit_questions --only 41 --force`
-4. **v41 現有 5 題 validated**（4 MC + 1 coding），全部使用正確的 `extern`；3 題 MC 仍 `VALIDATION_RETRY_EXHAUSTED`（可接受，非阻斷）
-5. `promote_unit_content --only 41` → 本機 learning_units 已帶正確內容
-
-### Fixed — 兩支批次 script 自 7-1a-5 起就無法執行（本次才發現）
-- `generate_unit_content.py` / `generate_unit_questions.py` 的 `from scripts._db_guard import require_local_db` 被插進 **`from ... import (` 括號中間** → `SyntaxError`，import 即失敗
-- 加防護那次（2026-08-05 7-1a-5）之後**沒有任何人跑過這兩支**，所以直到今天要重生 v41 才炸出來
-- 修正後對 `scripts/*.py` 全數做 `ast.parse` 檢查，其餘 14 支語法正常
-
-### Added — `scripts/fix_production_video.py`
-- `seed_production_content.py` 是 `on conflict do nothing` 的初次播種，**無法更新既有資料** → 新增單章重播工具（RAG chunks / staging / learning_units / questions 四者整章替換），支援 `--dry-run`
-
-### 生產庫已同步（2026-08-05 使用者核准後執行）
-- v41：RAG chunks 8 換新 / questions 2 → **5** / staging + learning_units 內容更新
-- **全庫複查：questions / staging / learning_units / RAG 四張表的 `external` 殘留皆為 0**；總量 questions 631、RAG 861（僅 v41 被替換，其餘未動）
-
-
 ## [2026-08-05] — feat(edf)：時區提醒 + 端點正名 run-help；發現章節 41 教材把 `extern` 寫成 `external`
 
 ### Added — UTC 時區 Coddy 主動提醒（機械判定，零成本）
@@ -914,37 +505,14 @@ hello / stdin / argv / 編譯錯誤（真實 g++ 訊息）/ 逾時→Time Limit 
 - `uses_local_time()` 偵測 `localtime` / `strftime` / `asctime` / `ctime`（**只認會轉成「人看的當地時間」的函式**；`time(NULL)` 印 epoch、`clock()` 算 CPU 時間都不受時區影響，不觸發）
 - 執行**成功**時才提醒（編譯失敗/逾時另有路徑），每個 session 一次；文案說明這是雲端環境常態並反問「加多少秒會變成台灣時間」，不直接給答案
 
-### Changed — 端點正名 `/chat/compile-error` → `/chat/run-help`
-- 現在處理三種執行問題（平台限制 / 逾時 / 時區），原名已不準確；`services/compile_error.py` → `services/run_help.py`、回應欄位 `is_platform_limit` → `is_mechanical`
-- 抽出 `_persist()` 消除三條路徑的重複寫入邏輯
-
-### Tests
-- `tests/test_run_help.py`（原 test_compile_error）+6：`uses_local_time` 5 例（含 `time(NULL)` / `clock()` 不觸發的反例）+ 時區提醒不呼叫 LLM；後端全量 **804 passed**
-
-### 🔴 發現內容錯誤（待修，見 tech-debt）
-- **章節 41 教材與逐字稿把 C++ 關鍵字 `extern` 寫成 `external`**（Whisper 逐字稿 [00:35] 即為 `external`，grounded 生成忠實複製）→ 學生照打**編譯必失敗**
-- 影響範圍：RAG 2 chunks / staging 1 / questions 2；**生產庫同樣有**（staging 1 / learning_units 1 / RAG 2）
-- **極可能就是 v41 題庫掛零的原因**：生成端依錯誤教材出題，審查端（懂 C++ 的強模型）一律打回
-
-
 ## [2026-08-05] — fix(chat)：收合聊天不再遺失對話 + 平板補 chat + 執行語言鎖死（A1/A2/A3）
 
 > 上一則問題總結中查證出的三個缺陷，全部修掉。
 
-### Fixed A1 — 收合 Coddy 再展開，對話整個消失（🔴 與「輸出被清空」同源）
+### 決策依據與證據
 - **根因**：`app-shell.tsx` 的 `{chatOpen && <ChatPanel/>}` 是條件掛載 → 收合即 unmount，而訊息列表、session id、執行結果訂閱**全都住在 ChatPanel 裡**。資料其實在 DB，但畫面空白，學生得自己從歷史選單撈回來
 - **修法**（與 Output 執行歷史同一套）：新增 `components/chat/chat-runtime.tsx`，把 `useChat` / `useSessions` 與三個 workspace 訂閱提到 `ChatRuntimeProvider`（掛在 `WorkspaceProvider` 內、`ShellLayout` 外＝永遠掛載）；`ChatPanel` 降為純呈現層（145 → 95 行）
 - **一併修好的副作用**：① 聊天收合時執行程式，結果卡片不再被丟掉（原本 `onExecutionComplete` 沒有 queue，直接消失）② 編譯錯誤去重簽章不再隨面板開合重置（不會重複花每日配額）
-
-### Fixed A2 — 平板尺寸的聊天按鈕是死的
-- `TabletHeader` 有按鈕呼叫 `onToggleChat`，但 tablet 版面從未渲染 `ChatPanel`。依 frontend.md 規格補上 **bottom sheet**（`inset-x-0 bottom-0 h-[60%]` + `shadow-modal`）
-
-### Fixed A3 — 執行語言可被前端指定
-- `ExecuteRequest.language_id` 有預設值但可被覆寫，打 API 可跑 Python/Java。非安全漏洞（Judge0 沙箱隔離），但本平台只教 C++ → **移除該欄位，路由固定 `CPP_LANGUAGE_ID`**
-
-### Tests
-- `test_code_execute.py` +2：送 `language_id=71` 仍以 54 執行 / `args` 確實轉為 `command_line_arguments`；後端全量 **798 passed**，web build + tsc + eslint 綠
-
 
 ## [2026-08-05] — feat(workspace)：62 章程式碼類別 × Judge0 能力矩陣實測，補齊 argv 與逾時說明
 
@@ -966,63 +534,30 @@ hello / stdin / argv / 編譯錯誤（真實 g++ 訊息）/ 逾時→Time Limit 
 | **main 參數 argc/argv（章節 58）** | ❌ **argc 恆為 1**，學生無法傳參數 → 本次補 |
 | C++ 標準 | `__cplusplus=201402`（**預設 C++14**）、GCC 9.2.0。教材未用 C++17 語法（僅 `nullptr`×3 屬 C++11），**現階段不需調整**；實測 `compiler_options: -std=c++17` 可用，日後需要再開 |
 
-### Added — 執行參數（章節 58）
-- Judge0 的 `command_line_arguments` 實測可用 → `judge0.py` / `ExecuteRequest.args`（≤500 字）/ context `getArgs·setArgs` / `use-run-code` 一路接通
-- 前端：**偵測到 `main(..., argv)` 才顯示**「執行參數」欄位（`codeUsesArgs()`），不干擾其他章節
-
 ### Added — 逾時也由 Coddy 主動說明（同樣零成本）
 - `compile_error.py` 加 `is_timeout()` + `_TIMEOUT_TEMPLATE`：固定文案指出兩大主因（迴圈沒有結束條件 / 用 `cin` 但沒給輸入），**並肯定「正在練習無窮迴圈這章的話，這個結果是正確的」**
 - 前端觸發條件擴到 `Time Limit Exceeded`，以狀態字串當去重簽章；session 標題改「執行問題引導」
-
-### Tests
-- `test_compile_error.py` +1（逾時走固定文案、斷言 LLM 未被呼叫）；後端全量 **796 passed**
-
 
 ## [2026-08-05] — feat(workspace)：補上標準輸入介面（`cin` 無處可輸入）+ 修 kickoff fail-open
 
 > 使用者寫了含 `std::cin >> userInput` 的程式，**畫面上沒有任何地方可以輸入**。
 
-### Fixed — stdin 從未被送出（後端一直支援，前端沒接）
-- `api/routes/code.py:20` 的 `ExecuteRequest.stdin` 早就存在且會傳給 Judge0，但 `use-run-code.ts` 只送 `{ code }`，**UI 也沒有輸入欄位** → 學生的 `cin` 永遠讀到 EOF，畫面看起來像程式壞掉
-- `use-run-code` 補送 `stdin: workspace.getStdin()`；`workspace-context` 加 `getStdin/setStdin`（ref，不觸發 re-render）
-
-### Added — `components/workspace/stdin-panel.tsx`
+### 決策依據與證據
 - Output 面板頂端的「輸入」摺疊列：多行 textarea（上限 10,000 字，與後端一致）、顯示目前行數
 - **偵測到程式會讀輸入時自動展開並標示「程式在等待輸入」**（`codeNeedsInput()` 比對 `cin >>` / `getline` / `scanf` / `cin.get`，純字串比對零成本）
 - 明說批次執行的限制：「程式是一次跑完的，不能邊跑邊打字——請先在這裡填好所有 `cin` 要讀的內容，再按 Run」（roadmap 既有決策：Judge0 批次模式，不做即時互動 terminal）
-
-### Fixed — `services/chat_kickoff.py` 同型 fail-open 缺口
-- 上一批在 `compile_error.py` 修掉的問題（`_get_client()` 在 try 之外，client 建構失敗會 500）在 kickoff 也存在，一併修掉
-
-### Tests
-- `tests/test_code_execute.py` +2：stdin 確實轉發給 Judge0 / 未提供時為空字串（鎖住這條被漏掉過的契約）；後端全量 **795 passed**，web build + tsc + eslint 綠
 
 ## [2026-08-05] — feat(edf)：編譯失敗時 Coddy 主動說明（平台限制直說 / 學生錯誤引導）
 
 > 使用者提問「預設函式庫有哪些、想引用別的怎麼辦」+ 定案「編譯錯誤本來就該由 Coddy 主動分析；系統錯誤直說，學生自己出錯要引導」。
 > **背景事實**：`judge0.py:13` 寫死 `CPP_LANGUAGE_ID=54`，只送單一 `main.cpp` → 可用的僅 C++ 標準函式庫；沙箱無顯示裝置也無網路，Qt 這類 GUI 函式庫**裝了也跑不動**。
 
-### Added — `services/compile_error.py` + `POST /chat/compile-error`
+### 決策依據與證據
 - **兩類錯誤刻意不同處理**：
   - **平台限制**（`fatal error: X: No such file or directory` 且 X 不在標準標頭白名單）→ **機械判定 + 固定文案，完全不呼叫 LLM**（零成本；也避免 LLM 亂編「你可以裝一下」這種做不到的建議）。文案說明「不是你寫錯」＋環境只有標準函式庫＋無畫面沙箱＋改用 `cin` 的具體出路
   - **學生自己的錯誤**（漏分號、型別不符…）→ LLM 引導：白話翻譯錯誤訊息 + 指出從哪裡查起，**prompt 明令不可給修好的程式碼、不可說「第 N 行改成 XXX」**
 - **標準標頭白名單**涵蓋 STL / C 標頭 / 常見 POSIX；`iostream` 找不到會被判為環境異常而非平台限制（不對學生說謊）
 - 訊息寫入現有 session（非另開），保留在對話歷史可回看；LLM 失敗 fail-open 回固定文案
-
-### Added — 前端自動觸發（`chat-panel.tsx`）
-- Run 完成且 `compile_output` 非空才觸發（runtime error 不觸發——那屬於學生該自己除錯的範圍）
-- **去重**：以「前兩行 + 抹掉行號」為簽章，同一個錯誤只主動說明一次 → 學生沒改就重跑不會重複消耗每日 60 次配額
-- 失敗（含配額用盡）靜默，不打擾學生
-
-### Fixed（實作中由測試逼出）
-- `_get_client()` 原本在 try 之外，OpenAI client 建構失敗會 500 → 移入 try，真正 fail-open。**`services/chat_kickoff.py:85` 有同樣結構的潛在問題，未動（不在本次範圍，已記錄）**
-- `models/chat.py` 抽出 `DEFAULT_SESSION_TITLE`：原本判斷 `if not session.title` 永遠為假（新 session 預設就是「新對話」），標題不會被覆寫
-
-### Changed — `api/routes/chat.py` 289 → 206 行（超過 250 硬線）
-- session 歷史三個端點 + 其 schema 拆至 `api/routes/chat_sessions.py`（100 行），比照 assignments 的雙 router 慣例；`MessageOut` 仍由 chat.py 提供，單向 import 無循環
-
-### Tests
-- `tests/test_compile_error.py` +10：標頭偵測 6 例（Qt / tinyfiledialogs / iostream / stdio.h / 語法錯 / 空字串）+ 平台限制路徑**斷言 LLM 未被呼叫** + 學生錯誤走 LLM + 訊息進歷史且標題正確 + LLM 掛掉 fail-open；後端全量 **793 passed**
 
 ## [2026-08-05] — fix(ui)：複製按鈕統一回饋（驗收回饋：複製後沒有任何提示）
 
@@ -1043,44 +578,11 @@ hello / stdin / argv / 編譯錯誤（真實 g++ 訊息）/ 逾時→Time Limit 
 
 > 使用者截圖回報兩點：對話歷史下拉選單被切掉一半、系統各處滾動條是白色不透明的。
 
-### Fixed — 下拉選單溢出（`components/chat/session-list.tsx`）
-- History 鈕位於 Chat panel 右上角，選單卻寫 `absolute left-0` + `w-64` → 256px 往右畫必然超出面板與視窗（連帶讓整頁出現橫向滾動條）
-- 改 `right-0` 靠右對齊（**與 `global-nav.tsx` avatar 選單同一寫法**，該處本來就是對的）+ `max-w-[calc(100vw-2rem)]` 保底窄視窗
-- 順修 R4 違規：`shadow-lg` → `shadow-modal`（全站唯一一處非 token 陰影，已無殘留）
-
-### Fixed — 滾動條（`app/globals.css`，使用者選定方案）
+### 決策依據與證據
 - **根因**：`globals.css` 從未宣告 `color-scheme`，也沒有任何滾動條樣式 → 瀏覽器一律給淺色預設，在純 Dark Mode 介面上就是一條白槓
 - `html { color-scheme: dark }` — 讓所有原生元件（滾動條、select、日期選擇器）跟著深色，不只滾動條受益
 - 自訂滾動條（使用者選 10px + 透明軌道）：拇指 `--border-default`、hover 轉 `--border-emphasis`、`border: 2px solid transparent` + `background-clip: content-box` 內縮 → **視覺 6px 細、實際 10px 好抓**；軌道與 corner 全透明；Firefox 以 `scrollbar-width: thin` + `scrollbar-color` 對應
 - 全部走既有 token，未引入新色（R1 通過）
-
-### Verified
-- web build + tsc + eslint 綠
-
----
-
-## [2026-08-05] — fix(workspace)：Output 執行歷史不再被側邊欄清空 + page.tsx 拆分（250 行硬線）
-
-> 使用者回報：「開啟側邊欄，先前終端機的輸出會被清空，且沒有歷史記錄可查看。」
-
-### Fixed — 根因是元件樹換根，不是 Output 自己清空
-- `page.tsx` 原本**依側欄開合回傳兩種不同的根節點**（無側欄＝Fragment / 有側欄＝PanelGroup）→ 切換時整棵子樹 unmount，`OutputPanel` 的 local state `blocks` 一併歸零。收合 Output 也是同一類結構切換
-- **修法一：版面單一化**（新檔 `components/workspace/workspace-layout.tsx`）——永遠渲染同一棵水平 PanelGroup，只讓側欄 slot 在有/無之間切換（沿用 `app-shell.tsx` 既有的條件式 Panel 寫法），主欄位置固定不再重建
-- **修法二：歷史移出元件樹**（新檔 `use-run-history.ts`）——module-level store + `useSyncExternalStore`，經 `WorkspaceContext` 提供 `runs` / `clearRuns`。任何 unmount 都不影響，連跨頁導航（Learn ⇄ Workspace）回來也還在
-
-### Added — 執行歷史可查看
-- 保留**最近 20 次**執行（新到舊），寫入 **sessionStorage**：同分頁重整仍看得到，關掉分頁即清除（共用電腦不留下他人的程式輸出）；「清空」鈕維持
-- 展開規則改為無 effect 的推導：預設只展開最新一則，`overrides` 只記使用者手動翻過的例外 → 新結果自動展開、舊的自動收合（原行為不變，但不再需要 setState-in-effect）
-- 型別抽到 `components/workspace/types.ts`（`ExecutionResult` / `RunRecord`），避免 context ⇄ history hook 循環相依；`workspace-context` 仍 re-export `ExecutionResult`，既有 import 不受影響
-
-### Changed — page.tsx 254 → 189 行（經使用者同意拆分）
-- 版面組裝 → `workspace-layout.tsx`；反思 handoff 的兩個 effect（active reflection 訂閱 + Coddy kickoff）→ `use-reflection-handoff.ts`
-- tech-debt 的「超過 250 硬上限」項目消除
-
-### Verified
-- web build + tsc + eslint 綠（`react-hooks/set-state-in-effect` 兩處已用 store / 推導式改寫，非停用規則）
-
----
 
 ## [2026-08-05] — fix(workspace)：檔名鎖定 .cpp 尾綴 + 點檔名改名 + 首次草稿併發修復（U2e 驗收回饋）
 
@@ -1092,43 +594,9 @@ hello / stdin / argv / 編譯錯誤（真實 g++ 訊息）/ 逾時→Time Limit 
 - **前端 `.cpp` 為鎖定尾綴**（新元件 `file-name-input.tsx`）：輸入框只編輯主檔名，尾綴以固定灰字呈現於框內、無法刪改；另存對話框 / 側欄儲存 / 改名列三處共用。另存對話框補一行「程式一律以 C++ 編譯執行」
 - 存檔後**以伺服器回傳的檔名為準**（原本沿用送出的字串，補副檔名後會與 DB 不一致）；實作題 handoff 自動命名同步改為「{單元} 程式實作題.cpp」，維持反思按鈕的檔名比對成立
 
-### Added — 點檔名就地重新命名（③；使用者選「真正重新命名」）
-- 後端 `PATCH /code/files`（`rename_file`）：以 `(user, name)` 定位 → **同一列改名不複製**（回傳 id 不變），新名已存在回 409 `CODE_FILE_NAME_TAKEN`、不存在 404；**草稿的 `opened_name` 一併跟著改**，重整後仍停在同一檔
-- 前端 `file-name-field.tsx`：Toolbar 檔名改為可點按鈕 → 就地編輯（Enter 確認 / Esc 取消 / 失焦取消 / 錯誤以浮層顯示）。**未命名草稿**點檔名則開啟另存對話框（還沒有檔案可改名）
-
-### Fixed — 首次草稿併發建立回 500（①的可證缺陷）
-- `save_draft` 原本「查無草稿 → INSERT」，但**進頁時 handoff 開檔與自動存檔可能同時發出**，`uq_code_files_draft` partial unique index 會擋下較慢者 → IntegrityError 冒泡成 500。**只在第一次（草稿列還不存在時）可能發生，之後全走 UPDATE**，症狀與回報的「剛開始有錯、後來都正常」吻合
-- 修法比照 6-R7 `get_or_create_user`：捕捉 IntegrityError → rollback → 重查對方建立的那列繼續更新
-- ⚠ **未能確認這就是使用者當下看到的錯誤**（列表載入與草稿存檔是不同端點，且錯誤已無法重現）→ 併同下一項讓下次可辨識
-
-### Changed — 側欄錯誤可診斷
-- 列表載入失敗原本一律顯示「載入檔案列表失敗」吞掉真因 → 改為附上後端訊息與 HTTP status（如 `後端回應逾時（504）`）+ **重試按鈕**（不必收合再展開）
-
-### Tests
-- `tests/test_code_files.py` +10：副檔名正規化 5 例（`main`/`main.cpp`/`main.CPP`/`main.md`/前後空白）+ 補完超長 422 + 改名成功（含草稿 opened_name 跟隨、id 不變）+ 改名撞名 409 + 他人檔案 404 + 首次草稿並發三發皆 200；後端全量 **783 passed**，web build + tsc + eslint 綠
-
----
-
 ## [2026-08-05] — docs：生產庫播種狀態複驗（7-1a-4 收尾，無待補項）
 
 > 承接「concepts 影片 ID 待補」的掛帳。開公網後以 `--dry-run --force` 查驗，結果**該項在上個 session 修完 script 後就已執行完畢**，只是狀態文件未同步 → 本次為純狀態修正，**未對生產庫做任何寫入**（dry-run 已 rollback）。
-
-### Verified（生產庫實查，逐項對照本機）
-| 項目 | 生產 | 本機 |
-|---|---|---|
-| concepts / 有 `video_youtube_id` | 62 / **62** | 62 / 62（v01–v05 抽查 id + duration 逐筆相同） |
-| documents / questions | 64 / 628 | 64 / 628 |
-| unit_content_staging（approved） | 62 | 62 |
-| data_codedge_rag | 861 | 861 |
-| alembic 版本 | `t6c7d8e9f0a1` | head（**K4e citations migration 已上生產**） |
-
-- **`learning_units` 62 筆 content 全部非空**（`concept_explanation` 1,061–2,161 字，0 筆空骨架）——lazy-seed 已在首次進 Learn 頁時觸發並帶入 staging 內容，原 roadmap「為 0 屬預期」的註記已過期
-- 生產 `users` 1 / `learning_paths` 1 = 目前僅開發者本人登入過，實驗資料乾淨
-
-### Changed
-- `CLAUDE.md` 7-1a-4 移除「待補：concepts 影片 ID」；`docs/roadmap.md` 7-1a-4 補複驗結果並修正 `learning_units` 為 0 的過期敘述
-
----
 
 ## [2026-08-05] — perf(llm)：模型全面升級 gpt-5.6 + 每日配額 + 離題分流（成本控制三層）
 
@@ -1146,44 +614,13 @@ hello / stdin / argv / 編譯錯誤（真實 g++ 訊息）/ 逾時→Time Limit 
 - **修 `core/llm_params.py`**：gpt-5.6 世代拒收自訂 `temperature`**也拒收 `reasoning_effort`**（原判斷只認 `gpt-5-` 前綴 → luna 直接 502）。拆出 `_accepts_custom_temperature()`；預設 `reasoning_tokens=0` 無須壓制
 - `config.py` 的 `LLM_MODEL` 預設由 `gpt-4o` 改為 `gpt-5.6-luna`（生產漏設時的 fallback 不該是 2024 世代）
 
-### Added — 每日配額（`core/rate_limit.py`）
+### 決策依據與證據
 - `RATE_LIMIT_LLM_PER_DAY=60`：**只掛 `scope="llm"`**，`/code/execute` 等不受影響。UTC 日期分 key、26 小時 TTL 涵蓋任何時區；超額回 429 `DAILY_QUOTA_EXCEEDED` 並明示「明天重新計算，仍可寫程式/執行/讀教材」；設 0 停用。+3 tests
 - **決策：不做上課日/非上課日分級配額**——正常使用僅 $6.5/月，分級省的是最壞情況的一部分（該由 OpenAI 帳號硬上限擋），卻要付出教師端課表 UI + 時區處理的複雜度，且**會傷害週末複習/考前衝刺的學習體驗**
-
-### Added — 離題分流（`services/edf/off_topic.py`，新模組）
-> **分流不是攔截**：關鍵字黑名單會誤傷「這題老師上課有講嗎」這類合法提問（使用者指出），改採 routing 思路（呼應 6-M 已引用的 FrugalGPT / RouteLLM）
-
-- **判斷搭在既有 Evidence 呼叫上，零額外成本**：`EvidenceResult` 加 `is_on_topic`（預設 True——LLM 未回傳時寧可多花錢也不誤判）；**Evidence 原本看不到學生提問**（prompt 只有程式碼+執行結果），故 `analyze_evidence` 補 `question` 參數並以 `wrap_student_input` 包裝防注入
-- prompt 明列不得判為離題的情境：程式問題、對教材/影片/課程的詢問（**明寫「老師上課有講嗎」**）、對錯誤訊息的困惑、極簡短但語境上在求助（「?」）
-- 離題 → `generate_off_topic_reply()`：跳過 RAG 檢索與 persona/strategy/K-Graph 組裝，**Feedback input 1,699 → 135 tokens（省 92%）**；LLM 失敗回固定文案不拋錯
-- 離題判定回填 `dialogue_act=off_topic`（5-2c 啟發式無此訊號）→ 評估期可統計學生離題比例
-- `feedback.py` 加完後達 263 行**超過 250 硬上限 → 拆出 off_topic.py**（227 + 53）
-
-### Tests
-- +10（3 每日配額 + 7 離題分流，含「LLM 未回傳欄位預設 on-topic」與鎖住 prompt 規則不被誤刪）；後端全量 **773 passed**
-
-### Verified（真實 LLM）
-- 「晚餐推薦吃什麼」→ 輕量路徑，友善婉拒並給出可問的具體例子，**0 citations**（未檢索）
-- **「這題老師上課有講嗎」→ 正確判為課程相關**，走完整路徑並附教材連結 + 3 則 citations
-
----
 
 ## [2026-08-05] — feat(edf)：Coddy 防幻覺三層機制（NotebookLM 式可驗證引用）
 
 > 承上一條：把正確 metadata 餵給 LLM 只解決「它沒資料可用」，**不保證它聽話**。本次補上不依賴 LLM 自律的機制。原 `validate_output()` 只檢查程式碼洩漏，對「內容是否真的來自教材」零檢查。
-
-### Added — `services/edf/citations.py`（新模組，163 行）
-> `feedback.py` 已 236 行逼近 250 上限，格式化邏輯一併移出，主檔反而降至 221 行
-
-- **① 機械式攔截 `strip_ungrounded_citations()`**：由檢索結果建立「合法出處表」（video_id → [(start, end)]），掃描回應中的 Markdown 連結，解析 YouTube video id 與 `t=` 參數，**不在檢索結果內的整段連結直接移除**（連標籤一起——標籤本身就含編造的時間）。容差 ±90 秒（LLM 常把 63 秒寫成 01:00）；非 YouTube 連結（如 cppreference）保留；攔截時寫 `logger.warning`，**可據此統計幻覺率供論文使用**
-- **② 誠實路徑 `NO_SOURCE_RULE`**：RAG 全部低於門檻時原本靜默不注入教材，Coddy 會用自身知識回答且不告知學生。現改為明確指示——不可提及任何章節或時間點、被問「老師在哪講過」要誠實說沒有對應段落、可用一般知識但不得宣稱是課程教材
-- **③ 可驗證 UI**：`extract_citations()` 輸出章節/時間/連結/原文摘錄/相似度 → migration `t6c7d8e9f0a1` 為 `chat_messages` 加 `citations` JSON 欄位（**持久化才能在重開對話時仍可核對**；不塞進 `evidence`，語意不同）→ 前端 `components/chat/citation-list.tsx` 摺疊清單，展開即見 transcript 原文（原文本身帶 `[00:45]` 逐句時間標記），另附「在 YouTube 開啟此段」
-
-### Tests
-- `tests/test_edf_citations.py` **+13**：合法引用保留 / 未知影片攔截 / 時間偏離過遠攔截 / 容差內放行 / 非 YouTube 連結保留 / 無檢索結果時全部攔截 / 清理殘留空列表項 / youtu.be 短網址 / metadata 缺漏處理；後端全量 **763 passed**，migration up-down 可逆驗證，web build + tsc + eslint 綠
-
-### Verified（真實 LLM）
-- 引用 `[C++的for迴圈 03:01](...&t=181s)`（181s=03:01 換算正確）；citations 回傳 3 則，含相似度 0.649–0.663 與 transcript 原文
 
 ### 已知限制（誠實記錄）
 - **幻覺無法 100% 消除**：出處已鎖死，但 LLM 仍可能曲解教材內容（老師說 A 講成 B）。驗證這個需第二次 LLM 呼叫比對，成本與延遲翻倍 → **不常態開啟**，日後可做抽樣稽核工具（原方案④）
@@ -1192,12 +629,7 @@ hello / stdin / argv / 編譯錯誤（真實 g++ 訊息）/ 逾時→Time Limit 
 
 ## [2026-08-05] — fix(edf)：Coddy 影片引用改為真實出處 + 可點擊時間連結（K4d 驗收回饋）
 
-### Fixed
-- **Coddy 的影片時間戳是幻覺**（使用者驗收發現）：`feedback.py` 組 prompt 時只注入 `chunk.text`，**完全沒帶 metadata** → LLM 手上沒有任何時間資訊，卻仍輸出「影片 01:22～01:40」這類看似精確的內容。而 RAG chunk 的 metadata 其實一應俱全（`title_zh` / `youtube_id` / `start_time_seconds` / `end_time_seconds`），只是從未被使用
-- **修法**：新增 `_format_rag_chunk()`，每則片段標示「出處：{章節名稱} {mm:ss}｜連結：{帶 t= 參數的 YouTube URL}」；prompt 加 `_CITATION_RULE` 三條規則——只能用標示的出處、**嚴禁自行推測時間點**、必須輸出 Markdown 連結格式；metadata 不齊的片段不附出處，規則要求該片段不提時間
-- **前端**（`components/ui/markdown.tsx`）：補 `a` 元件（`text-text-link` + 底線 + `target="_blank"` + `rel="noopener noreferrer"`）——Coddy 回覆本就走 react-markdown 渲染，補上樣式後連結即可點擊
-
-### Verified
+### 決策依據與證據
 - 本機真實 LLM 實測：輸出 `[C++的break與continue 04:05](...&t=245s)`、`[C++的while迴圈 07:04](...&t=424s)`，章節名稱與秒數換算皆正確（245s=04:05、424s=07:04）且來自真實 metadata
 - 後端 750 passed；web tsc / eslint 綠
 
@@ -1214,45 +646,31 @@ hello / stdin / argv / 編譯錯誤（真實 g++ 訊息）/ 逾時→Time Limit 
 - 前端交付：HTTP/2 + `cache-control: immutable` + gzip，9 個 chunk，各頁只打 1 個 API（Knowledge 用 `Promise.all`），**無瀑布**
 - Performance trace（499MB / 699,950 事件）：**≥100ms 的任務只有 1 個**，總耗時 8.5 秒 → **主執行緒幾乎完全閒置，前端零阻塞**
 
-### Fixed 1 — Node DNS 走 IPv6 逾時耗盡 libuv threadpool（環境變數，見 deployment.md）
+### 決策依據與證據
 - **證據**：Network 顯示 `/api/auth/session` 首次 **2.2 分鐘**，期間 `health` ×5 全部 5.00 秒逾時（前端 AbortController 上限）；session 一完成，health 立刻回到 86–472ms → **兩者共用同一瓶頸資源**
 - **機制**：Next.js 為單一 Node process，DNS 查詢走 libuv threadpool（預設僅 4 執行緒）。容器內 Node 18+ IPv6 優先而 Zeabur 容器 IPv6 無法路由外網 → 解析逾時佔滿 threadpool → proxy 要解析 `*.zeabur.internal` 時排隊
 - **修法**：web service 加 `NODE_OPTIONS=--dns-result-order=ipv4first` + `UV_THREADPOOL_SIZE=32`（**不在版控，已記入 deployment.md Step 2**）
 - **結果**：`workspace?_rsc` 304ms、`draft` 491ms — API 全數恢復
 
-### Fixed 2 — Zeabur 邊緣宣告 HTTP/3，瀏覽器改走 UDP（`web/next.config.ts`）
+### 決策依據與證據
 - **證據**：修好 DNS 後靜態資源仍極慢——137KB 花 **18.50 秒**（約 7 KB/s），但同機同時 curl 測**序列 633 KB/s、15 個混合並行 0.71 秒全完成**。回應帶 `alt-svc: h3=":443"; ma=3600` → Chromium 系瀏覽器切 HTTP/3（QUIC over UDP），curl 走 TCP 不受影響
 - **修法**：`next.config.ts` 加 `Alt-Svc: clear`（RFC 7838），讓瀏覽器清除記錄並留在 HTTP/2。**拒絕「要使用者自行關閉 QUIC」的方案**——校園 / 企業 / 部分 ISP 對 UDP 443 限速或丟包很常見，2027-01 評估時學生多在校園網路
 - **結果**（使用者實測 43 筆請求全為 `h2`）：同一檔案 **18.50 秒 → 166ms（111 倍）**；靜態資源普遍 15–22ms、API 70–350ms
 
-### 診斷工具
-- `main.py` 加 `X-Process-Time` middleware（回應標頭帶 backend 內部處理毫秒，CORS `expose_headers` 一併開放）——可直接分辨慢在運算或傳輸鏈路
-
----
-
 ## [2026-08-05] — fix(deploy)：生產環境影片 ID 全 NULL — 播種 script 補 concepts metadata 同步
 
-### Fixed
+### 決策依據與證據
 - **生產 Learn 概念說明只顯示 placeholder**（使用者實測回報）：根因**不是**教材沒灌成功，而是 `concepts.video_youtube_id` 在生產庫全為 NULL——migration `e1f2a3b4c5d6:134` 把它 seed 成 `None`，62 個真實影片 ID 是 6-1d 用 `patch_video_metadata.py` 寫進**本機** DB 的，屬「本機有、migration 沒有」的第三類缺口（前兩類＝concept UUID 隨機、`data_codedge_rag` 執行期建表）
 - **放大效應**：`web/components/learn/concept-tab.tsx:32` 在 `video_youtube_id` 為 null 時**整個 tab early return placeholder**，連已經灌好的 grounded 教材都不渲染 → 症狀看起來像「播種失敗」，實際只差影片 ID
 - **修法**：`seed_production_content.py` 新增 `sync_concept_metadata()`，以 tag 為鍵 UPDATE 生產庫的 `video_youtube_id` / `video_duration_seconds`
 
-### Verified
-- 重建 `prod_test` 完整重現症狀（migration 後 62 筆全 NULL）→ 執行修正後 script → **0 筆仍為 NULL**，抽查 v01/v02/v03 的 youtube_id 與 duration 與本機一致
-
----
-
 ## [2026-08-05] — feat(scripts)：測試/生產環境隔離防護 + 生產播種實機完成
 
-### Added
+### 決策依據與證據
 - **`backend/scripts/_db_guard.py`**：所有 script 共用 `core.database` 讀 `settings.DATABASE_URL`，而對生產庫做維護時 `export DATABASE_URL=<生產>` 會**殘留在同一個終端機**——之後跑任何 script 都會誤寫生產庫（本次部署過程中就已具備此條件）。兩級防護：
   - `require_local_db()` — **無覆寫選項，非本機一律中止**。掛 `seed_fake_students`（假帳號污染實驗資料）/ `generate_unit_content` / `generate_unit_questions` / `ingest_transcripts_rag` / `rereview_questions`（本機生成、之後用播種搬運，沒有對生產跑的理由）
   - `confirm_remote_db()` — 允許但需互動輸入 `yes`（非互動環境用 `ALLOW_PRODUCTION_WRITE=1`）。掛 `promote_unit_content` / `patch_video_metadata`（生產庫的合法維護操作）
   - 訊息一律遮蔽密碼（`postgres:***@host`），並提示「這通常是變數殘留，請開新終端機或 unset」
-
-### Verified
-- 假 seeder 指向生產 → 中止；本機 → 正常；promote 指向遠端輸入 no → 取消；後端全量 **750 passed**
-- **生產播種實機完成**：documents 64 / questions 628 / unit_content_staging 62 / data_codedge_rag 861
 
 ### 決策記錄
 - DEV 工具安全性複查（使用者提問）：`/dev/reset`·`/dev/mastery`·`/dev/role`·`/dev/simulate-failures` **全部已限定 `user.id`**（`services/dev_tools.py` 每條 delete 都帶 user_id 條件），`/dev/questions` 唯讀、幽靈解鎖純前端 → **無需修改**；生產開啟 DEV 僅需 `DEV_MODE_ENABLED=true` + email 白名單
@@ -1261,37 +679,9 @@ hello / stdin / argv / 編譯錯誤（真實 g++ 訊息）/ 逾時→Time Limit 
 
 ## [2026-08-04] — feat(deploy)：生產資料播種 script（7-1a-3）+ Judge0 RapidAPI 鏈路實測
 
-### Added
-- **`backend/scripts/seed_production_content.py`**：把本機教學內容搬到生產庫。**核心問題＝`concepts` 的 seed migration 用 `uuid4()` 隨機產生 id（`c3d4e5f6a7b8:163`），生產庫 UUID 與本機完全不同** → 直接 `pg_dump` 會讓 `unit_content_staging.concept_id` 全數對不上。Script 以 **concept tag 為橋樑重新映射**：讀本機 staging join concepts 取 tag → 查生產庫同 tag 的新 UUID → 改寫後寫入
-  - 分工：`documents` / `questions` 直接複製（前者 uploader_id 全 NULL、後者用 `concept_tags` 字串關聯，皆不依賴 UUID）；`unit_content_staging` 走 tag 重映射；**`data_codedge_rag` 由 LlamaIndex 執行期建表、不在 migration 內**，需先 `pg_dump` 連 schema 一起搬（script 偵測到表不存在時印出完整指令）
-  - 防呆：拒絕 `TARGET_DB_URL` 指向本機（方向反了）、目標表非空需 `--force`、兩邊 concepts 數量不符即中止、`--dry-run` 預覽
-  - JSON 欄位處理：依 `information_schema` 找出 json/jsonb 欄位顯式包 `Json()`——否則 psycopg2 會把 `concept_tags` 的 Python list 誤 adapt 成 PostgreSQL `text[]` 而型別衝突
-
-### Verified
+### 決策依據與證據
 - **本機建 `prod_test` 庫完整演練**：跑完整 alembic → 確認 concept UUID 與本機不同（`bb615138…` vs `0e660c1e…`）→ pg_dump 搬 RAG 表 → 執行 script → **62 教材 / 628 題（503 MC + 125 coding）/ 861 chunks / 64 documents 全數寫入，0 孤兒、tag 對應與本機完全一致**
 - **Judge0 RapidAPI 端到端實測**（此鏈路首次真正跑通）：正常執行（stdin `3 4` → `stdout='sum=7\n'`、0.003s / 1140KB）/ 編譯錯誤（g++ 訊息完整回傳）/ 服務不可用（`AppError 503 JUDGE0_UNAVAILABLE`）三路徑皆符合 `backend.md` 規範
-
-### 部署進度（Zeabur）
-- 四個 service 建立完成（手動建立，避開未實測的 `zeabur.json` PREBUILT schema）+ 網域綁定 + Google OAuth 登入通過
-- 踩點記錄：Zeabur 預設埠 8080 與 backend 寫死的 8000 / web 的 3000 不符；`zeabur.app` 是公共後綴無法登記為 Google 授權網域 → 改用 OAuth 測試模式（100 人上限，1 月評估前需評估改用自訂網域）
-
----
-
-## [2026-08-04] — fix(deploy)：Phase 7 部署前置檢查——生產映像缺 python-multipart 阻斷修復
-
-### Fixed
-- **🚨 生產 backend 容器會啟動即崩**（`backend/requirements.lock`）：5-5 作業附件加了 `python-multipart` 到 `pyproject.toml`，但 lock 檔停留在 4-1a 版本未重產；`backend/Dockerfile` 只 `pip install -r requirements.lock` → 生產映像缺此套件，FastAPI 註冊 `File()` 路由（`assignments.py` / `assignment_submissions.py`）時直接 raise，容器永遠起不來。以 `uv pip compile` 重產（既有 pin 全部保留，僅新增 `python-multipart==0.0.32`）
-- **生產會用錯 LLM 模型**（`zeabur.json`）：backend env 未傳任何模型變數，`config.py` 預設 `LLM_MODEL=gpt-4o`（2024 舊世代）且三個分組變數 fallback 至它 → 6-M 任務導向路由在生產完全失效。補上 `LLM_MODEL` / `LLM_MODEL_GENERATE` / `LLM_MODEL_VALIDATE` / `LLM_MODEL_CONTENT` / `EMBEDDING_MODEL` 五個變數，值對齊 6-M 選型表
-
-### Changed（文檔同步）
-- `docs/deployment.md`：前置條件的 Judge0 段落改寫（正式方案＝自架於伺服器 B，RapidAPI 降為過渡方案，指向 server-plan.md）；checklist 的 lock 檢查改為「與 pyproject 同步」的實質規則（原「≥ 100 個 `==`」數字本身不成立）
-- `docs/server-plan.md`：Judge0 authn header 技術債註記改為已完成（2026-07-18 消除），待辦清單對應項打勾
-
-### Verified
-- `docker build ./backend` 成功 → 容器內 `import multipart`（0.0.32）+ `from main import app` 成功載入 **81 條路由**（即生產啟動路徑可用）
-- `zeabur.json` JSON 格式驗證通過
-
----
 
 ## [2026-07-21] — fix(workspace)：我的程式碼刪除修正 + 反思 modal 提交按鈕遮蔽
 

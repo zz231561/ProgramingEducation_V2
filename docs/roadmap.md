@@ -409,8 +409,8 @@
 - [ ] 7-D4a **教材程式碼全量健檢**：以自建 runner 編譯全部 starter code，修正所有
       `Compilation Error`，確認靜態錯字掃描與全量編譯皆為 0 問題；完成後同步驗收清單 9-2
 - ~~7-D5 其餘文件稽核~~ → **已併入 7-D3 階段二**（同一件事，不重複列）
-- [ ] 7-D6 **全站 429 / 5xx toast**（tech-debt B4 剩餘）：引入 sonner，把 quiz / learn / 教師端
-      各自為政的 catch 收斂成統一攔截（chat 路徑已於 7-C2b 單獨修好）
+- [x] 7-D6 **全站 429 / 5xx toast**（2026-08-08）：以 sonner 與統一 API client 收斂
+      quiz / learn / 教師端錯誤提示；integration tests 模擬 429 冷卻秒數與 5xx 訊息
 - [ ] 7-D7 **無意義／冗餘註解清查**（2026-08-07 使用者提出，獨立一輪執行）：
       linter 做不到——判斷「這行註解有沒有講程式碼本身沒講的事」屬語意判斷。
       掛進 `code-health` skill 當一個階段；會動到大量檔案的註解，值得單獨審

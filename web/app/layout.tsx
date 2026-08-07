@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Noto_Sans_TC, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { SessionProvider } from "@/components/providers/session-provider";
+import { Toaster } from "sonner";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -41,6 +42,17 @@ export default function RootLayout({
         <SessionProvider>
           {children}
         </SessionProvider>
+        <Toaster
+          position="top-right"
+          theme="dark"
+          duration={3000}
+          toastOptions={{
+            classNames: {
+              toast: "!rounded-md !border !border-[#30363D] !border-l-[3px] !border-l-[#F85149] !bg-[#161B22] !text-[#E6EDF3]",
+              description: "!text-[#8B949E]",
+            },
+          }}
+        />
       </body>
     </html>
   );

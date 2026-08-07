@@ -8,12 +8,11 @@
 
 ### 🔴 B. Coddy 教學品質
 
-**B4. 全站 429 / 5xx toast 仍未實作**（7-C2b 已修掉最痛的 chat 路徑，其餘待辦）
+**B4. 全站 429 / 5xx toast** — ✅ **已清償（2026-08-08，7-D6）**
 - [x] ~~chat 撞配額被誤導成故障~~ — 7-C2b：`lib/chat-error.ts` 分辨 `DAILY_QUOTA_EXCEEDED`
       （原文照用，已寫明何時恢復）與 `RATE_LIMITED`（消費 `retry_after_seconds` 顯示秒數）
-- [ ] `web/lib/api.ts` 檔頭與 `frontend.md` 寫的是**全站** toast 攔截，目前仍只有 401 重導
-  - 其他頁面（quiz / learn / 教師端）撞 429 或 5xx 仍是各自的 catch，訊息不一致
-  - 需先引入 shadcn/ui toast（sonner）基礎設施 → **排 7-D6**
+- [x] sonner 已掛入全域 layout；統一 API client 處理 429 冷卻秒數與 5xx 錯誤，
+      integration tests 直接模擬兩種 HTTP response；chat 保留 7-C2b 專屬串流文案
 
 **B5. Evidence concept tag 雜訊 fan-out 到無關概念**（2026-08-06 模擬實證）
 - [ ] hello world 被標 `control-flow` → 寫入 cpp-25-if-else；overflow 程式被標 `io-streams`（因有 cout）

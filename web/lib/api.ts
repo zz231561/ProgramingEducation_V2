@@ -1,3 +1,5 @@
+import { showApiErrorToast } from "@/lib/api-error-toast";
+
 /**
  * 前端統一 API client — 所有請求經 /api/ proxy 到 FastAPI。
  *
@@ -58,6 +60,8 @@ export async function api<T = unknown>(
     ) {
       window.location.href = "/login";
     }
+
+    showApiErrorToast(res.status, body);
 
     throw new ApiRequestError(res.status, body);
   }

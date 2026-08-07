@@ -685,29 +685,21 @@ P2 證實不需要脆弱的「致謝歸零」規則：理解訊號本身就會�
 
 ## [2026-07-21] — fix(workspace)：我的程式碼刪除修正 + 反思 modal 提交按鈕遮蔽
 
-### Fixed
+### 決策依據與證據
 - **刪除檔案誤報「操作失敗」**（根因 `lib/api.ts`）：後端 DELETE 回 204 No Content，`api()` 無條件 `res.json()` 對空 body 解析失敗拋錯 → 被 catch 誤判失敗；實際已刪除（重整後列表重抓才看到消失）。加 `res.status === 204 → return undefined`；**同時修好「未立即刪除」**——樂觀 `setFiles` filter 原本在 throw 後永遠沒執行到，現正常即時移除
 - **刪到當前開啟檔案無提示**（`code-files-sidebar.tsx` + `use-named-file.ts`）：刪除時偵測 `f.name === currentName`，跳出專屬確認「此為目前開啟檔案，刪除後將移除並跳回預設程式」；確認後呼叫新抽出的 `resetToDefault`（從 `newFile` 抽離、不含未存確認）重設編輯器為預設範本並清檔名關聯
 - **反思計畫過長時提交按鈕消失**（`reflection-flow.tsx` + `reflection-flow-parts.tsx`）：modal Popup 原為 `max-h-[85vh] overflow-hidden` 但內部 header/題目(22vh)/body(60vh)/footer 直向堆疊無 flex 約束，總高超過即把 footer 裁出可視區且無法捲動觸及；改 Popup 為 `flex flex-col`、body 改 `min-h-0 flex-1` 吸收剩餘高度並內捲、header/題目/footer 加 `shrink-0` 固定 → 提交按鈕永遠可見（側欄編輯版本身已有 `overflow-y-auto`，不受影響）
 
-### Tests
-- 前端 tsc / eslint / build 全綠（前端此區無 vitest 測試層）
-
----
-
 ## [2026-07-18] — fix(tech-debt)：低風險技術債清償——Judge0 自架 authn / lazy-seed 空骨架 / pyproject / uv.lock
 
-### Fixed
+### 決策依據與證據
 - **Judge0 自架 authn header**（`services/judge0.py`）：`_build_headers` 加 authn 分支——URL 含 rapidapi 網域 → `X-RapidAPI-Key`（現狀不變）；自架 + key → `X-Auth-Token`；無 key 不帶 auth header。新增可選 `JUDGE0_AUTH_MODE` 環境變數（rapidapi / self-hosted）顯式覆蓋自動判斷，供邊角情境救援；消除「切自架開 authn 會 401」技術債（生產實測仍待 Phase 7）
 - **lazy-seed 空骨架**（`services/learning/generator.py`）：`generate_learning_path` seed units 時讀 `unit_content_staging`（status=approved）直接帶入 content，無 approved 才寫空骨架——promote 後才註冊的新帳號（含 DEV ghost user）概念說明 tab 不再落 pending fallback；與 promote script 整包覆蓋行為對齊（單一真相來源，讀取端零改動）
 - **pyproject.toml hatchling packages**：補 `[tool.hatch.build.targets.wheel] packages`（flat layout 顯式列 api/core/models/services/scripts），`pip install -e .` 不再失敗；hatchling 隔離環境驗證 wheel target 可解析（151 files）
 
-### Changed
+### 決策依據與證據
 - **`.gitignore` 加 `uv.lock`**：依賴鎖定正本維持 `requirements.lock`（Dockerfile 亦用它）；uv.lock 為先前 uv 指令副產品，不進版控避免雙鎖定檔 drift
 - **git user.name/email 技術債關閉**：確認已設定（曾冠豪 / abbyabby41@gmail.com）
-
-### Tests
-- +6（judge0 authn 4 分支 + generator staging 帶入/非 approved 排除 2）；後端全量 **750 passed**
 
 ### 決策記錄
 - OpenAI client ×9 重複：維持刻意延後（抽共用需連動 9 檔 + 大量測試 monkeypatch，收益不成比例）
@@ -715,282 +707,30 @@ P2 證實不需要脆弱的「致謝歸零」規則：理解訊號本身就會�
 
 ---
 
-## [2026-07-16] — feat(chat)：Coddy 反思開場——進 Workspace 主動閱讀題目與反思計畫
-
-### Added
-- **`POST /chat/reflection-kickoff`**（`services/chat_kickoff.py`）：讀題目 + 反思全文 + 追問狀態 → Coddy 開場訊息（3–5 句：肯定亮點 → 接手被跳過的追問或補充最模糊處 → 邀請提出想先弄懂的概念）；建獨立新 session（title=實作題題幹）；LLM 失敗 fail-open 固定友善文案；僅本人 404 保護
-- **與 modal 追問分工**（使用者定案「modal 一層，剩下交 Coddy」）：prompt 依 followup 狀態分流——被跳過的追問由 Coddy 換句話自然帶入；已回答的不重複問
-- **前端**：實作題 handoff 進 Workspace → **自動展開 chat 面板** + 觸發開場（workspace-context 加 `requestReflectionKickoff` 事件含掛載前 queue；`useChat.loadKickoff` 建 session 顯示訊息）；sessionStorage 去重（同一反思只開場一次，重整不重發）
-
-### Tests
-- +4（開場持久化可讀回 / LLM 失敗 fallback / 他人反思 404 / 追問狀態三分支）；後端全量 **744 passed**；web tsc/eslint/build 全綠
-
----
-
-## [2026-07-16] — feat(reflection)：反思評分初學者寬容化（使用者回饋：評分太難、反思變負荷）
-
-### Changed（四項，使用者全數核准）
-1. **追問變引導非門檻**：追問階段第一輪即可「直接開始作答」跳過（原本必答一輪）；回答過一次追問後無論分數一律放行（原 MAX 2 輪）——self-explanation 效益來自提示本身，非答對
-2. **評分 rubric 改寫**（`evaluate.py`）：加入校準原則——自己的話重述題意 ≥ 0.6、口語概念（「用 if 判斷」）視同正確、2 個以上具體步驟 ≥ 0.5、僅空白/敷衍/明顯誤解 < 0.4；高分範例從競程級換成初學者級；追問須先肯定亮點、一次只問一件事
-3. **門檻 0.6 → 0.45 + Bloom 自適應**（`_threshold_for`）：Bloom 1–2 → 0.4、Bloom ≥ 4 → 0.55
-4. **學生端不再顯示品質分數**（追問 QualityBar / 側欄 QualityChip / Learn 與 demo 的「品質分數 xx%」全移除，改正向文案）；quality_score 照常入 DB，論文資料收集不受影響
-
-### Tests
-- +1（Bloom 自適應門檻）+ 既有 evaluate 測試適配；後端全量 **740 passed**；web tsc/eslint/build 全綠
-
----
-
-## [2026-07-16] — feat(workspace)：實作題 handoff——自動命名開檔 + 反思按鈕限定實作題檔案
-
-### Added
-- **Learn 實作題 →「在 Workspace 作答」完整 handoff**：原本只是裸連結（不帶反思/程式碼），現在帶反思 id + 檔名 + 起手碼（`setActiveReflectionId(id, {fileName, starterCode})`，sessionStorage 加 `active_reflection_file`/`active_reflection_starter`）
-- **自動命名**：由實作題進入的程式碼自動命名為「{章節名稱} 程式實作題」（`unit.concept_name_zh`）；首次進入以起手碼建檔（立即出現在我的程式碼）、已存過＝載入續作、草稿仍掛該檔＝優先草稿（最新工作內容）
-- quiz-demo 同步帶檔名「程式實作題」+ 起手碼
-
-### Changed
-- **反思計畫按鈕限定實作題檔案**：只在「目前開啟檔案 === 反思綁定檔案」時顯示（切到其他檔/開新檔即隱藏並收合反思側欄，`effectivePanel` 派生、不加 setState）；一般檔案無反思按鈕
-- **Toolbar 圖示順序**：我的程式碼 → 開新檔案 → 反思計畫（反思移至開新檔案右側）
-
-### Verified
-- web tsc/eslint/build 全綠；⚠ UI 待使用者驗收（Learn 實作題 → 反思 → Workspace 動線）
-
----
-
-## [2026-07-16] — feat(workspace)：檔名關聯跨重整持久化 + page.tsx 拆分
-
-### Added
-- **重整/再登入停留在最後開啟的檔案**：`code_files` 草稿列加 `opened_name` 欄（migration `s5b6c7d8e9f0`，可逆驗證）；PUT /code/draft 省略欄位＝保留、帶 null＝清除（sentinel `KEEP_OPENED_NAME`，自動存檔不觸碰關聯）；載入/另存/開新檔即時持久化關聯；進頁還原內容+檔名；+1 test（739）
-
-### Changed
-- **page.tsx 拆分**（使用者核准；255 → 214 行）：抽出 `use-run-code.ts`（Judge0 執行 + isDirty）與 `use-draft-restore.ts`（草稿+檔名還原）；反思 handoff gating 改 lazy 初始值（消 react-compiler set-state-in-effect）；hook 回傳全面解構取用（消 preserve-manual-memoization）
-
-### Verified
-- 後端 739 passed；migration up/down/up 可逆；web tsc/eslint/build 全綠；⚠ UI 待使用者驗收
-
----
-
-## [2026-07-16] — feat(workspace)：U2e 快捷鍵修訂——Ctrl/Cmd+S 儲存 + 開新檔案（仿主流編輯器）
-
-### Added
-- **Ctrl/Cmd+S 儲存**（`use-named-file.ts`）：已命名（載入過/存過）→ 直接覆寫並於檔名旁短暫顯示「已儲存」；未命名 → 開另存對話框（`save-as-dialog.tsx`，**檔名預填且反白**、Enter 確認、Esc 取消）；攔截瀏覽器預設另存網頁
-- **開新檔案**：Toolbar FilePlus 按鈕；內容尚未存至「我的程式碼」時先 confirm，再重設為預設範本並解除檔名關聯
-- **檔名關聯**：Toolbar 檔名顯示目前開啟的命名檔案（未命名顯示 main.cpp）；程式化載入/開新檔不誤標為使用者修改（suppress 機制）
-
-### Changed
-- 側欄儲存表單改與 Ctrl/Cmd+S 走同一 `saveNamed` 流程；外部儲存成功以 refreshToken 觸發側欄列表重抓
-
-### Verified
-- web tsc/eslint/build 全綠；⚠ UI 操作待使用者驗收
-
----
-
 ## [2026-07-16] — fix(workspace)：U2e 回饋修訂——側欄化 + 近實時存檔 + 游標跳行 + Enter 縮排
 
-### Fixed
+### 決策依據與證據
 - **打字游標跳到第一行**：兩個根因——(1) CodeEditor 以父層 onChange 為重建依賴，父層 callback identity 每 render 變動 → 編輯器整個重建、游標重設；改 onChange 走 ref、重建僅依賴 `initialValue`。(2) 草稿還原 effect 以整個 autosave hook 物件為依賴 → 每 render 重抓草稿並覆寫存檔基準；改解構穩定 callback 為依賴
 - **Enter 換行不對齊上一行**：CodeMirror `indentUnit` 預設 2 空格與 4 空格程式碼錯位（換行後需再按 Tab）；加 `indentUnit.of("    ")` 統一 4 空格，並保留語法感知縮排（`{` 後自動加深）
 
-### Changed
-- **「我的程式碼」改左側欄**（`code-files-sidebar.tsx`，取代 Toolbar dropdown）：與反思計畫同側、可收合；**互斥切換**（開一個自動收另一個，`sidePanel` 單一狀態）；Toolbar 加 FolderOpen toggle
-- **近實時存檔**：停頓 0.4 秒即存；連續輸入不間斷時至多每 2 秒強制存一次（原為停止輸入 2 秒才存）
-
-### Verified
-- web tsc/eslint/build 全綠；⚠ UI 操作待使用者驗收
-
----
-
 ## [2026-07-16] — feat(workspace)：U2e 程式碼存檔（DB 草稿自動存 + 我的程式碼多檔管理）
 
-### Added
+### 決策依據與證據
 - **`code_files` 表**（migration `r4a5b6c7d8e9`，up/down 可逆驗證）：單表兩用——草稿（name IS NULL，partial unique 每人一份）+ 命名檔案（UNIQUE(user_id,name) 同名覆蓋；上限 50；code CHECK ≤ 100k 字元）
 - **API**（`services/workspace_files.py` + `api/routes/code_files.py`）：`GET/PUT /code/draft`（還原/upsert）+ `GET/PUT /code/files`（列表 meta / 同名覆蓋儲存）+ `GET/DELETE /code/files/{id}`；一律限本人（他人 404）
 - **自動存檔**（`lib/use-draft-autosave.ts`）：停止輸入 2 秒 PUT 草稿 + Toolbar「儲存中…/已自動儲存」指示；beforeunload 與 SPA 卸載時 keepalive 搶救未存變更；內容未變不重複打 API
 - **進 Workspace 還原草稿**：載入完成前不掛編輯器（避免預設範本閃現）；404/失敗 fail-open 用預設範本
 - **Toolbar「我的程式碼」選單**（`code-files-menu.tsx`）：另存命名檔案（同名覆蓋）+ 列表（名稱+時間）載入/刪除；載入後 Toolbar 檔名同步
 
-### Changed
-- **CodeEditor 加受控 `value` prop**：外部值與現值不同時整段替換（載入檔案/還原草稿）；`initialValue` 行為不變（quiz 相容）。順帶修復 output 收合切換 remount 後編輯器內容重設的潛在 bug
-
-### Tests
-- +8（草稿 404/upsert/隔離、檔案存-列-載-刪、同名覆蓋、他人 404、空白檔名 422、上限 409）；後端全量 **738 passed**；web tsc/eslint/build 全綠
-
-### Verified
-- migration up/down/up 實跑可逆；dev server 熱載新路由（401 需登入）；⚠ UI 操作待使用者驗收
-
----
-
-## [2026-07-12] — docs：驗收狀態同步 + 修正 6-3c 過時註記
-
-### Changed
-- **UI 驗收通過標記**（使用者 2026-07-12 驗收）：5-5b-3/4（含徽章+可點卡片修訂）、5-1c-4 加入班級、5-6a/b/c、DEV 六卡
-- **修正過時註記**：6-3c「實機複審+批次生成待跑」→ 實已於 2026-07-06 隨 6-3d 跑完（436 MC + 57 coding + 舊題複審刪 15）；CLAUDE.md「下一步」6-3c → **批次 ⑧ U2e**
-- Phase 5 教師端標記完成（5-3/5-4 等真實資料除外）
-
----
-
-## [2026-07-12] — docs：伺服器需求規劃定案（兩台拓撲，Judge0 自架取代 RapidAPI）
-
-### Added
-- **`docs/server-plan.md`**：伺服器 A（主機 4C8G，Zeabur 託管 PokerNote_V2 + 本專案 4 service）+ 伺服器 B（2C2G Ubuntu 22.04 專跑自架 Judge0，SSH docker-compose 直跑、不走 Zeabur dashboard）；容量假設（30–60 人課堂）、安全硬性要求（authn token + 防火牆鎖 A 機 IP）、租用後待辦
-- 決策背景：Judge0 RapidAPI 成本高（免費 50 次/天、付費訂閱制）且官方 pay-per-use（Sulu）已收攤 → 自架；Judge0 需 privileged + cgroup v1 → 獨立一台與主資料物理隔離
-
-### Changed
-- `docs/tech-debt.md` 新增：`judge0.py _build_headers()` 尚不支援自架 authn header（`X-Auth-Token`），Phase 7 部署前補
-
----
-
-## [2026-07-12] — fix(assignment)：5-5b UI 動線修訂（使用者回饋）
-
-### Changed
-- **學生繳交表單**：「我的繳交」標題旁新增狀態徽章（未繳交/已繳交/已評分）+ 繳交時間；「繳交/更新繳交」按鈕邏輯保留
-- **教師交件動線**：移除作業卡「交件」展開鈕 → 作業卡標題區改為可點入口（hover 變 link 色），點擊進入全頁 `TeacherAssignmentDetail`（作業資訊 + 交件情況 + 批改），返回鈕回列表；編輯/停用/刪除/附件操作留在列表卡
-- `formatDateTime` 抽入 `lib/assignment-format.ts`（消除 assignment-card / submission-row / submission-form 三處重複）
-
-### Verified
-- web tsc + eslint 綠；⚠ UI 操作待使用者驗收
-
----
-
-## [2026-07-12] — feat(classroom)：5-1c-4 學生加入班級 UI（補規劃缺口）
-
-### Added
-- **缺口背景**：`POST /classes/join` 後端（5-1b-3）一直存在，但前端從未排入輸入邀請碼的 UI，導致 5-5b 無法驗收
-- **共用表單**（`components/classroom/join-class-form.tsx`）：6 位數字碼即時過濾 + 驗證；404（無效/停用碼）與 409（未填 profile）錯誤訊息直出
-- **作業頁空狀態**：`/assignments` 無作業時顯示加入班級表單，加入成功即重載作業列表
-- **Settings「我的班級」卡**（`my-classes-card.tsx`，僅學生顯示）：列已加入班級（班名 + 教師名）+ 加入表單
-- 後端 `GET /classes/mine`（`list_joined_classes`）：學生列自己已加入班級；學生視角 schema 不含邀請碼/成員數
-
-### Tests
-- +2（未加入回空 / 加入後列出且不洩漏 invite_code）；後端全量 **730 passed**；web tsc 綠
-
-### Verified
-- ⚠ UI 操作待使用者驗收（解鎖 5-5b-3/4 驗收動線）
-
----
-
-## [2026-07-12] — feat(assignment)：5-5b-4 教師交件檢視 UI（評分+評語）
-
-### Added
-- **交件檢視面板**（`components/teacher/submissions-panel.tsx`）：作業卡新增「交件」展開 → 名冊 × 繳交狀態列表 + 繳交率統計（已繳交 X / Y）
-- **學生交件列**（`submission-row.tsx`）：姓名/email + 狀態徽章（複用 `submissionBadge`）+ 繳交時間；展開檢視繳交文字 + 下載繳交附件
-- **評分表單**（`grade-form.tsx`）：分數（可留空=未評）+ 評語 → `PATCH /submissions/{sid}/grade`，儲存後即時回寫列表徽章
-- 後端 `GET /assignments/{id}/submissions` 回應加 `attachments`（繳交附件 meta）：`list_attachment_meta_bulk` 批次查詢（單 query 避免 N+1）
-
-### Tests
-- +1（教師列表含繳交附件 + 教師下載繳交附件授權）；後端全量 **728 passed**；web tsc 綠
-
-### Verified
-- ⚠ UI 操作待使用者驗收（可與 5-5b-3 學生端一併驗）
-
----
-
-## [2026-07-08] — feat(assignment)：5-5b-3 學生作業 UI + Dashboard 待辦卡片
-
-### Added
-- **學生導航加「作業」tab** → `/assignments`（`STUDENT_TABS`）
-- **學生作業頁**（`components/assignments/`）：列表（標題/截止/繳交狀態徽章/逾期）→ 詳情（教師說明 + 下載教師附件 + 分數/評語 banner + 繳交表單）
-- **繳交表單**：文字 + 拖曳上傳（複用 `FileDropzone`）+ 刪除自己的繳交附件；重繳覆蓋（`更新繳交`）
-- **Dashboard「待辦作業」卡片**（`PendingAssignmentsCard`）：列未繳作業連往 `/assignments`；無作業不渲染
-- `lib/assignments.ts` 學生/教師交件 API wrappers + `lib/assignment-format.ts`（截止格式化 + 狀態徽章）
-
-### Verified
-- web tsc/eslint 綠 + `next build` 成功（/assignments 註冊）
-- ⚠ UI 操作待使用者驗收
-
----
-
-## [2026-07-08] — feat(assignment)：5-5b 作業繳交後端（學生繳交 + 教師評分）
-
-### Added
-- **繳交 service**（`services/assignment/submissions.py`）+ **route**（`api/routes/assignment_submissions.py`）：
-  - 學生：`GET /assignments/mine`（所屬班級 active 作業 + 我的繳交狀態）+ `GET /assignments/mine/{id}`（詳情含教師附件 + 我的繳交 + 我的附件）+ `PUT /assignments/{id}/submission`（文字 upsert，重繳覆蓋）+ `POST /submissions/{sid}/attachments`（繳交附件上傳）
-  - 教師：`GET /assignments/{id}/submissions`（班級名冊 × 交/未交狀態）+ `PATCH /submissions/{sid}/grade`（score + feedback + graded_at）
-  - 授權：學生限自己所屬班級 active 作業與自己的繳交；教師限自己作業
-  - submissions router 先於 assignments router 註冊（`/assignments/mine` 優先於 `/assignments/{id}`）
-### Changed
-- `delete_attachment` 通用化：作業附件限該作業教師、**繳交附件限繳交本人**（`DELETE /attachments/{id}` 改 `get_current_db_user`）；`build_attachment` 共用 builder（作業/繳交附件）
-
-### Tests
-- +8（學生看到班級作業 / 非成員 404 / 繳交 upsert 覆蓋 / 繳交附件上傳+下載+刪除 / 教師列名冊×狀態 / 教師評分 / 學生不可評分 403）；後端全量 **727 passed**
-
-### Note
-- 前端 5-5b-3（學生 UI + Dashboard 卡片）/ 5-5b-4（教師交件檢視 UI）待做
-
----
-
 ## [2026-07-08] — feat(teacher)：5-6b Learn 教師全開 + 5-6c 單元題庫檢視
 
-### Added
+### 決策依據與證據
 - **5-6c 教師題庫檢視**：
   - 後端 `GET /quiz/bank?tag=`（`require_roles(TEACHER)`）回完整 content（含正解 answer_index）+ 解析，僅 validated；複用 `list_questions_by_tag`；+2 tests（教師看得到正解 / 學生 403）
   - 前端 `TeacherQuestionBank` 元件 + `unit-content` 教師專屬「題庫（教師）」tab：列該單元 concept 題目，**解答預設隱藏 + 顯示/隱藏一鍵切換**（避免示範露答案），正解以綠框標示 + 解析
-### Changed
-- **5-6b Learn 教師權限全開**：`learn/page.tsx` `ghostUnlock = useGhostUnlock() || role==="teacher"`——複用 DEV-4 幽靈解鎖鏈路，教師可點閱全部 locked 單元（後端 `get_default_path` 本就 lazy-seed 全 59 單元）
-
-### Verified
-- 後端全量 **720 passed**；web tsc/eslint 綠 + `next build` 成功
-- ⚠ UI 操作待使用者驗收
-
----
-
-## [2026-07-08] — feat(teacher)：5-6a 角色化導航
-
-### Changed
-- **師生導航分流**（`components/layout/global-nav.tsx` + `lib/use-role.ts`）：
-  - 教師頂部導航＝`班級 | 作業 | Workspace | Learn`（移除 Quiz/Knowledge）；學生維持原 5 頁籤
-  - `班級管理`/`作業`從右上角 avatar 選單**移入頂部導航**（avatar 只留設定/登出）
-  - 新 `useRole` hook（fetch /users/me role + 訂閱 ROLE_CHANGE_EVENT 即時更新）；role 未定前不渲染頁籤避免閃現
-  - `/teacher` 是 `/teacher/assignments` 前綴 → active tab 精確比對
-- **教師預設落地班級管理**：login callbackUrl `/workspace`→`/`；`app/(app)/page.tsx` 改 client 端依角色分流（教師→/teacher，其餘→/workspace）
-- **`/teacher` 路由拆分**：`layout.tsx`（角色 gate 一次）+ `page.tsx`（班級）+ `assignments/page.tsx`（作業）；移除原頁內分頁切換
-
-### Verified
-- web `tsc` 綠 + eslint 綠（僅既有 img 警告）+ `next build` 成功（/teacher、/teacher/assignments 皆註冊）
-- ⚠ UI 操作待使用者驗收
-
-### Note
-- 5-5a-3 教師作業 UI **UI 驗收通過**（本次回饋為導航位置調整，功能不變）
-
----
-
-## [2026-07-07] — feat(teacher)：5-5a-3 教師作業 UI（程式碼完成，待 UI 驗收）
-
-### Added
-- **教師作業管理 UI**（`web/components/teacher/assignment-*.tsx` + `/teacher` 加分頁）：
-  - `/teacher` 頁改「教師中心」+ 分頁切換「班級管理 / 作業」（active tab 沿用 #F78166 底線）
-  - 建立作業：選班級 + 標題/內容/**截止時間**（datetime-local）+ **拖曳上傳**附件（`FileDropzone`，前端型別/10MB 即時驗證）→ 建立後依序上傳
-  - 作業卡：顯示標題/內容/截止時間/停用徽章；**編輯**（含清除截止時間）、停用/啟用、刪除、展開附件面板（懶載入下載/刪除/續傳）
-  - 元件拆分保持 < 150 行：fields / edit-form / dropzone / attachments / card / manager
-- **API 層**：`web/lib/assignments.ts`（wrappers + `validateFile` + 下載 URL）；`api()` 支援 FormData（不覆寫 Content-Type，讓瀏覽器帶 multipart boundary）
-- **後端補強**（UI 依賴）：`GET /assignments/{id}` 改回 `AssignmentDetailOut` 含 `attachments`（`list_attachment_meta` 只取中繼欄位不載 bytes）；+1 test
-
-### Verified
-- 後端全量 **718 passed**；web `tsc --noEmit` + eslint 綠 + `next build` 成功
-- ⚠ UI 視覺/操作待使用者驗收（截止時間編輯、拖曳上傳、下載）
-
----
-
-## [2026-07-07] — feat(teacher)：5-5a-2 教師作業 CRUD + 附件 API
-
-### Added
-- **作業 CRUD API**（`api/routes/assignments.py` + `services/assignment/crud.py`）：require_roles(TEACHER) + 擁有權（他人 404）
-  - `POST/GET/GET{id}/PATCH{id}/DELETE{id} /assignments`；list 支援 `?class_id=` 過濾
-  - **PATCH 可編輯 due_at**（截止時間）：用 `model_fields_set` 區分「未提供（保留）」與「明確 null（清除）」——UNSET 哨兵
-  - DELETE 顯式清理多型附件 + 繳交（無 FK cascade）
-- **附件 API**（`services/assignment/attachments.py`）：檔案存 bytea
-  - `POST /assignments/{id}/attachments`（multipart 上傳，教師）+ `GET /attachments/{id}`（下載）+ `DELETE /attachments/{id}`
-  - **安全**：副檔名白名單（word/pdf/pptx/程式碼/文字/zip）+ 單檔 ≤ 10MB（讀 MAX+1 偵測超標）+ 檔名去路徑；下載一律 `Content-Disposition: attachment`（防 inline XSS）+ 授權（作業附件＝教師或班級成員；繳交附件＝本人或該作業教師）
-  - 上傳掛 `rate_limit("upload", 20)`
-- 新依賴 `python-multipart`（pyproject）；main.py 註冊 assignments + attachments 兩 router
-
-### Tests
-- +15（CRUD 授權 / due_at 編輯+清除+保留 / 上傳白名單+空檔+超標 / 下載授權：教師/成員/非成員 403 / 刪附件）；後端全量 **717 passed**；ruff 綠
-
----
-
 ## [2026-07-07] — feat(teacher)：5-5a-1 作業 3 表 migration + models
 
-### Added
+### 決策依據與證據
 - **作業指派 schema**（migration `q3f4a5b6c7d8` + `models/assignment.py`）：TronClass 式文件繳交
   - `assignments`：教師建立、指派整班（title/description/due_at/is_active）
   - `assignment_submissions`：學生繳交（text/score/feedback/graded_at）；UNIQUE(assignment_id, student_id) 每生每作業一份重繳覆蓋；score CHECK >= 0
@@ -998,14 +738,9 @@ P2 證實不需要脆弱的「致謝歸零」規則：理解訊號本身就會�
   - db-schema.md §Module 8 同步 3 表
 - **設計決策（2026-07-07 使用者定案）**：作業＝文件繳交非題庫 quiz；指派整班；檔案存 Postgres；教師可評分+評語；學生雙入口（作業 tab + Dashboard 卡片）；**原 5-5b 熱力圖/錯誤統計改隸 5-4**（與文件繳交無關）
 
-### Verified
-- migration up/down/up 可逆（Postgres 實跑）；models 匯入；後端全量 **702 passed**（schema 步驟，API/UI 測試隨 5-5a-2 起補）
-
----
-
 ## [2026-07-07] — feat(dev)：DEV-E 假學生資料 seeder
 
-### Added
+### 決策依據與證據
 - **假學生 seeder**（`services/dev_seed/` package + CLI `scripts/seed_fake_students.py`）：供教師端 / 行為分析本機開發
   - 三行為原型（主動 / 被動 / 掙扎）塑形資料，讓 5-2d 聚合與 5-3 群聚分析有可跑樣本
   - 每位學生：profile + 班級成員 + coding_events（成功/錯誤/hint）+ chat_messages（含 dialogue_act）+ student_mastery（confidence 依原型 gauss 抖動）
@@ -1015,14 +750,9 @@ P2 證實不需要脆弱的「致謝歸零」規則：理解訊號本身就會�
   - **拆分**：`generators.py`（純 builder，130 行）+ `seeder.py`（編排，158 行）避免單檔逾 250 行門檻
 - CLI 實機驗證：對 Postgres dev DB 生成 6 位（原型 2/2/2 均衡）
 
-### Tests
-- +4（seed 建學生+資料 / 可重現冪等 / purge 保留教師班級 / 與 5-2d 聚合整合）；後端全量 **702 passed**
-
----
-
 ## [2026-07-07] — feat(analytics)：5-2d 行為指標聚合 service
 
-### Added
+### 決策依據與證據
 - **行為指標聚合 service**（`services/analytics/aggregate.py` `aggregate_user_behavior` + `BehaviorMetrics` dataclass）：
   - 從 coding_events + chat_messages 計算單一使用者指標：execution_count / success_count / success_rate / hint_request_count / avg_fix_duration_seconds / hint_distribution / dialogue_act_distribution
   - **修復時間**：時序配對「首次未解錯誤 → 下一次成功」的間隔平均（無配對回 None）
@@ -1031,69 +761,9 @@ P2 證實不需要脆弱的「致謝歸零」規則：理解訊號本身就會�
 - **設計決策**：compute-on-read，**不建 `behavior_aggregates` 預聚合表 / 不排程**——初期 < 100 人查詢壓力低；預聚合屬效能優化，留待 5-3/5-4 有真實資料 + 查詢壓力再評估
 - **範圍取捨**：concept_error_counts / active_seconds 暫不計（現有事件資料無乾淨來源，避免臆測）；API 端點屬 5-3d（延後至真實資料）
 
-### Tests
-- +7（空使用者 / 成功率 / 修復時間配對 / 無前置錯誤 / hint 分布 / dialogue_act 分布 / 時間窗過濾）；後端全量 **698 passed**
-
----
-
-## [2026-07-07] — feat(analytics)：5-2c chat_messages dialogue_act 欄位（StudyChat schema）
-
-### Added
-- **`chat_messages.dialogue_act` 欄位**（migration `p2e3f4a5b6c7` + `models/chat.py` `DialogueAct` enum）：學生訊息對話行為分類
-  - String(24) + CHECK（非 PG ENUM，比照 coding_events.event_type）；nullable，既有列不回填
-  - 合法值＝StudyChat 6 類：asking_hint / clarification_request / debugging / off_topic / acknowledgment / verification（CC-BY-4.0）
-- **啟發式分類器**（`services/analytics/dialogue.py` `classify_dialogue_act`）：純函式、零 LLM 呼叫（比照 5-2b `classify_execution`）
-  - 優先序：明確 hint 請求（hint_level>0）> 簡短致謝 > 求證 > 除錯（附執行錯誤）> 文字求助 > 澄清提問；訊號不足回 None
-  - `off_topic` 無可靠啟發式訊號暫不主動判定（保留合法值供未來 StudyChat 語料訓練分類器 / 人工標註）
-- **掛鉤**：`chat interact` 於 fail-safe commit 前分類並隨 user message 一併持久化（僅用 LLM 呼叫前既有訊號）
-- db-schema.md §Module 9 dialogue_act 註記同步（補齊 clarification_request / verification）
-
-### Tests
-- +11（分類器 10 單元含優先序 / interact 寫入驗證）；後端全量 **691 passed**
-
-### Verified
-- migration up/down/up 可逆（Postgres 實跑）
-
----
-
-## [2026-07-07] — feat(analytics)：5-2b event logging service
-
-### Added
-- **event logging service**（`services/analytics/events.py`）：
-  - `classify_execution`：Judge0 status → success / compile_error / runtime_error
-  - `log_coding_event`：best-effort 寫 coding_events（失敗吞例外 + `logger.warning` + rollback，不擋主流程；code_snapshot 截斷 10k）
-  - `log_execution`：從一次執行摘要結果（status/exit_code/time/memory/has_stderr）並寫入
-- **掛鉤**：`/code/execute` 每次執行記錄結果事件；`chat interact` 當 `hint_level>0` 記 hint_request（帶 evidence concept_tags）
-
-### Tests
-- +6（classify 三態 / log_execution 寫入 / route 記 success / route 記 compile_error）；後端全量 **680 passed**
-
----
-
-## [2026-07-07] — feat(analytics)：5-2a coding_events 表（ProgSnap2）
-
-### Added
-- **coding_events 表**（migration `o1d2e3f4a5b6` + `models/coding_event.py`）：程式行為事件收集（Module 9）
-  - `event_type` 採 ProgSnap2 EventType 詞彙（submit/compile_error/runtime_error/success/hint_request/fix；String+CHECK）
-  - id=EventID、user_id=SubjectID（ProgSnap2 五欄主鍵對映，CC-BY-4.0）
-  - `concept_tags`/`execution_result`/`event_metadata` 用通用 JSON（相容 SQLite 測試）；`metadata` 保留字改名 `event_metadata`
-  - `session_id` FK chat_sessions ON DELETE SET NULL；`(user_id, created_at)` 複合索引供時序查詢
-- db-schema.md §Module 9 同步（JSON 取代 text[]/jsonb 註記）
-
-### Verified
-- migration up/down 可逆；欄位/索引/FK 正確；model 匯入；後端全量 **674 passed**
-
----
-
 ## [2026-07-07] — feat(auth)：5-1d-3/4 身分選擇 onboarding + 設定重置卡（前端，UI 驗收通過）
 
-### Added
-- **Onboarding 三段 gate**（`onboarding-gate.tsx`，原 profile-gate 改名）：① 未選身分 → `RolePicker`（教師/學生兩卡）② 學生未填 profile → `ProfileSetupForm` ③ 放行；選完身分後 gate 重新評估
-- **Settings 身分重置卡**（`identity-card.tsx`，全使用者可見）：顯示目前身分 + 切換鈕；二段確認 + 明確警告「全部資料將永久清空」；成功後 `window.location` 導回 `/` 重走 onboarding
-- **data layer** `lib/identity.ts`：`selectRole`
-- DEV 身分切換卡（devSetRole，不清資料的測試用切換）與此並存互補
-
-### Verified（自動）
+### 決策依據與證據
 - tsc / eslint 0 problem（沿用 dashboard 的 async setState disable）/ build 通過；元件皆 < 150 行
 - **待使用者 UI 驗收**（既有帳號 role_selected=false → 下次登入先見身分選擇頁）
 
@@ -1101,141 +771,20 @@ P2 證實不需要脆弱的「致謝歸零」規則：理解訊號本身就會�
 
 ## [2026-07-07] — feat(auth)：5-1d-1/2 身分自選 + 切換全清（後端）
 
-### Added
+### 決策依據與證據
 - **`users.role_selected`**（migration `n0c1d2e3f4a5`，server_default false）：區分「onboarding 已主動選身分」vs 首登預設；`/users/me`·`/auth/me` 回傳；既有帳號下次登入將被引導選身分
 - **`POST /users/role`**（`services/identity.py`）：自選 student/teacher（admin 不可自選 → 422）；**首次選擇只設定不清資料；已選過再改＝重置**——全清 mastery/progress/quiz/chat（reuse `reset_user_data`）+ profile + 班級成員關係 + 教師擁有的 classes（顯式先刪成員）；回傳 `did_reset`
 
-### Decision（2026-07-07）
-- Production 身分：**onboarding 自選教師/學生**（提權風險已知悉、使用者接受，單一教授小課程情境）；**單一身分**；設定頁可切換身分＝**全資料重置 + 警告**
-
-### Tests
-- +5 route tests（首選不清 / role_selected 反映 / 切換清 profile / admin 422 / 未登入 401）；修 `test_user_table_columns` 加欄位；後端全量 **674 passed**
-
----
-
-## [2026-07-07] — feat(teacher)：5-1c-3 右上角導覽顯示學生身分（待 UI 驗收）
-
-### Added
-- **avatar 選單顯示自填身分**（`global-nav.tsx`）：學生登入後右上角優先顯示 profile `real_name`（退回 Google 名）；avatar 旁加真名（sm+ 顯示、truncate）；下拉標頭加「校名 · 系所」+「學號」+ email
-- profile 隨 `/users/me` 一併取得（role=student 才抓 `/profile`，404 視為未填）；訂閱 `ROLE_CHANGE_EVENT`，DEV 身分切換即時更新
-
-### Verified（自動）
-- tsc / eslint 0 errors（僅既有 img warning）/ build 通過
-- **待使用者 UI 驗收**（學生右上角應顯示真名 + 校系）
-
----
-
-## [2026-07-07] — feat(teacher)：5-1c-2 學生 profile 表單 + 首次登入 gate（待 UI 驗收）
-
-### Added
-- **首次登入 gate**（`components/onboarding/profile-gate.tsx`）：包在 `(app)/layout.tsx` 的 AppShell 外層；role=student 且 `GET /profile` 回 404 → 全屏擋在填寫頁；教師/admin 直接放行；非 404 錯誤 fail-open（不因後端暫時性問題鎖住使用者）
-- **profile 表單**（`profile-setup-form.tsx`）：姓名/學號/學校/系所四欄 + email 唯讀顯示（登入帳號）；送出 `POST /profile` 成功後即時放行（onComplete，無需重整）；login 風格全屏卡片
-- **data layer** `lib/profile.ts`：getMyProfile / submitProfile
-
-### Verified（自動）
-- tsc / eslint 0 問題 / `next build` 通過；元件皆 < 150 行
-- **待使用者 UI 驗收**（切換為學生身分 + 未填 profile → 應被擋到填寫頁）
-
----
-
-## [2026-07-07] — fix(nav)：身分切換即時更新選單 + 精簡 avatar 選單
-
-### Fixed
-- **DEV 身分切換後選單需重整才更新**：`devSetRole` 成功後廣播 `ROLE_CHANGE_EVENT`（比照 GHOST_UNLOCK 模式）；`global-nav` avatar 選單訂閱該事件重抓 `/users/me`，教師入口即時出現/消失，無需重整
-
-### Changed
-- **精簡 avatar 下拉選單**（使用者評估）：移除「學習總覽 `/overview`」（空殼、與已實作 Dashboard tab 語義重疊）與「通知 `/notifications`」（空殼、無後端通知機制）兩個連入空頁的項目；選單留 班級管理（教師）/ 設定 / 登出。頁面檔保留（`/overview` 仍被 mobile-nav 引用），僅自此選單移除；連帶清除 orphan 的 Home/Bell import
-
-### Verified
-- 5-1c-1 教師班級管理頁 **UI 驗收通過**（使用者確認）；tsc / eslint 0 errors / build 全綠
-
----
-
-## [2026-07-07] — fix(auth)：/users/me 端點修 role 取得（NextAuth 路由碰撞）
-
-### Fixed
-- **`/auth/me` 經 Next.js proxy 取不到角色**（pre-existing，DEV-6 dev-role-card 從未驗過）：`/api/auth/*` 被 NextAuth `[...nextauth]` catch-all 攔截，`/api/auth/me` 到不了後端 → 「無法取得目前角色」；同時導致 5-1c-1 教師 gating（avatar 教師入口 / `/teacher` 頁）永遠失敗
-- **解法**：後端 auth.py 抽出 `build_user_response`；新增 `api/routes/users.py` `GET /users/me`（不在 `/auth` 前綴 → proxy 正常轉發）；前端三處（dev-role-card / global-nav / teacher page）改呼叫 `/users/me`
-- `/auth/me` 保留供後端測試（直打 ASGI 無碰撞）
-
-### Tests
-- +2（/users/me 未帶 token 401 / 回 role）；後端全量 **669 passed**；前端 build 通過
-
----
-
-## [2026-07-07] — feat(teacher)：5-1c-1 教師班級管理頁（前端，待 UI 驗收）
-
-### Added
-- **`/teacher` 班級管理頁**（`app/(app)/teacher/page.tsx`）：role gate（`/auth/me`，非教師顯示無權限）
-- **元件**（`components/teacher/`）：`class-manager`（列表+建立狀態）/ `create-class-form`（建班，綠色 btn-primary）/ `class-card`（邀請碼 + 複製 + 成員數 + 停用/啟用 + 名冊展開）/ `class-roster`（lazy 載名冊表格：姓名/學號/系所/校名/email）
-- **data layer** `lib/classroom.ts`：listClasses / createClass / updateClass / getClassMembers
-- **導覽入口**：avatar 下拉選單加教師專屬「班級管理」連結（`/auth/me` role 判定，非教師不顯示）
-
-### Verified（自動）
-- tsc 無誤 / eslint 0 errors（僅既有 img warning）/ `next build` 通過（`/teacher` route 產出）；元件皆 < 150 行
-- **待使用者 UI 驗收**（可用 DEV 身分切換為教師測試）
-
----
-
-## [2026-07-07] — feat(teacher)：5-1b-3 加入班級 + 學生 profile API
-
-### Added
-- **學生 profile**（`api/routes/profile.py` + `services/student_profile.py`）：
-  - `POST /profile` upsert（school/department/student_id/real_name）；`GET /profile`（未填回 404 PROFILE_NOT_FOUND 供前端引導）；email 一律取自 users，不由前端提交
-- **加入班級**（`POST /classes/join`）：以 6 位邀請碼入班，idempotent（重複加入不重複建 row）；**profile gate**——未填身分資料回 409 PROFILE_REQUIRED；邀請碼無效 / 班級停用回 404
-- **教師名冊**（`GET /classes/{id}/members`）：回全班 profile + email，依加入時間排序；僅班級擁有者可看（他人 404、學生 403）
-- `services/classroom.py` 加 `join_class` / `list_members`；註冊 `profile_router`
-
-### Tests
-- +13 route tests（profile upsert/404/422、join 409/200/idempotent/404×2/422、members 名冊/他人 404/學生 403）；後端全量 **667 passed**
-
----
-
-## [2026-07-07] — feat(teacher)：5-1b-2 班級 CRUD API
-
-### Added
-- **班級 CRUD**（`api/routes/classes.py` + `services/classroom.py`）：
-  - `POST /classes` 建班 → 產 6 位數字邀請碼（`secrets.randbelow` + DB unique 把關 + 碰撞重試 10 次）
-  - `GET /classes` 列出教師自己的班級（outerjoin 算成員數、建立時間新到舊）
-  - `PATCH /classes/{id}` 改名 / 停用（`is_active`）
-- **授權**：全端點 `require_roles(UserRole.TEACHER)`（沿用既有依賴，非新建）；他人班級一律 404（不洩漏存在性）
-- 註冊 `classes_router` 至 main.py
-
-### Tests
-- +7 route tests（6 位數碼 / 學生 403 / 空名 422 / 僅列自己班 / 停用改名 / 他人班 404 / 碼唯一）；後端全量 **654 passed**
-
----
-
 ## [2026-07-07] — feat(teacher)：5-1b-1 學生身分 profile 表 + 需求擴充決策
 
-### Added
+### 決策依據與證據
 - **student_profiles 表**（migration `m9b0c1d2e3f4` + `models/student_profile.py`）：學生首次登入補填 school / department / student_id / real_name；`user_id` 當 PK（1:1 天然去重）；email 沿用 users
 - **需求擴充決策**（AskUserQuestion 三裁決）：① profile 存獨立表（非 users 加欄位）② 首次登入強制引導填寫（僅 role=student，gate 由前端執行）③ 學號不做唯一約束（跨校撞號）；邀請碼定為 6 位數字
 - 5-1b 拆為 5-1b-1（本次）/ 5-1b-2 班級 CRUD / 5-1b-3 加入班級+profile API
 
-### Verified
-- migration up/down 可逆實跑；欄位/PK/FK 正確；model 匯入 OK；db-schema.md §Module 8 同步
-
----
-
-## [2026-07-07] — feat(teacher)：5-1a 班級資料表 migration
-
-### Added（Phase 5 教師端起步）
-- **classes / class_members 表**（migration `l8a9b0c1d2e3` + `models/classroom.py`）：對齊 db-schema.md §Module 8
-  - `classes`：teacher_id(FK users, CASCADE) + invite_code(String12, unique+index) + is_active + created_at
-  - `class_members`：複合主鍵 (class_id, user_id)，兩 FK 皆 ON DELETE CASCADE，天然去重
-  - invite_code 產生與碰撞重試留待 5-1b（API 層），migration 只保證唯一性
-- Model 註冊至 `models/__init__.py`（`Classroom` / `ClassMember`）
-
-### Verified
-- `alembic upgrade head` → 表/約束/FK 正確；`downgrade -1` 表全清可逆；re-upgrade 成功
-- 既有取樣測試 156 passed（測試 metadata 建表流程未受影響）
-
----
-
 ## [2026-07-06] — feat(quiz)：6-3d QUIZ 弱項綜合測驗組 + 程式題強模型 + 題庫淨化
 
-### Added（6-3d 弱項綜合測驗組）
+### 決策依據與證據
 - **多概念綜合出題**：`generate_question` 加 `extra_concepts`——system prompt 要求綜合測驗目標 + 相關概念（需綜合運用才可解），`concept_tags` 記錄全部概念
 - **藍圖 + 節點選擇**（`weakness_set_plan.py`，不呼叫 LLM）：`compute_blueprint` 依題數 + 整體掌握度算配額（掌握度低→偏單節點；回升→提高綜合題比例）；`mastery_snapshot` 以 effective confidence 分弱項/已掌握；`plan_questions` 單節點 MC / 綜合 MC（弱項+前置）/ coding（弱項+已掌握鷹架）
 - **組裝**（`weakness_set.py`）：題庫優先重用 ≤30% + 缺口並行生成（`asyncio.gather` + semaphore 6 併發，各自獨立 session，coding 用強模型）
@@ -1243,53 +792,20 @@ P2 證實不需要脆弱的「致謝歸零」規則：理解訊號本身就會�
 - **前端** QUIZ 頁改弱項測驗：選 10/25 → 一次生成（動畫進度）→ 逐題作答（重用 MC/coding/hint/result）→ 總結；無弱項提示先去 LEARN；DEV 深連結 `?question=` 仍走舊 runner
 - **文獻標注** references.md §5.1：Bjork 交錯/適欲難度、Vygotsky ZPD/鷹架、CAT content balancing、概念圖 GNN+RL 多跳
 
-### Changed / Fixed（題庫品質）
-- **程式題改強模型**（gpt-5.4 生成+審查）：cascade 弱生成幾乎全滅，改強模型後 LEARN 程式題覆蓋 2 → 57 部（v20/v53 仍生不出，資料驅動 tab 隱藏優雅處理）
-- **審查加「考點有意義」面向**：擋考操作細節/瑣碎資訊（左上右下等）的題；複審舊 generated MC 刪 15 題不合格（答案錯 + 考點瑣碎）
-- **LEARN 資料驅動 tab 隱藏**：`has_concept_quiz`/`has_coding_exercise` 依 batch 題存在與否決定；無可測驗概念的單元（DevC++ 安裝片）不顯示觀念題 tab
-- **6-3c 知識點題庫實機生成**：batch 436 MC（覆蓋 61/62 片）+ 57 coding
-
-### Tests
-- +30（multi-concept、blueprint/plan、orchestration、endpoint、tab flags、knowledge points）；後端全量 **647 passed**；前端 tsc/eslint/build 全綠
-
----
-
 ## [2026-07-06] — feat(quiz)：6-3c 知識點驅動題庫 + LEARN 整組作答 + 審查加「考點有意義」
 
-### Added（6-3c）
+### 決策依據與證據
 - **知識點萃取**（`services/quiz/knowledge_points.py`）：LLM（分析組 gpt-5.4-mini）讀該影片全部字幕 → 萃取 3-8 個重要知識點，明確排除操作細節（安裝步驟 / 介面位置 / 左上右下等畫面資訊）
 - **題量依知識量**：批次改為每知識點 1 題觀念選擇題（`content.knowledge_point` 記錄對應點供覆蓋追溯）+ 每單元固定 1 題 coding（課程介紹單元 0 題）
 - **題目來源分流**：新增 `QuestionSource.BATCH`（migration `k7f8a9b0c1d2`）——LEARN 單元題組只列 batch 預生成題；QUIZ 弱項現生題（`generated`）不列入
 - **LEARN 整組作答 API**：`GET /quiz/unit-set`（`list_unit_question_set`）回傳某概念全部 batch 題 + 該生作答進度（answered/total）
 - **`GET /quiz/generate` 加 knowledge_point / source 參數**；generate prompt 加「考點必須有意義」規則
 
-### Changed
-- **審查（validate）新增第 4 面向 `point_meaningful`**（使用者回饋）：題目若考操作細節 / 瑣碎資訊（左上角右下角等）→ 不通過；四面向全 AND 才 validated
-- **LEARN 前端**：觀念題改整組逐題作答（`concept-quiz-tab.tsx`，答完顯示「已完成」+ 可重新作答）；程式題改讀預生成 batch 題（`exercises-tab.tsx`）；**LEARN 完全不呼叫 LLM**（AI 現生只在 QUIZ 弱項模式）；刪除 `exercises-mc-panel.tsx`、精簡 views
-
-### Scripts
-- `scripts/generate_unit_questions.py` 改知識點驅動摘要；新增 `scripts/rereview_questions.py`（以新標準複審既有題庫，刪除不合格題）
-
-### Tests
-- +19（knowledge_points 5、batch generator 重寫、unit-set bank 3 + route 4）；後端全量 **627 passed**；前端 tsc/eslint/build 全綠
-
----
-
 ## [2026-07-06] — feat(learn)：U2g tab 重構 + 範例程式移除 + 62 部內容全量上線
 
-### Changed（U2g）
+### 決策依據與證據
 - **LEARN 單元 tab 改為「概念說明 / 程式實作題 / 觀念題」**：練習題兩面板升為獨立 tab（`ExercisesTab` 加 `category` prop 由 tab 指定題型）；課程介紹單元（v01-03）隱藏程式實作題 tab；移除練習題/Quiz 入口的「優先從題庫取題」開發者導向提示字樣
 - **內容上線流程改使用者回饋制**（使用者決策）：6-4a 正式抽查移除；新增 `scripts/promote_unit_content.py` 全量 approve + promote **62 concepts → learning_units**（promote 時剝除 summary/code_examples 殘留 key）；品質問題待實際操作回饋（6-4b 局部重跑）
-
-### Removed（範例程式全面下架）
-- **前端**：`examples-tab.tsx`、`lib/pending-workspace-code.ts`（6-2d Workspace 轉場機制）、workspace page `initialCode` 消費、`learning.ts` CodeExample(s) 型別
-- **管線**：`content_generator.py` CodeExample(s) model / `_EXAMPLES_TASK` prompt / `generate_code_examples()` / U2c intro 分支全移除（1 section = 1 LLM call）；`batch_generator` notes/聚合同步簡化
-
-### Tests
-- content/batch generator 測試改 1 section（-4 例）；後端全量 **611 passed**；前端 tsc + eslint + `next build` 全綠
-- 遺留 tech-debt：lazy-seed 新使用者仍空骨架（generator 不讀 staging），既有帳號不受影響
-
----
 
 ## [2026-07-06] — docs(planning)：U2g/6-3c 定案——LEARN tab 重構、範例程式移除、知識點驅動題量
 
@@ -1297,19 +813,13 @@ P2 證實不需要脆弱的「致謝歸零」規則：理解訊號本身就會�
 - **U2g（遞補原第 6 批）**：LEARN tab 改「概念說明 / 程式實作題 / 觀念題」；觀念題＝選擇題（**簡答題型不做**）；v01-03 課程介紹隱藏程式實作題 tab；範例程式全面移除（前端 + 管線 skip examples call，staging 資料留存不 promote）
 - **6-3c（接 U2g）**：題量改依影片知識量——批次前置 LLM 知識點萃取（3-8 點/影片）→ 每知識點 1 題觀念題（JSON 記錄知識點供覆蓋追溯）；程式題固定 1 題（intro 0 題）；既有 138 題保留只補缺；估 $3-6
 
-### Removed
-- **U2f 範例程式製作作廢**（範例程式整個介面移除，製作無意義）
-- **6-2d deferred-ui 驗收作廢**（範例卡片 → Workspace 轉場隨介面消失）；deferred-ui 僅剩 6-2c citation 跳轉
-
----
-
 ## [2026-07-06] — fix(learn)：練習題題型分類 + 反思僅限程式題 + 反思視窗置頂題目
 
-### Fixed
+### 決策依據與證據
 - **反思誤套非程式題**：題庫混題型後（6-3a-3），LEARN 練習 tab 抽到選擇題仍被強制進反思流程（反思設計僅適用「先想解題思路再寫程式」的情境）；現改題型分類入口
 - **反思視窗看不到題目**：學生填反思需關窗回看題目；`ReflectionFlow` 加 `questionStem` prop，題幹固定顯示於視窗頂部（獨立捲動區，不隨表單捲動）
 
-### Changed
+### 決策依據與證據
 - **練習題入口改題型卡**（`exercises-tab-views.tsx`）：「程式實作題」（讀題 → 反思 gating → Workspace）/「觀念選擇題」（直接作答 + 立即對錯回饋，重用 Quiz 頁 `MCQuestion` + `submitAnswer`，答題驅動 BKT）；from-bank / generate 均帶 `question_type` 過濾
 - 檔案拆分守規：`exercises-tab.tsx` 233 → 148 行；新增 `exercises-coding-panel.tsx`（原 QuestionPanel + 反思摘要搬出）與 `exercises-mc-panel.tsx`（MC 作答 + 結果）
 - 驗證：`tsc --noEmit` + eslint + `next build` 全綠
@@ -1318,7 +828,7 @@ P2 證實不需要脆弱的「致謝歸零」規則：理解訊號本身就會�
 
 ## [2026-07-06] — feat(content)：第 5 批實機批次——6-2b content 62 部 + 6-3a-3 題庫 138 題
 
-### Fixed（實機才暴露的兩個 bug）
+### 決策依據與證據
 - **gpt-5 世代參數不相容**：全系列拒收 `max_tokens`（須 `max_completion_tokens`）；`gpt-5-mini` reasoning 系拒收自訂 temperature 且預設把預算燒在內部推理回空內容（實測 `reasoning_effort="minimal"` → 0 reasoning tokens 正常輸出）。新增 `core/llm_params.py` 相容層純函式 `chat_model_kwargs()`，13 個呼叫點統一切換；gpt-5.4 系 / gpt-4o 行為不變；+5 tests
 - **quiz batch `MissingGreenlet`**：validate 失敗的 rollback 會 expire session 內全部 concept（不只當前），下一輪迴圈屬性存取觸發同步 lazy-load 崩潰；`generate_all` 每輪 `db.refresh(concept)`；+1 回歸測試（未修復狀態精準重現）；後端全量 **614 passed**
 
@@ -1331,64 +841,29 @@ P2 證實不需要脆弱的「致謝歸零」規則：理解訊號本身就會�
 
 ## [2026-07-06] — feat(llm)：6-M1 分組模型環境變數（任務導向路由落地）
 
-### Added
+### 決策依據與證據
 - **`core/config.py` 三組模型變數**：`LLM_MODEL_GENERATE` / `LLM_MODEL_VALIDATE` / `LLM_MODEL_CONTENT`，各配 lowercase fallback property（未設定 → `LLM_MODEL`，單一模型時代行為不變）；不抽共用 client（tech-debt 既有決策）
 - **呼叫點切換**（依 6-M 選型表分流）：生成組 `llm_model_generate` = quiz/generate、quiz/hint、comprehension 出題（epl / predict_output / variation generate）；審查組 `llm_model_validate` = quiz/validate；內容組 `llm_model_content` = learning/content_generator（batch_generator `model_used` 記錄同步）；對話 + 分析組維持 `LLM_MODEL` 預設（edf/feedback、edf/evidence、reflection/evaluate、quiz/feedback、comprehension 評分）
 - **variation `_call_llm_json` 加 `model` 參數**：出題與評分共用 helper，由 caller 分流
 - **.env 套用選型**：`LLM_MODEL=gpt-5.4-mini`、`GENERATE=gpt-5-mini`、`VALIDATE=gpt-5.4`、`CONTENT=gpt-5.4`；`.env.example` 同步
 
-### Tests
-- 新增 `test_llm_model_routing.py` ×3（fallback / 全覆寫 / 部分覆寫）；後端全量 **608 passed**
-
----
-
-## [2026-07-06] — feat(quiz)：第 4 批 U2d 題庫優先 + U2a 美化 + 重複曝光消除
-
-### Added（U2d）
-- **`GET /quiz/from-bank` 弱項模式**：省略 `concept_tag` → 後端以 `pick_target_concept`（原 orchestrator 私有函式轉公開）挑最弱概念再抽題庫；新增 `question_type` 過濾（尊重使用者選的題型）
-- **重複曝光防護（tech-debt 消除）**：bank service 加 `exclude_answered_by`——server-side 排除該生已答過的題，Learn ExercisesTab 與 Quiz 頁同時生效、前端零改動；全部答過 → 404 → fallback 現生新題（validated 後入庫，題庫自然成長）
-- **QuizRunner 題庫優先**：先 from-bank（< 1s）→ 404 QUESTION_BANK_EMPTY 才 LLM 現生；Loading 兩階段文案（「正在從題庫挑題」/「AI 正在生成新題」）
-
-### Changed（U2a）
-- Quiz 入口重設計：題型選擇改資訊卡（lucide icon + 一句話說明 + aria-pressed；active 用 border-emphasis 不用色塊，R8.5 合規）+ 視覺階層重整 + 「優先從題庫取題」提示
-- 修 R8.2 符號字違規 ×2：exercises-tab「✓ 反思已記錄」、unit-action-bar「已完成 ✓」→ lucide CheckCircle2
-
-### Tests
-- bank service +2（type 過濾 / exclude_answered_by 雙使用者）；route +3（弱項模式 / type 過濾 404 / 已答過排除端到端）；`test_from_bank_concept_tag_required` 改寫（省略 tag 已是合法模式）；後端全量 **605 passed**
-
----
-
 ## [2026-07-06] — feat(mastery)：第 3 批 K6a/b/c 熟練度演算法 v2 + knowledge-graph 拆檔
 
-### Added
+### 決策依據與證據
 - **K6a 訊號分級**：`BKT_CHAT_PARAMS(learn=0.05, slip=0.3, guess=0.4)`——chat「程式碼無錯」是弱證據（學生常帶寫到一半的碼求助），以 BKT 參數本身表達通道雜訊；`update_mastery` 加 `params` 參數，chat 傳弱證據、quiz/comprehension 沿用強證據預設；測試驗證雙向更新幅度皆顯著小於 quiz
 - **K6b 遺忘衰減**：新模組 `services/mastery/decay.py`——`effective = floor + (stored−floor)×exp(−ln2×days/half_life)`；floor=0.25、基準半衰期 14 天、每次成功練習 +50%（FSRS 穩定度）、上限 180 天；惰性計算不改 DB、BKT 更新仍以 stored 為 prior（衰減=提取強度下降，非習得倒退）。套用點：mastery summary（K4 鷹架自動連動）、quiz Select（衰減回弱項重新被選中=遺忘驅動複習）、K3 診斷（久未練習的前置概念可成嫌疑）
 - **K6c 事件級透明化**：`/concepts/mastery` 加 `raw_confidence`/`days_since_practiced`/`due_for_review`；detail panel 顯示「已 N 天未練習，掌握度自 X% 回落至 Y%——建議複習」（due 用 accent-orange）與輕量提示（差 ≥5% 才顯示避免雜訊）；圖譜 band 色以 effective confidence 驅動、衰減自然變暗；不做逐筆帳本
 - 測試 +18（decay 純函式 17 + mastery route 衰減整合 1）；後端全量 **601 passed**
 
-### Changed
-- `knowledge-graph.tsx` 265 行 → 212 行：章節游標 + 鏡頭動作拆出 `use-graph-nav.ts`（119 行），tech-debt 消除
-
----
-
 ## [2026-07-06] — feat(learn)：第 2 批 U2b 移除摘要 + U2c 拔課程介紹範例
 
-### Removed（U2b）
-- **前端**：LEARN 摘要 tab（`unit-content.tsx` 4 tab → 3 tab）、`summary-tab.tsx` 刪除、`learning.ts` SummaryContent 型別與 content.summary 欄位移除
-- **生成管線**：`content_generator.py` Summary model / `_SUMMARY_TASK` prompt / `generate_summary()` 全移除（3 section → 2 section，批次生成省 1/3 LLM calls）；`batch_generator.py` 聚合邏輯同步；lazy-seed 空骨架去 summary 欄位（既有 DB 內殘留 summary key 無害，前端直接忽略）
-
-### Added（U2c）
+### 決策依據與證據
 - **`concept_category` 直通**：`UnitWithConcept` + `UnitOut` + 前端 `Unit` 型別加欄位；課程介紹單元（video 1-3）前端隱藏「範例程式」tab（含 activeTab 防呆退回概念說明）
 - **批次生成跳過**：`generate_unit_content` 對 category=課程介紹 concept 不呼叫 examples LLM call，回空 examples 且不標 needs_more_source（避免 6-4 抽查誤判待補）
 
-### Tests
-- test_content_generator 改 2 section + 新增 intro 跳過測試；test_batch_generator fixtures 去 summary；test_learning_route 加 concept_category 斷言；後端全量 **583 passed**；前端 tsc + eslint 乾淨
-
----
-
 ## [2026-07-06] — fix(workspace)：第 1 批 U1a/b/c — 首登誤顯、反思側欄比例、反思 handoff gating
 
-### Fixed
+### 決策依據與證據
 - **U1a**：根路由 `/`（`app/(app)/page.tsx`）原為 Phase 1「程式碼編輯器將在後續任務中實作」placeholder——首次登入 OAuth callback 偶爾落在 `/`（NextAuth callbackUrl 遺失時預設值）即誤顯此畫面；改為 server-side `redirect("/workspace")`
 - **U1b**：反思側欄被壓成細縫的根因＝react-resizable-panels **v4 裸數字解讀為 px 而非 %**（`maxSize={40}` = 最大 40 像素）；workspace 頁全部 Panel size props 改百分比字串（`"28%"`/`"40%"` 等，含 editor/output 垂直組）
 - **U1c**：反思顯示 gating——`setActiveReflectionId`（僅「前往 Workspace」按鈕呼叫）同步寫 `active_reflection_handoff` 標記；Workspace 進入改用 `getHandedOffReflectionId()`：標記不符（直接 navigate 的殘留）→ 自動清除不顯示；同 tab 重新整理仍保留（非一次性消費，保住「當下解題脈絡」語意）；舊 session 殘留無標記 → 下次進 Workspace 自動清
@@ -1398,34 +873,19 @@ P2 證實不需要脆弱的「致謝歸零」規則：理解訊號本身就會�
 
 ## [2026-07-06] — docs(planning)：實作順序 + LLM 模型選型 v2 定案（任務導向路由）
 
-### Added
+### 決策依據與證據
 - **roadmap 6-M LLM 模型選型 v2**（與使用者三輪討論定案，取代原論文指定的單一 GPT-4o）：任務導向路由——對話組（EDF Feedback）/ 分析組（Evidence、Reflection、Comprehension 評分）= `gpt-5.4-mini`；生成組（Quiz generate / Hint / Comprehension 出題）= `gpt-5-mini`；審查組（Quiz validate）= `gpt-5.4`（cascade：弱生成 + 強把關）；Unit content 6-2b 批次 = `gpt-5.4`（教科書品質優先）；Embedding 維持 text-embedding-3-small。6-M1 實作 = 分組環境變數（GENERATE/VALIDATE/CONTENT，fallback LLM_MODEL），不抽共用 client
 - **費用估算**（依 2026-07 官方定價網查）：一次性批次 ≈ $6.6（content $4 + 生成 $1 + 審查 $1.6），儲值 $10；上線後即時互動 ≈ $35-40/月（100 學生，比 GPT-4o 省逾半）；不採 OpenAI Batch API（省 <$1.5 不值非同步改寫）
 - **references.md §5.1 補論文文獻**：FrugalGPT（arXiv:2305.05176）+ RouteLLM（arXiv:2406.18665）——cascade / 模型路由設計依據
 - **實作執行順序 10 批定案**（roadmap 已確認決策節）：U1 bugs → U2b/c 移除類 → k-graph 拆分 + K6 → quiz 模組（U2d/U2a/重複曝光） → 6-M1 + 實機批次 → U2f → 教師端（5-1→5-2→DEV-E→5-5） → U2e + 監控 → Phase 7 部署 → 5-3/5-4（待真實資料，Phase 5 資料策略註記同步修訂）
 
-### Changed
-- 真人驗收（K1d / K5d / K4d 語氣）改為使用者每次 session 後自測，不排入開發批次；K4d 的 RAG_MIN_SCORE 調參與對話組模型升級判斷併入第 5 批
-- U2f 範例程式製作移至第 6 批（教師端之前）
-- tech-debt：`OPENAI_API_KEY` 未填條目已消除（2026-07-06 驗證已填，僅驗證存在性）
-
-### Decisions
-- Claude 訂閱額度不能當 API key（訂閱與 API 分開計費），且後端鎖定 OpenAI——批次仍走 OpenAI，儲值 $10
-- 論文處理：模型選型準則寫入方法論（FrugalGPT/RouteLLM 支撐）、實驗記錄確切模型版本，取代鎖死 GPT-4o
-
----
-
 ## [2026-07-06] — docs(planning)：session 規劃定案 — K6 熟練度演算法 v2 + Phase 6-U 學生端修正清單 + 文檔重整
 
-### Added
+### 決策依據與證據
 - **roadmap K6 熟練度演算法 v2**（2026-07-06 與使用者 AskUserQuestion 裁決）：K6a 訊號分級 BKT 參數（quiz 強證據沿用現參數 / chat 弱證據 guess↑ learn↓，以 slip/guess 表達觀察通道雜訊、不外掛權重係數）+ K6b 遺忘曲線惰性衰減（`floor + (conf−floor)·exp(−λ·days)`，半衰期隨練習次數成長＝FSRS 穩定度概念，floor 防歸零，讀取端套用不需排程）+ K6c 事件級透明化（OLM；語意化事件不給逐筆帳本，衰減 framing 為複習提示接 K-Graph 節點變暗）
 - **roadmap Phase 6-U 學生端修正**：U1a 首登誤顯 Workspace 待製作畫面 / U1b 反思 UI 比例 / U1c 反思顯示 gating（sessionStorage 殘留）/ U2a QUIZ 美化 / U2b 移除 LEARN 摘要 tab / U2c 拔除 1-3 章範例程式 / U2d QUIZ tab 改題庫優先 / U2e Workspace 程式碼存檔 / U2f 範例程式製作（低優先）；教師端＝既有 Phase 5 不另立項
 - **references.md §5.1 論文關鍵文獻標注**（使用者論文引用需求）：BKT（Corbett & Anderson 1995）/ BKT+Forgetting（Khajah et al. 2016）/ Ebbinghaus 指數衰減 / FSRS 記憶穩定度 / Duolingo HLR（Settles & Meeker 2016）/ contextual guess-slip（Baker et al. 2008）/ OLM（Bull & Kay + 2020 系統性回顧）/ 生成式學習（Fiorella & Mayer 2015）
 - tech-debt 新增：unit content 生成管線 `summary` 欄位閒置（U2b 移除 tab 後，6-4 批次重跑前評估從 prompt 移除以省 token）
-
-### Changed
-- roadmap 6-4a-deferred-ui 的 6-2e 摘要驗收作廢（U2b 決策）；tech-debt 同步
-- tech-debt 重整：修正「練習題重複曝光」條目內錯置的 6-2d 驗收段落（歸回 deferred-ui 條目）；5 個 ✅ 已完成項目歸檔至「已消除」節
 
 ### Decisions（第一區現狀確認 + 第二區裁決）
 - **題庫成本**：不採 NotebookLM（無公開 API、輸出對不齊題目 schema/citation）；批次 grounded 生成 + 題庫優先已是解方，QUIZ tab 補上題庫優先（U2d）即完整
@@ -1436,114 +896,9 @@ P2 證實不需要脆弱的「致謝歸零」規則：理解訊號本身就會�
 
 ---
 
-## [2026-07-05] — feat(DEV-7~9)：EDF Debug 面板 + K3 診斷模擬器 + 題庫檢視器（開發者模式收尾）
-
-### Added
-- **DEV-7 EDF Debug 面板**：`interact()` / `generate_feedback()` 新增 `debug_sink` 參數（dev 帳號由 route 以 `is_dev_email` 判定才建 sink，一般帳號 None 零開銷、回傳形狀不變）——收集 evidence / strategy（hint level + 策略指令）/ RAG 命中（cosine 分數 + 200 字預覽）/ kgraph 鷹架 block；`InteractResponse.debug` 附回，前端 AI 訊息下方 `EdfDebugPanel` 摺疊面板（JetBrains Mono 灰階；僅當輪互動有，不持久化、載歷史不顯示）
-- **DEV-8 K3 診斷模擬器**：`POST /dev/simulate-failures {tag, count}` 注入連續答錯紀錄（找既有含該 tag 題目、無則建 `[dev]` stub 題並重用；answered_at 毫秒遞增保排序）→ 立即回診斷摘要（streak / triggered / 嫌疑 tags）；Settings 卡顯示結果 + 知識圖譜 `?remedial=` 補救高亮連結
-- **DEV-9 題庫檢視器**：`GET /dev/questions?tag=` python 端過濾 concept_tags（與 diagnosis 同款、dev 題量小可接受）回傳題型/Bloom/難度/validated/題幹摘要；Settings 卡列題 + 「作答」→ **`/quiz?question=<id>` 深連結**（QuizRunner 讀 searchParams 直接載入指定題，Quiz 頁補 Suspense 邊界）
-- 共用 `DevConceptSelect`（章節+概念下拉）與 `fetchConceptGraph()` module 快取（熟練度/診斷/題庫三卡共用，session 只打一次 graph）
-- Tests +8（debug sink 2 / 診斷模擬 3 / 題庫 1 / 403 防線 2）；後端全量 583 passed
-- 另修 K5 Cytoscape console 警告：移除自訂 `wheelSensitivity`、`font-family` 去引號（Cytoscape 樣式解析器不接受）
-
----
-
-## [2026-07-05] — feat(DEV-2~6)：開發者工具 Settings 區塊（分類重置 / 幽靈解鎖 / 熟練度編輯 / 身分切換）
-
-### Added
-- **後端**（`services/dev_tools.py` + `/dev` 路由擴充，全掛 `require_dev_user`，操作寫 log 留痕）：
-  - `POST /dev/reset`：分類刪除使用者資料——mastery（student_mastery）/ progress（learning_paths+units+unit 反思；刪後 Learn 頁 lazy re-seed 全新路徑）/ quiz（student_answers+quiz 反思）/ chat（sessions+messages）；子表顯式先刪不依賴 FK cascade（SQLite/Postgres 行為一致）
-  - `PUT /dev/mastery`：tags 或整章 category 擇一（model_validator 強制）+ confidence 0-1 upsert；新記錄 exposure_count=1 讓前端 band 顯示為已互動
-  - `PUT /dev/role`：student ⇄ teacher 真改 `users.role`（admin 不開放）
-- **前端**（Settings 頁「開發者工具」區塊，非 dev 帳號完全不渲染；防線仍在後端）：
-  - `lib/dev-mode.ts`（API wrappers + is_dev module 快取 + 幽靈解鎖 localStorage/CustomEvent）+ `hooks/use-dev-mode.ts`（useDevMode / useGhostUnlock）
-  - 四張卡：身分切換（顯示 /auth/me 當前角色）/ 幽靈解鎖 toggle / 熟練度編輯（章節+概念下拉 from `/concepts/graph` + 滑桿）/ 分類重置（二段確認：點一下待確認 3 秒內再點執行，回報刪除筆數）
-  - **DEV-4 幽靈解鎖**：Learn 頁 locked unit 變可點瀏覽（列表 + 上一/下一單元導航）；unit 內容後端本就回傳給本人、action bar 對 locked 只顯示「尚未解鎖」，故不改後端、不影響 BKT
-- Tests +14（`test_dev_tools.py`：403 防線 3 / reset 3 / mastery 6 / role 2）；後端全量 575 passed
-
-### Fixed
-- `core/errors.py` `validation_error_handler` 潛在 bug：pydantic v2 `model_validator` 的 ValueError 會出現在 `errors()` 的 ctx，直接進 JSONResponse 會 TypeError → 加 `jsonable_encoder`（對齊 FastAPI 預設 handler 行為）
-
----
-
-## [2026-07-05] — feat(DEV-1)：開發者模式後端 gating 基礎 + rate limit 豁免
-
-### Added
-- **開發者模式規劃定案**（與使用者 AskUserQuestion 四項裁決）：首版含使用者 4 項（分類重置 / 幽靈解鎖 / 熟練度編輯 / 身分切換真改 role）+ 追加 A EDF Debug 面板、B rate limit 豁免、C K3 診斷模擬器、D 題庫檢視器；UI 入口 = Settings 頁區塊；完整拆解見 roadmap DEV-1 ~ DEV-9（E 假學生 seeder 延後 Phase 5）
-- **DEV-1 後端 gating 基礎**：
-  - `core/config.py` 新增 `DEV_MODE_ENABLED`（總開關，生產預設關）+ `DEV_MODE_EMAILS`（逗號分隔白名單，環境變數不進 git）；`core/dev_mode.py` `is_dev_email()`（小寫/空白正規化，開關關閉一律 False）
-  - `api/deps.py` 新增 `require_dev_user` dependency（後續所有 dev 變更端點的統一防線，非 dev 403）
-  - `GET /dev/status`：已登入使用者查自己 `is_dev`，供前端決定是否渲染開發者區塊
-  - **Rate limit 豁免（追加功能 B）**：dev 帳號跳過 per-user 限流（不寫入 Redis 計數），一般帳號行為不變
-  - 本機 `backend/.env` 已加 `DEV_MODE_ENABLED=true` + 白名單（gitignored）；`.env.example` 補範本
-- Tests +11（`test_dev_mode.py`：白名單判定 5 / status 端點 4 / 限流豁免 2）；後端全量 561 passed
-
----
-
-## [2026-07-05] — fix(K5-視覺淨化)：移除星雲背景圖層 + 修 detail panel setState-in-effect（使用者七驗回饋）
-
-### Removed
-- **星雲背景圖層**（使用者裁決：嚴重影響視覺體驗，語意縮放效果本身已獲肯定）：章節 compound parent 改為無填色、僅章名標籤；刪除孤兒檔 `galaxy-backgrounds.ts`；`/knowledge` 只剩黑色畫布 + 灰階星空點與軌道虛線
-- `.claude/rules/frontend.md` R8 白名單撤銷「Knowledge Graph 星系背景」裝飾例外（剩餘星空點/導覽鈕皆灰階，屬既有白名單）
-
-### Fixed
-- `concept-detail-panel.tsx` react-hooks lint error（effect 內同步 `setState(null)` 重設會 cascading render）：改為 tag 綁定單一 state + render 期 derived-state 重設（與 knowledge-graph.tsx chapterIdx 同模式），loading 狀態由 `state.tag !== tag` 推導
-- 驗證：`tsc` + `eslint components/knowledge`（0 error）+ `next build` 通過
-
----
-
-## [2026-07-05] — refactor(K5-語意縮放)：全覽改「全節點放大重排」，移除章節星系節點層（使用者六驗回饋）
-
-### Changed
-- **五驗雙層視圖會錯意修正**：使用者要的不是 zoom out 換成章節級星系節點，而是**同一批概念節點與名稱全部保留**，依 zoom 比例調整節點大小、字體與排列。現改為語意縮放（semantic zoom）：
-  - **zoom < 0.45**：全部 59 個概念節點放大（節點 ×1.7、字體 11→30px 世界座標、文字轉主色）並重排為緊湊網格——9 章排 3×3、章內近方形 cell 網格（新 `overview-layout.ts`，cell 260×180 配合字體推算）；全覽 fit（zoom ≈ 0.3）下名稱約 9-10px 螢幕可讀且互不重疊
-  - **zoom ≥ 0.45**：回到蛇形星系佈局與原尺寸；切換時節點位置 320ms 動畫過渡 + 尺寸/字體 style transition，`graph-mode.ts` 改傳雙佈局座標
-- 移除 overview 星系節點層與章間聚合邊（`overviewElements` / `GALAXY_ID_PREFIX` / `.mode-hidden` crossfade 機制）；跨章依賴邊改在全覽時 opacity 0.3 呈現（detail 仍 0.18 淡出）
-- 軌道弧線 underlay 依模式 crossfade 兩條路徑（detail 蛇形 / overview 網格蛇形順序），SVG 抽出為 `orbit-underlay.tsx`；星空範圍覆蓋兩佈局聯集
-- 鏡頭改瞄準「目標佈局包圍盒」而非元素現況（`graph-camera.ts` 新增 `boundsOf` + `animateToBounds`）：從全覽點章 zoom in 時節點正在移回 detail 位置，fit 對元素現況會對錯座標
-- 驗證：`tsc` + `next build` 通過；視覺效果與間距參數待使用者實機驗收調整
-
-### 技術債
-- `knowledge-graph.tsx` 265 行（>250 硬性門檻）：已提出拆分計畫（抽章節導覽/鏡頭 hook），待使用者核可
-
----
-
-## [2026-07-05] — feat(K5-雙層視圖)：星雲回歸 + 章節級全覽排版 + 點擊聚焦（使用者五驗回饋）
-
-### Changed
-- **太陽系行星 → 星雲星系回歸**（使用者裁決：行星干擾視覺、不簡潔）：恢復 `galaxy-backgrounds.ts` 星雲生成器（本次帶 `width`/`height` 修正，先前隱形問題不再發生）；刪除 `planet-svg.ts` / `planet-theme.ts`
-- **雙層視圖（semantic zoom）**：解決「zoom out 後節點與字體小到看不見」——
-  - **Overview 層**（zoom < 0.45）：每章一顆大型星系節點（星雲背景 + 52px 章名 + 概念數，全覽縮放下約 15px 可讀）+ 章間聚合依賴箭頭；概念層整層淡出
-  - **Detail 層**（zoom ≥ 0.45）：原概念級視圖（mastery 填色 + 路徑 ring + 星雲章節容器）
-  - **平滑過場**：模式由 viewport zoom 門檻驅動（`graph-mode.ts`），雙層各帶 220ms opacity transition——鏡頭縮放動畫穿越門檻時自然 crossfade，無跳切
-- **點擊即聚焦**：點星系（overview）/ 章節容器 / 概念節點，鏡頭一律動畫 zoom in 至該章（概念節點同時開詳情面板）；統一走 `node[category]` tap handler
-- 全覽按鈕改 fit overview 星系層（500ms ease-in-out）
-- 驗證：`tsc` + `next build` 通過；headless Edge 雙模式截圖抽查（overview 章名可讀性 / detail 星雲融入度）
-
----
-
-## [2026-07-05] — refactor(K5-太陽系主題)：改程序生成 SVG 星球 + 全覽按鈕（使用者四驗回饋）
-
-### Changed
-- **NASA 影像 → 程序生成 SVG 星球**（使用者裁決：真實照片無法融入背景且搶走視覺焦點）：新 `planet-svg.ts` 生成低飽和 token 色相的漸層球體 + 特徵組合（太陽光暈/土星環/木星條紋/水星隕石坑/地球陸塊），data URI 帶明確 width/height（規避 canvas rasterize 坑）；`background-image-opacity` 0.55 維持低調；headless 驗證星球融入 #0D1117 且節點仍為主角
-- **章節標籤去天體名**：parent 標籤與導覽 pill 只顯示原分類名（如「運算子（4/10）」）——星球是介面主題非主角
-- 刪除 `web/public/planets/*.jpg` + `CREDITS.md`（NASA 方案棄用）與 `galaxy-backgrounds.ts`（星雲備援被星球 SVG 取代）；mulberry32 抽至 `prng.ts`；`fitWithCap` 抽至 `graph-camera.ts`（knowledge-graph.tsx 239→217 行）
-
-### Added
-- **全覽按鈕**（GalaxyNav 底部 pill 旁 Maximize 鈕）：動畫 zoom out 至涵蓋所有節點，供使用者隨時查看整張圖
-- 驗證：`tsc` + `next build` 通過；headless Edge 渲染抽查（SVG 星球 × cytoscape parent）
-
----
-
 ## [2026-07-05] — feat(K5-太陽系主題)：NASA 行星影像 + 蛇形軌道佈局（與使用者共同定案）
 
-### Added
-- **太陽系主題定案**（AskUserQuestion 四項裁決）：十章依課程順序對應「離太陽距離」（課程介紹=太陽 → 物件導向=冥王星）；NASA 真實影像優先（效果不佳再退程序生成 SVG）；蛇形軌道佈局；行星大小依章節概念數
-- **NASA 影像資產** `web/public/planets/*.jpg`（10 張，public domain，來源與後製記錄於 `CREDITS.md`）：太陽 SDO / 水星 MESSENGER / 金星 Mariner 10（裁單盤）/ 地球 Blue Marble 2012 / 火星 Viking / 木星 Cassini / 土星 Cassini / 天王星、海王星 Voyager 2 / 冥王星 New Horizons；`planet-theme.ts` 對應表
-- **軌道弧線 + 星空 underlay**（`orbit-scene.ts`）：Catmull-Rom 平滑軌道虛線貫穿十章錨點 + 140 顆 seeded 星點，掛在 cytoscape canvas 底下的 SVG `<g>`，監聽 `viewport` 事件同步 pan/zoom transform
-- 章節容器背景改 NASA 行星影像（ellipse 裁圓盤、`background-image-opacity: 0.55`、影像大小隨 cluster 自動縮放 = 行星大小 ∝ 概念數）；章名標籤改「章節 · 天體」
-
-### Fixed（使用者三驗回饋）
+### 決策依據與證據
 - **星系背景隱形根因**：程序生成 SVG 缺 `width`/`height` 屬性，canvas rasterize 退回 300×150 預設尺寸 → cover 錯位成角落污漬（headless Edge 對照實驗證實）；NASA 影像為 JPG 無此問題，`galaxy-backgrounds.ts` 保留為備援並註記此坑
 - **zoom 過大**：`fitWithCap` 取代裸 fit——fit zoom 與 `ZOOM_CAP=1.0` 取小，小章節不再貼臉
 - **節點過密**：phyllotaxis 步距 52→74；章距 380→700、行距 680（蛇形 2×5）
@@ -1552,77 +907,18 @@ P2 證實不需要脆弱的「致謝歸零」規則：理解訊號本身就會�
 
 ---
 
-## [2026-07-05] — feat(K5-視覺調整二)：進度星系聚焦 + 導覽 + 星雲增亮（使用者二驗回饋）
-
-### Added
-- **進場鏡頭聚焦**：進 `/knowledge` 不再顯示全圖縮小狀態，直接 zoom 至「目前進度單元」所在星系（`?remedial=` 補救跳轉仍優先框住嫌疑鏈）；無路徑資料時退回第一章
-- **星系導覽 `galaxy-nav.tsx`**：左右半透明圓鈕（灰階 `bg-surface-1/70`，R8 白名單）+ 底部章名指示 pill（如「運算子（4/10）」）；點擊以 350ms ease-in-out 動畫切換星系，拖移/縮放原生手勢不受影響
-- **規則協作原則**：全域 CLAUDE.md 新增「規則衝突處理」——需求與規則文檔衝突時先與使用者討論，核准例外回寫規則文檔；星系背景已登記至 frontend.md R8 例外白名單（限 /knowledge）
-
-### Changed
-- **星雲透明度整體調亮**（原本幾乎看不見）：SVG 核心 0.28→0.5、星雲橢圓 0.10-0.20→0.18-0.32、cytoscape `background-image-opacity` 0.5→0.8
-- 驗證：`tsc` + `next build` 通過；lint 僅剩既有 concept-detail-panel 舊錯誤
-
----
-
-## [2026-07-05] — feat(K5-視覺調整)：確定性星系佈局（使用者初驗回饋）
-
-### Changed
-- **佈局改確定性 preset**（取代 fcose 隨機 force-directed）：章節沿左→右 S 曲線排列（`graph-layout.ts`：spacing 380 / 振幅 170），章內節點以 phyllotaxis 黃金角螺旋展開（形似星團、零重疊）；排序依據 = `video_order`（`/concepts/graph` 新增此欄位）——同資料每次渲染座標完全一致
-- **背景統一 + 星系區隔**：章節容器移除填色與邊框（背景與畫布一致 #0D1117），改掛程序生成的低透明度星雲 SVG（`galaxy-backgrounds.ts`：mulberry32 seeded → 每章樣式獨特且固定；色相僅用 token 藍/紫/灰 + `background-image-opacity: 0.5`）；拖曳章節（parent）可整體移動該星系
-- 移除 `knowledge-graph.tsx` 的 fcose import（`cytoscape-fcose` 依賴保留於 package.json，未從其他處使用）
-- ⚠ 設計註記：星系背景屬裝飾性視覺，與 frontend.md R8.4 有張力——依使用者 2026-07-05 明示要求實作，以低飽和灰藍紫階壓低違和
-- 驗證：`tsc` + `next build` 通過；後端 550 tests 全綠；星雲 SVG 以 qlmanage 轉圖抽查確認柔和不搶主體
-
----
-
 ## [2026-07-05] — feat(K5+K3e)：知識圖譜視覺改版 + 診斷前端入口
 
-### Added
+### 決策依據與證據
 - **K5a 套件決策記錄**（`docs/references.md` §1）：維持 Cytoscape.js + fcose——fcose 是唯一同時支援 compound node + constraint 的 force-directed layout；dagre 不支援 compound（無法分章 cluster）；React Flow 定位 workflow editor、遷移需重寫全部 graph 程式碼無決定性優勢；D3 手刻本已禁用
 - **K5b 熟練度視覺**：節點填色改為 mastery band（綠=已掌握 / 橙=學習中 / 紅=需加強 / 灰=尚未互動，取代原 category 填色 + underlay 外圈）；每個 category 產生 compound parent 形成分章 cluster（fcose `nestingFactor: 0.15`）；prerequisite 邊箭頭放大（arrow-scale 0.75→1）+ 不透明度提高（0.55→0.7）；`toElements` 自 style 檔拆至 `knowledge-graph-elements.ts` 控制檔案大小
 - **K5c 路徑高亮**：underlay ring 改承載路徑語意——藍 ring=目前單元（in_progress，無則取 order 最小 available）/ 綠 ring=已完成 / 紅 ring=補救嫌疑；overlay 由 `/learning/paths/default` 衍生（`path-overlay.ts` 純函式，載入失敗不擋圖譜主體）；`/knowledge?remedial=tag1,tag2` query 觸發紅 ring + 鏡頭聚焦（K3e 跳轉入口）；header 圖例改共用 `graph-legend.tsx`
 - **K3e 診斷前端入口**：quiz 結果頁答錯自動查 `GET /concepts/{tag}/diagnosis`（未觸發或失敗自動隱藏，符合 K3d 設計）；觸發時顯示嫌疑鏈（depth / 熟練度 / 盲區標示）+ 每節點「微測驗」按鈕（新端點 `GET /quiz/questions/{id}` 直取 K3c 附掛的題庫診斷題，僅 validated）+「開放補救路徑」（POST remediate → 顯示重開單元順序 + Learn 連結）+「在知識圖譜查看嫌疑鏈」（`?remedial=` 跳轉）
 - 後端新增 `api/routes/quiz_questions.py`（獨立檔避免 quiz.py 破 250 行）+ 4 route tests（550 tests 全綠）
 
-### Changed
-- `quiz-runner.tsx`（291 行超標）拆出靜態子視圖至 `quiz-runner-views.tsx`（184 + 133 行）；ResultView 增 `onStartQuestion` 讓微測驗直接切入作答流程
-- Knowledge 頁改用 `useSearchParams`（補 Suspense boundary 符合 Next.js CSR bailout 規範），並行載入 default path 作 overlay
-- 驗證：`tsc --noEmit` + `next build` 通過；後端 550 tests 全綠；lint 僅剩既有 `concept-detail-panel.tsx` set-state-in-effect 舊警告（本次未觸碰）
-
----
-
-## [2026-07-04] — fix(chat)：Coddy 回覆 Markdown 渲染 + IME Enter 誤送出 + 樂觀顯示
-
-### Fixed
-- **Markdown 未渲染**：Coddy 回覆的粗體 / 列表 / inline code / code block 原本以純文字逐行顯示 → 新增共用 `components/ui/markdown.tsx`（`MarkdownContent`，react-markdown + remark-gfm，樣式對齊 frontend.md Code Block 規格：bg-inset / border / JetBrains Mono），`message-bubble.tsx` assistant 訊息改走 Markdown；使用者訊息維持純文字（輸入非 Markdown）；`concept-tab.tsx` 改 import 共用元件消除重複的 MARKDOWN_COMPONENTS
-- **中文輸入法 Enter 誤送出**：`chat-input.tsx` keydown 加 `e.nativeEvent.isComposing || e.keyCode === 229` 判斷——IME 組字中的 Enter 是確認選字，不再直接送出（Safari 相容以 229 補判）
-- **使用者訊息未即時顯示**：`use-chat.ts` `sendMessage` 改樂觀更新——送出後立即以暫時 id 上畫面（後接「Coddy思考中」indicator），API 成功後原位替換為 server 版訊息；失敗時保留使用者訊息、只補錯誤回覆（原本失敗才補 user 訊息的邏輯移除）
-- 驗證：`tsc --noEmit` + `next build` 通過（前端無測試基礎設施，UI 行為請手動驗收）
-
----
-
-## [2026-07-04] — feat(K4c)：補救路徑 — 診斷結果重新開放前置單元
-
-### Added
-- `services/learning/remedial.py`：`open_remedial_units` — 嫌疑概念在學生 default path 的既有 units 重新開放（completed/locked → available + 清 completed_at；available/in_progress 不動仍列入回傳）；**不新建 row**（62 concept 都已有 unit），不觸碰 (path_id, order_index) 唯一約束；completed → available 為系統級動作（手動 transition 禁止，但診斷已證明概念沒學牢，有教學依據）
-- `POST /concepts/{tag}/diagnosis/remediate`：先跑診斷（404 未知 concept / 409 未觸發），觸發後開放全部嫌疑 units，回傳 order_index 升冪的補救清單（= 建議學習順序，最基礎先學）
-- `tests/test_remedial.py` 5 tests（service reopen/noop + route 409/404/整合）→ **後端 546 tests 全綠**
-
-### Changed
-- `docs/api-spec.md` 補 remediate 端點；roadmap K4c 勾選
-- K4 僅剩 K4d 真人驗收（需 OPENAI_API_KEY，建議與 6-4a 實機批次合併執行）
-
----
-
 ## [2026-07-04] — feat(K4a/b)：Coddy 自適應提示 — K-Graph 鷹架 + RAG 相關性觸發
 
-### Added
-- **K4a** `services/edf/kgraph_context.py`：學生知識狀態 → prompt block（解析 evidence tags 直接命中 + `edf_parent_tag` group 已曝光成員、弱者優先取 6 筆）+ 鷹架分級指令（以**最弱**相關概念 confidence 決定：<0.4 框架填空/逐行拆解、0.4-0.7 引導式提問、>0.7 只點 edge case）；best-effort 無資料回空字串不擋教學流程
-- `chat.py` interact 在 mastery 更新後讀取 kgraph block（鷹架依最新狀態）注入 `generate_feedback`
-- 測試 +9（7 kgraph + 2 RAG 分數過濾）→ **後端 541 tests 全綠**
-
-### Changed
+### 決策依據與證據
 - **K4b（原 6-5a）** RAG 觸發改內容相關性：`TeachingStrategy` 移除 `use_rag` 欄位與 `hint>=2 && bloom>=ANALYZE` 寫死規則；`fetch_rag_chunks_safe` 每次互動都檢索、只注入 cosine >= `RAG_MIN_SCORE`（0.40 初始值，K4d 實測調參）的 chunks，全低於門檻回空（該查就查、不相關不硬塞）
 - **K4a（原 6-5b）** persona 語氣改寫：Coddy 具名、先肯定再引導、提問具體到程式碼、小事直接回答；RULE-5 從「永遠以提問結尾」放寬為「自然的下一步收尾（提問或行動建議），不必刻意反問」
 - `.claude/rules/edf-pipeline.md` 同步：RAG 觸發規範改為相關性分數、prompt 組裝順序加 kgraph 層、persona 描述更新
@@ -1632,112 +928,28 @@ P2 證實不需要脆弱的「致謝歸零」規則：理解訊號本身就會�
 
 ## [2026-07-04] — feat(K3)：根源弱點定位器後端（圖回溯認知診斷）
 
-### Added
+### 決策依據與證據
 - `services/diagnosis/root_cause.py`：**K3a** stateless 觸發判定（該 concept 最近作答連續失敗 streak，遇答對截斷，>= 3 觸發）+ **K3b** closure（max_depth=3）回溯嫌疑排序（已曝光低 confidence 優先 → 未曝光盲區；高 confidence 前置排除；上限 3）+ **K3c** 每個嫌疑附題庫 validated 診斷題 question_id
 - **K3d-API** `GET /concepts/{tag}/diagnosis`（獨立 route 檔避免 concepts.py 破 250 行；純 DB 讀取不掛 rate limit；未觸發回 triggered=false 供前端隱藏入口）
 - `tests/test_diagnosis.py` 9 tests（streak 截斷 / 嫌疑排序 / 高 conf 排除 / 題庫附題 / route 401+404+整合）→ **後端 533 tests 全綠**
 - 新增 K3e（前端入口）追蹤項，建議與 K5 視覺改版一併設計
 
-### Changed
-- `docs/api-spec.md` 補 diagnosis 端點；roadmap K3a-d 勾選
-- ⚠ `services/diagnosis/root_cause.py` 165 行（>150 提醒門檻）：單一職責完整（觸發+排序+附題），暫不拆分，K4c 補救路徑若復用再評估
-
----
-
 ## [2026-07-04] — feat(K2)：動態知識狀態追蹤 — EDF 對話重新驅動 BKT
 
-### Added
+### 決策依據與證據
 - **K2a** migration `j6e7f8a9b0c1`：`concepts.edf_parent_tag` 欄位 + index + mapping seed（EDF 20 粗 tag 中 10 個對映 59 個影片 concept；課程介紹 3 個 NULL；STL/template/concurrency 等課綱未涵蓋 tag 照舊跳過）
 - **K2a** `services/mastery/resolve.py`：三層 fan-out 解析（① tag 直接命中 → ② parent group 只更新該生已曝光組員 → ③ 全未曝光只更新組內 video_order 最小的入門 concept）——讓 Workspace 對話重新驅動 BKT，同時防止粗 tag 對話噪音淹沒 quiz / comprehension 精準信號；消除 tech-debt「EDF Mastery 連動暫時退場」
 - **K2b** `GET /concepts/mastery` 加 `last_practiced_at`（K4 Coddy prompt 的時序信號；缺口分析後改為擴充既有端點、不新建 k-state API）
 - **K2c 決策記錄**：暫不引入真 AST（tree-sitter/libclang）——LLM Evidence 已輸出等效信號；Phase 5 有行為資料後重評（記 tech-debt）
 - 測試 +6（5 fan-out + 1 endpoint 欄位）→ **後端 524 tests 全綠**
 
-### Changed
-- `services/mastery/updater.py`：`update_mastery` 改走 resolve 三層解析 + 跨 tag 去重（同 concept 每次 evidence 只更新一次）；移除被取代的 `_get_concept_id_by_tag`
-- 實機驗證：alembic upgrade 實跑 + mapping 分布查核（syntax-basic 20 / control-flow 11 / function-design 11 / ...共 59 對映）
-- `docs/roadmap.md`：K2/K3 依缺口分析細化（K2b 改擴充既有 API、K3a 改 stateless 查詢設計）並勾選 K2a/b/c；`docs/api-spec.md` Knowledge Graph 段修正為實際路徑 `/concepts/*` + 欄位更新；`docs/tech-debt.md` EDF Mastery 項 ✅ + 新增 AST 決策記錄
-
----
-
 ## [2026-07-04] — feat(K1)：K-Graph 自適應學習引擎啟動 — 跨章多對多依賴 DAG
 
-### Added
-- **Phase 6-K 納入 roadmap**（功能規格書五大功能）：K1 跨章多對多圖 / K2 動態知識狀態 / K3 根源弱點定位 / K4 Coddy 自適應（吸收原 6-5 全部）/ K5 視覺改版（吸收原 6-6a/c/d）；執行順序 K1→K2→K3→K4→K5 依技術相依性排定
-- **K1a** migration `i5d6e7f8a9b0`：curated 依賴 map（每 concept 1-3 個真實直接前置，依 C++ 教學相依性判斷）取代線性 PREREQUISITE 鏈 61 條 → **90 條多對多邊**；不變量：全邊 source.video_order < target.video_order（無環）、除 video 1 外每節點 ≥1 入邊（連通）；downgrade 可還原線性鏈
-- **K1b** `services/graph/traversal.py`：`get_prerequisite_closure(db, tag, max_depth)` — 單查詢載全邊 + 記憶體 BFS 回溯 + 菱形去重，回傳 (concept, depth) 依 (depth, video_order) 排序；供 K3 根源診斷使用；5 個新測試（**後端 518 tests 全綠**）
-- **K1c** 實機驗證：alembic upgrade 實跑 dev DB + SQL 驗證（90 prerequisite 邊 / cpp-47-recursion ← 25 if-else + 37 參數 + 38 回傳值 / 0 孤兒節點 / 0 反向邊）
-
-### Changed
+### 決策依據與證據
 - `docs/roadmap.md`：**移除 6-5 / 6-6 段**（內容完整整併至 K4 / K1+K5，留整併說明）；已確認決策更新（知識圖譜重構決議標記完成、新增 Phase 6-K 決策）
 - `docs/tech-debt.md`：「跨章節 PREREQUISITE 邊未標」✅ 消除（K1a）；「EDF Mastery 連動退場」cross-ref K2a；「Learn 頁 graph 版」併入 K5
 - `docs/modules.md` Module 5 升級為 K-Graph 引擎描述；`docs/db-schema.md` 補邊資料現況注記
 - 可行性檢查結論：schema 原生支援多對多（unique triple）、拓撲排序已處理 DAG、quiz select 的出度中心性加權在 DAG 下才真正生效（線性鏈時全部 out_degree=1 無區分度）——K1 為資料工程而非架構重寫
-
----
-
-## [2026-07-04] — feat(6-R)：健壯性強化（架構審查）+ 移除教授抽查
-
-### Added
-- `backend/core/rate_limit.py`：per-user rate limit dependency（Redis INCR+EXPIRE 固定窗口，Redis 掛掉 fail-open 放行）；掛上 12 個 LLM 端點（chat interact / quiz generate+hint / quiz feedback / reflection create / comprehension epl+predict+variation 全系列）+ `/code/execute`；429 回 `RATE_LIMITED` + `detail.retry_after_seconds`
-- `core/auth.py`：NextAuth token `exp` claim 驗證，過期回 401 `TOKEN_EXPIRED`（原本被竊 cookie 永久有效）
-- `core/errors.py`：`unhandled_error_handler` 補 `logger.exception` traceback（原 500 完全無痕跡）；新增 `validation_error_handler` 把 422 轉統一 `{error, message, detail}` 格式
-- `tests/test_rate_limit.py`（5 tests）+ auth exp / errors logging+422 / judge0 網路例外 / evidence schema / chat fail-safe / user 節流 共 14 個新測試 → **後端 513 tests 全綠**
-- `docs/api-spec.md` 新增「標準錯誤格式」一節（全部 error code 對照表）
-
-### Changed
-- `services/judge0.py`：httpx 網路例外（ConnectError / Timeout）submit 階段轉 503 `JUDGE0_UNAVAILABLE`、polling 階段視同該輪失敗重試（原直接冒泡 500）
-- `services/edf/evidence.py`：LLM 回傳合法 JSON 但不符 schema（ValidationError）→ 502 `LLM_PARSE_ERROR`（原冒泡 500）
-- `services/chat.py`：**fail-safe 持久化** — user message 於 LLM 呼叫前先 commit，OpenAI 失敗不再連學生輸入一起 rollback；`list_sessions` count 改 `func.count()`（原全表載入）
-- `services/user.py`：首登並發 race 防護（IntegrityError → rollback 重查）+ `last_login_at` 1 小時節流（原每個 authenticated request 都寫 DB）；lookup 改用 `google_id or sub`（修 google_id=None 永遠 miss 的邊界）
-- `services/quiz/orchestrator.py`：`list_history` count 改 `func.count()`
-- 容錯 swallow 全面補 `logger.warning`（chat / orchestrator / mastery_hook / quiz generate RAG fallback）
-- `web/lib/api.ts`：401 統一重導 `/login`（原為 TODO；已在 /login 不重導避免迴圈）
-- `web/app/api/[...path]/route.ts`：proxy 加 30 秒 `AbortSignal.timeout`，逾時回 504 `BACKEND_TIMEOUT`（原 backend 卡死時前端 request 無限懸掛）
-- `.claude/rules/backend.md` 錯誤處理表補「Token 過期 / 網路層例外 / LLM schema」三列 + 容錯 swallow 必須留痕規則
-- `docs/roadmap.md`：新增 6-R 段（8 項全勾）；**6-4 移除教授抽查改為自行品管**（實機批次跑 + deferred-ui 驗收保留）；Phase 7 前置條件加註 6-R 完成
-- `docs/tech-debt.md`：新增 3 筆刻意延後項（OpenAI client 抽取 / 429 toast UI / LLM 降級快取）+ 教授抽查字樣同步修訂
-- 既有 `test_user_service.py` 2 個測試配合節流行為改寫 + 新增節流內不寫 DB 測試
-
----
-
-## [2026-06-23] — docs：新增 roadmap 6-6 知識圖譜優化（使用者反饋）
-
-### Added
-- `docs/roadmap.md` Phase 6 新增 **6-6 知識圖譜優化（視覺 + 核心機制）**：
-  - 背景：使用者反饋 `/knowledge` 頁面視覺不佳；現況 62 節點僅線性 PREREQUISITE 鏈（58 條邊），fcose layout 呈現接近一條長鏈，不直觀。呼應既有決議「知識圖譜重構為 Phase 6 後續工作」與 tech-debt「跨章節 PREREQUISITE 邊未標」項目，擴大範圍納入學術研究調研
-  - 6-6a：查 `docs/references.md` §5 學術資源尋找知識圖譜輔助學習的實證設計參考（Cytoscape.js 為 Tier 1 鎖定套件，僅調整用法不換套件）
-  - 6-6b：跨章關鍵依賴重構多對多 PREREQUISITE 圖
-  - 6-6c：依研究結論重新設計 stylesheet/layout，對照 frontend.md R1-R8 規則檢核
-  - 6-6d：真人測試驗收（學生是否真能讀懂學習進度，不只是好看）
-- `docs/tech-debt.md` 既有「跨章節 PREREQUISITE 邊未標」項目加註 cross-ref 至 roadmap 6-6
-- 本次僅新增 roadmap 追蹤項目，未動程式碼
-
----
-
-## [2026-06-23] — docs：新增 roadmap 6-5 Coddy 對話品質優化（使用者反饋）
-
-### Added
-- `docs/roadmap.md` Phase 6 新增 **6-5 Coddy（EDF Chat）對話品質優化**：
-  - 背景：使用者實測後反饋 Coddy 反問語氣生硬不自然；且 RAG 是否查影片內容目前綁在 `services/edf/decision.py` 的 `use_rag = clamped_hint >= 2 and bloom >= ANALYZE` 門檻，而非「問題是否真的需要影片內容」
-  - 6-5a：RAG 觸發條件改為內容相關性判斷（取代 hint_level 門檻寫死規則）
-  - 6-5b：`services/edf/feedback.py` persona/preamble 語氣優化
-  - 6-5c：真人測試驗收
-- 本次僅新增 roadmap 追蹤項目，未動程式碼（依專案規範：單一最小任務、不擅自實作）
-
----
-
-## [2026-06-23] — chore：清理未追蹤垂圾檔 + 新增 dev-start.sh
-
-### Removed
-- `web/next`、`web/web@0.1.0`：誤建空檔（疑為指令打錯產生），已刪除
-- `.claude/scheduled_tasks.lock`：對應 PID 已不存在的過期 lock，已刪除
-
-### Added
-- `dev-start.sh`：本機一鍵啟動腳本（Colima → docker-compose → 等 Postgres → alembic current → uvicorn），路徑改用 `$(dirname "$0")` 可攜寫法
-
-### Changed
-- `.gitignore`：新增 `.claude/scheduled_tasks.lock`（runtime lock）與 `ScreenShot/`（本機暫存截圖，非專案文件資產）
 
 ---
 

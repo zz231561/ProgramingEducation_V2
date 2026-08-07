@@ -57,14 +57,14 @@ export function cppCompletionSource(
 ): CompletionResult | null {
   const word = context.matchBefore(/[A-Za-z_]\w*/);
   // 沒打字且非手動觸發（Ctrl+Space）時不跳出來煩人
-  if (!word || (word.from === word.to && !context.explicit)) return null;
+  if (!word && !context.explicit) return null;
   // 註解或字串內不補全（避免打中文註解時一直彈出）
   const line = context.state.doc.lineAt(context.pos).text;
   const col = context.pos - context.state.doc.lineAt(context.pos).from;
   if (/\/\//.test(line.slice(0, col))) return null;
 
   return {
-    from: word.from,
+    from: word?.from ?? context.pos,
     options: [
       ...scanIdentifiers(context.state.doc.toString()),
       ...STATIC_COMPLETIONS,

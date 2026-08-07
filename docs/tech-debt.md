@@ -22,14 +22,16 @@
 
 ### 🔴 C. 測試與工程品質
 
-**C1. 前端零自動化測試**
-- [ ] `web/` 沒有任何測試框架，但 `frontend.md` 寫著 Vitest + Playwright
-  - **代價已經在付**：2026-08 十幾批 UI 改動全靠 `tsc`/`eslint`/`build` 加手動點。7-U3/U4/U5 與
-    7-C1 的純函式我只能「把原始碼 `tsc` 編出來再用 node 跑斷言」——有效但**無法納入 CI、沒人會記得重跑**
-  - **最小可用起點**：Vitest + 純函式測試（`lib/transcript-timestamps.ts`、
-    `components/workspace/use-run-history.ts`、`components/editor/cpp-completion-source.ts`）
-  - ✅ **鏡像問題已由 7-C2a 根除**（2026-08-06）：persistence 搬後端，
-    lib/hint-escalation.ts 與 eval_coddy/ladder.py 兩檔皆刪除（已不存在），改由後端 pytest 覆蓋
+**C1. 前端零自動化測試** — ✅ **框架已建立（2026-08-07，7-D1）**，剩 E2E
+- [x] ~~`web/` 沒有任何測試框架~~ — Vitest(jsdom) + `npm test`／`npm run test:watch`；
+      三支純函式測試共 31 個 `it`（`transcript-timestamps` / `use-run-history` / `cpp-completion-source`）；
+      `doc_selfcheck.py` 已加計 web 測試數。**立刻回本**：測試寫到一半就抓出
+      `cpp-completion-source.ts` 一個永遠不成立的條件分支（Ctrl+Space 手動觸發形同虛設）
+- [ ] `frontend.md` 另寫的 **Playwright E2E 仍未建置**（golden path：登入 → 寫程式 → 執行 → AI 對話）
+  - **刻意不在 7-D1 一起做**：E2E 需要跑起後端 + runner + DB，屬部署環境依賴，
+    與「純函式單元測試」不同層級；**重評時機＝7-E 使用者驗收跑完後**（驗收動線本身就是 E2E 腳本的規格）
+- [ ] 元件測試（React Testing Library）同樣未建置——本批刻意不裝 `@vitejs/plugin-react`，
+      待真的要測元件互動時再引入
 
 **C2. 檔案大小超過門檻**（⚠ 150 / 🚫 250；數據來自 `scripts/doc_selfcheck.py`，2026-08-06）
 - [ ] 🚫 **超過硬上限 250（7 個）**：`api/routes/quiz.py` 347 / `services/quiz/generate.py` 307 /

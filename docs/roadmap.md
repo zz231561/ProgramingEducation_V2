@@ -367,9 +367,8 @@
 
 ### 7-D 技術債清償（**排在功能完成之後、使用者驗收之前**；2026-08-06 使用者定序）
 > 清單正本在 `docs/tech-debt.md`，此處只排執行順序。機械事實一律跑 `python3 scripts/doc_selfcheck.py`。
-- [ ] 7-D1 **前端測試基礎設施**（tech-debt C1，原 8-3a）：Vitest + 純函式測試——
-      `lib/transcript-timestamps.ts`、`use-run-history.ts`、`cpp-completion-source.ts`
-      （lib/hint-escalation.ts 已於 7-C2a 隨 persistence 搬後端刪除，改由後端 pytest 覆蓋）
+- [x] 7-D1 **前端測試基礎設施** ✅ 2026-08-07：Vitest(jsdom) + `npm test` + 三支純函式測試共 **31 it**；
+      順修 `cpp-completion-source.ts` 永遠不成立的 Ctrl+Space 分支（寫測試才浮現）
 - [ ] 7-D2 **檔案拆分**（tech-debt C2）：7 個超硬上限檔——`quiz.py` 347 / `generate.py` 307 /
       `concept-detail-panel.tsx` 279 / `batch_generator.py` 267 /
       `variation.py` 255 / `comprehension.py` 255 / `quiz/feedback.py` 251

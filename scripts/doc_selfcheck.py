@@ -111,6 +111,14 @@ def test_counts() -> dict[str, int]:
             len(re.findall(r"^\s*(?:async )?def test", f.read_text(errors="ignore"), re.M))
             for f in d.glob("*.py")
         )
+
+    # web 走 vitest，計數單位是 `it(...)`（7-D1）
+    web_tests = ROOT / "web/tests"
+    if web_tests.exists():
+        counts["web"] = sum(
+            len(re.findall(r"^\s*it\(", f.read_text(errors="ignore"), re.M))
+            for f in web_tests.glob("*.test.ts")
+        )
     return counts
 
 

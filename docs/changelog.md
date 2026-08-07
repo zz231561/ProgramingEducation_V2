@@ -1,5 +1,38 @@
 # 變更日誌
 
+## [2026-08-07] — 7-D1 前端測試基礎設施（`web/` 從零到有）
+
+### Added
+- `web/vitest.config.mts`：jsdom 環境 + `@/` alias 對齊 tsconfig；`include: tests/**/*.test.ts`
+  （用 `.mts` 是因為 `web/package.json` 非 `type: module`，`.ts` 會被 Vite 以 CJS 載入而告警）
+- `package.json` scripts：`npm test`（`vitest run`）/ `npm run test:watch`
+- devDependencies：`vitest` + `jsdom`（**不裝 @vitejs/plugin-react**——本批全是純函式，
+  沒有元件測試就不引入 React 測試堆疊）
+- `web/tests/` 三支，共 **31 個 `it`**：
+  - `transcript-timestamps.test.ts`（13）— parseClock/formatClock 邊界、戳記移到段尾 + 去重 +
+    區間取起點、**程式碼圍籬內原樣不動**、無戳記時完全不動、seek scheme 辨識
+  - `use-run-history.test.ts`（8）— module store 每例 `vi.resetModules()` 重載；驗每檔 20 次上限、
+    per-file 隔離、**5 檔 LRU 淘汰順序**、clearRuns 只清當前檔、hydrate 還原與毀損 JSON 不拋錯
+  - `cpp-completion-source.test.ts`（10）— 掃描模板/參考型別宣告、函式標記覆蓋同名變數、
+    保留字與單字元過濾、註解內不補全、無輸入不跳出
+
+### Fixed
+- `cpp-completion-source.ts` 手動觸發分支形同虛設：原判斷 `word.from === word.to && !explicit`
+  中的零長度比對**永遠不成立**（`/[A-Za-z_]\w*/` 至少吃一字元，matchBefore 無匹配時回 `null`
+  而非零長度區間），因此 Ctrl+Space 在空白處直接被 `!word` 擋掉，與該行註解寫的意圖相反。
+  改為 `!word && !context.explicit`＋`from: word?.from ?? context.pos`——**寫測試時才浮現，
+  正是 C1 說的「靠手動點抓不到」那類缺陷**
+
+### Changed
+- `scripts/doc_selfcheck.py` `test_counts()` 加計 web（vitest 以 `it(` 為單位）→ 報告現為
+  backend 854 / runner 27 / **web 31**
+
+### 驗證
+- `npm test` 31 passed｜`tsc --noEmit` 無錯｜`npm run lint` 僅既有 global-nav `<img>` warning｜
+  `npm run build` 16 routes 全過（確認 `tests/` 不影響 Next 建置）
+
+---
+
 ## [2026-08-06] — 7-C4 Coddy 品質再驗（七型重跑 + 三項裁決）
 
 ### 七型重跑結果（乾淨狀態、真實 LLM）

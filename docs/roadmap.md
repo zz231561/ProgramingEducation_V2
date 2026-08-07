@@ -406,8 +406,8 @@
       現況 83 HTTP operations、20 SQLAlchemy tables、所有穩定 inventory 均為零 drift
 - [x] 7-D4 **7-R R6 收尾**（2026-08-08）：教材健檢取消每日上限並改為預設全量；
       B 機 30 並行壓測通過，2-slot gate 與 2C2G 容量假設成立
-- [ ] 7-D4a **教材程式碼全量健檢**：以自建 runner 編譯全部 starter code，修正所有
-      `Compilation Error`，確認靜態錯字掃描與全量編譯皆為 0 問題；完成後同步驗收清單 9-2
+- [x] 7-D4a **教材程式碼全量健檢**（2026-08-08）：修正生成規範與既有 starter code，
+      自建 runner 全量複驗無靜態錯字、Compilation Error 或 runtime warning
 - ~~7-D5 其餘文件稽核~~ → **已併入 7-D3 階段二**（同一件事，不重複列）
 - [x] 7-D6 **全站 429 / 5xx toast**（2026-08-08）：以 sonner 與統一 API client 收斂
       quiz / learn / 教師端錯誤提示；integration tests 模擬 429 冷卻秒數與 5xx 訊息

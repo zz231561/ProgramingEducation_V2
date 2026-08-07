@@ -85,7 +85,9 @@ def _build_prompt(question: Question) -> str:
 
 請審查：
 A. **答案正確性 (answer_correct)**：題目所宣稱的答案在 C++ 語法 / 邏輯上是否真的正確？
-   多選題檢查 answer_index 對應的 option；填空題檢查 answers；coding 題檢查 stem 描述與 starter_code 是否一致、explanation 描述的解法是否真能達到目標。
+   多選題檢查 answer_index 對應的 option；填空題檢查 answers；coding 題另須確認 starter_code
+   不需學生修改即可單檔 compile + link，且沒有空 expression、未宣告 symbol 或缺少的自訂 header；
+   同時檢查 stem 與 starter_code 一致，explanation 描述的解法確實能達到目標。
 B. **概念符合 (concept_fits)**：題目實際測試的概念是否吻合 intended_concept_tags？
    舉例：如果 tag 是 pointer-arithmetic 但題目其實只在考 std::cout 用法 → false。
 C. **Bloom 等級適當 (bloom_appropriate)**：題目實際要求的認知層級是否 **不超出** 目標 Bloom？

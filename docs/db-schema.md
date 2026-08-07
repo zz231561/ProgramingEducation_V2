@@ -6,7 +6,7 @@
 > column type/nullability、FK、index、unique、check 與 Alembic 單一 head 由
 > `doc_selfcheck.py` 防 drift；更新 fingerprint 使用 contract inventory script。
 <!-- contract: db-signature-sha256=a68b1b21690f1919201456bd9649dd1f0fb40926524e95dd8a2b9b67f32f684e -->
-<!-- contract: alembic-heads=v8e9f0a1b2c3 -->
+<!-- contract: alembic-heads=w9f0a1b2c3d4 -->
 
 ## Module 1: Auth
 

@@ -169,6 +169,26 @@ async def test_generate_coding_success():
     assert q.content["expected_output"] is None
 
 
+@pytest.mark.asyncio
+async def test_generate_coding_normalizes_double_escaped_newlines():
+    concept = await _seed_concept()
+    llm_json = json.dumps({
+        "stem": "完成可編譯的 C++ 主程式骨架。",
+        "starter_code": "#include <iostream>\\nint main() {\\n    return 0;\\n}",
+        "expected_output": None,
+        "explanation": "補齊主程式。",
+    })
+
+    with patched_llm(llm_json):
+        async with TestSessionFactory() as db:
+            question = await generate_question(
+                db, concept, QuestionType.CODING, difficulty=2, bloom_level=3
+            )
+
+    assert "\\n" not in question.content["starter_code"]
+    assert question.content["starter_code"].splitlines()[1] == "int main() {"
+
+
 # === 錯誤處理 ===
 
 

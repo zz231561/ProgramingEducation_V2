@@ -34,6 +34,9 @@ build/
 # Phase 6-1e transient（Whisper audio cache 跑完自動刪；--keep-audio 才會保留）
 data/teaching_content/audio_cache/
 
+# 教材健檢的本機 runner cache（含本機 DB UUID 與執行時間，不屬於可部署資料）
+data/teaching_content/snippet_check_state.json
+
 # Claude Code runtime
 .claude/scheduled_tasks.lock
 

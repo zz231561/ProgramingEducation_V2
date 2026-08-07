@@ -67,6 +67,14 @@ class _CodingContent(BaseModel):
     starter_code: str = ""
     expected_output: str | None = None
 
+    @field_validator("starter_code")
+    @classmethod
+    def _normalize_escaped_newlines(cls, value: str) -> str:
+        """修正 LLM 將整份多行程式重複 JSON escape 的情況。"""
+        if "\n" not in value and "\\n" in value and "#include" in value:
+            return value.replace("\\n", "\n")
+        return value
+
 
 _CONTENT_MODEL_BY_TYPE = {
     QuestionType.MULTIPLE_CHOICE: _MCContent,

@@ -105,28 +105,30 @@ def pick_targets(
 
 async def compile_check(
     targets: list[tuple[str, str]], state: dict
-) -> list[str]:
-    """逐一送 runner 編譯；回傳失敗描述清單，並更新 state。"""
+) -> tuple[list[str], list[str]]:
+    """逐一送 runner 編譯；分開回傳編譯失敗與 runtime 警告。"""
     failures: list[str] = []
+    warnings: list[str] = []
     records = state.setdefault("snippets", {})
     for qid, code in targets:
         try:
             result = await submit_and_poll(source_code=code)
             status = result.status_description
             detail = (result.compile_output or "").strip().splitlines()
-            problem = status if result.compile_output else ""
         except Exception as e:
-            status, problem, detail = "EXCEPTION", repr(e), []
+            status, detail = "EXCEPTION", [repr(e)]
         records[qid] = {
             "hash": hashlib.sha256(code.encode()).hexdigest()[:12],
             "checked_at": datetime.now(UTC).isoformat(timespec="seconds"),
             "status": status,
         }
-        if problem:
+        if status in {"Compilation Error", "EXCEPTION"}:
             first = detail[0] if detail else ""
             failures.append(f"{qid} → {status}｜{first[:100]}")
+        elif status != "Accepted":
+            warnings.append(f"{qid} → {status}")
         print(f"  {qid[:8]}… {status}")
-    return failures
+    return failures, warnings
 
 
 async def main() -> int:
@@ -150,6 +152,7 @@ async def main() -> int:
 
     state = load_state()
     compile_failures: list[str] = []
+    runtime_warnings: list[str] = []
     checked = 0
 
     if not args.static_only:
@@ -157,7 +160,7 @@ async def main() -> int:
         limit = len(snippets) if args.limit is None else max(0, args.limit)
         targets = pick_targets(snippets, state, limit)
         print(f"\n=== 2) Runner 編譯：{len(targets)}/{len(snippets)} 支 ===")
-        compile_failures = await compile_check(targets, state)
+        compile_failures, runtime_warnings = await compile_check(targets, state)
         checked = len(targets)
 
         done = sum(
@@ -179,6 +182,7 @@ async def main() -> int:
                 "compiled": checked,
                 "static_findings": len(findings),
                 "compile_failures": len(compile_failures),
+                "runtime_warnings": len(runtime_warnings),
             }
         )
         state["runs"] = state["runs"][-60:]  # 只留最近 60 次
@@ -189,6 +193,9 @@ async def main() -> int:
     print(f"  編譯失敗：{len(compile_failures)}")
     for f in compile_failures:
         print(f"    ❌ {f}")
+    print(f"  Runtime 警告：{len(runtime_warnings)}")
+    for warning in runtime_warnings:
+        print(f"    ⚠ {warning}")
     return 1 if (findings or compile_failures) else 0
 
 

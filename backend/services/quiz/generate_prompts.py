@@ -84,6 +84,9 @@ def build_system_prompt(
 - 題幹具體、可單獨閱讀無需額外脈絡
 - 難度與 Bloom 必須匹配（高難度配高 Bloom）
 - 不可洩漏完整解答程式碼（coding 題的 starter_code 限骨架 + TODO）
+- coding starter_code 必須可單檔通過 C++ compile + link：TODO 只能放在註解、可編譯 placeholder
+  或 stub 內；不可留空 expression／未宣告 symbol，也不可 include 未隨題提供的自訂檔案
+- starter_code 的 JSON 換行只 escape 一次；解析後必須是真正多行文字，不可殘留字面 `\\n`
 - 選擇題：每個選項 < 30 字、誘答合理（不可有明顯錯選項）
 - explanation 解釋為何正解（2-3 句）
 - **考點必須有意義**：測驗概念理解、語法規則或程式行為；嚴禁考操作細節

@@ -393,9 +393,9 @@
   - [x] 階段二 A **UI 文件退場**（2026-08-07）：`ui-ux-spec` / `ui-wireframes` / `visual-protocol`
         / `design-references` 共 **2891 行**刪除，有效內容（動效表／快捷鍵表／`.kbd`）收斂進
         `frontend.md`；docs 15 → 12 份。順帶抓到實作缺口 tech-debt E4/E5
-  - [ ] 階段二 B **`decisions.md` 內容清理**：243 條依新規範逐條處理
+  - [x] 階段二 B **`decisions.md` 內容清理**（2026-08-08）：243 條依新規範逐條處理
         （刪 git log 已有的 Added/Changed/Tests 快照，留決策理由/否決方案/實測數據；
-        估 5114 → 約 1200-1400 行）。**按月份分批 commit**，每批可獨立回溯
+        3891 → 1568 行）；按月份分批 commit，每批可獨立回溯
   - [ ] 階段二 C **⚪ 穩定文檔逐份核對**（原 7-D5 / 8-1a）：已知 `api-spec.md` 只記載
         81 個實際路由中的 40 個（**51% 缺口**：classes / code files / dashboard / dev /
         comprehension trigger）；`db-schema.md` 缺 `unit_content_staging`

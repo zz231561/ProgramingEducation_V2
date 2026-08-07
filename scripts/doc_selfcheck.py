@@ -32,7 +32,7 @@ PREFIXES = ("", "backend/", "web/", "runner/", "docs/")
 # （如 R5d 移除的 stdin-panel.tsx），報成失效反而是雜訊
 HISTORICAL = {"docs/decisions.md", "docs/roadmap-archive.md"}
 # 各文檔自訂的行數上限（寫在該檔內，過去無人驗 → CLAUDE.md 曾超標 35% 未被發現）
-SELF_DECLARED_CAPS = {"CLAUDE.md": 60}
+SELF_DECLARED_CAPS = {"CLAUDE.md": 62}  # 2026-08-07 60→62：新增 AGENTS.md 雙讀者說明
 DOC_FILES = ["CLAUDE.md", *sorted(str(p.relative_to(ROOT)) for p in ROOT.glob("docs/*.md"))]
 DOC_FILES += sorted(str(p.relative_to(ROOT)) for p in ROOT.glob(".claude/rules/*.md"))
 DOC_FILES = [d for d in DOC_FILES if d not in HISTORICAL]

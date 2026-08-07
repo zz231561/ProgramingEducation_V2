@@ -1,4 +1,4 @@
-"""Mastery hook unit tests（roadmap 2-6e）。
+"""Mastery hook unit tests。
 
 涵蓋：passed=True/False/None 三種；update_mastery 異常時 swallow。
 """

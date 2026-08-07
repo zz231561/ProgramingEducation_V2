@@ -69,7 +69,7 @@ def test_system_prompt_with_empty_rag_list_omits_block():
     assert "教材參考片段" not in prompt
 
 
-# === Reflection block 注入（roadmap 2-5e） ===
+# Reflection block 注入
 
 
 def test_system_prompt_without_reflection_has_no_block():

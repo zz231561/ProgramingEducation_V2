@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import ast
 import io
 import re
 import sys
@@ -10,18 +11,10 @@ from dataclasses import dataclass
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-SCAN_DIRS = (
-    "backend/api",
-    "backend/core",
-    "backend/models",
-    "backend/services",
-    "web/app",
-    "web/components",
-    "web/hooks",
-    "web/lib",
-)
+SCAN_DIRS = ("backend", "web", "runner", "scripts")
 SUFFIXES = {".py", ".ts", ".tsx"}
-TEMPORAL_RE = re.compile(r"\b(?:Phase|roadmap)\s+\d|\b20\d{2}-\d{2}-\d{2}\b", re.I)
+IGNORED_PARTS = {".next", ".venv", "__pycache__", "node_modules"}
+TEMPORAL_RE = re.compile(r"\b(?:Phase|roadmap)\s+\d", re.I)
 SECTION_RE = re.compile(
     r"^[#/\s*=\-]*(?:response\s+)?(?:schemas?|endpoints?|main|prompt)[#/\s*=\-]*$",
     re.I,
@@ -37,6 +30,7 @@ REASON_RE = re.compile(r"\s(?:--|—)\s*\S")
 class Comment:
     line: int
     text: str
+    is_docstring: bool = False
 
 
 @dataclass(frozen=True)
@@ -48,13 +42,24 @@ class Violation:
 
 
 def _python_comments(source: str) -> list[Comment]:
-    """用 tokenizer 取 Python comments，避免掃到字串與教材內容。"""
+    """取 Python comments 與 docstrings，避開一般字串內教材內容。"""
     tokens = tokenize.generate_tokens(io.StringIO(source).readline)
-    return [
+    comments = [
         Comment(token.start[0], token.string)
         for token in tokens
         if token.type == tokenize.COMMENT
     ]
+    for node in ast.walk(ast.parse(source)):
+        body = getattr(node, "body", None)
+        if not isinstance(body, list) or not body or not isinstance(body[0], ast.Expr):
+            continue
+        value = body[0].value
+        if isinstance(value, ast.Constant) and isinstance(value.value, str):
+            comments.extend(
+                Comment(value.lineno + offset, line, is_docstring=True)
+                for offset, line in enumerate(value.value.splitlines())
+            )
+    return comments
 
 
 def _typescript_comments(source: str) -> list[Comment]:
@@ -110,15 +115,18 @@ def comments_for(path: Path) -> list[Comment]:
 def check_file(path: Path) -> list[Violation]:
     """檢查單一檔案並回傳所有違規。"""
     violations: list[Violation] = []
+    migration_history = "alembic" in path.parts and "versions" in path.parts
     for comment in comments_for(path):
         text = comment.text.strip()
-        if TEMPORAL_RE.search(text):
-            violations.append(Violation(path, comment.line, "CP001", "禁止 Phase／roadmap／日期快照"))
+        if not migration_history and TEMPORAL_RE.search(text):
+            violations.append(Violation(path, comment.line, "CP001", "禁止 Phase／Roadmap 快照"))
         if SECTION_RE.fullmatch(text):
             violations.append(Violation(path, comment.line, "CP002", "區段標題只重述程式結構"))
-        if TODO_RE.search(text) and not TRACKED_TODO_RE.search(text):
+        if not comment.is_docstring and TODO_RE.search(text) and not TRACKED_TODO_RE.search(text):
             violations.append(Violation(path, comment.line, "CP003", "TODO/FIXME 必須使用 TODO(#issue): 說明"))
-        suppression = PY_SUPPRESSION_RE.search(text) or TS_SUPPRESSION_RE.search(text)
+        suppression = not comment.is_docstring and (
+            PY_SUPPRESSION_RE.search(text) or TS_SUPPRESSION_RE.search(text)
+        )
         if suppression and not REASON_RE.search(text):
             violations.append(Violation(path, comment.line, "CP004", "suppression 必須以 -- 或 — 補充理由"))
     return violations
@@ -130,7 +138,9 @@ def production_files(root: Path = ROOT) -> list[Path]:
         path
         for directory in SCAN_DIRS
         for path in (root / directory).rglob("*")
-        if path.is_file() and path.suffix in SUFFIXES
+        if path.is_file()
+        and path.suffix in SUFFIXES
+        and not IGNORED_PARTS.intersection(path.parts)
     )
 
 

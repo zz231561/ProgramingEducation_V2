@@ -1,4 +1,4 @@
-"""Phase 6-2a 單元測試：grounded prompt + Pydantic 模型。
+"""Grounded prompt + Pydantic 模型單元測試。
 
 涵蓋（U2b 移除 summary、U2g 2026-07-06 晚間移除 code_examples，相關測試同步刪除）：
 - concept_explanation 正確解析 LLM JSON

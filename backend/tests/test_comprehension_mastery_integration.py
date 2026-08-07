@@ -1,4 +1,4 @@
-"""Comprehension grade → BKT mastery 整合測試（roadmap 2-6e）。
+"""Comprehension grade → BKT mastery 整合測試。
 
 驗證三條 grade pipeline（EPL / Predict / Variation）通過後，學生的 student_mastery 表
 對應 concept_tags 的 confidence 確實被 BKT 線上更新。

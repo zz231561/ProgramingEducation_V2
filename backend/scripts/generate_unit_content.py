@@ -1,4 +1,4 @@
-"""Phase 6-2b CLI：批次生成 unit content → unit_content_staging。
+"""批次生成 unit content → unit_content_staging 的 CLI。
 
 用法：
     cd backend

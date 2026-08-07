@@ -1,4 +1,4 @@
-"""Trigger 決策邏輯 unit tests（roadmap 2-6e）。
+"""Trigger 決策邏輯 unit tests。
 
 涵蓋純規則 _decide()：cold start / 高 / 中高 / 中 / 低 pass_rate；coding vs 非 coding fallback。
 """

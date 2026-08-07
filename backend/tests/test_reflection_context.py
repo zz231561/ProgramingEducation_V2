@@ -1,4 +1,4 @@
-"""reflection_context 格式化測試（roadmap 2-5e）。
+"""reflection_context 格式化測試。
 
 純函式測試 — 確認 Reflection → prompt block 的兩種視圖（Evidence 簡短 / Feedback 詳細）。
 """

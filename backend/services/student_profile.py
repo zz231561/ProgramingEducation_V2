@@ -1,4 +1,4 @@
-"""學生身分 profile service — 提交 / 查詢（roadmap 5-1b-3）。
+"""學生身分 profile service — 提交 / 查詢。
 
 Google OAuth 顯示名不一定是真名，故學生需補填 school / department /
 student_id / real_name；email 沿用 users。以 user_id 為主鍵做 upsert。

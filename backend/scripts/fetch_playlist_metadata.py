@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Phase 6-1a/6-1b 前置：YouTube playlist → CSV 對應 DB concepts.video_order。
+將 YouTube playlist 轉為 CSV，對應 DB concepts.video_order。
 
 Pipeline:
   1. 用 yt-dlp 抓 playlist 全部影片的 (id, title, duration)
@@ -28,8 +28,8 @@ from pathlib import Path
 
 # 標題格式：「C++：XX-(中文)」，XX = video_order
 TITLE_PATTERN = re.compile(r"^C\+\+：(\d+)-(.+)$")
-# Phase 6 採 62 個 concept：1-3（課程簡介、環境安裝、語言簡介）+ 4-62（教學影片）
-# video_order 1-3 標記 category="課程介紹" 不參與 PREREQUISITE 鏈（roadmap 6-1c）
+# 62 個 concept 包含 1-3（課程簡介、環境安裝、語言簡介）與 4-62（教學影片）
+# video_order 1-3 標記 category="課程介紹"，不參與 PREREQUISITE 鏈
 EXPECTED_VIDEO_ORDERS = set(range(1, 63))  # 1..62 共 62 部
 DEFAULT_OUTPUT = Path("data/teaching_content/videos.csv")
 

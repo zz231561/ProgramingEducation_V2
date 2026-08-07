@@ -22,7 +22,7 @@
 6. **改檔案一律用 Edit/Write 工具**：**禁止**用 `python3 - <<EOF` / `sed -i` / `cat >` 等 shell 手法改動專案檔案——那是任意程式碼執行、diff 不可見、且會繞過權限確認。批次改動就多呼叫幾次 Edit。
 7. **避免重複造輪子（OSS 優先）**：開發新功能前必先查 `docs/references.md` §1 決策矩陣。**禁止移植已有對應套件的演算法**（例：BKT 必用 pyBKT）。**禁止引入 AGPL/GPL 授權套件**（見 references.md §2 黑名單）。
 8. **當場修小問題**：範圍小、根因明確、不需設計裁決的過時文案／失效路徑／明顯 bug 當輪直接修；會擴散、涉及取捨或根因不明才討論。修完照「文檔同步」辦。
-9. **註解只寫程式碼沒說的事**：保留理由、限制、契約與風險；禁止重述程式、Phase／日期快照及空泛區段標題。TODO 必須綁 GitHub issue，suppression 必須附理由；改行為時同 commit 更新鄰近註解，並跑 `comment_policy_check.py`。
+9. **註解只寫程式碼沒說的事**：保留理由、限制、契約與風險；禁止重述程式、Phase／Roadmap 快照及空泛區段標題。TODO 必須綁 GitHub issue，suppression 必須附理由；改行為時同 commit 更新鄰近註解，並跑 `comment_policy_check.py`。
 
 ## 技術棧（已鎖定）
 - **前端**：Next.js 15 + TypeScript + Tailwind CSS（`web/`）

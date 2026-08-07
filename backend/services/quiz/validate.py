@@ -1,4 +1,4 @@
-"""出題 Validate 階段 — LLM 自我檢查題目品質（roadmap 2-4d）。
+"""出題 Validate 階段 — LLM 自我檢查題目品質。
 
 設計：
 - 對 generate 出來的題目跑第二次 LLM call，檢查三個面向：

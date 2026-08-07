@@ -1,6 +1,6 @@
 # code-health: allow-large — LLM 呼叫與 DB 編排雖屬二軸，但 start/submit_variation_for_answer
 # 直接呼叫 generate/grade_variation，拆開後改一次仍要開 2 檔（Q3）；超標 5 行不值得。
-"""Variation Challenge — LLM 生變體題 + 評分學生新解（roadmap 2-6d）。
+"""Variation Challenge — LLM 生變體題並評分學生的新解法。
 
 設計（理論基礎見 variation_prompts.py docstring）：
 - generate：LLM 看 (原題 + 學生程式碼) → 產出 (新 stem, starter_code, test_cases, concept_focus)

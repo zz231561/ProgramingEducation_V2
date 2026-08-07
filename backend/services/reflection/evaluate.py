@@ -1,4 +1,4 @@
-"""Reflection 品質評估 LLM service（roadmap 2-5b）。
+"""Reflection 品質評估 LLM service。
 
 設計（理論基礎見 references.md：PRIMM、Polya 解題四步驟、Self-explanation effect）：
 - 三面向評分（皆 0.0–1.0）：

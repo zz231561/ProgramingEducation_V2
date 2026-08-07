@@ -91,9 +91,9 @@ app.add_middleware(
     expose_headers=["X-Process-Time"],
 )
 
-app.add_exception_handler(AppError, app_error_handler)  # type: ignore[arg-type]
-app.add_exception_handler(RequestValidationError, validation_error_handler)  # type: ignore[arg-type]
-app.add_exception_handler(Exception, unhandled_error_handler)  # type: ignore[arg-type]
+app.add_exception_handler(AppError, app_error_handler)  # type: ignore[arg-type] -- Starlette handler protocol 過窄
+app.add_exception_handler(RequestValidationError, validation_error_handler)  # type: ignore[arg-type] -- Starlette handler protocol 過窄
+app.add_exception_handler(Exception, unhandled_error_handler)  # type: ignore[arg-type] -- Starlette handler protocol 過窄
 
 app.include_router(health_router)
 app.include_router(auth_router)

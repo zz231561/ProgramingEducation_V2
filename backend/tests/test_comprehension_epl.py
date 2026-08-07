@@ -1,4 +1,4 @@
-"""EPL service unit tests（roadmap 2-6b）— prompt 組裝 + LLM fallback + parsing。
+"""EPL service unit tests — prompt 組裝 + LLM fallback + parsing。
 
 整合（HTTP）測試見 test_comprehension_epl_route.py。
 """

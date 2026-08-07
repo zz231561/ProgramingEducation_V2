@@ -28,6 +28,10 @@ Python PEP 8 要求程式變更時優先保持註解正確；Google、LLVM 與 L
 因此 CI 只阻擋能客觀判定的時間快照、空泛區段標題、無 issue TODO 與無理由 suppression；
 「內容是否仍正確」沒有可靠 parser 規則，維持 code-health 逐檔語意審查。
 
+Alembic migration 是已執行過的不可變歷史，因此只對其中的 Phase／Roadmap 標記豁免；空泛標題、
+無追蹤註記與無理由 suppression 仍照常檢查。若改寫既有 migration 來消除歷史字樣，反而可能讓
+已部署環境與 repository 的 migration 身分不一致。
+
 參考：[Python PEP 8](https://github.com/python/peps/blob/main/peps/pep-0008.rst)、
 [Google C++ Style Guide](https://github.com/google/styleguide/blob/gh-pages/cppguide.html)、
 [LLVM Coding Standards](https://github.com/llvm/llvm-project/blob/main/llvm/docs/CodingStandards.rst)、

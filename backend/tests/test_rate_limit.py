@@ -39,7 +39,7 @@ SAMPLE_PAYLOAD = {
 @pytest.fixture
 def rl_app() -> FastAPI:
     _app = FastAPI()
-    _app.add_exception_handler(AppError, app_error_handler)  # type: ignore[arg-type]
+    _app.add_exception_handler(AppError, app_error_handler)  # type: ignore[arg-type] -- Starlette handler protocol 過窄
 
     @_app.post("/limited", dependencies=[Depends(rate_limit("test", limit_per_minute=3))])
     async def _limited():
@@ -127,7 +127,7 @@ async def test_rate_limit_isolated_per_user(rl_client: AsyncClient):
 def daily_app() -> FastAPI:
     """掛 scope="llm" 才會觸發每日配額。"""
     _app = FastAPI()
-    _app.add_exception_handler(AppError, app_error_handler)  # type: ignore[arg-type]
+    _app.add_exception_handler(AppError, app_error_handler)  # type: ignore[arg-type] -- Starlette handler protocol 過窄
 
     @_app.post("/llm", dependencies=[Depends(rate_limit("llm", limit_per_minute=999))])
     async def _llm():

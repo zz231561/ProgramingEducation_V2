@@ -4,7 +4,7 @@
     cd backend
     .venv/bin/python -m scripts.verify_rag_ingest
 
-驗收標準（roadmap 2-1b）：
+驗收標準：
     SELECT count(*) FROM data_codedge_rag > 0
 """
 

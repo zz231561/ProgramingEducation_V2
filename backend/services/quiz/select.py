@@ -1,6 +1,6 @@
 """出題 Select 階段 — 從學生 student_mastery 選弱項概念，並用圖譜中心度加權。
 
-設計（roadmap 2-4b）：
+設計：
 - 弱項定義：`effective confidence < WEAK_THRESHOLD` 且 `exposure_count >= 1`
   （未互動過的不算「弱」，那是「未接觸」由 cold-start 處理）
 - K6b（2026-07-06）：改用衰減後 effective confidence——久未練習的概念會

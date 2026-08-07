@@ -103,7 +103,7 @@ cd web && npm test && npx tsc --noEmit && npm run lint && npm run build
 ## 階段 5 — 註解語意稽核（僅 Roadmap／使用者明確要求時）
 
 逐檔閱讀 production code，不能只靠 regex 批次刪除。刪除：① 重述下一行程式的註解；
-② 已失效的 phase／日期／任務編號快照；③ 只重複函式或區塊名稱的 separator。
+② 已失效的 phase／roadmap／任務編號快照；③ 只重複函式或區塊名稱的 separator。
 
 保留：設計理由與否決方案、安全／相容性／效能限制、非直覺 workaround、public API docstring
 與外部契約。`TODO(#<GitHub issue>): <行動>` 才是合法 TODO；`eslint-disable`、`type: ignore`、

@@ -1,4 +1,4 @@
-"""Comprehension API route 整合測試（roadmap 2-6a）。
+"""Comprehension API route 整合測試。
 
 涵蓋：
 - 401 未登入

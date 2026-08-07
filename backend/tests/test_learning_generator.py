@@ -1,4 +1,4 @@
-"""學習路徑生成 integration tests（roadmap 3-1b）— DB 級別驗證。
+"""學習路徑生成 integration tests — DB 級別驗證。
 
 涵蓋：
 - 無概念 → 422 LEARNING_PATH_EMPTY

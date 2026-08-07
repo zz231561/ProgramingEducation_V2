@@ -1,4 +1,4 @@
-"""作業指派 service（roadmap 5-5，TronClass 式文件繳交）。
+"""作業指派 service（TronClass 式文件繳交）。
 
 crud：教師端作業 CRUD（含 due_at 編輯）；attachments：附件上傳驗證 / 下載授權 / 刪除。
 """

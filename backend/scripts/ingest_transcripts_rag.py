@@ -1,4 +1,4 @@
-"""Phase 6-1e 後半：把 transcripts_corrected/ ingest 進 RAG（NotebookLM 核心）。
+"""把 transcripts_corrected/ ingest 進 RAG（NotebookLM 核心）。
 
 流程（每 video）：
   1. INSERT 1 documents 行（source='video_transcript' / title=f'video_{order:02d}: {title_zh}'）

@@ -126,7 +126,7 @@ class _StubRedis:
 @pytest.fixture
 def rl_app() -> FastAPI:
     _app = FastAPI()
-    _app.add_exception_handler(AppError, app_error_handler)  # type: ignore[arg-type]
+    _app.add_exception_handler(AppError, app_error_handler)  # type: ignore[arg-type] -- Starlette handler protocol 過窄
 
     @_app.get("/probe", dependencies=[Depends(rate_limit("probe", 1))])
     async def probe() -> dict:

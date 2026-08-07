@@ -1,4 +1,4 @@
-"""Reflection service 單元測試（roadmap 2-5a + 2-5b）— DB CRUD + LLM 評分整合。"""
+"""Reflection service 單元測試 — DB CRUD + LLM 評分整合。"""
 
 import uuid
 from unittest.mock import AsyncMock, patch

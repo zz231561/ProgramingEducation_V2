@@ -1,9 +1,9 @@
-"""出題 Generate 階段 — LLM 出題 + RAG 教材注入（roadmap 2-4c / 6-3a）。
+"""出題 Generate 階段 — LLM 出題 + RAG 教材注入。
 
 設計：餵 concept + type + difficulty + bloom + RAG chunks → LLM JSON mode
 → Pydantic 驗 shape（不符 → 502）→ 寫 questions（validated=False，等 2-4d 過審）。
 
-Phase 6-3a grounded mode：`video_order` 提供時改走 `get_chunks_by_video_order`
+Grounded mode：`video_order` 提供時改走 `get_chunks_by_video_order`
 取整支影片字幕（避免跨 video 污染，與 6-2b 同策略），且 prompt 加 grounding 規則：
 情境須與字幕範例 / 變數命名一致。`video_order=None` 走原語意 retrieve_chunks。
 """

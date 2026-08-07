@@ -1,4 +1,4 @@
-"""EPL HTTP 整合測試（roadmap 2-6b）— mock LLM，驗證 generate / grade 兩 endpoint 流程。
+"""EPL HTTP 整合測試 — mock LLM，驗證 generate / grade 兩 endpoint 流程。
 
 涵蓋：
 - 401 未登入

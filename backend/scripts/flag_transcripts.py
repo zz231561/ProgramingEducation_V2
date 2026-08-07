@@ -1,4 +1,4 @@
-"""Phase 6-1e Stage 2：用 LLM 自動掃描 transcripts/ 找可疑錯誤。
+"""用 LLM 自動掃描 transcripts/ 找可疑錯誤。
 
 對每份 transcript 送 GPT-4o-mini 評估，找：
   - 語意明顯不通順的句子（被切壞、缺主詞、邏輯斷裂）

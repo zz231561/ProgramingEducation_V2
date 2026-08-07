@@ -1,4 +1,4 @@
-"""Dashboard 精熟度總覽 service + HTTP 整合測試（roadmap 3-3c）。
+"""Dashboard 精熟度總覽 service + HTTP 整合測試。
 
 涵蓋：
 - 401

@@ -28,7 +28,8 @@ def run() -> None:
         self.assertEqual(self._check(".py", source), set())
 
     def test_rejects_python_policy_violations_but_ignores_strings(self) -> None:
-        source = '''# Phase 4 再處理。
+        source = '''"""Module added in roadmap 7-D7."""
+# Phase 4 再處理。
 # === Schemas ===
 # TODO: 之後修。
 value = "# roadmap 7-D7"
@@ -36,9 +37,14 @@ result = call()  # type: ignore[arg-type]
 '''
         self.assertEqual(self._check(".py", source), {"CP001", "CP002", "CP003", "CP004"})
 
+    def test_domain_todo_inside_docstring_is_not_action_item(self) -> None:
+        source = '''"""要求模型輸出保留 TODO 的程式碼片段。"""
+'''
+        self.assertEqual(self._check(".py", source), set())
+
     def test_rejects_typescript_policy_violations_but_ignores_strings(self) -> None:
         source = '''const label = "// Phase 2";
-// 2026-08-08 新增
+// roadmap 7-D7 新增
 // eslint-disable-next-line react-hooks/set-state-in-effect
 setReady(true);
 '''

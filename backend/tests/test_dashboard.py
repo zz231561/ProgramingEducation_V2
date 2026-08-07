@@ -1,4 +1,4 @@
-"""Dashboard service + HTTP 整合測試（roadmap 3-3a）。
+"""Dashboard service + HTTP 整合測試。
 
 涵蓋：
 - 401 未登入

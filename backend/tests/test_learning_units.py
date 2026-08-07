@@ -1,4 +1,4 @@
-"""學習單元狀態 service + HTTP 整合測試（roadmap 3-1d）。
+"""學習單元狀態 service + HTTP 整合測試。
 
 涵蓋：
 - update_unit_status：合法 transition / 非法 transition / 完成解鎖下一單元 / 跨使用者

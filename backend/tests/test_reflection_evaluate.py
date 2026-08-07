@@ -1,4 +1,4 @@
-"""Reflection evaluate.py 單元測試（roadmap 2-5b）。
+"""Reflection evaluate.py 單元測試。
 
 Mock OpenAI client 與 settings；驗證 LLM 回應解析、threshold 行為、容錯路徑。
 """

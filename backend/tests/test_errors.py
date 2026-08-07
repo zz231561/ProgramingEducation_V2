@@ -11,7 +11,7 @@ from core.errors import AppError, ErrorResponse, app_error_handler
 def error_app():
     """建立含 AppError handler 的測試 app。"""
     _app = FastAPI()
-    _app.add_exception_handler(AppError, app_error_handler)  # type: ignore[arg-type]
+    _app.add_exception_handler(AppError, app_error_handler)  # type: ignore[arg-type] -- Starlette handler protocol 過窄
 
     @_app.get("/raise-app-error")
     async def _raise():
@@ -76,7 +76,7 @@ async def test_validation_error_returns_standard_format():
     from core.errors import validation_error_handler
 
     _app = FastAPI()
-    _app.add_exception_handler(RequestValidationError, validation_error_handler)  # type: ignore[arg-type]
+    _app.add_exception_handler(RequestValidationError, validation_error_handler)  # type: ignore[arg-type] -- Starlette handler protocol 過窄
 
     class _Body(BaseModel):
         question: str

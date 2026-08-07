@@ -121,7 +121,7 @@ async def test_delete_session():
             assert result is False
 
 
-# === Phase 2-5e — reflection_id 注入 EDF Pipeline ===
+# reflection_id 注入 EDF Pipeline
 
 
 async def _seed_reflection(user_id: uuid.UUID, planned_steps: list[str]) -> uuid.UUID:
@@ -310,4 +310,3 @@ async def test_interact_persists_user_message_when_llm_fails():
         assert len(messages) == 1
         assert messages[0].role == MessageRole.USER
         assert messages[0].content == "為什麼跑不停？"
-

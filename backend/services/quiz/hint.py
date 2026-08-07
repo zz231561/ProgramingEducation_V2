@@ -1,4 +1,4 @@
-"""Quiz Hint 生成 — LLM 依 hint_level (1-5) 給提示（roadmap 3-2b）。
+"""Quiz Hint 生成 — LLM 依 hint_level (1-5) 給提示。
 
 Hint Ladder（與 .claude/rules/edf-pipeline.md 對齊）：
 - Level 1：指出錯誤方向，不指出具體位置 — 「問題和迴圈邏輯有關，再看看」

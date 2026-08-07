@@ -1,4 +1,4 @@
-"""Phase 6-1e Step 1: Whisper transcription via OpenAI API (B1 plan).
+"""Whisper transcription via OpenAI API.
 
 讀 `data/teaching_content/videos.csv` → 對每部影片：
   1. yt-dlp 抓 audio（cached at `audio_cache/{order:02d}.{m4a|webm}`）

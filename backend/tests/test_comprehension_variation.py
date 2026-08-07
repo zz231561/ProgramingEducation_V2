@@ -1,4 +1,4 @@
-"""Variation Challenge service unit tests（roadmap 2-6d）。
+"""Variation Challenge service unit tests。
 
 涵蓋：
 - generate_variation：LLM 成功 / 各類 fallback

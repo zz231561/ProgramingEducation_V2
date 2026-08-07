@@ -1,4 +1,4 @@
-"""LearningPath / LearningUnit model tests（roadmap 3-1a）。
+"""LearningPath / LearningUnit model tests。
 
 涵蓋：
 - metadata / 欄位 / 索引 / UNIQUE / CHECK 結構

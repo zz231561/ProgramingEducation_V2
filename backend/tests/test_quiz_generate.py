@@ -286,7 +286,7 @@ async def test_generated_question_persists_with_correct_metadata():
         assert q.validated is False
 
 
-# === Phase 6-3a grounded mode ===
+# Grounded mode
 
 
 def _make_chunk(text: str) -> RetrievedChunk:

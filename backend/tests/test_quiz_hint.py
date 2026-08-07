@@ -1,4 +1,4 @@
-"""Quiz Hint service unit + HTTP 整合測試（roadmap 3-2b）。
+"""Quiz Hint service unit + HTTP 整合測試。
 
 涵蓋：
 - generate_hint：成功 / fallback (no client / exception / invalid JSON / empty hint)

@@ -1,4 +1,4 @@
-"""Phase 6-3b：題庫抽題 service 單元測試。
+"""題庫抽題 service 單元測試。
 
 涵蓋：
 - 有 validated 題 + 對應 tag → 隨機回 1 題

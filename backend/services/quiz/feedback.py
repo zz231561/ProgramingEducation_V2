@@ -1,6 +1,6 @@
 # code-health: allow-large — 單一變更軸＝作答後回饋生成，6 個 helper 皆只服務
 # generate_quiz_feedback（Q2）；超標 1 行，任何拆分都只是為了滿足門檻。
-"""Quiz 作答後 EDF 回饋生成（roadmap 3-2c）。
+"""Quiz 作答後 EDF 回饋生成。
 
 提交後立即顯示的 feedback 與 quiz/submit 的 feedback 不同：
 - /quiz/submit 的 `feedback` 欄位 = 對錯一句話（即時、快）

@@ -1,4 +1,4 @@
-"""Predict-Output service unit tests（roadmap 2-6c）。
+"""Predict-Output service unit tests。
 
 涵蓋：
 - normalize_output：trim / 折疊空白 / 多行 / 空行去除

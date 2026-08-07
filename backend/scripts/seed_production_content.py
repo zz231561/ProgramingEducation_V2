@@ -1,4 +1,4 @@
-"""把本機開發庫的教學內容搬到生產庫（Phase 7-1a 生產資料播種）。
+"""把本機開發庫的教學內容搬到生產庫。
 
 背景：`concepts` 的 seed migration 用 uuid4() 隨機產生 id，因此生產庫的
 concept UUID 與本機不同。`unit_content_staging.concept_id` 必須以 tag 為橋樑

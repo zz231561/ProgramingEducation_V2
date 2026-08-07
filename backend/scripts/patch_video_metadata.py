@@ -1,4 +1,4 @@
-"""Phase 6-1d PATCH script — 把 CSV 的 video metadata 寫入 concepts 表。
+"""把 CSV 的 video metadata 寫入 concepts 表。
 
 讀取 `data/teaching_content/videos.csv`（由 6-1b fetcher 產），對 `concepts` 表
 依 `video_order` 匹配，UPDATE `video_youtube_id` 與 `video_duration_seconds`
@@ -10,7 +10,7 @@
     .venv/bin/python -m scripts.patch_video_metadata --apply   # 實際寫入
     .venv/bin/python -m scripts.patch_video_metadata --apply --force  # 覆寫已有
 
-驗收標準（roadmap 6-1d）：
+驗收標準：
     SELECT count(*) FROM concepts
     WHERE video_order BETWEEN 1 AND 62
       AND video_youtube_id IS NOT NULL

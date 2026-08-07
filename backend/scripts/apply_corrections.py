@@ -1,4 +1,4 @@
-"""Phase 6-1e Stage 1：套用 corrections.json 到 transcripts/ → transcripts_corrected/。
+"""套用 corrections.json 到 transcripts/ → transcripts_corrected/。
 
 讀取：
   data/teaching_content/transcripts/{order:02d}.json   ← Whisper raw（不修改）

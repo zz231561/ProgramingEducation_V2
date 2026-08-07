@@ -1,4 +1,4 @@
-"""Phase 6-2b 單元 + 整合測試：batch generator + staging upsert + promote。
+"""Batch generator + staging upsert + promote 單元與整合測試。
 
 涵蓋：
 - 成功路徑：retrieve chunks → generate → 寫入 staging

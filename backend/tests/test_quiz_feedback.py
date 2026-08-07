@@ -1,4 +1,4 @@
-"""Quiz Feedback service + HTTP 整合測試（roadmap 3-2c）。
+"""Quiz Feedback service + HTTP 整合測試。
 
 涵蓋：
 - _llm_suggestion fallback 五種路徑（no client / exception / invalid JSON / empty / success）

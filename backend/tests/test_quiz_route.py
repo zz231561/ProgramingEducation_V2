@@ -321,7 +321,7 @@ async def test_history_returns_user_answers(client: AsyncClient):
     assert body["items"][0]["is_correct"] is True
 
 
-# === Phase 6-3b /quiz/from-bank ===
+# /quiz/from-bank 題庫出題
 
 
 async def _seed_validated_bank_question(concept_tag: str) -> Question:

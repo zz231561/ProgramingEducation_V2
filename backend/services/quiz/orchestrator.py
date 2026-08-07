@@ -1,4 +1,4 @@
-"""出題 + 作答的 use-case orchestration（roadmap 2-4e backbone）。
+"""出題 + 作答的 use-case orchestration。
 
 把 Select / Generate / Validate / Grade / Mastery 串成兩條主流程：
 - `generate_for_student` — 學生請求新題：選弱項 → 生成 → 自審 → retry

@@ -415,6 +415,8 @@
       重複結構名稱的 separator，保留設計理由，並修正教師角色、RAG 與 coding 題誤導文案
 - [x] 7-D7a **註解規範與防漂移**（2026-08-08）：建立 why／constraint／contract 標準與 CI checker，
       阻擋時間快照、空泛區段標題、無 issue TODO 及無理由 suppression
+- [x] 7-D7b **全 repository 註解規範收斂**（2026-08-08）：納入 docstrings、tests、scripts、runner
+      與 migrations；全量清除 Phase／Roadmap 快照、空泛標題與無追蹤註記（既有 migration 歷史豁免 CP001）
 - [~] 7-D8 **Claude Code / Codex 規則零漂移**（2026-08-08 使用者定案：共同 canonical source + 各自 adapter）
   - [x] A **canonical guidance + 跨平台同步器**：`.agent-source/` 成為唯一來源，能重建
         `CLAUDE.md`、`.claude/rules/*` 與根／巢狀 `AGENTS.md`；`--check` 可偵測 drift

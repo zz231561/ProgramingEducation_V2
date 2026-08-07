@@ -1,4 +1,4 @@
-"""Phase 6-2a: Grounded LLM content generation for learning_units (NotebookLM mode).
+"""Grounded LLM content generation for learning_units (NotebookLM mode).
 
 1 content section per unit（U2b 移除 summary；U2g 2026-07-06 晚間移除 code_examples——
 範例程式介面整個下架，批次生成僅剩 1 LLM call）：

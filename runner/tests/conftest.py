@@ -18,7 +18,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import httpx
 import pytest
 
-from app.main import app  # noqa: E402
+from app.main import app  # noqa: E402 -- 測試路徑需先注入 sys.path
 
 
 @pytest.fixture

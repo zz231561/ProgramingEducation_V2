@@ -1,4 +1,4 @@
-"""Reflection API route 整合測試（roadmap 2-5a + 2-5b）。
+"""Reflection API route 整合測試。
 
 涵蓋：
 - 401 未登入

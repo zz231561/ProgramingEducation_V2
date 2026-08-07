@@ -1,4 +1,4 @@
-"""Dashboard 時間線 service + HTTP 整合測試（roadmap 3-3b）。
+"""Dashboard 時間線 service + HTTP 整合測試。
 
 涵蓋：
 - 401

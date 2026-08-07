@@ -232,7 +232,6 @@ P2 證實不需要脆弱的「致謝歸零」規則：理解訊號本身就會�
 > 同日設計定案（見下一節）的實作。行為驗證（`eval_coddy` 七型重跑對照）屬 7-C4，尚未執行。
 
 ### 決策依據與證據
-- 後端 **857 tests 全綠**（+23）；`web` tsc 無錯、改動檔 eslint 乾淨
 - **真實 LLM 模擬實測**（`eval_coddy` P1/P3，本機 DB + debug_sink 白盒探針）：
   P1（NZEC）reveal 2→3→5→5、P3（索答）1→1→2→4，與公式逐輪吻合；
   P3 連四輪施壓「給我完整程式碼」皆被拒，reveal 4 只給留白 TODO 框架 → RULE-1/2 不變量守住
@@ -346,7 +345,6 @@ P2 證實不需要脆弱的「致謝歸零」規則：理解訊號本身就會�
 - K3 全鏈：連錯 3 → 前置嫌疑（18/19/15）各附診斷題 → remediate 回應正常
 - citations 全程 0 攔截（無捏造）、教材時間戳真實可點、無來源時誠實
 - SSE 三階段進度全程正常
-- 後端 834 tests 全綠（+7）；tsc/eslint 過
 
 ## [2026-08-06] — fix(coddy)：7-C1 P0 批次——接通 Hint Ladder + Evidence 補執行狀態
 
@@ -391,7 +389,7 @@ P2 證實不需要脆弱的「致謝歸零」規則：理解訊號本身就會�
 
 ## [2026-08-06] — feat(learn)：7-U3 教材出處移除 + 時間戳改句尾註腳式播放標記
 
-### Removed — 教材出處 UI（使用者決策：只有模型看得到）
+### 教材出處 UI：只供模型使用
 - LEARN 概念說明的「影片出處（點擊跳轉）」清單移除
 - Coddy 回應下方的「教材出處（展開可看原文）」移除，`components/chat/citation-list.tsx` 刪除
 - **citations 資料本身保留**：後端照常檢索、注入 prompt、隨回應傳回並存 DB，只是不再呈現給學生
@@ -399,7 +397,7 @@ P2 證實不需要脆弱的「致謝歸零」規則：理解訊號本身就會�
 
 ## [2026-08-06] — feat(learn)：7-U1 單元導航收斂 + 7-U2 課程全解鎖；修 schema 漂移
 
-### Changed — 7-U2 課程全解鎖（推翻「循序解鎖」設計）
+### 課程全解鎖：推翻循序鎖定
 - `generator.py`：新路徑所有 unit 皆 `available`（原為第一個 available、其餘 locked）
 - migration **`u7d8e9f0a1b2`**：既有使用者的 `locked` → `available`（downgrade 不可逆，僅還原初始語義）
 - 前端移除 **ghostUnlock 整條線路**：`learn/page.tsx` / `path-detail.tsx` / `unit-content.tsx` 的 prop、`hooks/use-dev-mode.ts` 的 `useGhostUnlock`、`lib/dev-mode.ts` 的旗標讀寫、`components/settings/dev-unlock-card.tsx`（DEV 設定卡）、以及 5-6b「教師全開」特例——全解鎖後這些例外全部多餘
@@ -421,7 +419,7 @@ P2 證實不需要脆弱的「致謝歸零」規則：理解訊號本身就會�
 - `runner/deploy.sh`：build → up → 等 healthy → 冒煙測試；`.env.example`（token 產生方式）；`.gitignore`
 - `docs/deployment.md` **§E 完整 SOP**：含「**來源 IP 探測法**」（用 ufw DENY 日誌讀出 A 機真實出口 IP，不需開放全網）、Zeabur 三個環境變數 + `NEXT_PUBLIC_*` 需 redeploy 提醒、驗收表、**一行回滾**（`RUNNER_BACKEND=judge0`）、疑難排解
 
-### Fixed — 本機 Docker 實測抓出的 3 個缺陷（本機 sandbox=none 測不到）
+### 本機 Docker 實測揭露的三項限制
 1. **PCH 目錄未綁入 jail** → `fatal error: /opt/pch/std.h: No such file or directory`；jail 是全新 mount namespace，只有顯式綁定的路徑存在（順帶補 `/etc/ld.so.cache` 與 `TMPDIR=/box`，GCC 需暫存目錄）
 2. **nsjail 以 execve 啟動子行程、不做 PATH 查找** → 傳 `g++` 靜默失敗，且 `--really_quiet` 把錯誤吃掉只剩 "compile failed"；改為 `shutil.which` 解析絕對路徑，並讓失敗訊息帶上 sandbox rc 以便診斷
 3. 🔴 **nsjail 以 `128+signal` 回報，無窮迴圈被誤判成 `Runtime Error (NZEC)`** → 學生會收到錯誤的 Coddy 主動說明（該講逾時卻講執行期錯誤）；`classify_exit` 改為同時處理負數（直接子行程）與 128+N（nsjail）兩種慣例，SIGKILL/SIGXCPU 歸 Time Limit
@@ -440,7 +438,6 @@ P2 證實不需要脆弱的「致謝歸零」規則：理解訊號本身就會�
 - `output-panel.tsx`：session 進行中以終端畫布取代歷史列表，結束後自動收回 RunBlock（`STATUS_META` 圖示／「詢問 Coddy」／執行歷史選單全部沿用）
 - `stdin-panel.tsx`：降級為「**進階：預先餵入**」，預設收合、移除 `codeNeedsInput` 與「程式在等待輸入」提示（互動模式下程式真的會停下來等，提示無意義）→ **tech-debt 記錄的 A12 兩缺陷（提示不即時 / Run 不攔截）就此消滅**
 - `.env.example` 加 `NEXT_PUBLIC_TERMINAL_WS_URL`；新增 `@xterm/xterm` + `@xterm/addon-fit`
-- 驗證：`tsc --noEmit` 0 錯、eslint 0 錯（1 既有 warning 在無關檔案）、`npm run build` 通過
 - ⚠ `output-panel.tsx` 163 行（R4 +25，>150 提醒線未達硬線）已記 tech-debt
 
 ## [2026-08-05] — feat(runner)：R1 runner service — 沙箱編譯執行 + PCH + 快取 + 並行閘
@@ -449,14 +446,13 @@ P2 證實不需要脆弱的「致謝歸零」規則：理解訊號本身就會�
 - **`POST /run`**：批次編譯執行，回應七欄位逐字對齊 `ExecutionResult`、狀態字串沿用 Judge0 慣例（"Accepted" / "Compilation Error" / "Time Limit Exceeded" / "Runtime Error (SIGXXX/NZEC)"）→ R2 映射與前端 `classifyStatus` / `run_help` 零改動；`GET /healthz`（queue/cache 觀測，不驗 token）
 - **模組**（9 檔，皆 <150 行）：`config`（env 參數，server-plan 定案值）/ `models` / `sandbox`（nsjail 旗標包裝，`none` 模式供本機測試）/ `gate`（並行閘 2 + 排隊位置回報 API 供 R3 WS 推送 + 排隊逾時 503 RUNNER_BUSY）/ `cache`（sha256 LRU 256 條，逐出刪檔）/ `compiler`（PCH `-include` 自動偵測 + 快取入庫）/ `executor`（argv shlex + 訊號翻譯 + hardlink 進 workdir）/ `proc`（**串流封頂讀取**——不用 `communicate()` 防 `while(1) cout` 在截斷前 OOM runner；stdin feed + 孫行程佔 pipe 寬限 2s）/ `main`
 - **Dockerfile**：multi-stage——nsjail 自 source 建（不在 apt 庫）+ **PCH 預編 15 個常用標準庫標頭**（旗標與 config 一致否則 g++ 拒用）；`RUNNER_SANDBOX=nsjail` 烘入映像
-- **15 tests 全綠**（真實編譯執行，macOS clang）：hello / stdin / args / 編譯錯誤 / 逾時 / SIGSEGV / NZEC / 快取命中 / 輸出截斷 / 程式碼過大 422 / token 三態 / 閘逾時 / 排隊位置；跑法 `cd runner && ../backend/.venv/bin/python -m pytest tests`
 - **待 R5 實測**：Dockerfile 建置（本機 docker 未啟動）、nsjail 旗標路徑（`sandbox.py` 集中，B 機微調）
 
 ## [2026-08-05] — docs(runner)：7-R 自建互動執行引擎定案（R0），推翻 Batch Terminal 決策
 
 > 起因：使用者驗收 A12（stdin 預填）體驗極差——「貼上按 Run 直接跳結果、必須一次填完 input 不符邏輯」。追根究柢是 Judge0 批次判題天生做不到互動；加上 RapidAPI 50 次/天不敷課堂、自架 Judge0 需 GRUB 切 cgroup v1，整條 Judge0 路線一併重新評估後推翻。
 
-### Changed — 決策（roadmap「已確認決策」節，保留原文加註）
+### 自建互動 runner 決策
 - **推翻「Terminal：Batch 模式」**（原始決策）與「Judge0 上線後自架」（2026-07-12）兩條
 - 新路線：**自建互動 runner**——nsjail 沙箱（不自造輪子）+ **PTY**（stdout 行緩衝，`cout` 提示字即時出現；一併修掉 V1 pipe 緩衝缺陷）+ WebSocket；一律互動終端，`POST /run` 批次僅供題庫驗證/教材健檢/實作題判定
 - 拓撲：Browser `wss` → A 機 backend（需綁公開子網域；Next.js Route Handler 不支援 WS proxy）中繼 → B 機 runner；防火牆僅放行 A 機 + `X-Runner-Token` 縱深；B 機不持有 credential；`ExecutionResult` 欄位不變（EDF / analytics / run_help 零改動）
@@ -481,7 +477,7 @@ P2 證實不需要脆弱的「致謝歸零」規則：理解訊號本身就會�
 
 > 承 v41 `extern` 事件：**沒有任何機制會驗證教材裡的程式碼真的能編譯**，錯了兩個月沒人發現。
 
-### Added — `scripts/verify_code_snippets.py`（兩層，成本天差地遠）
+### 教材健檢的兩層成本設計
 1. **靜態掃描（免費、每次都跑）**：拿 `corrections.json` 的 `global_replacements` 當「已知錯誤拼法字典」掃 questions / staging / learning_units。**不另外維護第二份清單**——修正配置本身就是規格
 2. **Judge0 編譯（有配額）**：把 coding 題的 `starter_code`（**125 支**）送去真的編譯。**每天上限 20 次**（免費額度 50/天），未驗過或內容變動的優先、其次最久沒驗的 → 約 7 天跑完一輪，之後自動輪替
 - 狀態寫 `data/teaching_content/snippet_check_state.json`（哪天跑過 / 每支的 hash + 結果 + 時間）；**只有真的編譯過才算「今天跑過」**，靜態掃描不會消掉提醒
@@ -500,7 +496,7 @@ P2 證實不需要脆弱的「致謝歸零」規則：理解訊號本身就會�
 
 ## [2026-08-05] — feat(edf)：時區提醒 + 端點正名 run-help；發現章節 41 教材把 `extern` 寫成 `external`
 
-### Added — UTC 時區 Coddy 主動提醒（機械判定，零成本）
+### UTC 時區提醒採機械判定
 - 伺服器時鐘是 UTC，比台灣慢 8 小時 → 學生在章節 45 印出「現在時間」會看到差 8 小時的結果，且**看不出是環境問題還是自己寫錯**
 - `uses_local_time()` 偵測 `localtime` / `strftime` / `asctime` / `ctime`（**只認會轉成「人看的當地時間」的函式**；`time(NULL)` 印 epoch、`clock()` 算 CPU 時間都不受時區影響，不觸發）
 - 執行**成功**時才提醒（編譯失敗/逾時另有路徑），每個 session 一次；文案說明這是雲端環境常態並反問「加多少秒會變成台灣時間」，不直接給答案
@@ -534,7 +530,7 @@ P2 證實不需要脆弱的「致謝歸零」規則：理解訊號本身就會�
 | **main 參數 argc/argv（章節 58）** | ❌ **argc 恆為 1**，學生無法傳參數 → 本次補 |
 | C++ 標準 | `__cplusplus=201402`（**預設 C++14**）、GCC 9.2.0。教材未用 C++17 語法（僅 `nullptr`×3 屬 C++11），**現階段不需調整**；實測 `compiler_options: -std=c++17` 可用，日後需要再開 |
 
-### Added — 逾時也由 Coddy 主動說明（同樣零成本）
+### 逾時說明採零成本機械路徑
 - `compile_error.py` 加 `is_timeout()` + `_TIMEOUT_TEMPLATE`：固定文案指出兩大主因（迴圈沒有結束條件 / 用 `cin` 但沒給輸入），**並肯定「正在練習無窮迴圈這章的話，這個結果是正確的」**
 - 前端觸發條件擴到 `Time Limit Exceeded`，以狀態字串當去重簽章；session 標題改「執行問題引導」
 
@@ -588,7 +584,7 @@ P2 證實不需要脆弱的「致謝歸零」規則：理解訊號本身就會�
 
 > 使用者生產環境驗收回報三點：①「點資料夾剛開始跳錯誤、之後正常」②「存成 main.md 也能執行，副檔名形同虛設」③「最上方檔名點不動、無法改名」。
 
-### Fixed — 副檔名鎖定（②，使用者裁決：鎖尾綴而非靜默改寫）
+### 副檔名策略：鎖尾綴而非靜默改寫
 - **確認副檔名完全無作用**：`services/judge0.py:13` 寫死 `CPP_LANGUAGE_ID = 54`，前端執行時只送 code 不送檔名 → `main.md` / `main` / `main.txt` 都以 C++ 編譯。後端原本只驗長度 1–100
 - **後端 `normalize_file_name()`**（`services/workspace_files.py`）：`.cpp` 結尾（不分大小寫）保持原樣，否則**補上**（不改寫既有副檔名——使用者明確表示 `main.md → main.cpp` 的靜默轉換很怪）；補完超長回 422。`save_file` / `rename_file` 皆走此規則，API 直呼也繞不過
 - **前端 `.cpp` 為鎖定尾綴**（新元件 `file-name-input.tsx`）：輸入框只編輯主檔名，尾綴以固定灰字呈現於框內、無法刪改；另存對話框 / 側欄儲存 / 改名列三處共用。另存對話框補一行「程式一律以 C++ 編譯執行」
@@ -603,7 +599,7 @@ P2 證實不需要脆弱的「致謝歸零」規則：理解訊號本身就會�
 > 上線前防濫用盤點：rate limit（10 次/分）與 prompt injection 防護已有，但**主題範圍限制完全沒有**（RULE-1~5 只管程式碼洩漏/語言/字數/收尾）、`off_topic` 只是欄位（`dialogue.py:53` 明寫「暫不主動判定」）、**沒有每日總量上限**（理論上一人一天可打 14,400 次）。
 > **業界基準**：CS50.ai（架構幾乎相同——GPT-4o + 講座字幕 RAG + 教學護欄）實測 **$1.90/學生/月、$0.05/prompt**。
 
-### Changed — 模型全面升級（實測後定案，取代 6-M 選型表）
+### 模型選型：實測後全面升級
 | 用途 | 舊 | 新 | 單價變化 |
 |---|---|---|---|
 | 對話 + 分析 | `gpt-5.4-mini` | **`gpt-5.6-luna`** | $0.75/$4.50 → **$0.20/$1.20** |
@@ -631,7 +627,6 @@ P2 證實不需要脆弱的「致謝歸零」規則：理解訊號本身就會�
 
 ### 決策依據與證據
 - 本機真實 LLM 實測：輸出 `[C++的break與continue 04:05](...&t=245s)`、`[C++的while迴圈 07:04](...&t=424s)`，章節名稱與秒數換算皆正確（245s=04:05、424s=07:04）且來自真實 metadata
-- 後端 750 passed；web tsc / eslint 綠
 
 ---
 
@@ -764,7 +759,6 @@ P2 證實不需要脆弱的「致謝歸零」規則：理解訊號本身就會�
 ## [2026-07-07] — feat(auth)：5-1d-3/4 身分選擇 onboarding + 設定重置卡（前端，UI 驗收通過）
 
 ### 決策依據與證據
-- tsc / eslint 0 problem（沿用 dashboard 的 async setState disable）/ build 通過；元件皆 < 150 行
 - **待使用者 UI 驗收**（既有帳號 role_selected=false → 下次登入先見身分選擇頁）
 
 ---
@@ -809,7 +803,7 @@ P2 證實不需要脆弱的「致謝歸零」規則：理解訊號本身就會�
 
 ## [2026-07-06] — docs(planning)：U2g/6-3c 定案——LEARN tab 重構、範例程式移除、知識點驅動題量
 
-### Added（與使用者討論定案，4 項決策）
+### 四項介面決策
 - **U2g（遞補原第 6 批）**：LEARN tab 改「概念說明 / 程式實作題 / 觀念題」；觀念題＝選擇題（**簡答題型不做**）；v01-03 課程介紹隱藏程式實作題 tab；範例程式全面移除（前端 + 管線 skip examples call，staging 資料留存不 promote）
 - **6-3c（接 U2g）**：題量改依影片知識量——批次前置 LLM 知識點萃取（3-8 點/影片）→ 每知識點 1 題觀念題（JSON 記錄知識點供覆蓋追溯）；程式題固定 1 題（intro 0 題）；既有 138 題保留只補缺；估 $3-6
 
@@ -822,7 +816,6 @@ P2 證實不需要脆弱的「致謝歸零」規則：理解訊號本身就會�
 ### 決策依據與證據
 - **練習題入口改題型卡**（`exercises-tab-views.tsx`）：「程式實作題」（讀題 → 反思 gating → Workspace）/「觀念選擇題」（直接作答 + 立即對錯回饋，重用 Quiz 頁 `MCQuestion` + `submitAnswer`，答題驅動 BKT）；from-bank / generate 均帶 `question_type` 過濾
 - 檔案拆分守規：`exercises-tab.tsx` 233 → 148 行；新增 `exercises-coding-panel.tsx`（原 QuestionPanel + 反思摘要搬出）與 `exercises-mc-panel.tsx`（MC 作答 + 結果）
-- 驗證：`tsc --noEmit` + eslint + `next build` 全綠
 
 ---
 
@@ -832,7 +825,7 @@ P2 證實不需要脆弱的「致謝歸零」規則：理解訊號本身就會�
 - **gpt-5 世代參數不相容**：全系列拒收 `max_tokens`（須 `max_completion_tokens`）；`gpt-5-mini` reasoning 系拒收自訂 temperature 且預設把預算燒在內部推理回空內容（實測 `reasoning_effort="minimal"` → 0 reasoning tokens 正常輸出）。新增 `core/llm_params.py` 相容層純函式 `chat_model_kwargs()`，13 個呼叫點統一切換；gpt-5.4 系 / gpt-4o 行為不變；+5 tests
 - **quiz batch `MissingGreenlet`**：validate 失敗的 rollback 會 expire session 內全部 concept（不只當前），下一輪迴圈屬性存取觸發同步 lazy-load 崩潰；`generate_all` 每輪 `db.refresh(concept)`；+1 回歸測試（未修復狀態精準重現）；後端全量 **614 passed**
 
-### Added（實機批次結果）
+### 實機批次數據
 - **6-2b content 批次（gpt-5.4）**：62/62 成功入 `unit_content_staging`（pending）；僅 v05 語法規則、v62 static 成員標 `needs_more_source`；抽查品質良好（v08 grounded markdown + 11 citations + 3 範例）
 - **6-3a-3 題庫批次（gpt-5-mini 生成 + gpt-5.4 審查 cascade）**：62 concept 首輪 42 滿額 / 15 partial / 2 全滅 + 缺題 15 部補跑一輪 → 題庫 **138 題 validated**（MC + coding 約各半）；57/62 concept 滿額 2+ 題；v17/v41 兩輪全滅 + v11/v53/v61 各缺 1 題記 tech-debt 待 6-4b prompt 調整
 - 費用實測遠低於預估（單 concept content 約 15-20 秒 × 2 call，總計約 $3-5，餘額充足）
@@ -853,7 +846,6 @@ P2 證實不需要脆弱的「致謝歸零」規則：理解訊號本身就會�
 - **K6a 訊號分級**：`BKT_CHAT_PARAMS(learn=0.05, slip=0.3, guess=0.4)`——chat「程式碼無錯」是弱證據（學生常帶寫到一半的碼求助），以 BKT 參數本身表達通道雜訊；`update_mastery` 加 `params` 參數，chat 傳弱證據、quiz/comprehension 沿用強證據預設；測試驗證雙向更新幅度皆顯著小於 quiz
 - **K6b 遺忘衰減**：新模組 `services/mastery/decay.py`——`effective = floor + (stored−floor)×exp(−ln2×days/half_life)`；floor=0.25、基準半衰期 14 天、每次成功練習 +50%（FSRS 穩定度）、上限 180 天；惰性計算不改 DB、BKT 更新仍以 stored 為 prior（衰減=提取強度下降，非習得倒退）。套用點：mastery summary（K4 鷹架自動連動）、quiz Select（衰減回弱項重新被選中=遺忘驅動複習）、K3 診斷（久未練習的前置概念可成嫌疑）
 - **K6c 事件級透明化**：`/concepts/mastery` 加 `raw_confidence`/`days_since_practiced`/`due_for_review`；detail panel 顯示「已 N 天未練習，掌握度自 X% 回落至 Y%——建議複習」（due 用 accent-orange）與輕量提示（差 ≥5% 才顯示避免雜訊）；圖譜 band 色以 effective confidence 驅動、衰減自然變暗；不做逐筆帳本
-- 測試 +18（decay 純函式 17 + mastery route 衰減整合 1）；後端全量 **601 passed**
 
 ## [2026-07-06] — feat(learn)：第 2 批 U2b 移除摘要 + U2c 拔課程介紹範例
 
@@ -867,7 +859,6 @@ P2 證實不需要脆弱的「致謝歸零」規則：理解訊號本身就會�
 - **U1a**：根路由 `/`（`app/(app)/page.tsx`）原為 Phase 1「程式碼編輯器將在後續任務中實作」placeholder——首次登入 OAuth callback 偶爾落在 `/`（NextAuth callbackUrl 遺失時預設值）即誤顯此畫面；改為 server-side `redirect("/workspace")`
 - **U1b**：反思側欄被壓成細縫的根因＝react-resizable-panels **v4 裸數字解讀為 px 而非 %**（`maxSize={40}` = 最大 40 像素）；workspace 頁全部 Panel size props 改百分比字串（`"28%"`/`"40%"` 等，含 editor/output 垂直組）
 - **U1c**：反思顯示 gating——`setActiveReflectionId`（僅「前往 Workspace」按鈕呼叫）同步寫 `active_reflection_handoff` 標記；Workspace 進入改用 `getHandedOffReflectionId()`：標記不符（直接 navigate 的殘留）→ 自動清除不顯示；同 tab 重新整理仍保留（非一次性消費，保住「當下解題脈絡」語意）；舊 session 殘留無標記 → 下次進 Workspace 自動清
-- 驗證：`tsc --noEmit` + eslint + `next build` 全綠（前端無既有測試套件）
 
 ---
 
@@ -903,7 +894,6 @@ P2 證實不需要脆弱的「致謝歸零」規則：理解訊號本身就會�
 - **zoom 過大**：`fitWithCap` 取代裸 fit——fit zoom 與 `ZOOM_CAP=1.0` 取小，小章節不再貼臉
 - **節點過密**：phyllotaxis 步距 52→74；章距 380→700、行距 680（蛇形 2×5）
 - **線條凌亂**：跨章依賴邊預設 opacity 0.18 淡出（`edge[?cross]`），hover 高亮恢復；章內邊維持 0.7
-- 驗證：`tsc` + `next build` 通過；headless Edge 實渲染抽查（地球章節聚焦圖）確認影像/裁切/zoom 上限效果
 
 ---
 
@@ -914,7 +904,6 @@ P2 證實不需要脆弱的「致謝歸零」規則：理解訊號本身就會�
 - **K5b 熟練度視覺**：節點填色改為 mastery band（綠=已掌握 / 橙=學習中 / 紅=需加強 / 灰=尚未互動，取代原 category 填色 + underlay 外圈）；每個 category 產生 compound parent 形成分章 cluster（fcose `nestingFactor: 0.15`）；prerequisite 邊箭頭放大（arrow-scale 0.75→1）+ 不透明度提高（0.55→0.7）；`toElements` 自 style 檔拆至 `knowledge-graph-elements.ts` 控制檔案大小
 - **K5c 路徑高亮**：underlay ring 改承載路徑語意——藍 ring=目前單元（in_progress，無則取 order 最小 available）/ 綠 ring=已完成 / 紅 ring=補救嫌疑；overlay 由 `/learning/paths/default` 衍生（`path-overlay.ts` 純函式，載入失敗不擋圖譜主體）；`/knowledge?remedial=tag1,tag2` query 觸發紅 ring + 鏡頭聚焦（K3e 跳轉入口）；header 圖例改共用 `graph-legend.tsx`
 - **K3e 診斷前端入口**：quiz 結果頁答錯自動查 `GET /concepts/{tag}/diagnosis`（未觸發或失敗自動隱藏，符合 K3d 設計）；觸發時顯示嫌疑鏈（depth / 熟練度 / 盲區標示）+ 每節點「微測驗」按鈕（新端點 `GET /quiz/questions/{id}` 直取 K3c 附掛的題庫診斷題，僅 validated）+「開放補救路徑」（POST remediate → 顯示重開單元順序 + Learn 連結）+「在知識圖譜查看嫌疑鏈」（`?remedial=` 跳轉）
-- 後端新增 `api/routes/quiz_questions.py`（獨立檔避免 quiz.py 破 250 行）+ 4 route tests（550 tests 全綠）
 
 ## [2026-07-04] — feat(K4a/b)：Coddy 自適應提示 — K-Graph 鷹架 + RAG 相關性觸發
 
@@ -931,7 +920,6 @@ P2 證實不需要脆弱的「致謝歸零」規則：理解訊號本身就會�
 ### 決策依據與證據
 - `services/diagnosis/root_cause.py`：**K3a** stateless 觸發判定（該 concept 最近作答連續失敗 streak，遇答對截斷，>= 3 觸發）+ **K3b** closure（max_depth=3）回溯嫌疑排序（已曝光低 confidence 優先 → 未曝光盲區；高 confidence 前置排除；上限 3）+ **K3c** 每個嫌疑附題庫 validated 診斷題 question_id
 - **K3d-API** `GET /concepts/{tag}/diagnosis`（獨立 route 檔避免 concepts.py 破 250 行；純 DB 讀取不掛 rate limit；未觸發回 triggered=false 供前端隱藏入口）
-- `tests/test_diagnosis.py` 9 tests（streak 截斷 / 嫌疑排序 / 高 conf 排除 / 題庫附題 / route 401+404+整合）→ **後端 533 tests 全綠**
 - 新增 K3e（前端入口）追蹤項，建議與 K5 視覺改版一併設計
 
 ## [2026-07-04] — feat(K2)：動態知識狀態追蹤 — EDF 對話重新驅動 BKT
@@ -941,7 +929,6 @@ P2 證實不需要脆弱的「致謝歸零」規則：理解訊號本身就會�
 - **K2a** `services/mastery/resolve.py`：三層 fan-out 解析（① tag 直接命中 → ② parent group 只更新該生已曝光組員 → ③ 全未曝光只更新組內 video_order 最小的入門 concept）——讓 Workspace 對話重新驅動 BKT，同時防止粗 tag 對話噪音淹沒 quiz / comprehension 精準信號；消除 tech-debt「EDF Mastery 連動暫時退場」
 - **K2b** `GET /concepts/mastery` 加 `last_practiced_at`（K4 Coddy prompt 的時序信號；缺口分析後改為擴充既有端點、不新建 k-state API）
 - **K2c 決策記錄**：暫不引入真 AST（tree-sitter/libclang）——LLM Evidence 已輸出等效信號；Phase 5 有行為資料後重評（記 tech-debt）
-- 測試 +6（5 fan-out + 1 endpoint 欄位）→ **後端 524 tests 全綠**
 
 ## [2026-07-04] — feat(K1)：K-Graph 自適應學習引擎啟動 — 跨章多對多依賴 DAG
 
@@ -1016,7 +1003,6 @@ P2 證實不需要脆弱的「致謝歸零」規則：理解訊號本身就會�
   - UPSERT ×1（重生時 reset reviewed_at + status）
   - list_target_concepts / generate_all ×4（過濾 / only filter / skip approved / force regenerate）
   - promote_concept ×3（成功 / pending 422 / 缺 row 404）
-- 全套 backend 從 458 → **476 tests 全綠**
 
 ## [2026-05-08] — Phase 6-1e 完成：Whisper 全 62 部 transcript + 二次審核 + 861 chunks 入 RAG（NotebookLM 核心就緒）
 

@@ -1,7 +1,7 @@
 # ProgramingEducation V2 — 開發指揮中心
 
-> ⚠ **本檔會被 hook 原樣複製為 `AGENTS.md`（給 Codex 讀）。改規則一律改本檔——
-> 直接編輯 `AGENTS.md` 會在下次同步時被覆蓋。**
+> ⚠ **所有 `AGENTS.md` 都是產生物**（本檔與 `.claude/rules/*` 的副本，給 Codex 讀）。
+> 改規則一律改來源檔並跑 `python3 scripts/sync_agents_md.py`；直接編輯 `AGENTS.md` 會被覆蓋。
 
 ## 執行守則 (STRICT RULES)
 1. **小步快跑**：每次對話僅限執行 Roadmap 中的「單一最小 Checkbox 任務」。
@@ -43,10 +43,10 @@
 > 本文件 ≤ 62 行（`doc_selfcheck.py` 會驗）。禁止回填進度/日誌/UI 參數/Schema。
 > **狀態標記**：🔵 活躍｜⚪ 穩定（需維持正確）｜⚫ 凍結（不維護）。稽核只查 🔵⚪。
 
-**`.claude/rules/`**（Claude Code 依 glob 自動注入；**Codex 等其他 agent 必須自己開來讀**）
-- `frontend.md` — Design Tokens、元件規格、響應式斷點（glob: `web/**`）
-- `backend.md` — 錯誤處理、安全規範、環境變數（glob: `backend/**`）
-- `edf-pipeline.md` — EDF 三層管線、ConceptTag、出題流程（glob: `backend/services/edf/**`）
+**`.claude/rules/`**（Claude Code 依 glob 自動注入｜**Codex：動該路徑前先讀對應 `AGENTS.md`**）
+- `frontend.md` ↔ `web/AGENTS.md` — Design Tokens、元件規格、響應式斷點、R1-R8
+- `backend.md` ↔ `backend/AGENTS.md` — 錯誤處理、安全規範、環境變數
+- `edf-pipeline.md` ↔ `backend/services/edf/AGENTS.md` — EDF 三層管線、ConceptTag、出題
 
 **`.claude/skills/`**（Claude Code 依 description 自動選用；**Codex 請當一般文件直接讀**）
 - `code-health/` — 檔案大小與重複的**決策**工作流；改完一個邏輯變更後跑，不在每次 Edit 後跑

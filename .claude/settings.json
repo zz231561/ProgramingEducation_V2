@@ -19,6 +19,24 @@
             "command": "python3 backend/scripts/snippet_check_reminder.py 2>/dev/null || true",
             "timeout": 10,
             "statusMessage": "檢查教材程式碼健檢紀錄"
+          },
+          {
+            "type": "command",
+            "command": "python3 scripts/sync_agents_md.py 2>/dev/null || true",
+            "timeout": 10,
+            "statusMessage": "同步 .claude/rules → 巢狀 AGENTS.md（供 Codex 讀）"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "FILE=$(cat | jq -r '.tool_input.file_path // empty'); case \"$FILE\" in */.claude/rules/*.md) python3 scripts/sync_agents_md.py 2>/dev/null || true ;; esac",
+            "timeout": 10
           }
         ]
       }

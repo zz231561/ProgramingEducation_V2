@@ -314,14 +314,15 @@
 - [x] R2 backend 抽換 ✅（2026-08-05）：`services/runner.py` dispatcher（RUNNER_URL 未設自動退 Judge0）+ 2 呼叫點換 import + 7 tests；後端 811 全綠
 - [x] R3 互動層 ✅（2026-08-05）：runner `WS /terminal`（PTY + 看門狗 + session 上限）+ backend `POST /terminal/ticket`（Redis 單次 60s，沿用 execute rate limit）+ `WS /terminal/ws` 中繼 + 行為事件側錄；runner 22 / backend 818 tests 全綠
 - [x] R4 前端 ✅（2026-08-05）：Output 面板終端模式（`@xterm/xterm` 動態載入避 SSR + ANSI 主題 + 排隊提示）+ 結束收合回 RunBlock + stdin 降級「進階：預先餵入」+ runner 不可用自動退批次；tsc/eslint/build 全過（A12 兩缺陷隨之消滅）
-- [~] R5 B 機上線：**部署產物 + 本機 Docker 實測完成 ✅（2026-08-05）**，實機執行待使用者
+- [x] R5 B 機上線（2026-08-06）：部署、沙箱、A↔B 串接與生產互動終端驗收完成
   - [x] R5a 部署產物：`docker-compose.yml`（SYS_ADMIN + apparmor/seccomp unconfined + mem/pids/cpu 天花板 + tmpfs /tmp）/ `bootstrap.sh`（swap+docker+ufw+**DOCKER-USER 補洞**+禁密碼登入）/ `deploy.sh`（build→up→healthy→冒煙）/ `.env.example` / deployment.md **§E 完整 SOP**（含來源 IP 探測法、回滾、疑難排解）
   - [x] R5b 本機 Docker 實測（nsjail 真實沙箱）：修 3 個只在容器內才會爆的缺陷——① PCH 目錄未綁入 jail ② nsjail 用 execve 故編譯器需絕對路徑（`--really_quiet` 把錯誤吃掉）③ **nsjail 以 128+signal 回報，逾時被誤判 NZEC**（會讓 Coddy 給錯的主動說明）；驗過 hello/stdin/argv/編譯錯誤/逾時/SIGSEGV/`/usr` 唯讀/**PTY 互動提示字先到達**；runner 27 tests
   - [x] R5c-1 **B 機實機部署 ✅**（2026-08-06）：bootstrap 8/8 驗證通過（swap/docker/ufw/DOCKER-USER/systemd unit/SSH 禁密碼）+ 映像建置 + 容器 healthy；實機驗過 hello/stdin/argv/編譯錯誤/逾時/SIGSEGV/快取命中/401/**PTY 互動**；外部直連 8080 已阻斷（Mac 測 000）
     - 修 3 個實機才暴露的缺陷：① `iptables-persistent` 與 ufw 互斥導致 **apt 直接移除 ufw**（改 systemd unit 持久化 DOCKER-USER，purge 該套件）② 驗證函式 `cmd | grep -q` 在 `pipefail` 下收 SIGPIPE 回 141 被誤判 FAIL ③ 🔴 **`/lib64` 未掛入 jail**——amd64 動態載入器在此，execve 報 "No such file or directory"；arm64 loader 在 `/lib` 底下故本機 Apple Silicon 完全測不出來
   - [x] R5c-2 **Zeabur 設定 ✅ 生產互動終端上線**（2026-08-06 使用者驗收通過）：backend 綁公開子網域 + 三變數 + **重啟 backend**（環境變數需重啟才讀入，這是唯一卡點）；web `NEXT_PUBLIC_TERMINAL_WS_URL` + redeploy；**A 機出口 IP 實測即 `43.153.167.105`**（與推測值一致，防火牆無需調整）
   - [x] R5d UI 收斂（使用者回饋「進階：預先餵入很醜」）：stdin-panel 元件刪除 → `args-panel.tsx`（僅 argv 單行，`codeUsesArgs` 為真才渲染）+ 靜態偵測函式移至 `lib/code-detect.ts`（`usesLocalTime` 供 Coddy UTC 說明）；context 移除 orphan `getStdin/setStdin`，批次降級路徑不再送 stdin
-- [ ] R6 收尾：教材健檢解除 20 支/天上限 + 額度文案清理（acceptance-checklist / CLAUDE.md）+ 30 並行壓測 + 文件同步
+- [x] R6 收尾（2026-08-08）：教材健檢改 runner 全量編譯；30 並行 30/30、3.491s、
+      latency p95 3.428s、peak 178.17% CPU / 74.96 MiB RAM，2C2G 容量成立
 
 > **7-R6 收尾已改列 7-D4**（2026-08-06 重排：技術債統一排在功能之後、驗收之前）。
 
@@ -403,9 +404,8 @@
 - [x] 7-D3' **文檔 ↔ 程式碼對齊**（2026-08-08）：完成 API signature、DB schema/Alembic、
       env/page route/deployment service 三層 contract gate；納入 GitHub CI 與 agent 規則，
       現況 83 HTTP operations、20 SQLAlchemy tables、所有穩定 inventory 均為零 drift
-- [ ] 7-D4 **7-R R6 收尾**：教材健檢解除每日上限（`verify_code_snippets.py` `DAILY_BUDGET = 20`，
-      Judge0 額度限制已隨自建 runner 消失）+ 30 並行壓測驗證 server-plan 容量假設
-      （原列的「hook 提示仍寫 Judge0 50 次/天」**2026-08-06 查證已不復現**，session 啟動輸出無此字樣）
+- [x] 7-D4 **7-R R6 收尾**（2026-08-08）：教材健檢取消每日上限並改為預設全量；
+      B 機 30 並行壓測通過，2-slot gate 與 2C2G 容量假設成立
 - ~~7-D5 其餘文件稽核~~ → **已併入 7-D3 階段二**（同一件事，不重複列）
 - [ ] 7-D6 **全站 429 / 5xx toast**（tech-debt B4 剩餘）：引入 sonner，把 quiz / learn / 教師端
       各自為政的 catch 收斂成統一攔截（chat 路徑已於 7-C2b 單獨修好）

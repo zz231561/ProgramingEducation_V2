@@ -1,7 +1,7 @@
 # ProgramingEducation V2 — 開發指揮中心
 
-> ⚠ **所有 `AGENTS.md` 都是產生物**（本檔與 `.claude/rules/*` 的副本，給 Codex 讀）。
-> 改規則一律改來源檔並跑 `python3 scripts/sync_agents_md.py`；直接編輯 `AGENTS.md` 會被覆蓋。
+> ⚠ `CLAUDE.md`、`.claude/rules/*` 與所有 `AGENTS.md` 都是產生物。
+> 改規則一律改 `.agent-source/` 並跑 `python3 scripts/sync_agents_md.py`；直接編輯產生物會被覆蓋。
 
 ## 執行守則 (STRICT RULES) — 交叉引用請用**守則名稱**，勿用編號（編號會隨增刪失效）
 1. **小步快跑**：每次對話僅限執行 Roadmap 中的「單一最小 Checkbox 任務」。

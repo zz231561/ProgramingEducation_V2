@@ -416,7 +416,8 @@
 - [~] 7-D8 **Claude Code / Codex 規則零漂移**（2026-08-08 使用者定案：共同 canonical source + 各自 adapter）
   - [x] A **canonical guidance + 跨平台同步器**：`.agent-source/` 成為唯一來源，能重建
         `CLAUDE.md`、`.claude/rules/*` 與根／巢狀 `AGENTS.md`；`--check` 可偵測 drift
-  - [ ] B **project skills 雙端分發**：canonical skill 同步至 `.claude/skills/` 與 `.agents/skills/`
+  - [x] B **project skills 雙端分發**：`code-health` 從 canonical source 同步至
+        `.claude/skills/` 與 `.agents/skills/`，兩端 validator 與 drift 測試通過
   - [ ] C **Claude / Codex lifecycle adapters**：雙端 SessionStart check、source edit 後同步、禁止直改生成物
   - [ ] D **GitHub CI drift check**：PR / push 必跑並設為 required check
   - [ ] E **跨平台 bootstrap**：macOS / Windows 首次手動安裝後可重建 agent 設定（不含 credential）

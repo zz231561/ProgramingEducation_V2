@@ -390,10 +390,20 @@
         變更明細改以 git log 為主）、`design-plan.md` → **`visual-protocol.md`**（名實對齊）、
         CLAUDE.md 去進度化（進度唯一真相＝roadmap）、守則 6 改為依變更類型決定、
         文件狀態標記 🔵活躍/⚪穩定/⚫凍結、高頻檔的寫法規範寫進各自檔頭
-  - [ ] 階段二 **內容審核**：依新規範逐條清理 `decisions.md` 243 個條目
+  - [x] 階段二 A **UI 文件退場**（2026-08-07）：`ui-ux-spec` / `ui-wireframes` / `visual-protocol`
+        / `design-references` 共 **2891 行**刪除，有效內容（動效表／快捷鍵表／`.kbd`）收斂進
+        `frontend.md`；docs 15 → 12 份。順帶抓到實作缺口 tech-debt E4/E5
+  - [ ] 階段二 B **`decisions.md` 內容清理**：243 條依新規範逐條處理
         （刪 git log 已有的 Added/Changed/Tests 快照，留決策理由/否決方案/實測數據；
-        估 5114 → 約 1200-1400 行）＋ ⚪ 穩定文檔逐份核對（原 7-D5）。**分批 commit**
+        估 5114 → 約 1200-1400 行）。**按月份分批 commit**，每批可獨立回溯
+  - [ ] 階段二 C **⚪ 穩定文檔逐份核對**（原 7-D5 / 8-1a）：已知 `api-spec.md` 只記載
+        81 個實際路由中的 40 個（**51% 缺口**：classes / code files / dashboard / dev /
+        comprehension trigger）；`db-schema.md` 缺 `unit_content_staging`
   - **不拆檔**：清理後行數自然回到合理範圍，拆檔只是把不該存在的內容換地方放
+- [ ] 7-D3' **文檔 ↔ 程式碼對齊**（2026-08-07 使用者指定，**待階段二全部完成後才做**）
+  - 逐份確認文檔敘述與實際程式碼相符、無衝突（本次已示範方法：路由/資料表/元件機械比對）
+  - **確保未來持續對齊**：檢視 `CLAUDE.md` 與 `.claude/rules/` 的規定是否夠清晰明確，
+    足以讓「改程式碼時同步改文檔」成為不需要提醒的預設行為；不足處補規則或補機械檢查
 - [ ] 7-D4 **7-R R6 收尾**：教材健檢解除每日上限（`verify_code_snippets.py` `DAILY_BUDGET = 20`，
       Judge0 額度限制已隨自建 runner 消失）+ 30 並行壓測驗證 server-plan 容量假設
       （原列的「hook 提示仍寫 Judge0 50 次/天」**2026-08-06 查證已不復現**，session 啟動輸出無此字樣）

@@ -192,7 +192,7 @@ uv pip install <package>
 
 | 項目 | 本機 dev | Zeabur prod |
 |------|---------|-------------|
-| Postgres image | `pgvector/pgvector:pg16`（docker-compose.dev.yml）| 目前 marketplace `postgresql`，**Phase 4-1b 會替換為 pgvector spec** |
+| Postgres image | `pgvector/pgvector:pg16`（docker-compose.dev.yml）| `pgvector/pgvector:pg16`（`zeabur.json`，dev / prod 一致） |
 | migration | `.venv/bin/alembic upgrade head` | 容器啟動腳本 `backend/start.sh` 同指令 |
 | `DATABASE_URL` | 寫死於 `backend/.env` | `zeabur.json` 注入 |
 | Docker daemon | Colima | Zeabur 平台自管 |

@@ -93,7 +93,7 @@ RAM 餘裕遠高於假設；現行 2C2G 不需升級。B 機重跑：
 | `RUNNER_URL` | `http://43.133.7.93:<port>` |
 | `RUNNER_TOKEN` | 共享密鑰（Zeabur Secret） |
 
-## 待辦
+## 完成紀錄
 
 - [x] B 機租用 + SSH 金鑰 + 硬體實測全綠（2026-08-05）
 - [x] R5：swap + docker + runner 部署 + 防火牆 + 禁密碼 + 健康檢查（2026-08-06）

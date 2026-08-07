@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * 計時器（roadmap 3-2b）— 顯示作答經過時間。
+ * 顯示作答經過時間的計時器。
  *
  * 純 prop-driven：caller 傳 startedAt（Date.now() 時戳），元件自行 tick 每秒重算。
  * 不影響 submit 行為（submit 時 caller 仍自行從 startedAt 計算 time_spent_seconds）。

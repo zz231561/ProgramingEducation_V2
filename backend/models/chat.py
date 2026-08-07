@@ -31,7 +31,7 @@ class MessageRole(str, enum.Enum):
 
 
 class DialogueAct(str, enum.Enum):
-    """學生訊息對話行為分類（StudyChat dialogue act schema，roadmap 5-2c）。"""
+    """學生訊息對話行為分類（StudyChat dialogue act schema）。"""
 
     ASKING_HINT = "asking_hint"
     CLARIFICATION_REQUEST = "clarification_request"

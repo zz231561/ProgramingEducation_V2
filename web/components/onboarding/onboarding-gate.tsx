@@ -58,7 +58,7 @@ export function OnboardingGate({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     // evaluate 為 async，setState 發生在 microtask（非 effect 同步階段）
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- session 載入完成後同步 gate 狀態
     void evaluate();
   }, [evaluate]);
 

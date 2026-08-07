@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Dashboard 今日建議卡片（roadmap 3-3a）。
+ * Dashboard 今日建議卡片。
  *
  * MVP 用規則版（後端 _today_suggestion）：依 path / unit 狀態決定建議文字 + 連結。
  * LLM 個人化建議留給後續任務。

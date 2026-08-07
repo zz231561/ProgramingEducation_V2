@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Dashboard 統計卡片網格（roadmap 3-3a）。
+ * Dashboard 統計卡片網格。
  *
  * 4 張卡片：
  * 1. 學習路徑進度（path_progress；無 path 時顯示「尚未建立」）

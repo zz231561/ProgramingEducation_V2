@@ -31,7 +31,7 @@ class InteractRequest(BaseModel):
     # 而是「學生按了『我卡住了』」這個後端觀測不到的實際動作
     explicit_help: bool = Field(default=False)
     execution_result: dict | None = Field(default=None)
-    # Phase 2-5e：若前端帶上當前 active reflection_id，後端會載入並注入 EDF prompt
+    # 若前端帶上 active reflection_id，後端會載入並注入 EDF prompt
     reflection_id: uuid.UUID | None = Field(default=None)
 
 

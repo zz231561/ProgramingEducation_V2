@@ -1,4 +1,4 @@
-"""Comprehension → BKT 精熟度更新 hook（roadmap 2-6e）。
+"""Comprehension → BKT 精熟度更新 hook。
 
 設計：
 - 通過（passed=True）→ Evidence(error_type=NONE) → BKT 視為「答對」上調 confidence

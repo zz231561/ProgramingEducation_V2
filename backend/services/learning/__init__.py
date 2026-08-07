@@ -1,4 +1,4 @@
-"""學習路徑 service — 路徑生成 + 拓撲排序 + 查詢 + 單元狀態（roadmap 3-1b/c/d）。"""
+"""學習路徑 service — 路徑生成、拓撲排序、查詢與單元狀態。"""
 
 from services.learning.generator import (
     DEFAULT_SKIP_MASTERED_THRESHOLD,

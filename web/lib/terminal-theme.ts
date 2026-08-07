@@ -3,7 +3,7 @@
  *
  * 前 6 項（bg/fg/cursor/selection）直接對應既有 design token；
  * ANSI 16 色採 GitHub 官方 dark 色盤，屬 frontend.md R8 白名單核准例外
- * （2026-08-05，7-R）：**僅限終端機畫布內**，供學生程式自行輸出的色碼渲染。
+ * **僅限終端機畫布內**，供學生程式自行輸出的色碼渲染。
  */
 
 /** @returns xterm ITheme 相容物件 */

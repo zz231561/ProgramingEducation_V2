@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * 最近活動時間線（roadmap 3-3b）。
+ * 最近活動時間線。
  *
  * 顯示 quiz / reflection / unit_completed 三種事件，依時間倒序。
  * Async load（不擋頁面其餘部分）；空狀態 placeholder。

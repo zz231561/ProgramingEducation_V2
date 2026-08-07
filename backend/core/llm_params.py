@@ -1,13 +1,13 @@
 """LLM chat completion 參數相容層（6-M1 實機驗證後新增）。
 
-設計意圖：gpt-5 世代模型的參數規則與 gpt-4o 不同，實測（2026-07-06）：
+設計意圖：gpt-5 世代模型的參數規則與 gpt-4o 不同，實測結果如下：
 - 全系列拒收 `max_tokens`，必須改用 `max_completion_tokens`（gpt-4o 兩者皆收）
 - reasoning 系列（gpt-5 / gpt-5-mini / gpt-5-nano）只接受預設 temperature=1，
   且預設會把 completion 預算燒在 reasoning 上導致空輸出——
   必須 `reasoning_effort="minimal"`（實測 minimal → 0 reasoning tokens、正常輸出）
 - gpt-5.4 / gpt-5.4-mini 接受自訂 temperature，行為同傳統模型
 - gpt-5.6 世代（sol / terra / luna）：拒收自訂 temperature；
-  ~~也拒收 reasoning_effort~~ → **2026-08-06 更正**：只是值域改了
+`reasoning_effort` 並非拒收，而是值域改了
   （`none/low/medium/high/xhigh`，不收 `minimal`）。預設**會**依提示複雜度
   燒 reasoning tokens（實測同一 prompt 0～96+ 顆浮動），與 max_completion_tokens
   同一預算——曾造成 reflection 評分間歇性整包空輸出（finish_reason=length、
@@ -26,7 +26,7 @@ _REASONING_PREFIX = "gpt-5-"
 _REASONING_EXACT = "gpt-5"
 # gpt-5.6 世代（sol / terra / luna）：拒收自訂 temperature；
 # reasoning_effort 值域為 none/low/…（不收 minimal），必須送 "none" 壓制
-# 浮動的 reasoning 預算（2026-08-06 更正，詳見檔頭）
+# 此系列使用浮動 reasoning 預算，限制詳見檔頭
 _GEN56_PREFIX = "gpt-5.6"
 
 

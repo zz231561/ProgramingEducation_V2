@@ -1,5 +1,5 @@
 /**
- * Dashboard types + API helper（roadmap 3-3a）。
+ * Dashboard types 與 API helper。
  *
  * 對應後端 `/dashboard/stats`；schema 與 `backend/api/routes/dashboard.py` 一致。
  */

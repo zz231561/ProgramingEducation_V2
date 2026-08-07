@@ -19,6 +19,27 @@
 > `python3 scripts/doc_selfcheck.py` 的當下產出為準（同 `tech-debt.md` 規範）。
 >
 
+## [2026-08-08] — 註解品質採機械 gate + 語意審查
+
+### 決策理由
+
+Python PEP 8 要求程式變更時優先保持註解正確；Google、LLVM 與 Linux Kernel 的共同原則是
+註解應補充程式碼無法表達的目的、理由、限制與契約，不重述 signature 或微觀執行步驟。
+因此 CI 只阻擋能客觀判定的時間快照、空泛區段標題、無 issue TODO 與無理由 suppression；
+「內容是否仍正確」沒有可靠 parser 規則，維持 code-health 逐檔語意審查。
+
+參考：[Python PEP 8](https://github.com/python/peps/blob/main/peps/pep-0008.rst)、
+[Google C++ Style Guide](https://github.com/google/styleguide/blob/gh-pages/cppguide.html)、
+[LLVM Coding Standards](https://github.com/llvm/llvm-project/blob/main/llvm/docs/CodingStandards.rst)、
+[Linux Kernel Coding Style](https://github.com/torvalds/linux/blob/master/Documentation/process/coding-style.rst)。
+
+### 否決方案
+
+- **只寫 agent 規則**：無法阻止新程式再次加入同型違規。
+- **讓 CI 判斷註解語意**：誤判率不可控，也無法證明註解與執行行為一致。
+- **直接套單一語言 linter**：本專案同時有 Python 與 TypeScript，且既有工具不涵蓋全部政策；
+  checker 使用 Python tokenizer 避開字串，TypeScript 則只抽取 comment token，不掃教材內容。
+
 ## [2026-08-08] — 文件契約 drift 的三層防線
 
 ### 為什麼採 AST inventory + fingerprint

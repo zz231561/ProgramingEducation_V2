@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Active Reflection 載入 hook（Phase 2-5d）。
+ * Active Reflection 載入 hook。
  *
  * 訂閱 sessionStorage 內的 `active_reflection_id`，呼叫 GET /reflection/{id} 取資料；
  * 同 tab 變更透過 custom event，跨 tab 變更透過 storage event。

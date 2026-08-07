@@ -1,13 +1,13 @@
 "use client";
 
 /**
- * Reflection Flow — 開題前反思 modal 容器（Phase 2-5c）。
+ * Reflection Flow — 開題前反思 modal 容器。
  *
  * 狀態機：form → submitting → (approved | followup) → submitting → approved
  *
  * - LLM 失敗（quality_score=null）→ 視為通過，不擋學生流程
  * - 達門檻（followup_question=null）→ approved
- * - 追問是引導不是門檻（2026-07-16 修訂）：追問階段隨時可「直接開始作答」跳過；
+ * - 追問是引導而非門檻，學生隨時可選擇「直接開始作答」跳過；
  *   回答過一次追問後無論分數一律放行（self-explanation 的效益來自提示本身）
  *
  * 純受控 — open/close 由 caller 用 prop 管；onApprove 通知放行 + 回傳 reflection。

@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * 教師班級管理頁（roadmap 5-1c-1；導航改造後為 /teacher 的班級分頁）。
+ * 教師班級管理頁（`/teacher` 的班級分頁）。
  * 角色 gating 在 teacher/layout.tsx。
  */
 

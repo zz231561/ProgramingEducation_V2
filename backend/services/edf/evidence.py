@@ -141,7 +141,7 @@ async def analyze_evidence(
 ) -> EvidenceResult:
     """呼叫 LLM 分析程式碼，回傳結構化 Evidence。
 
-    `reflection_summary`（Phase 2-5e）：學生先前提交的反思摘要字串。
+    `reflection_summary` 是學生先前提交的反思摘要字串。
     傳空字串等於不注入；caller 應透過 `format_reflection_for_evidence` 預先渲染。
     `exit_code` / `status_description`：執行平台的結束狀態——NZEC 這類
     「stderr 全空的失敗」只有這兩個欄位看得到。

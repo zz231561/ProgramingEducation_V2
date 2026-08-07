@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Workspace 反思側邊欄（Phase 2-5d）。
+ * Workspace 反思側邊欄。
  *
  * 持續顯示當前作答的反思計畫，學生可隨時對照、編輯：
  * - planned_steps、expected_concepts、problem_understanding

@@ -1,4 +1,4 @@
-"""學習路徑 API — 路徑 CRUD + 生成（roadmap 3-1c）。
+"""學習路徑 API — 路徑 CRUD 與生成。
 
 API 設計：
 - POST   /learning/paths         — 生成新路徑（拓撲 + 弱項補強）

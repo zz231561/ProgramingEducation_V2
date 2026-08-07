@@ -4,7 +4,7 @@
 // 而它們（DifficultyDots 等）都只用一次，外移違反「單次使用的邏輯不抽象」（Q3）。
 
 /**
- * Concept Detail Panel — 點節點後右側顯示的詳情面板（roadmap 2-2d）。
+ * Concept Detail Panel — 點節點後右側顯示的詳情面板。
  *
  * 串接 GET /concepts/{tag}，渲染：基本資訊 + 先修概念 + 進階概念。
  * 點鄰居可切換到該 concept（保持 panel 開啟，graph 不重新整理）。

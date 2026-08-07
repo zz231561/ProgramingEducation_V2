@@ -1,4 +1,4 @@
-"""對話行為分類（StudyChat dialogue act schema，roadmap 5-2c）。
+"""對話行為分類（StudyChat dialogue act schema）。
 
 啟發式分類學生訊息的互動類型，寫入 `chat_messages.dialogue_act` 供行為分析（5-2d）。
 純函式、零 LLM 呼叫（比照 5-2b `classify_execution` 慣例）；訊號不足回 None——欄位 nullable，

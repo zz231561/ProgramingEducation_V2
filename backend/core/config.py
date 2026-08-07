@@ -31,7 +31,7 @@ class Settings(BaseSettings):
 
     # === OpenAI ===
     OPENAI_API_KEY: str = ""
-    # 6-M 任務導向模型路由（2026-07-06 定案，roadmap 6-M 選型表）：
+    # 依任務分流模型，讓高頻對話與高風險審查可獨立調整成本及品質：
     # LLM_MODEL = 預設（對話組 EDF Feedback + 分析組 Evidence / Reflection / Comprehension 評分）
     # 分組變數未設定時一律 fallback LLM_MODEL，行為與單一模型時代相同
     LLM_MODEL: str = "gpt-5.6-luna"

@@ -29,8 +29,8 @@ from models.reflection import Reflection, ReflectionSourceType
 logger = logging.getLogger(__name__)
 
 # 平均分 < 此閾值才回追問；其餘放行。
-# 2026-07-16 修訂（使用者回饋：0.6 對初學者過嚴，反思變負荷）：
-# 預設降至 0.45，並依題目 Bloom 自適應——低 Bloom 題再降、高 Bloom 題略升。
+# 0.6 對初學者過嚴，會讓反思變成負荷；因此預設採 0.45，並依題目 Bloom
+# 自適應——低 Bloom 題再降、高 Bloom 題略升。
 QUALITY_THRESHOLD = 0.45
 _THRESHOLD_LOW_BLOOM = 0.4  # Bloom 1–2（記憶/理解層級題）
 _THRESHOLD_HIGH_BLOOM = 0.55  # Bloom >= 4（分析以上）

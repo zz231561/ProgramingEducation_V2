@@ -1,4 +1,4 @@
-"""學習單元狀態 API（roadmap 3-1d）— PATCH 觸發 transition + 自動解鎖下一單元。
+"""學習單元狀態 API — PATCH 觸發 transition 並自動解鎖下一單元。
 
 獨立檔避免 learning.py 超過 250 行硬性限制。
 

@@ -5,7 +5,7 @@
  *
  * Presentational 元件 — 由 KnowledgePage 傳入 graphData + masteryMap + pathOverlay，
  * 自己只負責 Cytoscape 生命週期與互動。
- * 語意縮放（2026-07-05 改版）：overview / detail 顯示同一批概念節點；
+ * 語意縮放：overview / detail 顯示同一批概念節點；
  * zoom < 門檻時節點與字體放大並重排為緊湊網格（overview-layout.ts），
  * 讓全覽時所有節點名稱仍可讀；切換由 graph-mode.ts 依 viewport zoom 驅動。
  * 點擊概念節點 zoom in 至該章（並開詳情面板）。

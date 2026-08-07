@@ -1,4 +1,4 @@
-"""EPL (Explain in Plain Language) — LLM 生成驗證題 + 評估學生回答（roadmap 2-6b）。
+"""EPL (Explain in Plain Language) — LLM 生成驗證題並評估學生回答。
 
 設計（理論基礎見 references.md：Self-explanation effect、Fowler et al. EPL）：
 - 兩階段：先生成 EPL prompt（看題目+學生答案 → 出「請用自己的話解釋」題），

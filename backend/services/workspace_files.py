@@ -66,7 +66,7 @@ async def save_draft(
     if draft is None:
         draft = CodeFile(user_id=user_id, code=code)
         if opened_name is not KEEP_OPENED_NAME:
-            draft.opened_name = opened_name  # type: ignore[assignment]
+            draft.opened_name = opened_name  # type: ignore[assignment] -- sentinel guard 已排除 object
         db.add(draft)
         try:
             await db.commit()
@@ -80,7 +80,7 @@ async def save_draft(
             return draft
     draft.code = code
     if opened_name is not KEEP_OPENED_NAME:
-        draft.opened_name = opened_name  # type: ignore[assignment]
+        draft.opened_name = opened_name  # type: ignore[assignment] -- sentinel guard 已排除 object
     await db.commit()
     await db.refresh(draft)
     return draft

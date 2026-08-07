@@ -1,4 +1,4 @@
-"""學習路徑查詢 service — list / get / delete / 自動建立預設（roadmap 3-1c+）。
+"""學習路徑查詢 service — list / get / delete / 自動建立預設。
 
 擁有權檢查：非本人擁有的路徑一律回 404（避免列舉攻擊揭露存在性，
 與 reflection / comprehension 服務一致）。

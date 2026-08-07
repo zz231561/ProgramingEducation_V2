@@ -1,4 +1,4 @@
-"""學生身分 profile API（roadmap 5-1b-3）。
+"""學生身分 profile API。
 
 - GET  /profile   — 取得自己的身分資料（未填回 404 供前端引導）
 - POST /profile   — 提交/更新身分資料（upsert）

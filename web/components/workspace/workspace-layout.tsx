@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Workspace 版面組裝（2026-08-05 由 page.tsx 拆出，250 行硬性線）。
+ * Workspace 版面組裝，讓 page 容器維持在檔案大小限制內。
  *
  * 側邊欄開合時**永遠渲染同一棵 PanelGroup**，只讓側欄 slot 在有/無之間切換——
  * 原本是「有側欄 → PanelGroup / 無側欄 → Fragment」兩種根節點，切換時整棵子樹

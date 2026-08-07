@@ -1,4 +1,4 @@
-"""班級 Models — 對應 Module 8: 教師端（roadmap 5-1a）。
+"""班級 Models — 教師端班級資料。
 
 Schema 對齊 alembic migration `l8a9b0c1d2e3` 與 db-schema.md §Module 8。
 invite_code 的產生邏輯屬 5-1b（API 層）；本檔僅定義 schema。

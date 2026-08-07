@@ -1,6 +1,6 @@
 /**
  * 教師端班級管理 API wrappers（5-1c-1）。
- * 對應後端 /classes 與 /classes/{id}/members（roadmap 5-1b-2/3）。
+ * 對應後端 `/classes` 與 `/classes/{id}/members`。
  */
 
 import { api } from "./api";

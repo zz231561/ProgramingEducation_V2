@@ -33,7 +33,7 @@ class BKTParams:
 # 累積足夠資料後，以 pyBKT.fit() 學出的 per-concept 參數覆蓋此預設
 BKT_DEFAULT_PARAMS = BKTParams(prior=0.3, learn=0.3, slip=0.1, guess=0.2)
 
-# K6a 訊號分級（2026-07-06 定案）：quiz 作答＝強證據（沿用預設）；
+# quiz 作答是強證據（沿用預設）；
 # chat 對話「程式碼無錯」＝弱證據。以 BKT 參數本身表達通道雜訊而非外掛權重係數
 # （Baker et al. 2008 contextual guess/slip 思路，見 references.md §5.1）：
 # - guess=0.4：程式碼恰好無錯不代表掌握（可能抄範例、改別人的碼）

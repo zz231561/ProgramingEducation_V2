@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * YouTube IFrame Player wrapper（Phase 6-2c）— 概念說明 tab 用。
+ * 概念說明 tab 使用的 YouTube IFrame Player wrapper。
  *
  * 設計：
  * - 用官方 IFrame Player API（不是純 iframe src）→ 才能 imperative seekTo

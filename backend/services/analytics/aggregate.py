@@ -1,4 +1,4 @@
-"""行為指標聚合 service（roadmap 5-2d / Module 9）。
+"""行為指標聚合 service。
 
 從 coding_events + chat_messages 計算單一使用者的行為指標，供教師端行為分析（5-3/5-4）與
 個人摘要使用。

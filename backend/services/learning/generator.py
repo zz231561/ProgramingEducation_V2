@@ -1,4 +1,4 @@
-"""學習路徑生成 service — 拓撲排序 + 弱項補強（roadmap 3-1b）。
+"""學習路徑生成 service — 拓撲排序與弱項補強。
 
 流程：
 1. 取概念集（可依 category filter）+ PREREQUISITE 邊 + 學生 mastery
@@ -162,8 +162,8 @@ async def generate_learning_path(
     db.add(path)
     await db.flush()  # 取 path.id
 
-    # 寫入 LearningUnits — **全部 available**（7-U2 2026-08-06 決策：課程全解鎖，
-    # 學生可自由跳章。順序仍以 order_index 呈現為「建議路徑」，並由 K-Graph
+    # LearningUnits 全部 available，讓學生可自由跳章。
+    # 順序仍以 order_index 呈現為「建議路徑」，並由 K-Graph
     # 前置依賴 / 弱項診斷 / 補救路徑提供學習引導，不再用鎖擋人）
     # content：已 approve 的 staging 內容直接帶入（無則空骨架待後續 promote）
     approved_content = await _fetch_approved_content(db, selectable_ids)

@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * ReflectionSidebar 的「顯示模式」（Phase 2-5d 拆檔）。
+ * ReflectionSidebar 的顯示模式。
  * 唯讀展示反思內容 + 編輯/清除入口。
  */
 

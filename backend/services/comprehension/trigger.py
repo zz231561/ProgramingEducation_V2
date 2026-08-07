@@ -1,4 +1,4 @@
-"""動態觸發 comprehension check 決策（roadmap 2-6e）。
+"""動態觸發 comprehension check 決策。
 
 依學生過往 comprehension 通過率 + 當前題型，決定：
 - 是否觸發

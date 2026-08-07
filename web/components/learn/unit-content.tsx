@@ -1,9 +1,9 @@
 "use client";
 
 /**
- * 學習單元內容頁（roadmap 3-1d）— tab 切換 + 上下單元導航 + 完成按鈕。
+ * 學習單元內容頁 — tab 切換、上下單元導航與完成按鈕。
  *
- * tab 內容（U2g 2026-07-06 晚間重構）：
+ * tab 內容依資料與使用者角色動態顯示：
  * - 概念說明：YT IFrame player + grounded markdown + citation 跳轉（6-2c，元件移至 concept-tab.tsx）
  * - 程式實作題：讀題 → 反思 → Workspace 作答；「課程介紹」單元（video 1-3）隱藏
  * - 觀念題：選擇題直接作答 + 即時回饋
@@ -181,4 +181,3 @@ function TabButton({
     </button>
   );
 }
-

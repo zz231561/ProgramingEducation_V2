@@ -86,7 +86,7 @@ async def generate_feedback(
 ) -> str:
     """組裝 prompt、呼叫 LLM、驗證輸出，回傳教學回應。
 
-    `reflection_block`（Phase 2-5e）：學生反思的詳細版字串；空字串代表不注入。
+    `reflection_block` 是學生反思的詳細版字串；空字串代表不注入。
     `kgraph_block`（K4a）：學生 K-Graph 知識狀態 + 鷹架指令；空字串代表不注入。
     RAG（K4b）：一律檢索，`fetch_rag_chunks_safe` 內部依相似度分數過濾。
     `debug_sink`（DEV-7）：dev 帳號的中間層觀測 dict；非 None 時寫入 RAG 命中明細。

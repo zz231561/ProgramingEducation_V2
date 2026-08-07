@@ -1,4 +1,4 @@
-"""Reflection → prompt block 格式化（Phase 2-5e）。
+"""Reflection → prompt block 格式化。
 
 把 `Reflection` model 渲染成可注入 EDF Pipeline 各層的字串：
 - `format_reflection_for_evidence`：簡短版，給 Evidence LLM 判斷 Bloom / concept_tags 用

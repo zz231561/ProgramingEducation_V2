@@ -1,4 +1,4 @@
-"""Quiz 作答後 EDF 回饋 API（roadmap 3-2c）。
+"""Quiz 作答後 EDF 回饋 API。
 
 獨立檔避免 quiz.py 超過 250 行硬性限制。
 

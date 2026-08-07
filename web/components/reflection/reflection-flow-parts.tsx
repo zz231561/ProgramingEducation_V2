@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * ReflectionFlow modal 的 sub-component 拆分（Phase 2-5c）— 控制主檔行數。
+ * ReflectionFlow modal 的 sub-components，讓容器只負責流程狀態。
  * 純展示元件，狀態與動作由 caller (`reflection-flow.tsx`) 注入。
  */
 

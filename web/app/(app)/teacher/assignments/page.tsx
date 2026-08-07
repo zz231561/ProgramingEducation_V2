@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * 教師作業頁（roadmap 5-5a-3；/teacher/assignments）。
+ * 教師作業頁（`/teacher/assignments`）。
  * 角色 gating 在 teacher/layout.tsx。
  */
 

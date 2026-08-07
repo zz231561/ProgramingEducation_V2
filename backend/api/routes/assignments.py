@@ -1,4 +1,4 @@
-"""作業指派 API — 教師端 CRUD + 附件（roadmap 5-5a-2）。
+"""作業指派 API — 教師端 CRUD 與附件。
 
 作業 CRUD 掛 require_roles(TEACHER) + 擁有權；附件下載對已登入使用者開放、授權在 service。
 檔案存 bytea；上傳白名單 + 10MB 由 service 把關。下載一律 Content-Disposition: attachment
@@ -41,7 +41,6 @@ attachments_router = APIRouter(prefix="/attachments", tags=["assignments"])
 _teacher = require_roles(UserRole.TEACHER)
 
 
-# === Schemas ===
 
 
 class CreateAssignmentRequest(BaseModel):

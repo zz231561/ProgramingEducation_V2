@@ -1,4 +1,4 @@
-"""學習單元狀態管理 service — status transition + 解鎖（roadmap 3-1d）。
+"""學習單元狀態管理 service — status transition 與解鎖。
 
 狀態機（與 LearningUnitStatus enum 對齊）：
 

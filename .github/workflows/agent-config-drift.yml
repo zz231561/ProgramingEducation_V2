@@ -35,3 +35,4 @@ jobs:
         run: |
           python3 -m unittest discover -s scripts/tests
           python3 scripts/doc_selfcheck.py
+          python3 scripts/comment_policy_check.py

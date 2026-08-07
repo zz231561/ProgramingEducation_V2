@@ -1,4 +1,4 @@
-"""班級管理 API — 教師端 CRUD（roadmap 5-1b-2）。
+"""班級管理 API — 教師端 CRUD。
 
 - POST   /classes         — 建立班級（回傳 6 位數字邀請碼）
 - GET    /classes         — 列出教師自己的班級（含成員數）

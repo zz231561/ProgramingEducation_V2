@@ -1,4 +1,4 @@
-"""Reflection API — 解題前反思 CRUD（roadmap 2-5a）。
+"""Reflection API — 解題前反思 CRUD。
 
 API spec 對齊 docs/api-spec.md：
 - POST /reflection            — 建立反思

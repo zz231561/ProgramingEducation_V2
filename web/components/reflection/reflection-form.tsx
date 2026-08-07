@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Pre-Coding Reflection 表單元件（Phase 2-5c）。
+ * Pre-Coding Reflection 表單元件。
  *
  * 三個必填欄位（PRIMM / Polya 解題四步驟）：
  * - problem_understanding：學生重述問題（避免直接動手沒讀題）

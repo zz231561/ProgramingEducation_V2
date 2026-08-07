@@ -1,4 +1,4 @@
-"""學生身分 Profile Model — 對應 Module 8: 教師端（roadmap 5-1b-1）。
+"""學生身分 Profile Model。
 
 Google OAuth 的顯示名不一定是真實姓名，故學生首次登入需補填校名 / 系所 /
 學號 / 姓名以確認身分；email 沿用 `users.email` 不重複儲存。

@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * 學生 Dashboard 頁面（roadmap 3-3a）。
+ * 學生 Dashboard 頁面。
  *
  * 4 張統計卡片 + 1 張今日建議。
  * 最近活動時間線（3-3b）+ 精熟度詳細圖表（3-3c）後續加。
@@ -38,7 +38,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     // 初次載入；setView 是 effect → external 同步典型情境
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- API 載入完成後同步頁面狀態
     load();
   }, [load]);
 

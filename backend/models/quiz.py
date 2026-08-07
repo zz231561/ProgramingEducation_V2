@@ -44,7 +44,7 @@ class QuestionSource(str, enum.Enum):
 
 
 class ComprehensionType(str, enum.Enum):
-    """Post-Solution Comprehension Check 驗證類型（roadmap 2-6）。"""
+    """Post-Solution Comprehension Check 驗證類型。"""
 
     EPL = "epl"  # Explain in Plain Language：用自己的話解釋
     PREDICT_OUTPUT = "predict_output"  # 預測新測資輸出
@@ -116,7 +116,7 @@ class StudentAnswer(Base):
         DateTime(timezone=True),
         server_default=func.now(),
     )
-    # Post-Solution Comprehension Check（roadmap 2-6a）— 解題後選擇性驗證，預設 NULL
+    # Post-Solution Comprehension Check 是解題後的選擇性驗證，預設 NULL
     comprehension_type: Mapped[str | None] = mapped_column(String(20), default=None)
     comprehension_prompt: Mapped[str | None] = mapped_column(Text, default=None)
     comprehension_answer: Mapped[str | None] = mapped_column(Text, default=None)

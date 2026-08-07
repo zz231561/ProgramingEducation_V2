@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Quiz 主流程 runner（roadmap 3-2a）。
+ * Quiz 主流程 runner。
  *
  * 三狀態：idle（題型選擇）→ question（作答）→ result（看結果）
  * K3e：result 答錯時 ResultView 內顯示診斷嫌疑鏈，微測驗直接切入指定題目。

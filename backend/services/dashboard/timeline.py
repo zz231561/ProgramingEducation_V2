@@ -1,4 +1,4 @@
-"""Dashboard 最近活動時間線（roadmap 3-3b）。
+"""Dashboard 最近活動時間線。
 
 事件類型 3 種：
 - quiz：學生作答（含對錯）

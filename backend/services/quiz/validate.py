@@ -44,7 +44,7 @@ class _ValidatorResponse(BaseModel):
     concept_reason: str = Field(default="")
     bloom_appropriate: bool
     bloom_reason: str = Field(default="")
-    # 2026-07-06 使用者回饋新增：考點須有意義（default True 兼容舊 LLM 回應）
+    # default True 兼容尚未回傳「考點是否有意義」欄位的舊 LLM 回應
     point_meaningful: bool = True
     point_reason: str = Field(default="")
 

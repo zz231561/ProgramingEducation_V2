@@ -1,4 +1,4 @@
-"""程式行為事件 Model — 對應 Module 9 學習行為分析（roadmap 5-2a）。
+"""程式行為事件 Model — 學習行為分析資料。
 
 event_type 採 ProgSnap2 EventType 詞彙（CC-BY-4.0，見 references.md §1）；
 concept_tags / execution_result / event_metadata 用通用 JSON 存（與 quiz/reflection

@@ -86,7 +86,7 @@ function ReflectionDoneSummary({
   starterCode?: string;
 }) {
   // 帶反思 + 檔名 + 起手碼進 Workspace：自動開啟同名檔案並顯示反思計畫
-  // 不顯示品質分數（2026-07-16：避免對初學者造成壓力；分數仍入 DB 供研究）
+  // 不顯示品質分數，避免對初學者造成壓力；分數仍入 DB 供研究
   const handleGoWorkspace = () =>
     setActiveReflectionId(reflection.id, { fileName, starterCode });
   return (

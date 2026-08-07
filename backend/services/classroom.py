@@ -1,4 +1,4 @@
-"""班級管理 service — 教師端 CRUD（roadmap 5-1b-2）。
+"""班級管理 service — 教師端 CRUD。
 
 - 邀請碼：6 位數字（含前導零），以 `secrets` 產生避免可預測；DB unique
   約束把關，碰撞則重試。

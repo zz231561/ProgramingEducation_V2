@@ -35,7 +35,7 @@ interface ToolbarProps {
 /**
  * Workspace 頁面 Toolbar — 檔名 + 修改狀態 dot + 語言 badge + Run 按鈕。
  * Chat Toggle 移至 GlobalNav（design-plan §2.5）。
- * Reflection Sidebar Toggle 在最左側（Phase 2-5d）。
+ * Reflection Sidebar Toggle 固定在最左側。
  */
 export function Toolbar({
   fileName = "main.cpp",

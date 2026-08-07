@@ -76,7 +76,7 @@ async def interact(
 ) -> tuple[ChatSession, ChatMessage, ChatMessage]:
     """主要教學互動 — 串接 EDF 三層管線。
 
-    `reflection_id`（Phase 2-5e）：若提供，載入學生反思並注入 Evidence + Feedback 兩層 prompt；
+    若提供 `reflection_id`，載入學生反思並注入 Evidence + Feedback 兩層 prompt；
     無或載入失敗都不擋流程（容錯，與 mastery / RAG 同款）。
     `debug_sink`（DEV-7）：dev 帳號的中間層觀測 dict——收集 evidence / strategy /
     kgraph / RAG 命中，由 route 附在回應 debug 欄位；None（一般帳號）零開銷。
@@ -169,7 +169,7 @@ async def interact(
         await on_stage(STAGE_RETRIEVING)
     kgraph_block = await fetch_kgraph_block_safe(db, user_id, evidence)
 
-    # 精熟度更新（roadmap 2-3b / K6a chat 弱證據參數）
+    # 對話訊號較 Quiz 弱，使用較保守的精熟度更新參數
     # 容錯：mastery 失敗不阻擋教學回應（與 RAG 同款處理）
     # 兩種情況跳過：① 無程式碼＝純提問，沒有能力佐證（導覽性問題曾從 0 直寫 0.46）
     # ② 與上一則訊息完全相同的 code+執行結果＝同一證據，不重複計分

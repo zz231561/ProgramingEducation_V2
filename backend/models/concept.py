@@ -35,7 +35,7 @@ class EdgeType(str, enum.Enum):
 
 
 class Concept(Base):
-    """知識圖譜節點 — 對應教學影片內容（roadmap 3-1c+：每影片 1 節點）。"""
+    """知識圖譜節點 — 每部教學影片對應一個節點。"""
 
     __tablename__ = "concepts"
 

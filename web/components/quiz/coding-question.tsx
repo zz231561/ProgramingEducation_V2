@@ -22,7 +22,7 @@ export function CodingQuestion({ question, busy, onSubmit }: Props) {
   // 切換題目時 reset state 與 ref（典型「effect 同步外部 state」場景，rule 例外）
   useEffect(() => {
     codeRef.current = initial;
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- 題目切換時重設編輯器狀態
     setHasContent(initial.trim().length > 0);
   }, [initial, question.id]);
 

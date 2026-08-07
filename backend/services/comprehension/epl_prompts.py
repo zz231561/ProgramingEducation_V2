@@ -1,4 +1,4 @@
-"""EPL prompt 模板（roadmap 2-6b）。
+"""EPL prompt 模板。
 
 獨立檔避免 epl.py 超過 250 行硬性限制。純字串組合，無外部副作用。
 """

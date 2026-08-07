@@ -1,4 +1,4 @@
-"""行為事件 logging service（roadmap 5-2b）。
+"""行為事件 logging service。
 
 從既有 Judge0 執行與 EDF 對話流程擷取事件寫入 `coding_events`。
 一律 best-effort：失敗吞例外 + logger.warning，不阻擋主流程（比照 mastery/RAG 注入慣例）。

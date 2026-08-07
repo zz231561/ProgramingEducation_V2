@@ -40,7 +40,8 @@ class CodeFile(Base):
     # ⚠ 這些約束原本只寫在 migration `r4a5b6c7d8e9`，model 未宣告 → 測試的
     # `Base.metadata.create_all` 建不出來，於是 save_draft 的併發保護
     # （靠 IntegrityError 接住較慢的 INSERT）在測試中從未真正執行過。
-    # 2026-08-06 補宣告，讓測試 schema 與生產一致。dialect 條件兩者都給：
+    # model 也要宣告 migration 的約束，否則測試 schema 不會走到併發保護。
+    # dialect 條件兩者都給：
     # partial index 在 Postgres 與 SQLite 語法不同，SQLAlchemy 需分別指定。
     __table_args__ = (
         UniqueConstraint("user_id", "name", name="uq_code_files_user_name"),

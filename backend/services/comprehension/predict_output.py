@@ -1,4 +1,4 @@
-"""Predict-Output 驗證 — LLM 生成新測資 + 兩階段比對學生預測（roadmap 2-6c）。
+"""Predict-Output 驗證 — LLM 生成新測資並分兩階段比對學生預測。
 
 設計（理論基礎見 references.md：Mental simulation / Trace prediction）：
 - Generate：LLM 看 (題目 + 學生程式碼) → 出新 input + expected（針對學生實際程式而非題目正解）

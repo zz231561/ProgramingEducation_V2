@@ -1,4 +1,4 @@
-"""Comprehension trigger-suggestion API（roadmap 2-6e）。
+"""Comprehension trigger-suggestion API。
 
 獨立檔避免主 comprehension.py 超過 250 行硬性限制。
 

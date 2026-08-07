@@ -1,4 +1,4 @@
-"""學生 Dashboard API（roadmap 3-3a/b/c）。
+"""學生 Dashboard API。
 
 API：
 - GET /dashboard/stats               — 4 統計卡片 + 今日建議

@@ -1,7 +1,7 @@
 /**
  * GraphData → Cytoscape elements 轉換（K5b 自 knowledge-graph-style.ts 拆出）。
  *
- * 單一元素集（2026-07-05 語意縮放改版）：
+ * 單一元素集供 overview 與 detail 共用：
  * - concept 節點（填色 = 熟練度）+ 分章 compound parent（無填色，僅章名標籤）
  * - overview / detail 共用同一批節點，zoom out 只切換 `.ov` 尺寸
  *   （ov_size）與佈局座標，由 graph-mode.ts 驅動

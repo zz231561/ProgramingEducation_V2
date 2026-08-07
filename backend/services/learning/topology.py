@@ -1,4 +1,4 @@
-"""拓撲排序（priority Kahn's algorithm）— 純函式，無 DB / 框架依賴（roadmap 3-1b）。
+"""拓撲排序（priority Kahn's algorithm）— 純函式，無 DB / 框架依賴。
 
 設計：
 - 邊語意：(src, tgt) 表示「學 tgt 前要先學 src」（src 是 tgt 的 prerequisite）

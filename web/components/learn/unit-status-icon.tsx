@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * 學習單元狀態圖示 — 4 種狀態各對應一個 lucide icon（roadmap 3-1c）。
+ * 學習單元狀態圖示 — 4 種狀態各對應一個 lucide icon。
  *
  * R8 反 AI 感：色彩僅用於語意（status），無裝飾性彩色塊。
  */

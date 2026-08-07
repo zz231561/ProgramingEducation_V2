@@ -34,7 +34,7 @@ _NAV_QUESTION_RE = re.compile(r"哪一段|哪段|哪一章|哪個單元|第幾�
 def build_rag_query(evidence: EvidenceResult, student_question: str = "") -> str:
     """從學生問句 + Evidence 結果組裝 RAG 檢索 query。
 
-    學生問句放最前面（2026-08-06 修復）：原本只用 error_message + concept_tags +
+    學生問句必須放最前面：原本只用 error_message + concept_tags +
     code_analysis，「% 運算子在影片哪一段有講？」會拿手上程式碼的分析去檢索、
     完全錯過模數章節——問句才是檢索意圖的第一訊號。
     課程定位型問句更進一步**只用問句**檢索（evidence 脈絡只會幫倒忙）。

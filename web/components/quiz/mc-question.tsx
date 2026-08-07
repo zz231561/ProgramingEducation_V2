@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * 選擇題作答 UI（roadmap 3-2a）。
+ * 選擇題作答 UI。
  *
  * 純 prop-driven：state 由 caller 持有，本元件只負責顯示 + 觸發 onSubmit。
  */

@@ -1,7 +1,7 @@
 # code-health: allow-large — 10 個 Pydantic schema 為 7 個端點共用（QuestionForStudentOut
 # 同時餵 from-bank / unit-set / weakness-set）；抽 schema 或按端點群拆，都讓「改一個端點」
 # 變成同時開 2 檔（Q3）。與 comprehension.py 的 schema-in-route 慣例一致。
-"""Quiz API — 智慧出題 + 作答 + 歷史（roadmap 2-4e）。"""
+"""Quiz API — 智慧出題、作答與歷史。"""
 
 import uuid
 from typing import Any

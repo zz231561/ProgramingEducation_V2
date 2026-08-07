@@ -1,4 +1,4 @@
-"""Comprehension CRUD service — student_answers 擴充欄位讀寫（roadmap 2-6a）。
+"""Comprehension CRUD service — student_answers 擴充欄位讀寫。
 
 職責邊界：
 - 本層僅做 schema 驗證 + DB 讀寫，不做 LLM 生成 / 評分（屬 2-6b/c/d）。

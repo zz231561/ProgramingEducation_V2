@@ -18,7 +18,7 @@ import { getDefaultPath, type Unit } from "@/lib/learning";
 import { ApiRequestError, api } from "@/lib/api";
 
 /**
- * Knowledge 頁面 — 知識圖譜全圖 + Concept Detail Panel（roadmap 2-2c/d + K5b/c）。
+ * Knowledge 頁面 — 知識圖譜全圖與 Concept Detail Panel。
  *
  * K5b：節點填色 = 熟練度、分章 cluster；K5c：路徑 ring（目前/已完成/補救）。
  * 補救高亮由 /knowledge?remedial=tag1,tag2 觸發（K3e 診斷跳轉）。

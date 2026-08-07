@@ -1,4 +1,4 @@
-"""Variation prompt 模板（roadmap 2-6d）。
+"""Variation prompt 模板。
 
 獨立檔避免 variation.py 超過 250 行硬性限制。純字串組合，無外部副作用。
 

@@ -40,7 +40,7 @@ class StagingStatus(str, enum.Enum):
 
 
 class UnitContentStaging(Base):
-    """Grounded LLM 生成的 unit content 中介存放區（Phase 6-2b）。"""
+    """Grounded LLM 生成的 unit content 中介存放區。"""
 
     __tablename__ = "unit_content_staging"
 

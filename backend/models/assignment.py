@@ -1,4 +1,4 @@
-"""作業 Models — 對應 Module 8: 教師端（roadmap 5-5，TronClass 式文件繳交）。
+"""作業 Models — 教師端 TronClass 式文件繳交。
 
 Schema 對齊 alembic migration `q3f4a5b6c7d8` 與 db-schema.md §Module 8。
 設計：

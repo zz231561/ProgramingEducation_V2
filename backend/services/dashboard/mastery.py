@@ -1,4 +1,4 @@
-"""Dashboard 精熟度詳細總覽（roadmap 3-3c）。
+"""Dashboard 精熟度詳細總覽。
 
 依 concept.category 分組，每組含 summary（total/started/mastered）+ concept 列表
 （含該 user 的 BKT confidence；未練 = 0）。

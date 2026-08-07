@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * 作答後 EDF 回饋 section（roadmap 3-2c）。
+ * 作答後 EDF 回饋 section。
  *
  * 結果頁渲染 → 立即 async fetch /quiz/answers/{id}/feedback；
  * 顯示 BKT 概念精熟度條 + LLM 個人化建議 + 推薦學習單元連結。
@@ -32,7 +32,7 @@ export function FeedbackSection({ answerId }: Props) {
   useEffect(() => {
     let cancelled = false;
     // 切換 answerId 時 reset state（典型「effect 同步外部 fetch」場景，rule 例外）
-    /* eslint-disable react-hooks/set-state-in-effect */
+    /* eslint-disable react-hooks/set-state-in-effect -- answerId 變更時同步載入狀態 */
     setData(null);
     setError(null);
     /* eslint-enable react-hooks/set-state-in-effect */

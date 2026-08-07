@@ -1,4 +1,4 @@
-"""身分選擇 / 切換 service（roadmap 5-1d-2）。
+"""身分選擇與切換 service。
 
 - Onboarding 首次選擇（role_selected=False → True）：僅設定身分，不清資料。
 - 之後於設定頁切換身分（role_selected 已 True）：視為「重置」，全清該使用者

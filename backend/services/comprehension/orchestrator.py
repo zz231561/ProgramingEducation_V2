@@ -1,9 +1,9 @@
 """Comprehension orchestrator — 整合 LLM (epl/predict_output) 與 DB (crud)。
 
-EPL（roadmap 2-6b）：
+EPL：
 - start_epl_for_answer / submit_epl_for_answer
 
-Predict Output（roadmap 2-6c）：
+Predict Output：
 - start_predict_for_answer：限 coding 題型；LLM 生新測資 → JSON 存 prompt（input + expected）
 - submit_predict_for_answer：兩階段比對 → 寫 answer/passed
 
@@ -118,7 +118,7 @@ async def submit_epl_for_answer(
     return answer, result
 
 
-# === Predict Output (roadmap 2-6c) ===
+# Predict Output
 
 
 def _extract_student_code(answer: StudentAnswer) -> str:

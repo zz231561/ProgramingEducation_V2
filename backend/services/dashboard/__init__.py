@@ -1,4 +1,4 @@
-"""學生 Dashboard service — 統計 + 建議 + 時間線 + 精熟度總覽（roadmap 3-3a/b/c）。"""
+"""學生 Dashboard service — 統計、建議、時間線與精熟度總覽。"""
 
 from services.dashboard.mastery import (
     CategoryBreakdown,

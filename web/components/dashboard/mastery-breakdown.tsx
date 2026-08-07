@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * 精熟度詳細總覽（roadmap 3-3c）。
+ * 精熟度詳細總覽。
  *
  * 依 category 分群顯示所有 concepts 的 mastery progress bar。
  * 全展開（無摺疊互動）— 學生一眼看清整體分布。

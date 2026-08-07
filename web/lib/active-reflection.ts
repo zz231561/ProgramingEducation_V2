@@ -1,5 +1,5 @@
 /**
- * Active Reflection 持久化（Phase 2-5d）。
+ * Active Reflection 持久化。
  *
  * 用 sessionStorage 記住「目前 Workspace 對應的反思」，避免：
  * - 跨頁跳轉（Quiz → Workspace）需要走 URL query

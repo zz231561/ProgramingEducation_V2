@@ -59,13 +59,13 @@ class EvidenceResult(BaseModel):
     bloom_level: BloomLevel = Field(description="學生目前所處的 Bloom 認知等級")
     bloom_reasoning: str = Field(default="", description="Bloom 等級判斷依據")
     code_analysis: str = Field(default="", description="程式碼問題分析（供 Decision 層使用）")
-    # 成本分流（2026-08-05）：搭在既有 Evidence 呼叫上判斷，零額外成本。
+    # 搭在既有 Evidence 呼叫上判斷離題，避免增加額外 LLM 成本。
     # 離題時 Feedback 走輕量路徑（跳過 RAG + 精簡 prompt），仍會回應學生、不攔截。
     # 預設 True：舊資料與 LLM 未回傳此欄時一律當作課程相關，避免誤判成離題。
     is_on_topic: bool = Field(
         default=True, description="學生訊息是否與 C++ 程式學習相關"
     )
-    # 7-C2a'（2026-08-06）：Decision 層 `need` 狀態機的兩個輸入，同樣搭在本次
+    # Decision 層 `need` 的兩個輸入同樣搭在本次
     # Evidence 呼叫上（零額外請求）。預設值一律偏保守：判不出來就維持現狀，
     # 不會把卡住的學生打回 L0，也不會替索答者加碼。
     comprehension_signal: ComprehensionSignal = Field(
@@ -80,7 +80,7 @@ class EvidenceResult(BaseModel):
     def from_llm(cls, data: dict, execution_failed: bool = False) -> "EvidenceResult":
         """容錯解析 LLM 輸出——單一欄位越界不該毀掉整次教學互動。
 
-        2026-08-06 實測：LLM 把 ConceptTag 寫進 `error_type`（"undefined-behavior"），
+    實測曾發現 LLM 把 ConceptTag 寫進 `error_type`（"undefined-behavior"），
         pydantic 直接 raise，學生收到的是「AI 服務暫時不可用」。JSON 本身是完整的，
         毀掉整輪並不合理。
 

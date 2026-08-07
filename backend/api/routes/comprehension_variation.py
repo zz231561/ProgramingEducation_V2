@@ -1,4 +1,4 @@
-"""Comprehension Variation Challenge API（roadmap 2-6d）。
+"""Comprehension Variation Challenge API。
 
 獨立檔避免 comprehension.py 超過 250 行硬性限制。
 

@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * 實作題 handoff 接線（2026-08-05 由 page.tsx 拆出）：
+ * 實作題 handoff 接線：
  * - 追蹤 sessionStorage 的 active reflection → toolbar dot 與反思按鈕的顯示條件
  * - 經正確 handoff 進入時自動展開 chat 並請求 Coddy 反思開場（每份反思一次，U2i）
  */

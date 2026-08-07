@@ -1,6 +1,6 @@
 """Feedback 層的 prompt 組裝 — PREAMBLE / PERSONA / system prompt 各區塊。
 
-自 `feedback.py` 抽出（7-C2a，2026-08-06）：加入不變量宣告與揭露階梯區塊後
+自 `feedback.py` 抽出：加入不變量宣告與揭露階梯區塊後
 該檔到 253 行、超過 250 硬上限，而膨脹全來自 prompt 文字。本檔只管「要對 LLM
 說什麼」，`feedback.py` 只管「呼叫 LLM 與驗證輸出」。
 
@@ -118,7 +118,7 @@ def build_system_prompt(
 ) -> str:
     """組裝完整 system prompt。
 
-    `reflection_block`（Phase 2-5e）/ `kgraph_block`（K4a）：
+    `reflection_block` / `kgraph_block`：
     caller 預先渲染；傳空字串等於不注入。
     """
     blocks = [

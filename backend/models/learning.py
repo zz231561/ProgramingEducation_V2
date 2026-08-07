@@ -1,4 +1,4 @@
-"""LearningPath / LearningUnit ORM Models — 對應 Module 7: 學習路徑（roadmap 3-1a）。
+"""LearningPath / LearningUnit ORM Models。
 
 Schema 對齊 alembic migration `c9d0e1f2a3b4` 與 `docs/db-schema.md` Module 7。
 

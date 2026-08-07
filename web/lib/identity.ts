@@ -1,6 +1,6 @@
 /**
  * 身分自選 / 切換 API wrapper（5-1d）。
- * 對應後端 POST /users/role（roadmap 5-1d-2）。
+ * 對應後端 `POST /users/role`。
  */
 
 import { api } from "./api";

@@ -1,6 +1,6 @@
 /**
  * 學生身分 profile API wrappers（5-1c-2）。
- * 對應後端 GET/POST /profile（roadmap 5-1b-3）。
+ * 對應後端 `GET/POST /profile`。
  */
 
 import { api } from "./api";

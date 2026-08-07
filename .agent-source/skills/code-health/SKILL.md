@@ -105,11 +105,13 @@ cd web && npm test && npx tsc --noEmit && npm run lint && npm run build
 逐檔閱讀 production code，不能只靠 regex 批次刪除。刪除：① 重述下一行程式的註解；
 ② 已失效的 phase／日期／任務編號快照；③ 只重複函式或區塊名稱的 separator。
 
-保留：設計理由與否決方案、安全／相容性／效能限制、非直覺 workaround、public API docstring、
-外部契約、仍可執行且有明確完成條件的 TODO。註解若描述錯誤，依「當場修小問題」直接修正。
+保留：設計理由與否決方案、安全／相容性／效能限制、非直覺 workaround、public API docstring
+與外部契約。`TODO(#<GitHub issue>): <行動>` 才是合法 TODO；`eslint-disable`、`type: ignore`、
+`noqa` 必須以 `--` 或 `—` 寫明理由並縮到最小範圍。註解若描述錯誤，依「當場修小問題」修正。
 
 輸出以「刪除類型 → 代表例子 → 為何不影響理解」彙整，不逐檔流水帳。若只改註解，驗證至少跑
-formatter／lint、type check／compile 與受影響側完整測試，確保沒有誤刪 pragma 或工具指令。
+formatter／lint、type check／compile 與受影響側完整測試，確保沒有誤刪 pragma 或工具指令；最後跑
+`python3 scripts/comment_policy_check.py`。checker 只處理可客觀判斷的型態，語意正確性仍須人工閱讀。
 
 ---
 

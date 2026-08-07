@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * 概念說明 tab（Phase 6-2c；7-U3 改版）— grounded 內容渲染 + YT player + 時間跳轉。
+ * 概念說明 tab — grounded 內容渲染、YouTube player 與時間跳轉。
  *
  * 三種狀態優先順序：
  * 1. 無 video_youtube_id（教授尚未補資料）→ placeholder
@@ -9,7 +9,7 @@
  *    → 仍嵌入 player + 簡短說明
  * 3. 完整 grounded → player + Markdown（句尾註腳式播放標記可跳轉影片）
  *
- * 7-U3（2026-08-06）：移除「影片出處」清單；句中 `[00:15]` 戳記改寫為段尾標記。
+ * 不顯示「影片出處」清單；句中 `[00:15]` 戳記會改寫為段尾標記。
  */
 
 import { useMemo, useRef } from "react";

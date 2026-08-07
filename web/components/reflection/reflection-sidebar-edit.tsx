@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * ReflectionSidebar 的「編輯模式」（Phase 2-5d 拆檔）。
+ * ReflectionSidebar 的編輯模式。
  * 復用 ReflectionForm；存檔呼叫 PATCH /reflection/{id}（觸發後端重新評分）。
  */
 

@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Learn 頁面（roadmap 3-1c+ 簡化版）— 直接顯示使用者的預設學習路徑。
+ * Learn 頁面 — 直接顯示使用者的預設學習路徑。
  *
  * 設計轉變：原 3-1c 含「list / 生成新路徑 / 刪除」介面，但 concept graph 重建為固定
  * 59 影片線性鏈後，每位學生「生成」結果完全相同，路徑列表只有 1 條，新增/刪除按鈕無意義。
@@ -50,7 +50,7 @@ export default function LearnPage() {
   useEffect(() => {
     // 初次載入：fetch 預設路徑（loadDefault 內含 setView 是必要的初始化，
     // 屬「effect → external state」典型場景，故停用 react-hooks/set-state-in-effect）
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- route query 變更時同步選取單元
     loadDefault();
   }, [loadDefault]);
 

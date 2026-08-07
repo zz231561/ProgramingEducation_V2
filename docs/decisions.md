@@ -18,7 +18,7 @@
 > **禁止手抄機械事實**（行數／測試數／檔案清單）——那些會過時，一律以
 > `python3 scripts/doc_selfcheck.py` 的當下產出為準（同 `tech-debt.md` 規範）。
 >
-> 2026-06 以前的舊條目仍為舊格式（變更日誌），依 7-D3 分批依本規範清理中。
+> 下方仍可見的舊格式條目正依 7-D3 分批按本規範清理。
 
 ## [2026-08-07] — 7-D3 階段二 A：UI 文件退場（2891 行）
 
@@ -45,18 +45,6 @@ Variation + 評分）無關。
 「Design Token 增補（**寫入 frontend.md**）」；§5 違和感清單同 §0；§1/§2 借鑑對照的
 來源檔（`design-references/` 1819 行）同日刪除後成為純歷史。
 唯一存活內容是 §2.10 `.kbd` 規格（被 `frontend.md` 引用），已搬入。
-
-### 處置：萃取 3 塊 + 刪除 3 檔
-- `frontend.md` ← §9 動效表、§10 快捷鍵表（`Ctrl+B`/`Ctrl+S`/`Escape` 查證均已實作）、
-  `.kbd` CSS（並標註**此 class 從未建立**——`globals.css` 只有註解）
-- 刪除 `ui-ux-spec.md` 625 + `ui-wireframes.md` 120 + `visual-protocol.md` 327
-  + `design-references/` 1819 ＝ **2891 行**
-- `docs/` 15 → **12 份**，每份都是活的或內容正確的
-
-### 稽核順帶抓到兩個實作缺口（→ tech-debt E4/E5）
-- **狀態列**：元件真的存在（我原本誤判沒實作），但 `Ln 1, Col 1`／`精熟度 —`／`使用者`
-  三個欄位都是寫死的佔位字，只有連線狀態接了真值
-- **`/overview` 與 `/notifications`**：各 17 行空殼頁，早已移出導覽卻仍打包進生產 build
 
 ---
 
@@ -101,11 +89,6 @@ git log 沒有的」，那複述內容本來就不該存在，搬走只是換地
 早就寫了怎麼寫，缺的正好是最高頻的 `changelog` 與 `roadmap`。**寫在檔頭是就近原則**：
 要改這個檔的人一定看得到檔頭，不會看到另一份規範。
 
-### 實作時抓到自己的 bug
-新增的章節錨點檢查回報「0 筆」，但 `roadmap.md` 明明引用著已改名的 `design-plan.md §0.3`。
-根因＝`missing_paths` 的 `_PATH_RE` 只收 `.py/.ts/.json` **不收 `.md`**，而錨點檢查在
-檔案不存在時直接 skip → 兩邊都漏。已改為由錨點檢查自己回報。
-
 ### 數據
 `doc_selfcheck.py` 現驗四類且全過（exit 0）：檔案大小、失效路徑、**失效章節**、**自訂行數上限**。
 後兩者為本次新增——CLAUDE.md 超標 35% 長期沒被發現，正是因為沒人驗自訂上限。
@@ -121,7 +104,7 @@ git log 沒有的」，那複述內容本來就不該存在，搬走只是換地
 沒被發現的原因很單純：lint 不參與執行，抓的全是「能跑但寫法有問題」的東西，
 `pytest` / `tsc` / `build` 全綠與 lint 從沒跑過完全不衝突。
 
-### Changed — rule set 擴充（`B` `C4` `SIM` `PERF` `ERA` `RUF`）+ 誤判校準
+### Rule set 校準依據
 盲目全開會拿到 **6952 個錯誤**，其中 96% 是誤判，故逐項校準：
 | 忽略項 | 數量 | 為什麼是誤判 |
 |---|---:|---|
@@ -135,28 +118,10 @@ git log 沒有的」，那複述內容本來就不該存在，搬走只是換地
   中文資訊密度高於英文，100 對本專案過嚴
 - 5 個檔的超長行落在**多行中文字串內部**（連 `# noqa` 都放不進去，會變成字串內容）→ per-file-ignore
 
-### Fixed — 437 → 0
-- **400 個自動修**（safe fixes）：未使用 import 44、import 排序 83、`Optional[X]` → `X | None` 84、
-  已棄用寫法 61、缺檔尾換行 8 等
-- **20 個選定的 unsafe fixes**：`zip(strict=)`、多餘 comprehension、`contextlib.suppress`、
-  測試中的死變數等；逐項確認語意等價後才套用
-- **手動修 8 個**：`evaluate.py` 的 `logger` 誤插在 import 之間、`feedback.py` 的 `l` 變數更名、
-  `pytest.raises(Exception)` → `ValidationError`、兩處 PERF401 改 comprehension、
-  `judge0.py` params dict 與 `sanitizer.py` 攻擊偵測 regex 換行（拆成相鄰字串常數，pattern 不變）
-
 ### 實際健檢結果：程式碼比預期乾淨
 使用者關切的三類問題實測幾乎不存在——**低效寫法 2 個**、**被註解掉的程式碼 0 個**
 （原 2 個是欄位說明註解的誤判）、jscpd 重複率 **0.28%**。
 真正的債是「44 個未使用 import」與「lint 從沒跑過」本身。
-
-### 意外揭露：5-2b 的 chat 事件記錄已失效（→ tech-debt C6）
-`api/routes/chat.py` import 了 `log_coding_event` / `CodingEventType` 但**全專案無呼叫**——
-7-C2a 移除 `hint_level` 時把那次記錄一併帶走。`coding_events` 現在只剩執行事件，
-**5-3 行為分析少一類資料來源**，開工前需決定是否改記 `explicit_help`。
-
-### 驗證
-- `ruff check .` **All checks passed**｜backend **883 passed**（含 sanitizer 18 項專測，
-  確認 regex 換行後行為不變）｜逐筆檢視 websocket 收尾與 import 移除的 diff 語意等價
 
 ---
 
@@ -172,7 +137,7 @@ git log 沒有的」，那複述內容本來就不該存在，搬走只是換地
 - 提案二（只計邏輯行、排除 schema/prompt/JSX）**同樣放棄**：對 AI 而言成本是 token 與
   檢索粒度，100 行 Pydantic schema 與 100 行分支邏輯載入成本相同，折算反而失真
 
-### Changed — 新規則（全域 `~/.claude/CLAUDE.md` + 專案 CLAUDE.md，兩邊已對齊）
+### 新規則
 - 門檻 **150/250 → 250/400**，維持**原始行數**；判準改為「AI 能否用檔名預測內容 +
   能否一次讀完」，與可維護性理論脫鉤
 - **超標不等於必拆**：逐案回答三問後三選一（拆分／豁免／記債）
@@ -183,69 +148,11 @@ git log 沒有的」，那複述內容本來就不該存在，搬走只是換地
 - **新增重複偵測**：jscpd，**跨 ≥3 檔才處理**（只跨 2 檔沿用「三行重複優於過早抽象」）
 - 函式層級加例外：主體以單一字串常數為主者（LLM prompt 組裝）以邏輯行判斷
 
-### Added
-- `.claude/skills/code-health/SKILL.md` — 五階段工作流（蒐集 → 分流 → 逐案判斷 →
-  執行拆分 → 豁免收尾）。**刻意不做 hook 即時攔截**：寫到一半暫時超標屬正常，
-  即時擋會逼出為了過門檻的病態拆分
-- `scripts/doc_selfcheck.py`：新門檻 + 讀檔頭前 5 行的 `code-health: allow-large` 豁免標記，
-  報告新增「已舉證豁免」區塊
-- `backend/services/quiz/generate_prompts.py`（110 行）— 自 `generate.py` 拆出
-
-### 7 個原「超硬上限」檔的逐案結果：1 拆分 + 6 豁免
-| 檔案 | 結論 | 依據 |
-|---|---|---|
-| `services/quiz/generate.py` 307 → **205** | **拆分** | prompt 與流程是獨立變更軸（Q2） |
-| `api/routes/quiz.py` 347 | 豁免 | 10 個 schema 為 7 端點共用，拆完改一端點要開 2 檔（Q3） |
-| `api/routes/comprehension.py` 255 | 豁免 | 三 type 共用 `_parse_type`，按 type 拆需 4 檔（Q3） |
-| `batch_generator.py` 267 | 豁免 | 單一變更軸，查詢 helper 僅此處使用（Q2/Q3） |
-| `comprehension/variation.py` 255 | 豁免 | 二軸但互相直呼，拆後仍 2 檔連動；超標 5 行（Q3） |
-| `services/quiz/feedback.py` 251 | 豁免 | 單一變更軸，**超標 1 行**（Q2） |
-| `concept-detail-panel.tsx` 279 | 豁免 | 已內拆 7 子元件且都只用一次（Q2/Q3） |
-
-結果：🚫 **0 個** / ⚠ **0 個** / 已舉證豁免 6 個。
-
 ### 實測數據（本次決策依據，非引用）
 - jscpd 全專案重複率 **0.28%**（276 檔）——遠低於業界 3–5% 警戒值，
   「vibe coding 必然產生大量重複」在本專案**不成立**
 - 但預設門檻漏掉 tech-debt C3：`--min-lines 5 --min-tokens 30` 才抓到 `_get_client`
   跨 14 檔的 7 行 near-duplicate。**那 14 檔全部通過行數檢查**——已回填 C3
-
-### 驗證
-- backend **883 passed**｜`tsc --noEmit` 無錯｜`npm run lint` 僅既有 `<img>` warning｜
-  `doc_selfcheck.py` 🚫/⚠ 歸零、失效路徑 0
-
----
-
-## [2026-08-07] — 7-D1 前端測試基礎設施（`web/` 從零到有）
-
-### Added
-- `web/vitest.config.mts`：jsdom 環境 + `@/` alias 對齊 tsconfig；`include: tests/**/*.test.ts`
-  （用 `.mts` 是因為 `web/package.json` 非 `type: module`，`.ts` 會被 Vite 以 CJS 載入而告警）
-- `package.json` scripts：`npm test`（`vitest run`）/ `npm run test:watch`
-- devDependencies：`vitest` + `jsdom`（**不裝 @vitejs/plugin-react**——本批全是純函式，
-  沒有元件測試就不引入 React 測試堆疊）
-- `web/tests/` 三支，共 **31 個 `it`**：
-  - `transcript-timestamps.test.ts`（13）— parseClock/formatClock 邊界、戳記移到段尾 + 去重 +
-    區間取起點、**程式碼圍籬內原樣不動**、無戳記時完全不動、seek scheme 辨識
-  - `use-run-history.test.ts`（8）— module store 每例 `vi.resetModules()` 重載；驗每檔 20 次上限、
-    per-file 隔離、**5 檔 LRU 淘汰順序**、clearRuns 只清當前檔、hydrate 還原與毀損 JSON 不拋錯
-  - `cpp-completion-source.test.ts`（10）— 掃描模板/參考型別宣告、函式標記覆蓋同名變數、
-    保留字與單字元過濾、註解內不補全、無輸入不跳出
-
-### Fixed
-- `cpp-completion-source.ts` 手動觸發分支形同虛設：原判斷 `word.from === word.to && !explicit`
-  中的零長度比對**永遠不成立**（`/[A-Za-z_]\w*/` 至少吃一字元，matchBefore 無匹配時回 `null`
-  而非零長度區間），因此 Ctrl+Space 在空白處直接被 `!word` 擋掉，與該行註解寫的意圖相反。
-  改為 `!word && !context.explicit`＋`from: word?.from ?? context.pos`——**寫測試時才浮現，
-  正是 C1 說的「靠手動點抓不到」那類缺陷**
-
-### Changed
-- `scripts/doc_selfcheck.py` `test_counts()` 加計 web（vitest 以 `it(` 為單位）→ 報告現為
-  backend 854 / runner 27 / **web 31**
-
-### 驗證
-- `npm test` 31 passed｜`tsc --noEmit` 無錯｜`npm run lint` 僅既有 global-nav `<img>` warning｜
-  `npm run build` 16 routes 全過（確認 `tests/` 不影響 Next 建置）
 
 ---
 

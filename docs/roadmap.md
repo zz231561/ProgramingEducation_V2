@@ -443,7 +443,7 @@
 
 ### 8-1 文件一致性全面稽核
 > 2026-08-06 已先修三份（roadmap / 驗收清單 / tech-debt），其餘尚未逐字核對。
-- [ ] 8-1a 逐份核對 `docs/` 其餘 13 份與現況是否相符（重點：`modules.md`、`api-spec.md`、`db-schema.md`、`ui-ux-spec.md` — 這幾份最久沒動）→ **已前移為 7-D5**
+- ~~8-1a 逐份核對 `docs/`~~ → **已併入 7-D3 階段二**
 - [x] 8-1b ~~修正 `CLAUDE.md` 文件索引的過時描述~~ — 2026-08-06 已隨 8-0c 瘦身處理完（文件索引兩處描述先前已修；同時修 `技術棧` 仍寫 Judge0 / GPT-4o → 改自建 runner + gpt-5.6）
 - [ ] 8-1c `changelog.md` 4500+ 行 → 拆 `changelog-archive.md`（2026-07 以前）→ **已前移為 7-D3**
 - [x] 8-1d **文件自檢 script ✅ 完成**（2026-08-06）：`scripts/doc_selfcheck.py`（手動跑，不掛 pre-commit）
@@ -475,7 +475,7 @@
 - ~~Judge0：開發期 RapidAPI (免費 50 次/天) → 上線後自架~~ → **2026-08-05 改自建 runner**：自架 Judge0 需 GRUB 切 cgroup v1（淘汰中機制）+ privileged，且仍是批次判題；Judge0 降為 fallback（`RUNNER_BACKEND` 切換回 RapidAPI）
 - 部署：Zeabur (Tencent Tokyo VPS) | 使用者規模：初期 < 100 人
 - 即時通訊：Phase 1 用 REST + SSE (chat streaming)，未來視需求加 WebSocket
-- 介面借鑑：6 份來源僅貢獻結構模式，視覺基本元素統一為 GitHub Dark（visual-protocol.md §0.3 七條硬規則）
+- 介面借鑑：6 份來源僅貢獻結構模式，視覺基本元素統一為 GitHub Dark（`frontend.md` R1–R8）
 - **OSS 重用**：開發前必查 `docs/references.md` §1 決策矩陣；禁止 AGPL/GPL 套件；禁止移植已有對應套件的演算法（如 BKT 必用 pyBKT）
 - **執行順序**：功能優先（Phase 2 → 3）→ 部署準備（Phase 4）→ **Phase 5 教師端 ⇄ Phase 6 教學內容建構（可平行）** → 上線實測（Phase 7）；所有需要實際部署才能驗證的工作集中在 Phase 7
 - **Phase 6 採 NotebookLM grounded 模式**（2026-05-07 確認）：所有 LLM 生成的 unit content / 練習題必須 grounded 在教授實際 YT 影片字幕上，禁止 LLM 自由發揮；source 採 Whisper API（B1 方案，6-1e 已完成 62 部 transcribe），品質不夠的 unit 在 6-4 抽查時局部重跑

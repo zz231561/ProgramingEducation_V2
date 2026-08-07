@@ -55,6 +55,6 @@
 - ⚪ [dev-setup.md](docs/dev-setup.md) **本機啟動 SOP（每次 session 必讀 §1）** / [acceptance-checklist.md](docs/acceptance-checklist.md) 真人驗收清單
 - ⚪ [architecture.md](docs/architecture.md) / [modules.md](docs/modules.md) / [db-schema.md](docs/db-schema.md) / [api-spec.md](docs/api-spec.md) / [references.md](docs/references.md)（OSS 決策矩陣，守則 8）
 - ⚪ [deployment.md](docs/deployment.md)（§E = Runner 部署 SOP）/ [server-plan.md](docs/server-plan.md) A 機 + B 機
-- ⚫ [ui-ux-spec.md](docs/ui-ux-spec.md) / [ui-wireframes.md](docs/ui-wireframes.md) / [visual-protocol.md](docs/visual-protocol.md)（實作該頁時才讀）/ [roadmap-archive.md](docs/roadmap-archive.md)
+- ⚫ [roadmap-archive.md](docs/roadmap-archive.md) — 完成細節快照｜UI 規格全數收斂於 `frontend.md`
 
 **驗收機制**：`backend/scripts/eval_coddy/` — 七型學生模擬（真實 LLM + debug_sink/DB 白盒探針），改完 Coddy 重跑對照

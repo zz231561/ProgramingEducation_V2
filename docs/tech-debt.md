@@ -109,9 +109,21 @@
   - v17/v41 掛零已解除（v17 有 8 題、v41 重生後 5 題）
   - **如何處理**：6-4b 檢視 validate 失敗 reason 分佈後調整 generate prompt
 
-**E2. Learn 頁卡片版 ≠ ui-wireframes.md 期望的「節點+箭頭」graph 版**
+**E2. Learn 頁卡片版 ≠ 原設計期望的「節點+箭頭」graph 版**
 - [ ] 與 `/knowledge` 風格不統一；無法直觀顯示多對多 PREREQUISITE 分支
   - **如何處理**：復用 knowledge 頁 Cytoscape 元件（K5 已完成，隨時可評估）
+  - 原始期望出自已退場的 `ui-wireframes.md`（2026-08-07 刪除，查 git log）
+
+**E4. 狀態列三個欄位是寫死的佔位字**（2026-08-07 文檔稽核發現）
+- [ ] `components/layout/status-bar.tsx`：`Ln 1, Col 1`（未接編輯器游標）、
+      `精熟度 —`（未接 mastery API）、`使用者`（未接登入者名稱）；只有連線狀態是真的
+  - **影響**：畫面上像壞掉的功能，而非未完成的功能
+  - **如何處理**：接三個現有資料源即可（CodeMirror selection / `GET /concepts/mastery` / session）
+
+**E5. `/overview` 與 `/notifications` 是空殼路由，仍打包進生產**
+- [ ] 兩頁各 17 行，內容為「將在後續任務中實作」；早已移出導覽（5-1c 精簡選單）但路由還在
+  - **影響**：使用者若直接輸入網址會看到半成品；`npm run build` 也持續產出這兩個 route
+  - **如何處理**：確認不再需要就刪除；要保留則排入實作
 
 **E3. 真 AST（tree-sitter / libclang）暫不引入**（K2c 決策記錄）
 - [ ] 現以 LLM Evidence 為程式碼分析信號；自建 AST 特徵規則工程成本高且與 LLM 重複

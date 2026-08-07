@@ -17,7 +17,7 @@ globs: web/**
 字型: Inter (UI) + Noto Sans TC (中文) + JetBrains Mono (程式碼)
 元件庫: shadcn/ui (dark preset, 基於 Radix UI)
 
-### Phase 1-6 統一協議 token（visual-protocol §3）
+### Phase 1-6 統一協議 token
 Surface 語義別名: `--surface-0` (=bg-canvas) | `--surface-1` (=bg-default) | `--surface-2` (=bg-subtle) | `--surface-inset` (=bg-inset)
 Shadow（僅 3 階）: flat | `--shadow-card`: `0 1px 3px rgba(0,0,0,0.3)` | `--shadow-modal`: `0 16px 48px rgba(0,0,0,0.5), 0 0 0 1px var(--border-default)`
 Border AI 例外: `--border-ai`: `rgba(188, 140, 255, 0.25)` — 僅 Chat AI 訊息氣泡可用
@@ -56,6 +56,28 @@ Top Navigation Bar（GitHub 風格頂部 tab），非 Sidebar。**角色化頁�
 角色由 `lib/use-role.ts` 取得；班級/作業入口在導航（非 avatar 選單）。
 Active tab: `border-bottom: 2px solid #F78166`
 
+## 動效與過渡
+
+| 動作 | 動效 | 時間 |
+|------|------|------|
+| 頁面切換 | Content Area 內容 fade-in | 150ms ease-out |
+| AI Chat 展開/收合 | 水平滑動 + Content Area resize | 200ms ease-in-out |
+| Output Panel 展開/收合 | 垂直滑動 | 200ms ease-in-out |
+| Concept Detail 滑入 | 從右側滑入 | 200ms ease-out |
+| Toast 通知 | 從右上滑入 → 3s 後淡出 | 300ms ease-out |
+| 按鈕 hover | 背景色漸變 | 150ms |
+| Modal | 背景 overlay fade-in + modal scale-up | 200ms |
+
+## 快捷鍵
+
+| 快捷鍵 | 功能 |
+|--------|------|
+| `Ctrl+Enter` | 執行程式碼（Workspace） |
+| `Ctrl+B` | 展開/收合 AI Chat Panel |
+| `Ctrl+S` | 儲存（已命名檔覆寫／未命名開另存對話框） |
+| `Ctrl+\`` | 展開/收合 Output Panel |
+| `Escape` | 關閉 Modal / 收合面板 |
+
 ## 測試策略
 
 - **Component**: Vitest + React Testing Library → 各 UI 元件
@@ -67,9 +89,11 @@ Active tab: `border-bottom: 2px solid #F78166`
 前端統一用 `fetch('/api/...')` 打 Next.js API Routes（proxy 至 FastAPI），不直接打後端。
 統一錯誤攔截：401 → 重導登入、429 → 冷卻倒數 toast、5xx → 錯誤 toast
 
-## 統一視覺協議（Phase 1-6 借鑑計畫）
+## 統一視覺協議
 
-**詳見 [docs/visual-protocol.md](../../docs/visual-protocol.md)。** 6 份外部借鑑來源（Cursor / Warp / Linear / Claude / Vercel / Raycast）僅貢獻結構模式，**所有 color / font / shadow / border / radius / spacing 一律來自本檔上方既有 GitHub Dark token**。
+本協議源自 6 份外部借鑑（Cursor / Warp / Linear / Claude / Vercel / Raycast），**它們僅貢獻結構模式**；
+所有 color / font / shadow / border / radius / spacing 一律來自本檔上方既有 GitHub Dark token。
+（2026-08-07：原始借鑑分析與 `visual-protocol.md` 已退場——內容全數收斂於本檔，歷史查 git log。）
 
 ### 違和感檢核 7 條（每元件實作後逐條對照）
 | 規則 | 規格 |
@@ -84,7 +108,21 @@ Active tab: `border-bottom: 2px solid #F78166`
 
 ### 兩處唯一視覺例外
 1. **AI 訊息氣泡** ring：`border: 1px solid var(--border-ai)`（已建立 token，1-6d 套用）
-2. **`.kbd` 鍵帽**：多層 inset 陰影（1-6e 實作時建立 `.kbd` class，規格見 visual-protocol §2.10）
+2. **`.kbd` 鍵帽**：全站唯一可用多層 inset 陰影者（tooltip / 選單項 / Cmd+K 結果列）。
+   ⚠ **尚未建立此 class**（`globals.css` 僅有註解，`tooltip.tsx` 用的是 shadcn 自帶樣式）：
+   ```css
+   .kbd {
+     background: linear-gradient(180deg, #21262D 0%, #161B22 100%);
+     border-radius: 4px;
+     padding: 2px 6px;
+     font: 11px JetBrains Mono;
+     color: #C9D1D9;
+     box-shadow:
+       rgba(255, 255, 255, 0.04) 0 1px 0 0 inset,
+       rgba(0, 0, 0, 0.3) 0 1px 2px 0,
+       rgba(0, 0, 0, 0.2) 0 -1px 0 0 inset;
+   }
+   ```
 
 ### R8 反 AI 感規則（必須遵守）
 拒絕「現代 AI 工具網站」的廉價視覺：彩色半透明 halo / 卡通圓頭像 / emoji 圖示。專業工具（Linear / Stripe / Vercel）皆無此風格。

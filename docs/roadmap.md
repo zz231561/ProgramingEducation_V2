@@ -385,7 +385,7 @@
 - [x] 7-D2b **後端 lint 首次落地** ✅ 2026-08-07：ruff 早已宣告與設定卻從未安裝（lint 零執行）；
       擴充 rule set 並校準 6900+ 筆中文全形／FastAPI `Depends` 誤判，437 findings → **0**；
       意外揭露 5-2b chat 事件記錄失效（→ tech-debt C6）
-- [~] 7-D3 **文檔工作流重整**（2026-08-07 使用者擴大範圍：原「changelog 拆檔」→ 全文檔清查優化）
+- [x] 7-D3 **文檔工作流重整**（2026-08-08 完成；原「changelog 拆檔」→ 全文檔清查優化）
   - [x] 階段一 規則與標題（2026-08-07）：`changelog.md` → **`decisions.md`**（重新定位為決策記錄，
         變更明細改以 git log 為主）、`design-plan.md` → **`visual-protocol.md`**（名實對齊）、
         CLAUDE.md 去進度化（進度唯一真相＝roadmap）、文檔同步守則改為依變更類型決定、
@@ -396,9 +396,9 @@
   - [x] 階段二 B **`decisions.md` 內容清理**（2026-08-08）：243 條依新規範逐條處理
         （刪 git log 已有的 Added/Changed/Tests 快照，留決策理由/否決方案/實測數據；
         3891 → 1568 行）；按月份分批 commit，每批可獨立回溯
-  - [ ] 階段二 C **⚪ 穩定文檔逐份核對**（原 7-D5 / 8-1a）：已知 `api-spec.md` 只記載
-        81 個實際路由中的 40 個（**51% 缺口**：classes / code files / dashboard / dev /
-        comprehension trigger）；`db-schema.md` 缺 `unit_content_staging`
+  - [x] 階段二 C **⚪ 穩定文檔逐份核對**（2026-08-08；原 7-D5 / 8-1a）：API 規格
+        對齊 83/83 HTTP operations、DB schema 覆蓋 20/20 SQLAlchemy tables；同步修正架構、部署、
+        本機環境、模組與 OSS 參考文件的過時敘述
   - **不拆檔**：清理後行數自然回到合理範圍，拆檔只是把不該存在的內容換地方放
 - [ ] 7-D3' **文檔 ↔ 程式碼對齊**（2026-08-07 使用者指定，**待階段二全部完成後才做**）
   - 逐份確認文檔敘述與實際程式碼相符、無衝突（本次已示範方法：路由/資料表/元件機械比對）

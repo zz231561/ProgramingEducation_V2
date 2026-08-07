@@ -400,10 +400,9 @@
         對齊 83/83 HTTP operations、DB schema 覆蓋 20/20 SQLAlchemy tables；同步修正架構、部署、
         本機環境、模組與 OSS 參考文件的過時敘述
   - **不拆檔**：清理後行數自然回到合理範圍，拆檔只是把不該存在的內容換地方放
-- [ ] 7-D3' **文檔 ↔ 程式碼對齊**（2026-08-07 使用者指定，**待階段二全部完成後才做**）
-  - 逐份確認文檔敘述與實際程式碼相符、無衝突（本次已示範方法：路由/資料表/元件機械比對）
-  - **確保未來持續對齊**：檢視 `CLAUDE.md` 與 `.claude/rules/` 的規定是否夠清晰明確，
-    足以讓「改程式碼時同步改文檔」成為不需要提醒的預設行為；不足處補規則或補機械檢查
+- [x] 7-D3' **文檔 ↔ 程式碼對齊**（2026-08-08）：完成 API signature、DB schema/Alembic、
+      env/page route/deployment service 三層 contract gate；納入 GitHub CI 與 agent 規則，
+      現況 83 HTTP operations、20 SQLAlchemy tables、所有穩定 inventory 均為零 drift
 - [ ] 7-D4 **7-R R6 收尾**：教材健檢解除每日上限（`verify_code_snippets.py` `DAILY_BUDGET = 20`，
       Judge0 額度限制已隨自建 runner 消失）+ 30 並行壓測驗證 server-plan 容量假設
       （原列的「hook 提示仍寫 Judge0 50 次/天」**2026-08-06 查證已不復現**，session 啟動輸出無此字樣）

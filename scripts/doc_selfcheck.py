@@ -18,6 +18,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+from doc_contract_check import contract_drift
+
 ROOT = Path(__file__).resolve().parent.parent
 # 2026-08-07 重新校準：判準是「AI 能否用檔名預測內容 + 能否一次讀完」，
 # 不是人類認知負荷，故用原始行數。原 150/250 的 150 產生 78 個警告＝警告失效。
@@ -223,8 +225,24 @@ def main() -> int:
     if not caps:
         print("（無）")
 
+    missing_api, stale_api, missing_tables = contract_drift(ROOT)
+    print(f"\n### API 契約 drift（缺 {len(missing_api)}／過時 {len(stale_api)}）")
+    for item in missing_api:
+        print(f"- 缺少 `{item}`")
+    for item in stale_api:
+        print(f"- 過時 `{item}`")
+    if not missing_api and not stale_api:
+        print("（無）")
+
+    print(f"\n### DB Schema drift（缺 {len(missing_tables)} 張 table）")
+    for table in missing_tables:
+        print(f"- 缺少 `{table}`")
+    if not missing_tables:
+        print("（無）")
+
     # 超硬上限或任何失真時回非零，方便未來接 CI
-    return 1 if (hard or missing or anchors or caps) else 0
+    drift = missing_api or stale_api or missing_tables
+    return 1 if (hard or missing or anchors or caps or drift) else 0
 
 
 if __name__ == "__main__":

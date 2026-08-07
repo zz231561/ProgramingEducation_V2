@@ -89,3 +89,4 @@ cd backend
 ```
 - ruff 設定見 `pyproject.toml`；**不要為了消警告而放寬 ignore**，先確認是不是真誤判
 - 動到 migration：另跑 `.venv/bin/alembic upgrade head` 確認可套用
+- 新增／刪除／改名 route 必須同步 `docs/api-spec.md`；ORM table 或 migration 契約變更同步 `docs/db-schema.md`，最後跑 `python3 scripts/doc_selfcheck.py`

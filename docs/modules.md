@@ -6,9 +6,8 @@
 Google OAuth (NextAuth.js) + JWT + 角色 (student/teacher/admin) + Rate limiting (per-user)
 
 ## Module 2：程式碼編輯與執行
-CodeMirror 6 (C++ 語法高亮) + Judge0 API 編譯執行 + stdin 支援 + Batch 模式
-- 開發期用 Judge0 RapidAPI (免費 50 次/天)，上線後自架
-- 執行 timeout 統一 10 秒，language_id 抽象化供未來擴充
+CodeMirror 6（C++）+ 自建 runner（nsjail + PTY + WebSocket）提供互動 terminal；
+批次 `POST /run` 供題庫驗證與實作題判定，Judge0 RapidAPI 僅為 fallback。
 
 ## Module 3：EDF 教學管線
 Evidence → Decision → Feedback 三層管線，保留 V1 核心設計。詳見 `.claude/rules/edf-pipeline.md`
@@ -24,7 +23,7 @@ PostgreSQL 鄰接表（非 Neo4j，100 人規模 + 62 concept + ~90 邊，不需
 - 先修/包含/特化/相關 4 種邊類型；PREREQUISITE 為 **curated 多對多依賴 DAG**（K1a 取代原線性鏈；全邊 source.video_order < target.video_order 保證無環）
 - 圖走訪：`services/graph/traversal.py` `get_prerequisite_closure`（BFS 回溯 + depth 限制）— 根源弱點診斷（K3）的基礎
 - Cytoscape.js 視覺化（Tier 1 鎖定），節點顏色依精熟度：綠 >0.7 / 黃 0.4-0.7 / 紅 <0.4
-- 規劃中（roadmap Phase 6-K）：K2 動態知識狀態 API / K3 根源弱點定位 / K4 Coddy 自適應提示 / K5 視覺改版
+- 已落地：K2 動態知識狀態、K3 根源弱點定位、K4 Coddy 自適應提示、K5 視覺改版與 K6 遺忘衰減／透明化
 
 ## Module 6：智慧出題
 4 階段管線 (Select → Generate → Validate → Present)，支援選擇題/填空題/程式撰寫題
@@ -40,13 +39,13 @@ PostgreSQL 鄰接表（非 Neo4j，100 人規模 + 62 concept + ~90 邊，不需
 - 參考：EduAdapt-AI (RL-based learning path optimization + content graph)
 
 ## Module 8：教師 Dashboard（Phase 5）
-班級管理、精熟度熱力圖、常見錯誤統計、作業指派。Schema 先設計，後續實作。
+班級管理、學生身分、精熟度總覽、行為時間線與 TronClass 式作業／附件繳交均已落地。
 
 ## Module 9：學習行為分析（Phase 5，教師專屬）
 中粒度追蹤學生 coding 行為與 AI Tutor 互動模式，視覺化圖表呈現行為與成效的關聯。自建分析，不依賴外部服務。
 
 **資料來源（從現有模組擷取，不新增前端 event listener）：**
-- Coding 行為：編譯頻率/成功率（Judge0）、錯誤類型分布（EDF Evidence）、修復時間（submit 間隔）、session 時長、程式碼變化量（code_snapshot diff）
+- Coding 行為：編譯頻率／成功率（runner）、錯誤類型分布（EDF Evidence）、修復時間（submit 間隔）、session 時長、程式碼變化量（code_snapshot diff）
 - AI 互動行為：對話輪數、hint level 分布（EDF Decision）、AI 建議採納率、對話類型分布（dialogue act 分類）、主動提問 vs 被動觸發
 - 學習成效：精熟度趨勢（student_mastery）、Quiz 正確率（student_answers）、Bloom 等級進展
 - 反認知外包指標：反思品質分數趨勢、EPL 通過率、變體成功率、首次求助前等待時間
@@ -59,7 +58,7 @@ PostgreSQL 鄰接表（非 Neo4j，100 人規模 + 62 concept + ~90 邊，不需
 - 班級行為群聚分析：依行為模式分群（主動型/被動型/掙扎型）
 - 精熟度趨勢線：學生或班級的 confidence 隨時間變化
 
-- 參考：ProgSnap2 + KOALA (事件 schema)、StudyChat (dialogue act 分類)、pyBKT (精熟度演算法)、PM4Py (行為流程分析)、OpenLAP (三層架構)
+- 參考：ProgSnap2 + KOALA（事件 schema）、StudyChat（dialogue act）、pyBKT（參數擬合）；PM4Py 因 AGPL 禁用，以 prefixspan 取代
 
 ---
 

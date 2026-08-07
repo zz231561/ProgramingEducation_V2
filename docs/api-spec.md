@@ -1,221 +1,126 @@
 # API 規格
 
-## Auth
+> 本文件記錄 FastAPI 對外契約；路由 inventory 以 `backend/main.py` 註冊後的 OpenAPI 為準。
+> Backend routes 不帶 `/api`；瀏覽器端由 Next.js `/api/**` proxy 轉送。修改 router 時需同步本表。
 
-```
-POST   /api/auth/google          -- Google OAuth callback
-GET    /api/auth/me               -- 取得當前使用者資訊
-POST   /api/auth/logout           -- 登出
-```
+## Auth、使用者與 Profile
 
-## Code Execution
+| Method | Path | 用途 |
+|---|---|---|
+| GET | `/auth/me` | 驗證 JWT 並取得目前使用者 |
+| GET | `/users/me` | 取得使用者與 onboarding 狀態 |
+| POST | `/users/role` | 首次選擇 student / teacher 身分 |
+| GET / POST | `/profile` | 取得或建立學生身分資料 |
 
-```
-POST   /api/code/execute          -- 提交程式碼至 Judge0 執行
-  body: { code, language_id, stdin? }
-  resp: { stdout, stderr, compile_output, exit_code, time, memory }
+Google OAuth callback、session 與 logout 由 NextAuth.js 處理，不是 FastAPI routes。
 
-GET    /api/code/languages        -- 取得支援的語言列表
-  resp: [{ id, name }]
-```
+## 程式碼、檔案與 Terminal
 
-## Chat (EDF Pipeline)
+| Method | Path | 用途 |
+|---|---|---|
+| POST | `/code/execute` | 批次執行 C++；自建 runner 為主、Judge0 fallback |
+| GET / PUT | `/code/draft` | 讀取／儲存自動草稿 |
+| GET / PUT / PATCH | `/code/files` | 列表、儲存、改名命名檔案 |
+| GET / DELETE | `/code/files/{file_id}` | 讀取／刪除命名檔案 |
+| POST | `/terminal/ticket` | 簽發 WebSocket terminal 一次性 ticket |
 
-```
-POST   /api/chat/interact         -- 主要教學互動（SSE streaming response）
-  body: { code, question, session_id?, stdin_data?, is_review? }
-  resp: text/event-stream → { type: "token"|"done", data: string }
-        done event 包含: { session_id, evidence_summary }
+## Chat（EDF Pipeline）
 
-GET    /api/chat/sessions         -- 取得使用者所有對話 session
-  query: { page?, limit? }
-  resp: { sessions: [{ id, title, updated_at }], total }
+| Method | Path | 用途 |
+|---|---|---|
+| POST | `/chat/interact` | SSE 教學互動；stage → done / error events |
+| POST | `/chat/run-help` | 依執行結果主動說明 |
+| POST | `/chat/reflection-kickoff` | 由反思內容建立對話情境 |
+| GET | `/chat/sessions` | 列出對話 sessions |
+| GET / DELETE | `/chat/sessions/{session_id}` | 讀取／刪除 session |
 
-GET    /api/chat/sessions/{sid}   -- 取得特定 session 的訊息歷史
-  resp: { session, messages: [{ role, content, code_snapshot?, created_at }] }
+## Quiz 與理解驗證
 
-DELETE /api/chat/sessions/{sid}   -- 刪除對話 session（cascade 刪除訊息）
-```
-
-## Quiz
-
-```
-POST   /api/quiz/generate         -- 根據弱項生成題目
-  body: { count?, difficulty?, concept_tags? }
-  resp: { questions: [Question] }
-
-POST   /api/quiz/submit           -- 提交作答
-  body: { question_id, answer, time_spent_seconds }
-  resp: { is_correct, explanation, feedback, mastery_update,
-          comprehension_check?: { type, prompt } }
-
-GET    /api/quiz/questions/{id}   -- 以 id 直取單題（K3e 診斷微測驗入口）
-  resp: Question（答案已 mask；僅 validated 題，否則 404 QUESTION_NOT_FOUND）
-
-GET    /api/quiz/history          -- 作答歷史
-  query: { page?, limit?, concept_tag? }
-  resp: { answers: [StudentAnswer], total }
-
-POST   /api/quiz/comprehension    -- 提交理解驗證回答
-  body: { answer_id, comprehension_answer }
-  resp: { passed, feedback, mastery_update }
-```
+| Method | Path | 用途 |
+|---|---|---|
+| GET | `/quiz/from-bank` | 依 concept 與題型取 validated 題目 |
+| GET | `/quiz/unit-set` | LEARN 單元題組 |
+| POST | `/quiz/generate` | 即時生成題目 |
+| POST | `/quiz/weakness-set` | 依弱項產生自適應題組 |
+| POST | `/quiz/hint` | 取得題目提示 |
+| POST | `/quiz/submit` | 提交作答並更新 mastery |
+| GET | `/quiz/history` | 作答歷史 |
+| GET | `/quiz/bank` | 教師檢視 validated 題庫與正解 |
+| GET | `/quiz/questions/{question_id}` | 診斷微測驗單題 |
+| GET | `/quiz/answers/{answer_id}/feedback` | 取得作答回饋 |
+| GET | `/comprehension/trigger-suggestion/{student_answer_id}` | 建議理解驗證類型 |
+| GET / PUT | `/comprehension/{student_answer_id}` | 讀取／更新理解驗證狀態 |
+| POST | `/comprehension/{student_answer_id}/epl/generate` | 產生 EPL 題目 |
+| POST | `/comprehension/{student_answer_id}/epl/grade` | 評分 EPL |
+| POST | `/comprehension/{student_answer_id}/predict_output/generate` | 產生預測輸出題 |
+| POST | `/comprehension/{student_answer_id}/predict_output/grade` | 評分預測輸出 |
+| POST | `/comprehension/{student_answer_id}/variation/generate` | 產生變體題 |
+| POST | `/comprehension/{student_answer_id}/variation/grade` | 評分變體題 |
 
 ## Pre-Coding Reflection
 
-```
-POST   /api/reflection            -- 提交解題前反思
-  body: { source_type: "quiz"|"learning_unit", source_id,
-          problem_understanding, planned_steps, expected_concepts }
-  resp: { reflection_id, quality_score,
-          followup_question?: string }   -- 品質不足時回傳追問
+| Method | Path | 用途 |
+|---|---|---|
+| POST | `/reflection` | 建立反思；source_type 為 quiz / learning_unit |
+| GET / PATCH | `/reflection/{reflection_id}` | 取得／更新反思 |
 
-PATCH  /api/reflection/{id}       -- 更新反思（補充回答或 coding 中修改計畫）
-  body: { followup_answer?, planned_steps?, expected_concepts? }
-  resp: { updated: true }
+## 學習路徑與知識圖譜
 
-GET    /api/reflection/{id}       -- 取得反思內容（供 UI 側邊欄顯示）
-  resp: { Reflection }
-```
+| Method | Path | 用途 |
+|---|---|---|
+| GET / POST | `/learning/paths` | 列出／建立學習路徑 |
+| GET | `/learning/paths/default` | 取得預設路徑 |
+| GET / DELETE | `/learning/paths/{path_id}` | 取得／刪除路徑 |
+| PATCH | `/learning/units/{unit_id}` | 轉換單元狀態 |
+| GET | `/concepts/graph` | 完整 K-Graph |
+| GET | `/concepts/mastery` | effective / raw mastery 與複習狀態 |
+| GET | `/concepts/{tag}` | concept 詳情與鄰居 |
+| GET | `/concepts/{tag}/diagnosis` | 根源弱點診斷 |
+| POST | `/concepts/{tag}/diagnosis/remediate` | 開放補救路徑 |
 
-## Learning Path
+## 班級、Dashboard 與作業
 
-```
-GET    /api/learn/paths           -- 取得使用者的學習路徑
-POST   /api/learn/paths           -- 建立新學習路徑
-  body: { title?, goal_concepts? }
+| Method | Path | 用途 |
+|---|---|---|
+| GET / POST | `/classes` | 教師列出／建立班級 |
+| GET | `/classes/mine` | 學生的班級 |
+| POST | `/classes/join` | 以 invite code 加入 |
+| PATCH | `/classes/{class_id}` | 編輯班級 |
+| GET | `/classes/{class_id}/members` | 班級成員 |
+| GET | `/dashboard/timeline` | 行為時間線 |
+| GET | `/dashboard/mastery-overview` | 精熟度總覽 |
+| GET | `/dashboard/stats` | Dashboard 統計 |
+| GET / POST | `/assignments` | 教師列出／建立作業 |
+| GET / PATCH / DELETE | `/assignments/{assignment_id}` | 取得／編輯／刪除作業 |
+| POST | `/assignments/{assignment_id}/attachments` | 上傳作業附件 |
+| GET | `/assignments/mine` | 學生作業列表 |
+| GET | `/assignments/mine/{assignment_id}` | 學生作業詳情 |
+| PUT | `/assignments/{assignment_id}/submission` | upsert 繳交 |
+| GET | `/assignments/{assignment_id}/submissions` | 教師檢視繳交狀態 |
+| POST | `/submissions/{submission_id}/attachments` | 上傳繳交附件 |
+| PATCH | `/submissions/{submission_id}/grade` | 評分與評語 |
+| GET / DELETE | `/attachments/{attachment_id}` | 授權下載／刪除附件 |
 
-GET    /api/learn/paths/{id}      -- 取得特定路徑的所有單元
-PATCH  /api/learn/units/{id}      -- 更新單元狀態
-  body: { status }
-```
+## Dev 與 Health
 
-## Knowledge Graph
+`/dev/**` 僅在 `DEBUG=true` 使用；不是正式環境功能。
 
-```
-GET    /api/concepts/graph        -- 完整概念圖 (nodes + edges；PREREQUISITE 為多對多 DAG)
-GET    /api/concepts/mastery      -- 學生精熟度（K-Graph state）
-  resp: [{ tag, confidence, exposure_count, success_count,
-           error_count, bloom_level, last_practiced_at }]  -- K2b 加 last_practiced_at
-GET    /api/concepts/{tag}        -- 特定概念詳情 + depth-1 鄰居（含方向）
-GET    /api/concepts/{tag}/diagnosis  -- 根源弱點診斷（K3）
-  resp: { target_tag, triggered, recent_failure_streak,
-          suspects: [{ tag, name_zh, depth, confidence(null=盲區),
-                       exposure_count, question_id(null=題庫無題) }] }
-POST   /api/concepts/{tag}/diagnosis/remediate  -- 開放補救路徑（K4c）
-  409 DIAGNOSIS_NOT_TRIGGERED 若未達連續失敗門檻
-  resp: { target_tag, remedial_units: [{ unit_id, concept_tag, name_zh,
-          order_index, previous_status, status }] }  -- order 升冪 = 補救順序
-```
+| Method | Path | 用途 |
+|---|---|---|
+| GET | `/dev/status` | dev mode 狀態 |
+| POST | `/dev/reset` | 重設測試資料 |
+| PUT | `/dev/mastery` | 設定測試 mastery |
+| PUT | `/dev/role` | 切換測試角色 |
+| GET | `/dev/questions` | 檢視題庫 |
+| POST | `/dev/simulate-failures` | 模擬連續答錯 |
+| GET | `/health` | DB、Redis 與服務健康狀態 |
 
-## Dashboard
+## 標準錯誤格式
 
-```
-GET    /api/dashboard/summary     -- 學生學習總覽（聚合資料）
-  resp: {
-    concepts_learned, concepts_total,
-    total_practices, avg_confidence,
-    streak_days,
-    weak_concepts: [{ tag, confidence }],
-    next_learning_unit: { path_id, unit_id, concept_tag }
-  }
-
-GET    /api/dashboard/activity    -- 最近活動時間線
-  query: { page?, limit? }
-  resp: { activities: [{ type, description, date }], total }
-```
-
-## Behavior Analytics（教師專屬，需 role=teacher）
-
-```
-GET    /api/analytics/class/{class_id}/overview  -- 班級行為總覽
-  resp: {
-    student_count, avg_submit_count, avg_success_rate,
-    avg_hint_level, avg_fix_duration_seconds,
-    cluster_distribution: { active: N, passive: N, struggling: N }
-  }
-
-GET    /api/analytics/class/{class_id}/scatter   -- 行為-成效散佈圖資料
-  query: { metric: "submit_count"|"hint_avg"|"fix_duration"|"chat_count" }
-  resp: { points: [{ user_id, name, x: metric_value, y: confidence_delta }] }
-
-GET    /api/analytics/class/{class_id}/heatmap   -- 錯誤類型熱力圖
-  resp: { students: [name], concepts: [tag], matrix: [[int]] }
-
-GET    /api/analytics/student/{user_id}/timeline -- 個人學習行為時序
-  query: { from?, to? }
-  resp: { events: [{ type, concept_tags, hint_level, created_at }] }
-
-GET    /api/analytics/student/{user_id}/summary  -- 個人行為摘要
-  resp: {
-    submit_count, success_rate, avg_fix_duration,
-    hint_distribution, dialogue_act_distribution,
-    confidence_trend: [{ date, avg_confidence }]
-  }
+```json
+{ "error": "UPPER_SNAKE_CASE", "message": "繁體中文訊息", "detail": {} }
 ```
 
-## Assignments（作業指派，5-5 TronClass 式文件繳交）
-
-```
-# 教師（require_roles TEACHER + 擁有權，他人 404）
-POST   /assignments               -- { class_id, title, description?, due_at? } → AssignmentOut
-GET    /assignments?class_id=     -- 列出教師自己的作業（可選班級過濾）
-GET    /assignments/{id}          -- 單一作業
-PATCH  /assignments/{id}          -- { title?, description?, due_at?, is_active? } 編輯；
-                                  --   due_at 明確傳 null = 清除截止；省略 = 保留
-DELETE /assignments/{id}          -- 刪除作業 + 繳交 + 附件（204）
-
-# 附件（bytea 儲存；白名單 word/pdf/pptx/程式碼/txt/zip；單檔 ≤ 10MB）
-POST   /assignments/{id}/attachments  -- multipart file（教師）→ AttachmentOut；rate_limit upload 20/min
-GET    /attachments/{id}          -- 下載（授權：作業附件=教師或班級成員；繳交附件=本人或該作業教師）
-                                  --   一律 Content-Disposition: attachment（防 inline XSS）
-DELETE /attachments/{id}          -- 教師刪除作業附件（204）
-```
-# 繳交（5-5b）
-```
-# 學生（班級成員）
-GET    /assignments/mine                    -- 我所屬班級 active 作業 + 我的繳交狀態
-GET    /assignments/mine/{id}               -- 詳情：教師附件 + 我的繳交 + 我的繳交附件
-PUT    /assignments/{id}/submission         -- { text } upsert（重繳覆蓋）→ SubmissionOut
-POST   /submissions/{sid}/attachments       -- multipart 繳交附件（本人）
-# 教師（作業擁有者）
-GET    /assignments/{id}/submissions        -- 班級名冊 × 交/未交狀態
-PATCH  /submissions/{sid}/grade             -- { score?, feedback } 評分 + 評語
-```
-> 附件下載/刪除沿用 `GET/DELETE /attachments/{id}`（作業附件=教師或班級成員；繳交附件=本人或該作業教師）。
-
-```
-# 教師題庫檢視（5-6c，require_roles TEACHER）
-GET    /quiz/bank?tag=<concept_tag>   -- 該 concept 的 validated 題目，含完整 content（正解）+ explanation
-```
-
-## Health
-
-```
-GET    /api/health                -- { status, db, redis, judge0 }
-```
-
-## 標準錯誤格式（2026-07-04 健壯性強化）
-
-所有錯誤統一回傳（含 422 請求驗證失敗）：
-
-```
-{ error: string, message: string, detail?: object }
-```
-
-| Status | error | 情境 | detail |
-|--------|-------|------|--------|
-| 401 | `UNAUTHORIZED` | 未帶 session token | — |
-| 401 | `INVALID_TOKEN` | token 解密失敗 | — |
-| 401 | `TOKEN_EXPIRED` | token `exp` 已過期（前端統一重導 /login） | — |
-| 403 | `FORBIDDEN` | 角色權限不足 | — |
-| 422 | `VALIDATION_ERROR` | Pydantic 請求驗證失敗 | `{ errors: [...] }` |
-| 422 | `INPUT_REJECTED` | prompt injection 偵測 | — |
-| 429 | `RATE_LIMITED` | per-user 限流（LLM 端點 + /code/execute，預設 10 次/分鐘） | `{ retry_after_seconds }` |
-| 502 | `LLM_ERROR` / `LLM_PARSE_ERROR` | OpenAI 呼叫失敗 / 回傳不符 schema | — |
-| 502 | `BACKEND_UNAVAILABLE` | Next.js proxy 連不到 FastAPI | — |
-| 503 | `JUDGE0_UNAVAILABLE` | Judge0 5xx 或網路層連線失敗 | — |
-| 503 | `LLM_UNAVAILABLE` | OPENAI_API_KEY 未設定 | — |
-| 504 | `EXECUTION_TIMEOUT` | Judge0 polling 逾時 | — |
-| 504 | `BACKEND_TIMEOUT` | Next.js proxy 30 秒逾時 | — |
-| 500 | `INTERNAL_ERROR` | 未處理例外（後端已記 traceback） | — |
+常見狀態：401 認證失敗、403 權限不足、404 資源隱匿／不存在、409 狀態衝突、
+422 validation、429 rate limit / daily quota、502 upstream LLM、503 runner / LLM unavailable、
+504 execution / backend timeout。實際 error code 由 `backend/core/errors.py` 與各 route 的 `AppError` 定義。

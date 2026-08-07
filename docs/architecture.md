@@ -85,7 +85,7 @@ ProgramingEducation_V2/
 ├── web/                          # Next.js 前端
 │   ├── app/                      # App Router
 │   │   ├── (auth)/               # 登入頁面
-│   │   ├── (main)/               # 主要頁面（需登入）
+│   │   ├── (app)/                # 主要頁面（需登入）
 │   │   │   ├── workspace/        # 程式碼編輯 + AI 對話
 │   │   │   ├── learn/            # 結構化學習路徑
 │   │   │   ├── quiz/             # 智慧出題 + 測驗
@@ -106,13 +106,13 @@ ProgramingEducation_V2/
 ├── backend/                      # FastAPI 後端
 │   ├── main.py                   # 進入點
 │   ├── api/
-│   │   ├── routes/               # auth, code, chat, quiz, learn, knowledge, dashboard, analytics, reflection, health
+│   │   ├── routes/               # auth, code, chat, quiz, learning, concepts, dashboard 等 27 個 router modules
 │   │   ├── middleware/           # auth (JWT), rate_limit
 │   │   └── deps.py              # 依賴注入
 │   ├── models/                   # SQLAlchemy Models
 │   ├── services/
 │   │   ├── edf/                  # EDF 教學管線 (evidence, decision, feedback, prompt)
-│   │   ├── analytics/            # 學習行為分析 (event logging, aggregation, clustering)
+│   │   ├── analytics/            # 學習行為聚合（compute-on-read）
 │   │   ├── runner.py / judge0.py # 執行引擎 client（自建 runner 主路徑 + Judge0 fallback）
 │   │   ├── rag.py                # RAG 檢索
 │   │   ├── quiz_generator.py     # 智慧出題
@@ -123,7 +123,6 @@ ProgramingEducation_V2/
 │   └── alembic/                  # DB Migration
 │
 ├── runner/                       # 自建執行引擎（B 機部署；R1 建立）
-├── judge0/                       # Judge0 部署配置（fallback，僅供追溯）
 ├── docs/                         # 計畫文件
 └── .claude/rules/                # Claude Code 自動注入規則
 ```

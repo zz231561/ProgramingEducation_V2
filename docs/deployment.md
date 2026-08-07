@@ -14,7 +14,7 @@ Browser → web (Next.js, port 3000) → backend (FastAPI, port 8000)
 
 ## ⚠ pgvector 必要性
 
-backend 啟動時會跑 `alembic upgrade head`，其中 migration `b2c3d4e5f6a7` 會執行
+backend 啟動時會跑 `alembic upgrade head`；migration chain 會執行
 `CREATE EXTENSION IF NOT EXISTS vector` — **PG image 必須預裝 pgvector**，否則部署
 會 fail。本專案統一用 `pgvector/pgvector:pg16`（dev / prod 一致）。
 
@@ -41,6 +41,7 @@ backend 啟動時會跑 `alembic upgrade head`，其中 migration `b2c3d4e5f6a7`
 | `POSTGRES_PASSWORD` | 🔒 敏感 | docker-compose.dev.yml hardcode | .env.prod | Zeabur 自動產生（`${PASSWORD}`） |
 | `JUDGE0_API_KEY` | 🔒 敏感（RapidAPI）| backend/.env | .env.prod | Zeabur **Secret** |
 | `JUDGE0_POSTGRES_PASSWORD` / `JUDGE0_REDIS_PASSWORD` | 🔒 敏感 | — | .env.prod + judge0.conf | Zeabur 不適用 |
+| `RUNNER_TOKEN` | 🔒 敏感 | backend/.env | .env.prod | Zeabur **Secret** |
 | `GOOGLE_CLIENT_ID` | 公開 | 各自 .env | .env.prod | Zeabur 一般 env |
 | `DATABASE_URL` / `REDIS_URL` | 公開 | dev hardcode | .env.prod 拼裝 | Zeabur 用 `${POSTGRES_HOST}` 等引用 |
 | `WEB_URL` / `NEXTAUTH_URL` | 公開 | localhost | .env.prod | Zeabur `${WEB_DOMAIN}` |
@@ -59,10 +60,8 @@ backend 啟動時會跑 `alembic upgrade head`，其中 migration `b2c3d4e5f6a7`
 - Google OAuth credentials
   - 在 Google Cloud Console 先建 OAuth Client
   - **Authorized redirect URI** 暫填佔位（部署完拿到 web domain 後再回頭補；見 §A Step 5）
-- OpenAI API Key（已啟用 GPT-4o + text-embedding-3-small）
-- Judge0：Zeabur 託管的 service 不能跑 self-host Judge0（見 §C 警告）。兩種選擇：
-  - **正式方案（2026-07-12 定案）**：另租一台 VPS 自架 Judge0，backend 設 `JUDGE0_API_URL=http://<伺服器B IP>:2358` + `JUDGE0_API_KEY=<authn token>` — 拓撲見 `docs/server-plan.md`
-  - 過渡方案：RapidAPI（免費 50 次/天，僅夠冒煙測試）
+- OpenAI API Key（現行對話／審查 models + text-embedding-3-small）
+- 正式執行引擎為 §E 的 B 機自建 runner；Judge0 RapidAPI 僅作故障 fallback，§C 為凍結追溯資料
 
 ## Service 串接架構
 
@@ -342,7 +341,7 @@ curl http://localhost:3000/api/health
 
 ---
 
-## §C. Judge0 自架（取代 RapidAPI 50 次/天限制）
+## §C. Judge0 自架（⚫ 凍結追溯；已由 §E 取代）
 
 適用：self-host VPS（§B）情境；想擺脫 RapidAPI 配額或在內網執行學生程式碼。
 

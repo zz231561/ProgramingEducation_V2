@@ -21,7 +21,7 @@ docker exec codedge-postgres-dev psql -U postgres -d programing_education -c "\d
 cd backend && .venv/bin/alembic current
 ```
 
-**預期最後一行輸出**：`b2c3d4e5f6a7 (head)` → 環境 OK。
+**預期最後一行輸出**：版本後帶 `(head)` → 環境 OK；實際版本以 `alembic heads` 為準。
 
 **逐步版（出問題時方便定位失敗點）：**
 ```bash
@@ -39,7 +39,7 @@ docker exec codedge-postgres-dev psql -U postgres -d programing_education -c "\d
 # 4) 確認 Alembic migration 在最新版
 cd /Users/hao/Desktop/Project/ProgramingEducation_V2/backend
 .venv/bin/alembic current
-# 預期顯示：b2c3d4e5f6a7 (head)
+# 預期：版本後帶 (head)；實際版本以 .venv/bin/alembic heads 為準
 ```
 
 ### 🟡 完整開發（再加後端 + 前端 server）
@@ -92,7 +92,7 @@ docker exec codedge-postgres-dev psql -U postgres -d programing_education -c "\d
 cd backend; .\.venv\Scripts\alembic.exe current
 ```
 
-**預期最後一行**：`b2c3d4e5f6a7 (head)` → 環境 OK。
+**預期最後一行**：版本後帶 `(head)` → 環境 OK；實際版本以 `alembic heads` 為準。
 
 ### 🟡 完整開發（後端 + 前端，分開三個 terminal）
 

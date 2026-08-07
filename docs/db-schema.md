@@ -1,6 +1,8 @@
 # DB Schema
 
 > 標記 `★` 為需要建立的 index/constraint
+> SQLAlchemy tables 以 `backend/models/__init__.py` 為 inventory；LlamaIndex 管理的 RAG tables
+> 不在 SQLAlchemy metadata。Migration head 以 `alembic heads` 動態查詢，不在文件手抄。
 
 ## Module 1: Auth
 
@@ -11,6 +13,7 @@ users
 ├── name
 ├── avatar_url
 ├── role (enum: student/teacher/admin)  -- 預設 student
+├── role_selected (boolean, default false) -- 是否已完成首次身分選擇
 ├── google_id (unique) ★
 ├── created_at
 └── last_login_at
@@ -34,6 +37,9 @@ chat_messages
 ├── code_snapshot (text, nullable)     -- 當時的程式碼快照
 ├── execution_result (jsonb, nullable) -- Judge0 執行結果
 ├── evidence (jsonb, nullable)         -- EDF Evidence 層輸出
+├── citations (jsonb, nullable)        -- 回應使用的教材引用，重開 session 仍可追溯
+├── dialogue_act (varchar, nullable)   -- StudyChat 六類學生對話行為
+├── explicit_help (boolean, default false) -- 「我卡住了」的明確求助訊號
 ├── created_at ★ index (session_id, created_at) 複合索引供歷史排序
 ```
 
@@ -170,6 +176,22 @@ learning_units
 ├── status (enum: locked/available/in_progress/completed)
 ├── completed_at (timestamp, nullable)
 └── UNIQUE (path_id, order_index) ★
+```
+
+### 教材內容審核 staging
+
+```
+unit_content_staging
+├── id (UUID, PK)
+├── concept_id (FK → concepts, ON DELETE CASCADE) ★ UNIQUE
+├── content (jsonb)                    -- grounded LLM 產生的 UnitContent
+├── status (pending/approved/rejected) ★ index
+├── needs_more_source (boolean) ★ index
+├── notes (text)
+├── attempt_count (int, CHECK >= 1)
+├── model_used (varchar)
+├── generated_at
+└── reviewed_at (nullable)
 ```
 
 ## Module 8: 教師端

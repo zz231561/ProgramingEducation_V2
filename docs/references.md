@@ -44,7 +44,7 @@
 | **OATutor `BKT-brain.js`** port | 已有 pyBKT 套件且更穩定 | Tier 1 直接用 pyBKT |
 | **EduAdapt-AI RL learning path** | RL 對 MVP 過度工程 | Phase 3-1 先用拓撲排序 + 弱項補強，後期再評估 |
 | **BloomBERT** | LLM 結構化輸出已足夠，引入額外模型增加維運成本 | 保留交叉驗證可能，Phase 1 不引入 |
-| **Socratic-LLM** fine-tune | 不做 fine-tuning（用 GPT-4o + prompt engineering）| — |
+| **Socratic-LLM** fine-tune | 不做 fine-tuning（使用現行 OpenAI model + prompt engineering）| — |
 
 ### 📌 決策記錄：K5a 知識圖譜視覺化套件（2026-07-05）
 
@@ -95,7 +95,7 @@
 | **Phase 2-5 Pre-Coding Reflection** | （無，純後端 + UI）| — |
 | **Phase 2-6 Comprehension Check** | （無，純 LLM prompt）| — |
 | **Phase 3-1 學習路徑** | （拓撲排序，不引 RL）| — |
-| **Phase 4 部署** | Zeabur 官方模板 + `pgvector/pgvector:pg16` + Judge0 docker-compose | — |
+| **Phase 4 部署** | Zeabur 官方模板 + `pgvector/pgvector:pg16` + 自建 runner | — |
 | **Phase 5-2 行為事件** | （無）| ProgSnap2 + StudyChat |
 | **Phase 5-3 行為分析** | pyBKT + `prefixspan` | — |
 

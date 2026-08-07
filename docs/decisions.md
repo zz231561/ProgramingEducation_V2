@@ -2953,231 +2953,45 @@ V1 cold-start 仰賴固定 tag `syntax-basic`，但 V2 cpp-XX 章節制 seed（6
 
 ---
 
-## [2026-05-06] — Phase 4-3a 進行中：Health endpoint Redis import binding 修復
+## [2026-05-06] — `from X import Y` 對 mutable global 的 binding 陷阱
 
-### 修補（4-3a 整合驗證階段抓到的 bug）
-- **`backend/api/routes/health.py` Redis 連線檢查 false-negative**：`from core.redis import redis_client` 在 import 當下抓到的是 `None`（因 `init_redis()` 是啟動時才 set global），之後 lifespan 設好的 client 不會反映到 health module 的 reference → `/health` 永遠回 `redis: disconnected` 即使實際 Redis 正常
-- **修法**：改用既有 `get_redis()` 函式（每次呼叫都 lookup 當前 module global），並移除已成多餘的 None 檢查（`get_redis()` 內部會 raise，由外層 `except Exception` 接住）
-- 修補後 `/health` 回 `{"status":"ok","services":{"database":"connected","redis":"connected"}}`
+`health.py` 寫 `from core.redis import redis_client`，import 當下抓到的是 `None`
+（`init_redis()` 啟動時才 set global），之後 lifespan 設好的 client 不會反映到這個
+reference → `/health` **永遠回 `redis: disconnected`**，即使 Redis 正常。
 
-### 整合驗證階段成果（自動驗證）
-- Backend pytest **442 passed** in 1.97s（零 regression）
-- Frontend `tsc --noEmit` 無錯
-- Frontend `next build` 成功 13 routes
-- Alembic migration 在 head（`e1f2a3b4c5d6`）
-- Postgres + Redis container healthy（dev compose Up 7 days）
+**規則**：module 層級的 mutable global 一律 `import X` 後用 `X.Y`，或包 getter 函式；
+只有不變的常數與型別才能直接 `from X import Y`。
 
-### 設計關鍵
-- **Python `from X import Y` 的 binding 陷阱**：對 module 層級 mutable global 應該 `import X` 然後用 `X.Y`，或透過 getter function 包裝；只有不變的常數或型別才能直接 `from X import Y`
-- **此 bug 之前 442 tests 沒抓到**：`test_health.py` 用 fixture mock 掉 `redis_client`，沒實測「lifespan 啟動 → ping」整條鏈路（記入 tech-debt 評估是否補 e2e health test）
-- **不影響其他端點**：`get_redis()` 走 module global lookup，之前所有 cache / rate limit 端點都正常；只有 health.py 自己誤報
+**為什麼 442 個測試沒抓到**：`test_health.py` 用 fixture 把 `redis_client` mock 掉了，
+從沒實測「lifespan 啟動 → ping」整條鏈路。其他端點都走 `get_redis()`（每次 lookup
+當前 global）所以正常——只有 health.py 自己誤報。
 
----
+## [2026-05-05] — Phase 4 部署配置：環境分層與 Zeabur 適配
 
-## [2026-05-05] — Phase 4-2c：NextAuth callback URL + CORS 設定（Phase 4-2 完成）
+**三套環境配置各自獨立**（dev / self-host / Zeabur），不共用一份 `.env` ——
+混用會讓生產密碼流入開發環境。敏感變數在文件中用 🔒 標記，部署時一眼看出哪些要設 Secret。
 
-### 修補（部署阻擋風險）
-- **`zeabur.json` web env 加 `AUTH_TRUST_HOST=true`**：NextAuth v5 在反向代理後（Zeabur）的必要設定；缺此設定 callback URL 會用 container internal hostname 而非公開 domain → Google OAuth `redirect_uri_mismatch`
-- **`backend/core/config.py` `cors_origins` 加 `.rstrip("/")` 防呆**：CORSMiddleware 對 origin 嚴格字串比對，若 `NEXTAUTH_URL` 含尾斜線（`https://domain.com/`）會與 browser 送的 `https://domain.com` 不符 → 403
+**Zeabur 適配要點**
+- **`AUTH_TRUST_HOST` 必填**：NextAuth v5 安全預設不信 forwarded headers，
+  不設會卡在 callback redirect
+- **`NEXTAUTH_SECRET` 兩端同源**：`zeabur.json` 的 backend 與 web 都引用同一個
+  `${AUTH_SECRET}` project variable，自動保證一致
+- **`POSTGRES_PASSWORD` 用 `${PASSWORD}`** 由 Zeabur 注入隨機強密碼，使用者不必自己設
+- 唯讀變數（HOST / PORT / DATABASE / USERNAME）標 `readonly: true` 防誤改；
+  `${CONTAINER_HOSTNAME}` 自動給內部 DNS 名
+- **CORS 對尾斜線做 rstrip 容錯**而非禁止 —— 與其要求使用者填 `.env` 時守紀律，不如 server 容錯
 
-### 新增（測試）
-- `backend/tests/test_cors.py` 加 3 個 cors_origins 容錯測試：
-  - 帶尾斜線 → 應 strip
-  - 無尾斜線 → 不變
-  - 多個尾斜線（極端）→ 全清
-- 全套 442 backend tests 全綠（439 → 442，+3 個新測試，零 regression）
+**dev / prod 用同一個 image**（`pgvector/pgvector:pg16`）：避免 dev 過、prod 才在 alembic 掛掉。
+prod compose **不暴露 PG / Redis host port**。
 
-### 文件
-- `docs/deployment.md` 加 §D NextAuth callback URL + CORS 機制章節（56 行）：
-  - **Callback URL 怎麼產生**：`/api/auth/callback/{provider}` + `AUTH_TRUST_HOST` 決定主機名來源（X-Forwarded-Host vs internal hostname）
-  - **三環境 AUTH_TRUST_HOST 設定一覽**：dev / self-host / Zeabur
-  - **後端 CORS 設計說明**：為何單 origin、為何 rstrip
-  - **「同 domain 仍要設 CORS」防禦深度說明**：架構上瀏覽器經 Next.js proxy 不直接打 backend，CORS 是萬一架構變動的安全網
-  - **NextAuth 疑難排解表**：`redirect_uri_mismatch` / 登入後跳到 internal hostname / `NEXTAUTH_SECRET` mismatch / CORS preflight 401
-- `web/.env.example`：補 `AUTH_TRUST_HOST=true` 註釋（dev 不需，prod 必要；含 NextAuth v5 預設不信 X-Forwarded-Host 的說明）
+**Judge0 自架獨立成一份 compose**（不併入 prod）：它是可選元件，且需要 privileged，
+併進去會讓主 compose 臃腫。**Zeabur 跑不了自架 Judge0**（privileged 限制）→ 該環境走 RapidAPI。
+`JUDGE0_API_KEY=""` 即表示自架模式，`_build_headers` 據此不加 RapidAPI header。
 
-### 設計關鍵
-- **`AUTH_TRUST_HOST` 是 Zeabur / 反代必填**：NextAuth v5 安全預設不信 forwarded headers；不設會卡 callback redirect
-- **CORS rstrip 防呆而非禁尾斜線**：使用者填 `.env` 時可能習慣帶尾斜線，與其要求紀律不如 server 容錯
-- **三環境設定表 vs 開放式描述**：學生 / 教師部署時直接看自己情境那行
-- **`NEXTAUTH_SECRET` 同源**：zeabur.json backend / web 都用 `${AUTH_SECRET}` 同 Project variable → 自動一致；自架 `.env.prod` 用同一變數注入兩個 service
-- **CORS preflight 401 疑難排解條目**：學生 / 教師最常踩的 trailing slash 坑寫進表格
+**`requirements.lock` 一次重產**：Phase 2-1 / 2-3 陸續加的套件一直沒同步，
+4-1a 是部署前最後修正機會。**pyBKT 不進 lock** —— 線上更新用純公式不需套件，
+它只在 Phase 5 跑 `fit()` 時才需要。
 
-### Phase 4-2 整體進度
-- ✅ 4-2a 環境變數分層配置
-- ✅ 4-2b Zeabur service 串接驗證
-- ✅ 4-2c NextAuth callback URL + CORS 設定
-- 4-2 配置層就緒；4-3 進入實際上線驗證 + 整合測試
-
----
-
-## [2026-05-05] — Phase 4-2b：Zeabur service 串接驗證 + 部署 checklist
-
-### 修正（zeabur.json 串接漏洞）
-- **backend service 加 `BACKEND_HOST` expose**：原 web 引用 `${BACKEND_HOST}` 但 backend 沒 expose 此變數 → 部署會 fail
-  - 加 `"BACKEND_HOST": {"default": "${CONTAINER_HOSTNAME}", "expose": true, "readonly": true}`
-  - 與 postgres / redis 的 `${CONTAINER_HOSTNAME}` 慣例一致
-- **redis 從 marketplace 改為 image-based**：與 postgres 一致，明確 expose `REDIS_HOST` / `REDIS_PORT`
-  - 使用 `redis:7-alpine` image（與 dev compose 一致）
-  - 加 ports / env / volumes spec
-
-### 文件（deployment.md §A 重寫）
-- 80 → 138 行新版 §A，重點變更：
-  - **Service 串接架構圖**：postgres/redis → backend → web 變數引用鏈視覺化
-  - **Zeabur 變數插值規則說明**：`${POSTGRES_HOST}` / `${CONTAINER_HOSTNAME}` / `${PASSWORD}` / `${WEB_DOMAIN}` 各自意義
-  - **Step 1 改用 zeabur template deploy**：一鍵部署 vs 舊「手動建 4 個 service」
-  - **Step 2 Project Variables 表**：6 個必設變數 + Secret 標記建議
-  - **Step 5 補 Google OAuth redirect URI**：明確順序「先部署拿 domain → 回 Google Console 補 callback」
-  - **部署 checklist**：8 項 dry-run 檢查（OAuth Client / API key / AUTH_SECRET / Zeabur 帳號 / commit 狀態）
-  - **疑難排解擴增**：加 `${BACKEND_HOST}` 解析失敗 / template schema 拒絕 / OAuth redirect_uri_mismatch
-
-### 設計關鍵
-- **expose / readonly 對齊 Zeabur 慣例**：唯讀變數（HOST / PORT / DATABASE / USERNAME）標 `readonly: true` 防止使用者誤改
-- **`${CONTAINER_HOSTNAME}` 自動內部 DNS**：每個 service 自己的內部主機名，不需手填
-- **Redis 也改 image-based**：避免 marketplace expose 行為猜測 — 與 postgres 統一
-- **部署 checklist 在 deploy 文件中**：實際操作前可逐項勾選；用戶不需記順序
-- **fallback 仍寫在 Step 1 footnote**：若 Zeabur 拒絕 PREBUILT IMAGE schema，明確兩條備案
-
-### Phase 4-2 進度
-- ✅ 4-2a 環境變數分層配置
-- ✅ 4-2b Zeabur service 串接驗證（zeabur.json schema + deployment.md 重寫）
-- ⬜ 4-2c NextAuth callback URL + CORS 設定
-
----
-
-## [2026-05-05] — Phase 4-2a：環境變數分層配置 + Zeabur Secret 指引
-
-### 整理（env 範本）
-- **刪除**：root `.env.example`（過時且與 backend/.env.example 重疊；誤導 dev 用 root .env）
-- **新增**：`.env.prod.example`（72 行）— self-host VPS 完整範本：
-  - 6 區段：Application PG / Auth / OpenAI / Judge0（A 自架 / B RapidAPI 二選一）/ Judge0 密碼 / 可選 debug 變數
-  - 標明每組密碼的「對應出處」（與 judge0.conf 一致 / 與 docker-compose 服務變數一致）
-  - 提示「強隨機密碼，至少 16 字元」
-- `.gitignore`：加 `!.env.prod.example` 與 `judge0.conf` ignore 規則（保留 `.example`）
-
-### 文件（環境變數分層）
-- `docs/deployment.md` 加「環境變數分層」章節（268 行 → 272 行細）：
-  - 三套配置一覽表（dev backend / dev web / self-host prod / Zeabur prod）禁混用
-  - 變數分類一覽（敏感 vs 公開；每變數的 dev / self-host / Zeabur 來源）
-  - **Zeabur Secret 標記方式**：Project Settings → Environment Variables → 詳情頁 → 開「Hidden / Secret」開關
-
-### 設計關鍵
-- **三套配置 vs 全部混用**：dev/self-host/Zeabur 三條獨立路徑；避免一個 .env 跨環境造成密碼洩漏
-- **公開 vs 敏感清楚標記**：表格用 🔒 標敏感變數；Zeabur 部署時知道哪些必須設 Secret
-- **`POSTGRES_PASSWORD` 在 Zeabur 自動產生**：zeabur.json 用 `${PASSWORD}`，由 Zeabur 注入隨機強密碼，使用者不需手動設
-- **`JUDGE0_*_PASSWORD` 不在 Zeabur**：Zeabur 不能跑 Judge0 自架（privileged 限制），所以不適用
-- **Self-host 路徑明確**：`.env.prod.example` 內標註「對應 docker-compose 服務」+ Judge0 密碼必須與 judge0.conf **完全一致**
-
-### Phase 4-2 進度
-- ✅ 4-2a 環境變數分層配置
-- ⬜ 4-2b Zeabur service 串接驗證 / ⬜ 4-2c NextAuth callback + CORS
-
----
-
-## [2026-05-05] — Phase 4-1c：Judge0 自架 docker-compose（取代 RapidAPI 配額）
-
-### 新增（self-host Judge0 stack）
-- `docker-compose.judge0.yml`（87 行）— Judge0 1.13.1 4 服務獨立 stack：
-  - `judge0-server`：API 端點（接 submission，丟進 Redis queue）；port 2358
-  - `judge0-workers`：實際 sandboxed 執行（讀 queue + cgroups 隔離）；同 image 不同 command
-  - `judge0-db`：PostgreSQL 13（Judge0 metadata；獨立於 app PG）
-  - `judge0-redis`：Redis 6（job queue；獨立於 app Redis，含密碼）
-  - 兩個執行容器 `privileged: true`（cgroups 限制學生程式時間/記憶體/process）
-  - healthcheck-gated 依賴鏈
-- `judge0.conf.example`：Judge0 配置範本
-  - `CPU_TIME_LIMIT=5` / `WALL_TIME_LIMIT=10` / `MEMORY_LIMIT=128000`
-  - `ALLOW_ENABLE_NETWORK=false`（防學生程式對外連線）
-  - `ENABLE_WAIT_RESULT=true`（同步等結果，簡化 backend）
-  - 使用者複製為 `judge0.conf` 並填密碼後**勿 commit**
-
-### 文件
-- `docs/deployment.md` 加 §C Judge0 自架（80 行）：
-  - **⚠ Zeabur 不支援警告**：privileged container 被禁 → Zeabur 部署仍走 RapidAPI Judge0
-  - Step 1-5：準備 conf → 補 .env.prod → 啟動 stack → 驗證 `/about` → 合併 backend 網路（3 種方式）
-  - 疑難排解表：`/about` 502 / privileged 被拒 / timeout / status=1 卡住
-- `docs/tech-debt.md`：加「Judge0 自架未在生產驗證」條目
-
-### 設計關鍵
-- **獨立 compose 而非整合 prod**：Judge0 是可選；4 服務 + privileged 整合進 prod compose 會臃腫
-- **Judge0 1.13.1 而非 v6.x**：1.13.1 文件多 + 多家驗證
-- **API key 留空表示自架**：backend `judge0.py` 的 `_build_headers` 已支援 — `JUDGE0_API_KEY=""` → 不加 RapidAPI header
-- **Zeabur fallback 寫在文件**：明確指引 Zeabur 部署改 RapidAPI
-
-### Phase 4-1 整體進度
-- ✅ 4-1a Dockerfile build 驗證
-- ✅ 4-1b pgvector 容器配置
-- ✅ 4-1c Judge0 自架
-- 4-1 容器化階段就緒；4-2 進入實際 Zeabur 部署
-
----
-
-## [2026-05-05] — Phase 4-1b：pgvector 容器配置驗證 + 生產 compose
-
-### 驗證（dev pgvector 完整就緒）
-- `docker-compose.dev.yml` 已用 `pgvector/pgvector:pg16` image，container 跑 6 天 healthy
-- `vector` extension 已啟用（v0.8.2）
-- `documents` 業務表 + LlamaIndex 自動建的 `data_codedge_rag` 表（含 `embedding vector` column）就緒
-- `alembic upgrade head` 含 `CREATE EXTENSION IF NOT EXISTS vector`（migration b2c3d4e5f6a7）
-
-### 修正（zeabur.json 部署風險）
-- 原 `zeabur.json` 的 postgres 用 `marketplace.postgresql` — **標準 PG 不含 pgvector** → 部署會 fail 在 alembic
-- 改為 `template: PREBUILT` + `source: {type: "IMAGE", image: "pgvector/pgvector:pg16"}`：
-  - 加 ports / env / volumes 完整 spec
-  - 暴露 `POSTGRES_HOST` / `POSTGRES_PORT` / `POSTGRES_DATABASE` / `POSTGRES_USERNAME` 給 backend service 引用（`${POSTGRES_HOST}` 等變數）
-- ⚠ Schema 細節未經實際 Zeabur 部署驗證（記入 tech-debt.md）；4-2 部署當下若 Zeabur 拒絕，依 deployment.md §A fallback：marketplace pgvector 或 GIT + 一行 Dockerfile
-
-### 新增（self-host 部署）
-- `docker-compose.prod.yml`（84 行）：
-  - 完整 4 服務（postgres / redis / backend / web）依賴鏈 healthy gate
-  - 密碼從 `.env.prod` env 讀取，**不寫入檔案**
-  - PG/Redis 不暴露 host port（內部網路），只 web `3000` 對外（前置 nginx/caddy）
-  - backend healthcheck（30s interval + 30s start_period）
-  - 與 `docker-compose.dev.yml` 同 pgvector image（dev/prod 一致）
-
-### 文件
-- `docs/deployment.md` 大幅擴充（80 → 174 行）：
-  - 章節分為 §A Zeabur / §B Self-host VPS
-  - 加 ⚠ pgvector 必要性說明（migration 會 CREATE EXTENSION vector）
-  - 加 §A Zeabur fallback 指引（schema 被拒時的兩種替代方案）
-  - 加 §B 完整 self-host 流程（.env.prod / 啟動 / nginx 反代 / 健康檢查 / 疑難排解）
-  - 疑難排解表加 `permission denied / type "vector" does not exist` 條目對應 PG image 錯誤
-- `docs/tech-debt.md`：加「Zeabur PREBUILT IMAGE schema 待實測」條目
-
-### 設計關鍵
-- **dev / prod 同 image**：兩個 compose 都用 `pgvector/pgvector:pg16`；避免 dev 過 / prod 在 alembic 才 fail 的尷尬
-- **prod compose 不暴露 PG/Redis host port**：MVP 安全考量；未來若需 backup/管理可加 `--profile admin` 服務
-- **Zeabur schema fallback 文件先寫**：4-2 實測前先把 fallback 路徑寫清楚，部署當下不需重新研究
-- **不刪 dev compose**：dev / prod 分檔，dev 仍方便 host port 連線除錯
-
----
-
-## [2026-05-05] — Phase 4-1a：Dockerfile 驗證 + 依賴 lock 重產
-
-### 修補（依賴）
-- `backend/pyproject.toml`：補完 `dependencies` — 加 LlamaIndex 三套件 + `psycopg2-binary`：
-  - `llama-index-core>=0.13,<1`
-  - `llama-index-embeddings-openai>=0.5,<1`
-  - `llama-index-vector-stores-postgres>=0.5,<1`
-  - `psycopg2-binary>=2.9,<3`（PGVectorStore 同步初始化用）
-- `backend/requirements.lock`：用 `uv pip compile pyproject.toml -o requirements.lock` 重產（38 → 272 行；含全部 transitive deps 鎖定版本）
-- 確認 pyBKT **未實際 import**（updater.py 註解保留說明 BKT 數學公式來自 Corbett & Anderson 1995；pyBKT 是 Phase 5 行為分析後可選用）→ 不加入依賴
-
-### 驗證
-- `docker build -t prog-edu-backend ./backend` ✅ 成功（667 MB；含 LlamaIndex / pgvector / cryptography 等）
-- `docker build -t prog-edu-web ./web` ✅ 成功（285 MB；Next.js standalone output 已啟用）
-- 兩個 Dockerfile 結構保持原樣，僅補 lock 內容讓 `pip install -r requirements.lock` 完整
-
-### 設計關鍵
-- **lock 重產一次到位**：tech-debt 累積已久（Phase 2-1 / 2-3 加套件後一直未更新）；4-1a 是部署前最後機會修正
-- **pyBKT 不加**：純 BKT 公式線上更新無需套件；pyBKT 用於 fit 真實學生資料，Phase 5 才需要
-- **Multi-stage build 暫不做**：backend Dockerfile 單階段；後續若要瘦身可改 multi-stage（builder 含編譯 deps，runtime 只裝 runtime deps）— 屬優化非阻塞
-
-### Phase 4-1 整體進度
-- ✅ 4-1a Dockerfile 驗證 build
-- ⬜ 4-1b pgvector/pgvector:pg16 容器配置
-- ⬜ 4-1c Judge0 自架 docker-compose
-
----
 
 ## [2026-05-05] — Phase 3-3c：Dashboard 精熟度詳細總覽（Phase 3 完成 🎉）
 

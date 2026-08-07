@@ -80,4 +80,12 @@ LOG_LEVEL=INFO
 - **Unit**: pytest + pytest-asyncio → services（EDF pipeline、quiz generator）
 - **Integration**: pytest + httpx.AsyncClient → API endpoints（含 DB）
 - **Security**: pytest → sanitizer regex、output validator
-- Phase 1 優先：EDF pipeline unit test + 登入 E2E test
+
+### 改完後端程式碼必跑（全綠才算完成）
+```bash
+cd backend
+.venv/bin/python -m pytest -q      # 全部測試
+.venv/bin/ruff check .            # lint（已校準中文與 FastAPI 誤判，應為 All checks passed）
+```
+- ruff 設定見 `pyproject.toml`；**不要為了消警告而放寬 ignore**，先確認是不是真誤判
+- 動到 migration：另跑 `.venv/bin/alembic upgrade head` 確認可套用

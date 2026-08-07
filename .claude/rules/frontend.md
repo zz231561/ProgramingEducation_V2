@@ -80,9 +80,17 @@ Active tab: `border-bottom: 2px solid #F78166`
 
 ## 測試策略
 
-- **Component**: Vitest + React Testing Library → 各 UI 元件
-- **E2E**: Playwright → 登入 → 寫程式 → 執行 → AI 對話（golden path）
-- Phase 1 優先：Workspace 頁面 E2E test
+- **Unit**: Vitest → 純函式（`web/tests/*.test.ts`；元件測試尚未建置）
+- **E2E**: Playwright → 尚未建置（tech-debt C1；規劃於使用者驗收後）
+
+### 改完前端程式碼必跑（全綠才算完成）
+```bash
+cd web
+npm test              # Vitest
+npx tsc --noEmit      # 型別
+npm run lint          # ESLint（僅 global-nav <img> 一則既有 warning 可忽略）
+npm run build         # Next build，確認 route 產出正常
+```
 
 ## API 呼叫
 

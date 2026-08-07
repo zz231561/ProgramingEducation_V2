@@ -96,7 +96,7 @@ cd web && npm test && npx tsc --noEmit && npm run lint && npm run build
 
 理由**必須能對應到 Q1–Q3 其中一題**，不接受「這樣比較好」「拆了沒意義」。
 
-收尾（專案守則 6）：重跑 `doc_selfcheck.py` 確認清單縮短 → 同步
+收尾（專案「文檔同步」守則）：重跑 `doc_selfcheck.py` 確認清單縮短 → 同步
 `docs/roadmap.md`（打勾＋一行）、`docs/tech-debt.md`；
 有設計取捨（如豁免判斷的依據）才寫 `docs/decisions.md`。
 
